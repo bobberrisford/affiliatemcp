@@ -1,0 +1,65 @@
+{
+  "Actions": [
+    {
+      "Id": "2001",
+      "CampaignId": "11111",
+      "CampaignName": "Atolls Bookshop",
+      "State": "APPROVED",
+      "EventDate": "2024-09-01T10:30:00-05:00",
+      "LockingDate": "2024-09-15T00:00:00-05:00",
+      "ReferringDate": "2024-09-01T10:00:00-05:00",
+      "IntendedAmount": "100.00",
+      "Payout": "8.00",
+      "Currency": "USD"
+    },
+    {
+      "Id": "2002",
+      "CampaignId": "11111",
+      "CampaignName": "Atolls Bookshop",
+      "State": "PENDING",
+      "EventDate": "2025-12-20T18:05:00-05:00",
+      "ReferringDate": "2025-12-20T18:00:00-05:00",
+      "IntendedAmount": "50.00",
+      "Payout": "4.00",
+      "Currency": "USD"
+    },
+    {
+      "Id": "2003",
+      "CampaignId": "33333",
+      "CampaignName": "Reef Outfitters",
+      "State": "REVERSED",
+      "EventDate": "2025-08-01T09:30:00-05:00",
+      "LockingDate": "2025-08-20T00:00:00-05:00",
+      "ReferringDate": "2025-08-01T09:00:00-05:00",
+      "IntendedAmount": "200.00",
+      "Payout": "0.00",
+      "Currency": "USD",
+      "ReversalReason": "Customer returned the item within 14 days"
+    },
+    {
+      "Id": "2004",
+      "CampaignId": "11111",
+      "CampaignName": "Atolls Bookshop",
+      "State": "PAID",
+      "EventDate": "2024-01-05T12:30:00-05:00",
+      "LockingDate": "2024-01-20T00:00:00-05:00",
+      "ClearedDate": "2024-02-15T00:00:00-05:00",
+      "IntendedAmount": "75.00",
+      "Payout": "6.00",
+      "Currency": "USD"
+    },
+    {
+      "Id": "2005",
+      "CampaignId": "11111",
+      "CampaignName": "Atolls Bookshop",
+      "State": "LOCKED",
+      "EventDate": "2025-11-01T10:00:00-05:00",
+      "LockingDate": "2025-11-15T00:00:00-05:00",
+      "IntendedAmount": "60.00",
+      "Payout": "5.00",
+      "Currency": "USD"
+    }
+  ],
+  "@page": "1",
+  "@numpages": "1"
+}

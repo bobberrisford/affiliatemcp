@@ -1,0 +1,24 @@
+{
+  "Clicks": [
+    {
+      "Id": "9001",
+      "CampaignId": "11111",
+      "CampaignName": "Atolls Bookshop",
+      "EventDate": "2026-05-15T10:00:00-05:00",
+      "ReferringDate": "2026-05-15T10:00:00-05:00",
+      "LandingPageUrl": "https://www.atolls-bookshop.example.com/landing",
+      "ReferringUrl": "https://www.atolls.com/blog/post-1",
+      "TrackedEventStatus": "Tracked"
+    },
+    {
+      "Id": "9002",
+      "CampaignId": "33333",
+      "CampaignName": "Reef Outfitters",
+      "EventDate": "2026-05-16T11:30:00-05:00",
+      "LandingPageUrl": "https://www.reef-outfitters.example.com/sale",
+      "ReferringUrl": "https://www.atolls.com/blog/post-2",
+      "TrackedEventStatus": "Tracked"
+    }
+  ],
+  "@page": "1"
+}

@@ -1,0 +1,36 @@
+{
+  "Campaigns": [
+    {
+      "CampaignId": "11111",
+      "CampaignName": "Atolls Bookshop",
+      "AdvertiserId": "22222",
+      "AdvertiserName": "Atolls Bookshop Ltd",
+      "CampaignUrl": "https://www.atolls-bookshop.example.com",
+      "ContractStatus": "Active",
+      "ContractCurrency": "USD",
+      "CampaignCurrency": "USD",
+      "Categories": ["Books", "Education"]
+    },
+    {
+      "CampaignId": "33333",
+      "CampaignName": "Reef Outfitters",
+      "AdvertiserId": "44444",
+      "AdvertiserName": "Reef Outfitters Inc",
+      "CampaignUrl": "https://www.reef-outfitters.example.com",
+      "ContractStatus": "Pending",
+      "ContractCurrency": "USD",
+      "Categories": ["Outdoor"]
+    },
+    {
+      "CampaignId": "55555",
+      "CampaignName": "Mainland Stationery",
+      "AdvertiserId": "66666",
+      "AdvertiserName": "Mainland Stationery LLC",
+      "ContractStatus": "NotEnrolled",
+      "ContractCurrency": "USD",
+      "Categories": ["Office"]
+    }
+  ],
+  "@page": "1",
+  "@numpages": "1"
+}
