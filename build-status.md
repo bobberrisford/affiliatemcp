@@ -2,7 +2,7 @@
 
 **Orchestrator branch**: `claude/affiliate-mcp-orchestration-qfKw4`
 **PRD**: v0.4 (Ready for build)
-**Status**: Days 1–6 complete (all adapters, wizard, generators, docs, skills, polish merged). Contribute infra + governance launching in parallel.
+**Status**: All structural chunks (1–12) merged. Next: §15.31 end-to-end contribution test + Chunk 13 launch prep.
 **Last updated**: 2026-05-21
 
 This document maps the PRD §13 build sequence to discrete sub-agent assignments. The orchestrator delegates one chunk at a time, reviews the handoff document at `handoffs/<branch>.md`, verifies against the relevant PRD §15 quality bars, then merges to `main` (the working integration branch on `claude/affiliate-mcp-orchestration-qfKw4`).
@@ -95,9 +95,11 @@ This document maps the PRD §13 build sequence to discrete sub-agent assignments
 | 8 | feature/setup-docs | ✅ merged | [handoffs/feature-setup-docs.md](handoffs/feature-setup-docs.md) |
 | 9 | feature/publisher-skills | ✅ merged | [handoffs/feature-publisher-skills.md](handoffs/feature-publisher-skills.md) |
 | 10 | feature/adapter-polish | ✅ merged | [handoffs/feature-adapter-polish.md](handoffs/feature-adapter-polish.md) |
-| 11 | feature/contribute-infra | in flight | — |
-| 12 | feature/governance | in flight | — |
-| 13 | feature/launch-prep | blocked on 11,12 | — |
+| 11 | feature/contribute-infra | ✅ merged | [handoffs/feature-contribute-infra.md](handoffs/feature-contribute-infra.md) |
+| 12 | feature/governance | ✅ merged (partial) | (sub-agent blocked by content filter pre-handoff) |
+| 12b | feature/governance-2 | ✅ merged | [handoffs/feature-governance-2.md](handoffs/feature-governance-2.md) |
+| §15.31 | (validation simulation) | queued | — |
+| 13 | feature/launch-prep | queued | — |
 
 ## Parallelism opportunities
 
