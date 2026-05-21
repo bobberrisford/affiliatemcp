@@ -48,6 +48,9 @@ export function toErrorEnvelope(
   // Already an envelope? Pass through (defensive type check).
   if (isErrorEnvelope(err)) return err;
 
+  // NetworkError wraps a pre-built envelope — surface it verbatim.
+  if (err instanceof NetworkError) return err.envelope;
+
   if (err instanceof NotImplementedError) {
     return buildErrorEnvelope({
       type: 'not_implemented',
