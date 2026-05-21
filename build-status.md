@@ -2,7 +2,7 @@
 
 **Orchestrator branch**: `claude/affiliate-mcp-orchestration-qfKw4`
 **PRD**: v0.4 (Ready for build)
-**Status**: Day 1–3 — foundations + Awin merged + registry wired; CJ/Impact/Rakuten in parallel
+**Status**: Day 1–3 complete (all four adapters merged). Day 2 wizard + Day 4 report generator launching in parallel.
 **Last updated**: 2026-05-21
 
 This document maps the PRD §13 build sequence to discrete sub-agent assignments. The orchestrator delegates one chunk at a time, reviews the handoff document at `handoffs/<branch>.md`, verifies against the relevant PRD §15 quality bars, then merges to `main` (the working integration branch on `claude/affiliate-mcp-orchestration-qfKw4`).
@@ -87,11 +87,11 @@ This document maps the PRD §13 build sequence to discrete sub-agent assignments
 | 1 | feature/foundations | ✅ merged (8ad594f) | [handoffs/feature-foundations.md](handoffs/feature-foundations.md) |
 | 2 | feature/network-awin | ✅ merged (7da8022) | [handoffs/feature-network-awin.md](handoffs/feature-network-awin.md) |
 | 2.5 | feature/wire-registry | ✅ merged | [handoffs/feature-wire-registry.md](handoffs/feature-wire-registry.md) |
-| 3 | feature/network-cj | in flight | — |
-| 4 | feature/setup-wizard | blocked on 1,2,3 | — |
-| 5 | feature/network-impact | in flight | — |
-| 6 | feature/network-rakuten | in flight | — |
-| 7 | feature/report-generator | blocked on 1-6 | — |
+| 3 | feature/network-cj | ✅ merged | [handoffs/feature-network-cj.md](handoffs/feature-network-cj.md) |
+| 4 | feature/setup-wizard | in flight | — |
+| 5 | feature/network-impact | ✅ merged | [handoffs/feature-network-impact.md](handoffs/feature-network-impact.md) |
+| 6 | feature/network-rakuten | ✅ merged | [handoffs/feature-network-rakuten.md](handoffs/feature-network-rakuten.md) |
+| 7 | feature/report-generator | in flight | — |
 | 8 | feature/setup-docs | blocked on 2,3,5,6 | — |
 | 9 | feature/publisher-skills | blocked on 2,3,5,6 | — |
 | 10 | feature/adapter-polish | blocked on 2,3,5,6 | — |
