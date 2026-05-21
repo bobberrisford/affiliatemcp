@@ -33,10 +33,6 @@ function printFirstRunBanner(): void {
   write('');
 }
 
-function printStub(message: string): void {
-  write(message);
-}
-
 function printHelp(): void {
   write('affiliate-mcp — MCP server for affiliate networks (Awin, CJ, Impact, Rakuten)');
   write('');
@@ -72,16 +68,18 @@ async function main(argv: string[]): Promise<number> {
       return 0;
     }
     case 'setup': {
-      printStub('`affiliate-mcp setup` — implemented in chunk 4 (setup wizard).');
-      return 0;
+      const { runSetup } = await import('./cli/setup.js');
+      return await runSetup();
     }
     case 'test': {
-      printStub('`affiliate-mcp test` — implemented in chunk 4 (setup wizard).');
-      return 0;
+      const { runTest } = await import('./cli/test.js');
+      const slug = rest[0];
+      return await runTest(slug ? { slug } : {});
     }
     case 'doctor': {
-      printStub('`affiliate-mcp doctor` — implemented in chunk 4 (setup wizard).');
-      return 0;
+      const { runDoctor } = await import('./cli/doctor.js');
+      const slug = rest[0];
+      return await runDoctor(slug ? { slug } : {});
     }
     case 'validate': {
       const slug = rest[0];
