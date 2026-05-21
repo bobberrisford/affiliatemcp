@@ -1,0 +1,54 @@
+name: Network adapter is broken
+description: An existing network adapter is failing or returning wrong data
+title: "[network-broken] <network> <operation>"
+labels: ["broken", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when a previously-working adapter has stopped working or is
+        returning incorrect data. If the network has announced an API change,
+        file [network-api-changed](./network-api-changed.yml) instead.
+  - type: dropdown
+    id: network
+    attributes:
+      label: Which network
+      options:
+        - awin
+        - cj
+        - impact
+        - rakuten
+        - other
+    validations:
+      required: true
+  - type: input
+    id: operation
+    attributes:
+      label: Which operation
+      description: The canonical operation name (e.g. list_transactions, get_programme).
+      placeholder: list_transactions
+    validations:
+      required: true
+  - type: textarea
+    id: error-message
+    attributes:
+      label: Verbatim error message
+      description: Paste the error envelope exactly as returned. Do not redact field names.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: doctor-output
+    attributes:
+      label: Full doctor output
+      description: Run `affiliate-mcp doctor <slug>` and paste the entire JSON envelope.
+      render: json
+    validations:
+      required: true
+  - type: checkboxes
+    id: credentials-ok
+    attributes:
+      label: Credentials confirmed working
+      options:
+        - label: I have verified my credentials work in the network's own publisher dashboard.
+          required: true

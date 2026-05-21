@@ -1,0 +1,25 @@
+# affiliate-mcp code ownership
+# Each adapter directory has its own owner once a contributor takes responsibility.
+# Shared infrastructure stays with the maintainer.
+
+# Shared infrastructure — maintainer review required
+/src/shared/        @bobberrisford
+/src/server.ts      @bobberrisford
+/src/index.ts       @bobberrisford
+/src/tools/         @bobberrisford
+/src/cli/           @bobberrisford
+/scripts/           @bobberrisford
+/.github/           @bobberrisford
+
+# Per-network adapters — current owner is the maintainer until a contributor takes over
+/src/networks/awin/      @bobberrisford
+/src/networks/cj/        @bobberrisford
+/src/networks/impact/    @bobberrisford
+/src/networks/rakuten/   @bobberrisford
+
+# Docs are broader
+/docs/              @bobberrisford
+/AGENTS.md          @bobberrisford
+/REPORT.md          @bobberrisford
+/README.md          @bobberrisford
+/CONTRIBUTING.md    @bobberrisford

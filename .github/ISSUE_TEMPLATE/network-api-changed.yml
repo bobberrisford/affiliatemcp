@@ -1,0 +1,46 @@
+name: Network API changed
+description: A network has announced or shipped an API change that affects the adapter
+title: "[network-api-changed] <network> <short summary>"
+labels: ["broken", "network-api"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when the upstream network's API has actually changed — new
+        endpoint, removed field, changed authentication, deprecated operation.
+        For one-off failures where the API has not changed, file
+        `network-broken` instead.
+  - type: dropdown
+    id: network
+    attributes:
+      label: Which network
+      options:
+        - awin
+        - cj
+        - impact
+        - rakuten
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: what-changed
+    attributes:
+      label: What changed
+      description: Describe the change in the upstream API. Be specific about endpoints, fields, and dates.
+    validations:
+      required: true
+  - type: input
+    id: source-url
+    attributes:
+      label: Source / changelog URL
+      description: Link to the network's changelog, developer announcement, or other authoritative source.
+      placeholder: https://...
+    validations:
+      required: true
+  - type: textarea
+    id: adapter-impact
+    attributes:
+      label: Impact on the adapter
+      description: Which canonical operations are affected? Is the change backwards-compatible?
+    validations:
+      required: true

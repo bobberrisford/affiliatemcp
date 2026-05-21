@@ -1,0 +1,54 @@
+name: Stuck during setup
+description: The setup wizard or a setup doc is unclear or blocking
+title: "[setup-stuck] <network> <step>"
+labels: ["docs", "setup"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If the setup wizard or a per-network setup doc left you blocked, this
+        template captures enough context to improve the docs for the next
+        person.
+  - type: dropdown
+    id: network
+    attributes:
+      label: Which network
+      options:
+        - awin
+        - cj
+        - impact
+        - rakuten
+        - other
+    validations:
+      required: true
+  - type: input
+    id: step
+    attributes:
+      label: Which step
+      description: Heading or step number from `docs/networks/<slug>.md` or from the wizard prompt.
+      placeholder: e.g. "Step 3 — Generate API token"
+    validations:
+      required: true
+  - type: input
+    id: screenshot-url
+    attributes:
+      label: Screenshot URL
+      description: Optional. Link to a screenshot of what you saw.
+      placeholder: https://...
+    validations:
+      required: false
+  - type: textarea
+    id: error-message
+    attributes:
+      label: Error message
+      description: Verbatim error or unexpected output, if any.
+      render: text
+    validations:
+      required: false
+  - type: textarea
+    id: what-you-tried
+    attributes:
+      label: What you tried
+      description: The steps you took before getting stuck.
+    validations:
+      required: true
