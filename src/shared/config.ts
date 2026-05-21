@@ -23,6 +23,23 @@ const log = createLogger('config');
 export const CONFIG_DIR = path.join(homedir(), '.affiliate-mcp');
 export const CONFIG_ENV_FILE = path.join(CONFIG_DIR, '.env');
 
+/**
+ * Polish (Chunk 10): resolve the active config directory, honouring the
+ * `AFFILIATE_MCP_CONFIG_DIR` env override. The wizard already honoured this in
+ * `src/cli/wizard/paths.ts`, but `isFirstRun()` and `loadConfig()` historically
+ * read the hardcoded `~/.affiliate-mcp/.env` — meaning the first-run banner and
+ * the auto-load would ignore the override. PRD §15.18: keep the config location
+ * consistent across every surface.
+ *
+ * Read on every call rather than at module load — tests mutate the env var
+ * between cases. Returns the effective `.env` path.
+ */
+export function resolveConfigEnvFile(): string {
+  const override = process.env['AFFILIATE_MCP_CONFIG_DIR'];
+  const dir = override && override.trim() !== '' ? override : CONFIG_DIR;
+  return path.join(dir, '.env');
+}
+
 let loaded = false;
 
 /**
@@ -51,8 +68,11 @@ export function parseEnvFile(contents: string): Record<string, string> {
 /**
  * Load `~/.affiliate-mcp/.env` once per process. Subsequent calls are no-ops.
  * Returns whether a config file was found.
+ *
+ * Polish (Chunk 10): when no explicit `filePath` is passed we resolve via
+ * `resolveConfigEnvFile()` so `AFFILIATE_MCP_CONFIG_DIR` is honoured.
  */
-export function loadConfig(filePath: string = CONFIG_ENV_FILE): boolean {
+export function loadConfig(filePath: string = resolveConfigEnvFile()): boolean {
   if (loaded) return existsSync(filePath);
   loaded = true;
   if (!existsSync(filePath)) {
@@ -120,7 +140,10 @@ export function requireCredential(
 /**
  * True when the standard config file does not yet exist; used by the CLI
  * entry point to decide whether to print the first-run banner.
+ *
+ * Polish (Chunk 10): default to `resolveConfigEnvFile()` so the
+ * `AFFILIATE_MCP_CONFIG_DIR` override is respected. PRD §15.18.
  */
-export function isFirstRun(filePath: string = CONFIG_ENV_FILE): boolean {
+export function isFirstRun(filePath: string = resolveConfigEnvFile()): boolean {
   return !existsSync(filePath);
 }
