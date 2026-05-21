@@ -20,6 +20,10 @@ import { z } from 'zod';
 import { validateNetwork } from '../src/shared/diagnostic.js';
 import { getAdapter } from '../src/shared/registry.js';
 
+// Side-effect import: populates the registry so the live diagnostic short-circuit
+// (`getAdapter(slug)`) below actually finds adapters at runtime.
+import '../src/networks/index.js';
+
 export const NetworkJsonSchema = z
   .object({
     slug: z.string().regex(/^[a-z0-9-]+$/, 'lowercase, kebab-case'),

@@ -25,6 +25,10 @@ import { generateAllTools, type ToolDefinition } from './tools/generate.js';
 import { isErrorEnvelope, NetworkError, toErrorEnvelope } from './shared/errors.js';
 import { createLogger } from './shared/logging.js';
 
+// Side-effect import: registers every network adapter with the shared registry.
+// Must precede any code path that calls `getAdapters()` / `getAdapter()`.
+import './networks/index.js';
+
 const log = createLogger('server');
 
 const SERVER_INFO = {
