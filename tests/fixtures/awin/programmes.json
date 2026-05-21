@@ -1,0 +1,35 @@
+[
+  {
+    "id": 7777,
+    "advertiserId": 7777,
+    "name": "Atolls Bookshop",
+    "status": "joined",
+    "primaryRegion": { "name": "United Kingdom", "countryCode": "GB", "currencyCode": "GBP" },
+    "currencyCode": "GBP",
+    "displayUrl": "https://www.atolls-bookshop.example.com",
+    "clickThroughUrl": "https://www.atolls-bookshop.example.com",
+    "logoUrl": "https://logos.example.com/atolls.png",
+    "commissionRange": { "min": 4, "max": 12, "type": "percentage" },
+    "sectors": [{ "name": "Books" }, { "name": "Education" }],
+    "validDomains": ["atolls-bookshop.example.com"]
+  },
+  {
+    "id": 8888,
+    "advertiserId": 8888,
+    "name": "Reef Outfitters",
+    "status": "pending",
+    "primaryRegion": { "name": "United Kingdom", "countryCode": "GB", "currencyCode": "GBP" },
+    "currencyCode": "GBP",
+    "displayUrl": "https://www.reef-outfitters.example.com",
+    "sectors": [{ "name": "Outdoor" }, { "name": "Travel" }]
+  },
+  {
+    "id": 9999,
+    "advertiserId": 9999,
+    "name": "Mainland Stationery",
+    "status": "notjoined",
+    "primaryRegion": { "name": "United Kingdom", "countryCode": "GB", "currencyCode": "GBP" },
+    "currencyCode": "GBP",
+    "sectors": [{ "name": "Office" }]
+  }
+]

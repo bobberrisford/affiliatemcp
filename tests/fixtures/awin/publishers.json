@@ -1,0 +1,10 @@
+[
+  {
+    "publisherId": 123456,
+    "accountId": 123456,
+    "name": "Atolls Test Publisher",
+    "kind": "publisher",
+    "publisherUri": "https://www.atolls.com",
+    "publisherTimezone": "Europe/London"
+  }
+]
