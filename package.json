@@ -1,0 +1,47 @@
+{
+  "name": "affiliate-mcp",
+  "version": "0.1.0",
+  "description": "Model Context Protocol server for affiliate networks (Awin, CJ, Impact, Rakuten). UK English throughout.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "affiliate-mcp": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint \"src/**/*.ts\" \"scripts/**/*.ts\" \"tests/**/*.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:live": "echo \"test:live placeholder — implemented in a later chunk\" && exit 0",
+    "validate:network": "tsx scripts/validate-network-json.ts",
+    "generate:readme": "echo \"generate:readme placeholder — implemented in chunk 7\" && exit 0",
+    "generate:report": "echo \"generate:report placeholder — implemented in chunk 7\" && exit 0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "pino": "^9.5.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "@typescript-eslint/eslint-plugin": "^7.16.0",
+    "@typescript-eslint/parser": "^7.16.0",
+    "eslint": "^8.57.0",
+    "pino-pretty": "^11.2.2",
+    "prettier": "^3.3.3",
+    "tsx": "^4.16.2",
+    "typescript": "^5.5.3",
+    "vitest": "^2.0.2"
+  }
+}
