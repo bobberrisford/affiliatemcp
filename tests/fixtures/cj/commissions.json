@@ -1,0 +1,95 @@
+{
+  "data": {
+    "publisherCommissions": {
+      "records": [
+        {
+          "commissionId": "C-1001",
+          "actionId": "A-1001",
+          "advertiserId": "7777",
+          "advertiserName": "Atolls Bookshop",
+          "saleAmountUsd": "100.00",
+          "saleAmountPubCurrency": "100.00",
+          "pubCommissionAmountUsd": "8.00",
+          "pubCommissionAmountPubCurrency": "8.00",
+          "currency": "USD",
+          "pubCurrency": "USD",
+          "actionStatus": "LOCKED",
+          "eventDate": "2024-09-01T10:00:00Z",
+          "postingDate": "2024-09-01T10:30:00Z",
+          "lockingDate": "2024-09-15T00:00:00Z",
+          "paidToPublisher": false
+        },
+        {
+          "commissionId": "C-1002",
+          "actionId": "A-1002",
+          "advertiserId": "7777",
+          "advertiserName": "Atolls Bookshop",
+          "saleAmountUsd": "50.00",
+          "saleAmountPubCurrency": "50.00",
+          "pubCommissionAmountUsd": "4.00",
+          "pubCommissionAmountPubCurrency": "4.00",
+          "currency": "USD",
+          "pubCurrency": "USD",
+          "actionStatus": "NEW",
+          "eventDate": "2025-12-20T18:00:00Z",
+          "postingDate": "2025-12-20T18:05:00Z",
+          "paidToPublisher": false
+        },
+        {
+          "commissionId": "C-1003",
+          "actionId": "A-1003",
+          "advertiserId": "8888",
+          "advertiserName": "Reef Outfitters",
+          "saleAmountUsd": "200.00",
+          "saleAmountPubCurrency": "200.00",
+          "pubCommissionAmountUsd": "0.00",
+          "pubCommissionAmountPubCurrency": "0.00",
+          "currency": "USD",
+          "pubCurrency": "USD",
+          "actionStatus": "CLOSED",
+          "eventDate": "2025-08-01T09:00:00Z",
+          "postingDate": "2025-08-01T09:30:00Z",
+          "lockingDate": "2025-08-20T00:00:00Z",
+          "paidToPublisher": false,
+          "isCorrected": true,
+          "correctionReason": "Customer returned the item within 14 days"
+        },
+        {
+          "commissionId": "C-1004",
+          "actionId": "A-1004",
+          "advertiserId": "7777",
+          "advertiserName": "Atolls Bookshop",
+          "saleAmountUsd": "75.00",
+          "saleAmountPubCurrency": "75.00",
+          "pubCommissionAmountUsd": "6.00",
+          "pubCommissionAmountPubCurrency": "6.00",
+          "currency": "USD",
+          "pubCurrency": "USD",
+          "actionStatus": "LOCKED",
+          "eventDate": "2024-01-05T12:00:00Z",
+          "postingDate": "2024-01-05T12:30:00Z",
+          "lockingDate": "2024-01-20T00:00:00Z",
+          "clearedDate": "2024-02-15T00:00:00Z",
+          "paidToPublisher": true,
+          "paymentId": "P-42"
+        },
+        {
+          "commissionId": "C-1005",
+          "actionId": "A-1005",
+          "advertiserId": "8888",
+          "advertiserName": "Reef Outfitters",
+          "saleAmountUsd": "30.00",
+          "saleAmountPubCurrency": "30.00",
+          "pubCommissionAmountUsd": "3.00",
+          "pubCommissionAmountPubCurrency": "3.00",
+          "currency": "USD",
+          "pubCurrency": "USD",
+          "actionStatus": "EXTENDED",
+          "eventDate": "2026-04-01T08:00:00Z",
+          "postingDate": "2026-04-01T08:15:00Z",
+          "paidToPublisher": false
+        }
+      ]
+    }
+  }
+}

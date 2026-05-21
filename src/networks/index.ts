@@ -15,3 +15,4 @@
  */
 
 import './awin/adapter.js';
+import './cj/adapter.js';
