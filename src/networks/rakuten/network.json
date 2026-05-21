@@ -1,0 +1,20 @@
+{
+  "slug": "rakuten",
+  "name": "Rakuten Advertising",
+  "base_url": "https://api.linksynergy.com",
+  "auth_model": "oauth2",
+  "env_vars": ["RAKUTEN_CLIENT_ID", "RAKUTEN_CLIENT_SECRET", "RAKUTEN_SID"],
+  "setup_time_estimate_minutes": 12,
+  "setup_requires_approval": true,
+  "setup_approval_days_typical": 5,
+  "known_limitations": [
+    "Click-level data (GET /v1/reports/clicks_reports) is gated by Rakuten as a paid tier; listClicks throws NotImplementedError until the test account has access.",
+    "listPublishers and listPublisherSectors are scaffolded for v0.2 only — they throw NotImplementedError.",
+    "The adapter has not been validated against a live Rakuten publisher account at commit time; claim_status reflects this."
+  ],
+  "claim_status": "partial",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-05-21",
+  "supports_brand_ops": false,
+  "docs_url": "https://developers.rakutenadvertising.com/"
+}
