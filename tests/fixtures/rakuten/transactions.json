@@ -1,0 +1,57 @@
+{
+  "transactions": [
+    {
+      "transaction_id": "TXN-9001",
+      "mid": 50001,
+      "advertiser_name": "Atolls Bookshop US",
+      "sid": 4567890,
+      "status": "locked",
+      "sale_amount": 120.0,
+      "commission_amount": 9.6,
+      "currency": "USD",
+      "click_date": "2024-09-01T10:00:00Z",
+      "transaction_date": "2024-09-01T10:30:00Z",
+      "process_date": "2024-09-15T00:00:00Z"
+    },
+    {
+      "transaction_id": "TXN-9002",
+      "mid": 50001,
+      "advertiser_name": "Atolls Bookshop US",
+      "sid": 4567890,
+      "status": "pending",
+      "sale_amount": 45.0,
+      "commission_amount": 3.6,
+      "currency": "USD",
+      "click_date": "2025-12-20T18:00:00Z",
+      "transaction_date": "2025-12-20T18:05:00Z"
+    },
+    {
+      "transaction_id": "TXN-9003",
+      "mid": 50002,
+      "advertiser_name": "Reef Outfitters North America",
+      "sid": 4567890,
+      "status": "reversed",
+      "sale_amount": 200.0,
+      "commission_amount": 0.0,
+      "currency": "USD",
+      "click_date": "2025-08-01T09:00:00Z",
+      "transaction_date": "2025-08-01T09:30:00Z",
+      "process_date": "2025-08-20T00:00:00Z",
+      "reversal_reason": "Customer returned the item within 30 days"
+    },
+    {
+      "transaction_id": "TXN-9004",
+      "mid": 50001,
+      "advertiser_name": "Atolls Bookshop US",
+      "sid": 4567890,
+      "status": "paid",
+      "sale_amount": 75.0,
+      "commission_amount": 6.0,
+      "currency": "USD",
+      "click_date": "2024-01-05T12:00:00Z",
+      "transaction_date": "2024-01-05T12:30:00Z",
+      "process_date": "2024-01-20T00:00:00Z",
+      "payment_date": "2024-03-01T00:00:00Z"
+    }
+  ]
+}

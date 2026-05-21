@@ -16,3 +16,4 @@
 
 import './awin/adapter.js';
 import './cj/adapter.js';
+import './rakuten/adapter.js';
