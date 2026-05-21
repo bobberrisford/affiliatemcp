@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "affiliate": {
+      "command": "npx",
+      "args": ["affiliate-mcp"],
+      "env": {
+        "AWIN_API_TOKEN": "your-token-here",
+        "AWIN_PUBLISHER_ID": "your-id-here"
+      }
+    }
+  }
+}
