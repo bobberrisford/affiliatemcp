@@ -1,7 +1,8 @@
 # Findings: Rakuten Advertising
 
-Captured during Chunk 6 implementation. Feeds Chunk 7's REPORT.md. Matter-of-fact
-about access friction — describe what is true, not "Rakuten is bad".
+Captured during Chunk 6 implementation. Feeds Chunk 7's REPORT.md. Notes
+describe access friction matter-of-factly: what happened, what worked, what
+didn't.
 
 ## Summary
 

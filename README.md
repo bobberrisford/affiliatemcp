@@ -56,8 +56,12 @@ The table above is regenerated from each adapter's `network.json` by
 support, latency, known limitations, and full findings prose — see
 [`REPORT.md`](./REPORT.md).
 
-Per-network setup notes live in `docs/networks/<slug>.md` (added by a later
-chunk).
+Per-network setup notes live under `docs/networks/`:
+
+- [Awin](./docs/networks/awin.md)
+- [CJ Affiliate](./docs/networks/cj.md)
+- [Impact](./docs/networks/impact.md)
+- [Rakuten Advertising](./docs/networks/rakuten.md)
 
 ## Tool surface
 
