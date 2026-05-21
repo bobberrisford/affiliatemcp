@@ -10,4 +10,10 @@ scratch/
 *.log
 .idea/
 .vscode/
-.claude/
+# Local Claude Code state — but the contribute skill must ship (it
+# auto-loads for contributors), so we ignore the noisy subpaths individually
+# rather than ignoring `.claude/` wholesale.
+.claude/cache/
+.claude/sessions/
+.claude/worktrees/
+.claude/settings.local.json

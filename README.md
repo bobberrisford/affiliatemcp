@@ -122,11 +122,13 @@ issue.
 
 Contributions are welcome — especially new network adapters. Start with
 [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the human-side workflow, then read
-the [`AGENTS.md`](./AGENTS.md) note (if you are using Claude Code) and the
-`.claude/skills/contribute/SKILL.md` playbook. [`WANTED.md`](./WANTED.md)
-lists networks and ideas that are explicitly on the roadmap.
-[`REPORT.md`](./REPORT.md) is the editorial baseline for any new claim about
-a network's API.
+[`AGENTS.md`](./AGENTS.md) (the primer for AI coding agents — file layout,
+conventions, "what not to do") and `.claude/skills/contribute/SKILL.md` (the
+playbook a Claude Code session loads automatically when you open this repo).
+[`templates/new-network/`](./templates/new-network/) is the scaffold to copy.
+[`WANTED.md`](./WANTED.md) lists networks and ideas explicitly on the
+roadmap, and [`REPORT.md`](./REPORT.md) is the editorial baseline for any
+new claim about a network's API.
 
 Local development:
 
