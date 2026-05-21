@@ -10,3 +10,4 @@ scratch/
 *.log
 .idea/
 .vscode/
+.claude/
