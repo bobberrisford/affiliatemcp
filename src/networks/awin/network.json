@@ -1,0 +1,17 @@
+{
+  "slug": "awin",
+  "name": "Awin",
+  "base_url": "https://api.awin.com",
+  "auth_model": "bearer",
+  "env_vars": ["AWIN_API_TOKEN", "AWIN_PUBLISHER_ID"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Click-level data is not exposed via the public publisher API; listClicks is unsupported."
+  ],
+  "claim_status": "partial",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-05-21",
+  "supports_brand_ops": false,
+  "docs_url": "https://wiki.awin.com/index.php/API_Get_Started"
+}

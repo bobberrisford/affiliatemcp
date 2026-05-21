@@ -1,0 +1,56 @@
+[
+  {
+    "id": 1001,
+    "url": "https://www.atolls-bookshop.example.com/landing",
+    "advertiserId": 7777,
+    "advertiserName": "Atolls Bookshop",
+    "publisherId": 123456,
+    "commissionStatus": "approved",
+    "saleAmount": { "amount": 100.0, "currency": "GBP" },
+    "commissionAmount": { "amount": 8.0, "currency": "GBP" },
+    "clickDate": "2024-09-01T10:00:00",
+    "transactionDate": "2024-09-01T10:30:00",
+    "validationDate": "2024-09-15T00:00:00",
+    "paidToPublisher": false
+  },
+  {
+    "id": 1002,
+    "advertiserId": 7777,
+    "advertiserName": "Atolls Bookshop",
+    "publisherId": 123456,
+    "commissionStatus": "pending",
+    "saleAmount": { "amount": 50.0, "currency": "GBP" },
+    "commissionAmount": { "amount": 4.0, "currency": "GBP" },
+    "clickDate": "2025-12-20T18:00:00",
+    "transactionDate": "2025-12-20T18:05:00",
+    "paidToPublisher": false
+  },
+  {
+    "id": 1003,
+    "advertiserId": 8888,
+    "advertiserName": "Reef Outfitters",
+    "publisherId": 123456,
+    "commissionStatus": "declined",
+    "saleAmount": { "amount": 200.0, "currency": "GBP" },
+    "commissionAmount": { "amount": 0.0, "currency": "GBP" },
+    "clickDate": "2025-08-01T09:00:00",
+    "transactionDate": "2025-08-01T09:30:00",
+    "validationDate": "2025-08-20T00:00:00",
+    "paidToPublisher": false,
+    "declineReason": "Customer returned the item within 14 days"
+  },
+  {
+    "id": 1004,
+    "advertiserId": 7777,
+    "advertiserName": "Atolls Bookshop",
+    "publisherId": 123456,
+    "commissionStatus": "approved",
+    "saleAmount": { "amount": 75.0, "currency": "GBP" },
+    "commissionAmount": { "amount": 6.0, "currency": "GBP" },
+    "clickDate": "2024-01-05T12:00:00",
+    "transactionDate": "2024-01-05T12:30:00",
+    "validationDate": "2024-01-20T00:00:00",
+    "paidToPublisher": true,
+    "paymentId": 42
+  }
+]
