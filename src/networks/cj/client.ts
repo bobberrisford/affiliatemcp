@@ -55,6 +55,7 @@ import {
   withResilience,
   type WithResilienceContext,
 } from '../../shared/resilience.js';
+import { buildErrorEnvelope, NetworkError } from '../../shared/errors.js';
 import type { AnyOperation, ResilienceConfig } from '../../shared/types.js';
 import { createLogger } from '../../shared/logging.js';
 
@@ -182,8 +183,17 @@ export async function cjGraphQL<T>(input: CjGraphQLInput): Promise<T> {
       try {
         envelope = JSON.parse(rawBody) as GraphQLEnvelope<T>;
       } catch (err) {
-        throw new Error(
-          `CJ ${input.operation} returned HTTP ${res.status} with non-JSON body: ${rawBody.slice(0, 500)} (parse error: ${(err as Error).message})`,
+        // Polish (Chunk 10): emit a NetworkError preserving the verbatim body
+        // (PRD §4.1) rather than collapsing into a generic Error string.
+        throw new NetworkError(
+          buildErrorEnvelope({
+            type: 'network_api_error',
+            network: 'cj',
+            operation: input.operation,
+            httpStatus: res.status,
+            networkErrorBody: rawBody,
+            message: `CJ ${input.operation} returned HTTP ${res.status} with non-JSON body (parse error: ${(err as Error).message})`,
+          }),
         );
       }
 
@@ -201,10 +211,18 @@ export async function cjGraphQL<T>(input: CjGraphQLInput): Promise<T> {
       }
 
       if (envelope.data === undefined) {
-        // A 200 with neither `data` nor `errors` is malformed by spec; treat
-        // as an upstream failure rather than handing the adapter `undefined`.
-        throw new Error(
-          `CJ ${input.operation} returned a GraphQL envelope with no data and no errors: ${rawBody.slice(0, 500)}`,
+        // Polish (Chunk 10): a 200 with neither `data` nor `errors` is malformed
+        // by spec; emit a NetworkError with the verbatim body (PRD §4.1) rather
+        // than a generic Error.
+        throw new NetworkError(
+          buildErrorEnvelope({
+            type: 'network_api_error',
+            network: 'cj',
+            operation: input.operation,
+            httpStatus: res.status,
+            networkErrorBody: rawBody,
+            message: `CJ ${input.operation} returned a GraphQL envelope with no data and no errors.`,
+          }),
         );
       }
 
@@ -256,8 +274,16 @@ export async function cjRest<T>(input: CjRestInput): Promise<T> {
       try {
         return JSON.parse(rawBody) as T;
       } catch (err) {
-        throw new Error(
-          `CJ ${input.operation} returned HTTP ${res.status} with non-JSON body: ${rawBody.slice(0, 500)} (parse error: ${(err as Error).message})`,
+        // Polish (Chunk 10): preserve verbatim networkErrorBody via NetworkError.
+        throw new NetworkError(
+          buildErrorEnvelope({
+            type: 'network_api_error',
+            network: 'cj',
+            operation: input.operation,
+            httpStatus: res.status,
+            networkErrorBody: rawBody,
+            message: `CJ ${input.operation} returned HTTP ${res.status} with non-JSON body (parse error: ${(err as Error).message})`,
+          }),
         );
       }
     },

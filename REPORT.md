@@ -655,9 +655,8 @@ returning a half-formed link.
 
 # Findings: Rakuten Advertising
 
-Captured during Chunk 6 implementation. Feeds Chunk 7's REPORT.md. Notes
-describe access friction matter-of-factly: what happened, what worked, what
-didn't.
+Captured during Chunk 6 implementation. Feeds Chunk 7's REPORT.md. Matter-of-fact
+about access friction — describe what is true, not "Rakuten is bad".
 
 ## Summary
 
@@ -852,4 +851,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-05-21 19:51 UTC._
+_Last regenerated 2026-05-21 19:57 UTC._

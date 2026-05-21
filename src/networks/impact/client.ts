@@ -23,6 +23,7 @@ import {
   withResilience,
   type WithResilienceContext,
 } from '../../shared/resilience.js';
+import { buildErrorEnvelope, NetworkError } from '../../shared/errors.js';
 import type { AnyOperation, ResilienceConfig } from '../../shared/types.js';
 import { createLogger } from '../../shared/logging.js';
 
@@ -133,11 +134,18 @@ export async function impactRequest<T>(input: ImpactRequestInput): Promise<T> {
       try {
         return JSON.parse(rawBody) as T;
       } catch (err) {
-        // 2xx but unparseable. Surface verbatim — Impact occasionally serves
-        // XML when the `Accept: application/json` header is dropped by an
-        // intermediary proxy; the user sees the actual body and can diagnose.
-        throw new Error(
-          `Impact ${input.operation} returned HTTP ${res.status} with non-JSON body: ${rawBody.slice(0, 500)} (parse error: ${(err as Error).message})`,
+        // Polish (Chunk 10): emit a NetworkError carrying the verbatim body
+        // (PRD §4.1) so the user sees the actual response Impact returned —
+        // often XML when the JSON Accept header is dropped at the edge.
+        throw new NetworkError(
+          buildErrorEnvelope({
+            type: 'network_api_error',
+            network: 'impact',
+            operation: input.operation,
+            httpStatus: res.status,
+            networkErrorBody: rawBody,
+            message: `Impact ${input.operation} returned HTTP ${res.status} with non-JSON body (parse error: ${(err as Error).message})`,
+          }),
         );
       }
     },

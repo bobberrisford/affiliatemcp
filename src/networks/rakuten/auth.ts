@@ -205,13 +205,33 @@ async function exchangeForToken(
       try {
         parsed = JSON.parse(raw);
       } catch (err) {
-        throw new Error(
-          `Rakuten token endpoint returned non-JSON body (did you forget Accept: application/json?): ${raw.slice(0, 300)} (parse error: ${(err as Error).message})`,
+        // Polish (Chunk 10): preserve verbatim body via NetworkError envelope
+        // so the user sees Rakuten's exact response (PRD §4.1).
+        throw new NetworkError(
+          buildErrorEnvelope({
+            type: 'auth_error',
+            network: 'rakuten',
+            operation: 'auth.tokenExchange',
+            httpStatus: res.status,
+            networkErrorBody: raw,
+            message: `Rakuten token endpoint returned non-JSON body (parse error: ${(err as Error).message})`,
+            hint: 'Did the Accept: application/json header reach the token endpoint? Check any intermediate proxy.',
+          }),
         );
       }
       if (!parsed.access_token) {
-        throw new Error(
-          `Rakuten token endpoint returned HTTP 200 but no access_token field. Body: ${raw.slice(0, 300)}`,
+        // Polish (Chunk 10): preserve verbatim body — a 200 with missing
+        // access_token is an upstream auth misconfiguration the user must see.
+        throw new NetworkError(
+          buildErrorEnvelope({
+            type: 'auth_error',
+            network: 'rakuten',
+            operation: 'auth.tokenExchange',
+            httpStatus: res.status,
+            networkErrorBody: raw,
+            message: 'Rakuten token endpoint returned HTTP 200 but no access_token field.',
+            hint: 'Re-check RAKUTEN_CLIENT_ID / RAKUTEN_CLIENT_SECRET / RAKUTEN_SID and the token URL.',
+          }),
         );
       }
       const lifetimeMs = (parsed.expires_in ?? 3600) * 1000;

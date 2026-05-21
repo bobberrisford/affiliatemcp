@@ -30,6 +30,7 @@ import {
   withResilience,
   type WithResilienceContext,
 } from '../../shared/resilience.js';
+import { buildErrorEnvelope, NetworkError } from '../../shared/errors.js';
 import type { AnyOperation, ResilienceConfig } from '../../shared/types.js';
 import { createLogger } from '../../shared/logging.js';
 
@@ -120,12 +121,20 @@ export async function awinRequest<T>(input: AwinRequestInput): Promise<T> {
       try {
         return JSON.parse(rawBody) as T;
       } catch (err) {
-        // We have a 2xx but unparseable body — surface verbatim so the user
-        // can see what came back. Treat as a network_api_error via the
-        // resilience layer's classifier (it'll see a plain Error, not an
-        // HttpStatusError, and classify as `network_api_error`).
-        throw new Error(
-          `Awin ${input.operation} returned HTTP ${res.status} with non-JSON body: ${rawBody.slice(0, 500)} (parse error: ${(err as Error).message})`,
+        // Polish (Chunk 10): emit a NetworkError carrying a verbatim
+        // networkErrorBody so PRD §4.1 (preserve raw upstream body) holds even
+        // for 2xx-with-non-JSON. Previously we threw a generic Error which the
+        // resilience layer would classify as network_api_error but with no
+        // networkErrorBody attached.
+        throw new NetworkError(
+          buildErrorEnvelope({
+            type: 'network_api_error',
+            network: 'awin',
+            operation: input.operation,
+            httpStatus: res.status,
+            networkErrorBody: rawBody,
+            message: `Awin ${input.operation} returned HTTP ${res.status} with non-JSON body (parse error: ${(err as Error).message})`,
+          }),
         );
       }
     },
