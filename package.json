@@ -25,8 +25,9 @@
     "test:watch": "vitest",
     "test:live": "echo \"test:live placeholder — implemented in a later chunk\" && exit 0",
     "validate:network": "tsx scripts/validate-network-json.ts",
-    "generate:readme": "echo \"generate:readme placeholder — implemented in chunk 7\" && exit 0",
-    "generate:report": "echo \"generate:report placeholder — implemented in chunk 7\" && exit 0"
+    "generate:readme": "tsx scripts/generate-readme-table.ts",
+    "generate:report": "tsx scripts/generate-report.ts",
+    "generate:report-image": "tsx scripts/generate-report-image.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
