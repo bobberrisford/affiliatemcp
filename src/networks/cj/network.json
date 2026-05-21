@@ -1,0 +1,18 @@
+{
+  "slug": "cj",
+  "name": "CJ Affiliate",
+  "base_url": "https://api.cj.com",
+  "auth_model": "bearer",
+  "env_vars": ["CJ_API_TOKEN", "CJ_COMPANY_ID"],
+  "setup_time_estimate_minutes": 8,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Click-level data is not exposed via CJ's modern GraphQL surface; listClicks throws NotImplementedError unless the legacy REST report endpoint is reachable for the account.",
+    "Brand-side operations (listPublishers, listPublisherSectors) are scaffolded for v0.2."
+  ],
+  "claim_status": "partial",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-05-21",
+  "supports_brand_ops": false,
+  "docs_url": "https://developers.cj.com/"
+}
