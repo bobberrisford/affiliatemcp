@@ -87,6 +87,64 @@ describe('buildReport — environment + config info', () => {
   });
 });
 
+describe('runDoctor — env-value leak regression (PRD §15.4, Polish Chunk 10)', () => {
+  it('never embeds env VALUES in the JSON output for a fully-populated config', async () => {
+    // Write a `.env` resembling a real fully-populated user file. Every value
+    // is a long, distinctive sentinel string we can grep for in the rendered
+    // JSON. If any of these appear, the doctor command is leaking secrets.
+    mkdirSync(tmp, { recursive: true });
+    const sentinels: Record<string, string> = {
+      AWIN_API_TOKEN: 'sentinel-awin-token-DO-NOT-PRINT-AAA111',
+      AWIN_PUBLISHER_ID: 'sentinel-awin-publisher-DO-NOT-PRINT-BBB222',
+      CJ_API_TOKEN: 'sentinel-cj-token-DO-NOT-PRINT-CCC333',
+      CJ_COMPANY_ID: 'sentinel-cj-company-DO-NOT-PRINT-DDD444',
+      IMPACT_ACCOUNT_SID: 'sentinel-impact-sid-DO-NOT-PRINT-EEE555',
+      IMPACT_AUTH_TOKEN: 'sentinel-impact-token-DO-NOT-PRINT-FFF666',
+      RAKUTEN_CLIENT_ID: 'sentinel-rakuten-client-id-DO-NOT-PRINT-GGG777',
+      RAKUTEN_CLIENT_SECRET: 'sentinel-rakuten-secret-DO-NOT-PRINT-HHH888',
+      RAKUTEN_SID: 'sentinel-rakuten-sid-DO-NOT-PRINT-III999',
+    };
+    const envText = Object.entries(sentinels)
+      .map(([k, v]) => `${k}=${v}`)
+      .join('\n') + '\n';
+    writeFileSync(path.join(tmp, '.env'), envText);
+
+    // Also populate process.env so any code path that reads from the live
+    // env (rather than the file) is exercised too.
+    const originalProcessEnv: Record<string, string | undefined> = {};
+    for (const [k, v] of Object.entries(sentinels)) {
+      originalProcessEnv[k] = process.env[k];
+      process.env[k] = v;
+    }
+
+    try {
+      const report = await buildReport();
+      const json = JSON.stringify(report);
+
+      // The KEY NAMES must appear (we explicitly publish them).
+      for (const key of Object.keys(sentinels)) {
+        expect(report.config.keys).toContain(key);
+      }
+
+      // The VALUES must NEVER appear.
+      for (const value of Object.values(sentinels)) {
+        expect(
+          json.includes(value),
+          `doctor JSON leaked credential VALUE for one of the sentinels (${value.slice(0, 30)}...)`,
+        ).toBe(false);
+      }
+    } finally {
+      for (const k of Object.keys(sentinels)) {
+        if (originalProcessEnv[k] === undefined) {
+          delete process.env[k];
+        } else {
+          process.env[k] = originalProcessEnv[k];
+        }
+      }
+    }
+  });
+});
+
 describe('runDoctor — JSON output to stdout', () => {
   it('prints a parseable JSON document containing the diagnostic envelope', async () => {
     registerAdapter(
