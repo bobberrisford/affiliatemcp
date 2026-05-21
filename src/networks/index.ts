@@ -15,3 +15,4 @@
  */
 
 import './awin/adapter.js';
+import './rakuten/adapter.js';
