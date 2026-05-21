@@ -34,6 +34,7 @@ import {
   withResilience,
   type WithResilienceContext,
 } from '../../shared/resilience.js';
+import { buildErrorEnvelope, NetworkError } from '../../shared/errors.js';
 import type { AnyOperation, ResilienceConfig } from '../../shared/types.js';
 import { createLogger } from '../../shared/logging.js';
 
@@ -163,11 +164,18 @@ async function rawRequest<T>(input: RakutenRequestInput, token: string): Promise
   try {
     return { kind: 'ok', value: JSON.parse(rawBody) as T };
   } catch (err) {
-    // 2xx but unparseable body — Rakuten occasionally returns XML when the
-    // Accept header gets stripped by an intermediary. Throw with the verbatim
-    // body so the user can see what came back.
-    throw new Error(
-      `Rakuten ${input.operation} returned HTTP ${res.status} with non-JSON body: ${rawBody.slice(0, 500)} (parse error: ${(err as Error).message})`,
+    // Polish (Chunk 10): preserve the verbatim body on the envelope (PRD §4.1).
+    // Rakuten occasionally returns XML when the Accept header is stripped by an
+    // intermediary; the user must see exactly what came back.
+    throw new NetworkError(
+      buildErrorEnvelope({
+        type: 'network_api_error',
+        network: 'rakuten',
+        operation: input.operation,
+        httpStatus: res.status,
+        networkErrorBody: rawBody,
+        message: `Rakuten ${input.operation} returned HTTP ${res.status} with non-JSON body (parse error: ${(err as Error).message})`,
+      }),
     );
   }
 }
