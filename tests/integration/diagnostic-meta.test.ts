@@ -5,10 +5,10 @@
  * registered adapter and returns `DiagnosticResult` whose `results[]` has one
  * entry per network with `NetworkCapabilities`.
  *
- * Per-network capabilitiesCheck tests exist in the four adapter test files;
+ * Per-network capabilitiesCheck tests exist in the five adapter test files;
  * what's missing — and what this file adds — is the integration test of the
  * meta-tool against the populated registry. The acceptance shape is:
- *   - 4 entries, one per registered adapter
+ *   - one entry per registered adapter
  *   - each entry has a populated `capabilities.operations` map
  *   - `knownLimitations` is preserved verbatim from the adapter manifest
  */
@@ -20,6 +20,7 @@ import { runDiagnostic } from '../../src/shared/diagnostic.js';
 import { getAdapters } from '../../src/shared/registry.js';
 import { _resetBreakers } from '../../src/shared/resilience.js';
 import { _resetTokenCache } from '../../src/networks/rakuten/auth.js';
+import { _resetTokenCache as _resetEbayTokenCache } from '../../src/networks/ebay/auth.js';
 
 /**
  * The probe fetch mock: respond with a plausible success body for every
@@ -35,12 +36,35 @@ function mockUniversalSuccess(): ReturnType<typeof vi.fn> {
   const spy = vi.fn(async (input: string | URL | Request) => {
     const url = typeof input === 'string' ? input : input.toString();
 
-    // Rakuten token exchange — return an access token.
+    // Rakuten and eBay token exchanges — both POST to a `/token` path.
     if (url.includes('/token')) {
       return new Response(
         JSON.stringify({ access_token: 'fake-token', expires_in: 3600 }),
         { status: 200, headers: { 'content-type': 'application/json' } },
       );
+    }
+
+    // eBay reporting / campaign endpoints — respond with empty envelopes
+    // shaped per the adapter's transformer expectations.
+    if (url.includes('api.ebay.com')) {
+      if (url.includes('/affiliate/reporting/v1/transaction')) {
+        return new Response(JSON.stringify({ transactions: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (url.includes('/affiliate/reporting/v1/click')) {
+        return new Response(JSON.stringify({ clicks: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+      if (url.includes('/affiliate/campaign/v1/campaign')) {
+        return new Response(JSON.stringify({ campaigns: [] }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
     }
 
     // CJ GraphQL responses are envelope-shaped — `data` plus optional `errors`.
@@ -81,6 +105,9 @@ const FIXTURE_ENV: Record<string, string> = {
   RAKUTEN_CLIENT_ID: 'fake-rakuten-client',
   RAKUTEN_CLIENT_SECRET: 'fake-rakuten-secret',
   RAKUTEN_SID: '4567890',
+  EBAY_CLIENT_ID: 'fake-ebay-client-id-12345',
+  EBAY_CLIENT_SECRET: 'fake-ebay-client-secret',
+  EBAY_CAMPAIGN_ID: '5338000001',
 };
 
 const originalEnv: Record<string, string | undefined> = {};
@@ -88,6 +115,7 @@ const originalEnv: Record<string, string | undefined> = {};
 beforeEach(() => {
   _resetBreakers();
   _resetTokenCache();
+  _resetEbayTokenCache();
   for (const [k, v] of Object.entries(FIXTURE_ENV)) {
     originalEnv[k] = process.env[k];
     process.env[k] = v;
@@ -105,13 +133,14 @@ afterEach(() => {
   }
   _resetBreakers();
   _resetTokenCache();
+  _resetEbayTokenCache();
 });
 
 describe('runDiagnostic meta-tool (PRD §15.3)', () => {
   it('returns one capabilities entry per registered adapter', async () => {
     mockUniversalSuccess();
     const adapters = getAdapters();
-    expect(adapters.length, 'expected all four adapters registered').toBe(4);
+    expect(adapters.length, 'expected all five adapters registered').toBe(5);
 
     const result = await runDiagnostic();
 

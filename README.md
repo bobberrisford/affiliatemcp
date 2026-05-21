@@ -60,6 +60,7 @@ prefixed `affiliate_<network>_…`.
 | --- | ---: | --- | ---: | --- |
 | Awin | 5 min | no | 6 / 7 | no clicks |
 | CJ Affiliate | 8 min | no | 6 / 7 | no clicks |
+| eBay Partner Network | 10 min | yes (~3 days) | 7 / 7 | see notes |
 | Impact | 6 min | no | 7 / 7 | upstream variability |
 | Rakuten Advertising | 12 min | yes (~5 days) | 6 / 7 | clicks gated |
 <!-- AFFILIATE_MCP_NETWORK_TABLE_END -->

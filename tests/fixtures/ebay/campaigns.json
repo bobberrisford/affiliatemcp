@@ -1,0 +1,30 @@
+{
+  "campaigns": [
+    {
+      "campaignId": "5338000001",
+      "campaignName": "Atolls Bookshop — UK site",
+      "campaignStatus": "ACTIVE",
+      "marketplaceId": "EBAY_GB",
+      "startDate": "2024-01-01T00:00:00Z",
+      "defaultLandingPage": "https://www.ebay.co.uk/"
+    },
+    {
+      "campaignId": "5338000002",
+      "campaignName": "Atolls Bookshop — US site (paused)",
+      "campaignStatus": "PAUSED",
+      "marketplaceId": "EBAY_US",
+      "startDate": "2024-03-01T00:00:00Z",
+      "defaultLandingPage": "https://www.ebay.com/"
+    },
+    {
+      "campaignId": "5338000003",
+      "campaignName": "Holiday push — draft",
+      "campaignStatus": "DRAFT",
+      "marketplaceId": "EBAY_GB",
+      "startDate": "2026-11-15T00:00:00Z"
+    }
+  ],
+  "total": 3,
+  "offset": 0,
+  "limit": 100
+}

@@ -1,0 +1,34 @@
+{
+  "clicks": [
+    {
+      "clickId": "clk-001",
+      "campaignId": "5338000001",
+      "campaignName": "Atolls Bookshop — UK site",
+      "clickDate": "2026-05-20T08:14:22Z",
+      "landingPageUrl": "https://www.ebay.co.uk/itm/385123456789",
+      "referrerUrl": "https://www.atolls-bookshop.example.com/reviews/penguin",
+      "itemId": "385123456789"
+    },
+    {
+      "clickId": "clk-002",
+      "campaignId": "5338000001",
+      "campaignName": "Atolls Bookshop — UK site",
+      "clickDate": "2026-05-20T09:02:00Z",
+      "landingPageUrl": "https://www.ebay.co.uk/sch/i.html?_nkw=field+guide",
+      "referrerUrl": "https://www.atolls-bookshop.example.com/reading-list",
+      "itemId": ""
+    },
+    {
+      "clickId": "clk-003",
+      "campaignId": "5338000002",
+      "campaignName": "Atolls Bookshop — US site (paused)",
+      "clickDate": "2026-05-19T22:45:11Z",
+      "landingPageUrl": "https://www.ebay.com/itm/385456789012",
+      "referrerUrl": "https://www.atolls-bookshop.example.com/snorkel",
+      "itemId": "385456789012"
+    }
+  ],
+  "total": 3,
+  "offset": 0,
+  "limit": 100
+}

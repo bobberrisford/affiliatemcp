@@ -22,6 +22,7 @@ import '../../src/networks/index.js';
 import { validateNetwork } from '../../src/shared/diagnostic.js';
 import { _resetBreakers } from '../../src/shared/resilience.js';
 import { _resetTokenCache } from '../../src/networks/rakuten/auth.js';
+import { _resetTokenCache as _resetEbayTokenCache } from '../../src/networks/ebay/auth.js';
 
 const BAD_BODY = '{"error":"invalid_token","detail":"token rejected by upstream"}';
 
@@ -71,6 +72,14 @@ const FIXTURES: NetworkFixture[] = [
       RAKUTEN_SID: '9999',
     },
   },
+  {
+    slug: 'ebay',
+    env: {
+      EBAY_CLIENT_ID: 'badclient-ebay-12345',
+      EBAY_CLIENT_SECRET: 'badsecret-ebay',
+      EBAY_CAMPAIGN_ID: '5338000001',
+    },
+  },
 ];
 
 const ALL_ENV_KEYS = FIXTURES.flatMap((f) => Object.keys(f.env));
@@ -79,6 +88,7 @@ const originalEnv: Record<string, string | undefined> = {};
 beforeEach(() => {
   _resetBreakers();
   _resetTokenCache();
+  _resetEbayTokenCache();
   for (const k of ALL_ENV_KEYS) {
     originalEnv[k] = process.env[k];
   }

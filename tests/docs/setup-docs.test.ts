@@ -2,7 +2,7 @@
  * Per-network setup doc acceptance tests.
  *
  * Encodes the PRD §15.16 quality bar for the per-network setup documents in
- * `docs/networks/<slug>.md`. For each of the four bundled networks, asserts
+ * `docs/networks/<slug>.md`. For each bundled network, asserts
  * that the doc:
  *   - exists at the expected path,
  *   - opens with a level-1 heading that includes a time estimate,
@@ -28,7 +28,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const DOCS_DIR = path.join(REPO_ROOT, 'docs', 'networks');
 
-const NETWORK_SLUGS = ['awin', 'cj', 'impact', 'rakuten'] as const;
+const NETWORK_SLUGS = ['awin', 'cj', 'ebay', 'impact', 'rakuten'] as const;
 
 /**
  * Reads a setup doc. Throws a useful error if the file is missing so the
