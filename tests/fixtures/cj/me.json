@@ -1,0 +1,11 @@
+{
+  "data": {
+    "me": {
+      "id": "user-7654321",
+      "companyId": "1234567",
+      "name": "Atolls Test Publisher",
+      "email": "publisher@atolls.example.com",
+      "company": { "id": "1234567", "name": "Atolls Test Co" }
+    }
+  }
+}

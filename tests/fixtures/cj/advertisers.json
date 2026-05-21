@@ -1,0 +1,36 @@
+{
+  "data": {
+    "advertisers": {
+      "resultList": [
+        {
+          "advertiserId": "7777",
+          "advertiserName": "Atolls Bookshop",
+          "status": "joined",
+          "relationshipStatus": "joined",
+          "primaryCategory": { "name": "Books" },
+          "categories": [{ "name": "Books" }, { "name": "Education" }],
+          "currency": "USD",
+          "programUrl": "https://www.atolls-bookshop.example.com",
+          "performanceIncentives": "Base 8%, up to 12% for new customers"
+        },
+        {
+          "advertiserId": "8888",
+          "advertiserName": "Reef Outfitters",
+          "status": "pending",
+          "relationshipStatus": "pending",
+          "primaryCategory": { "name": "Outdoor" },
+          "currency": "USD",
+          "programUrl": "https://www.reef-outfitters.example.com"
+        },
+        {
+          "advertiserId": "9999",
+          "advertiserName": "Mainland Stationery",
+          "status": "not joined",
+          "relationshipStatus": "not joined",
+          "primaryCategory": { "name": "Office" },
+          "currency": "USD"
+        }
+      ]
+    }
+  }
+}
