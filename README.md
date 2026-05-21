@@ -90,12 +90,14 @@ acceptance testing against real publisher accounts (a later chunk).
 ## For developers
 
 `affiliate-mcp` is designed to be contributed to with the help of Claude Code.
-The repository ships a `templates/new-network/` scaffold and (in a future
-chunk) a `.claude/skills/contribute/` skill that walks an LLM agent through
-adding a new network adapter end-to-end. A `CONTRIBUTING.md` covering the
-human-side workflow is on the roadmap; until then, the per-chunk handoffs in
-`handoffs/` are the best entry point for understanding how the codebase fits
-together.
+The repository ships a `templates/new-network/` scaffold and a
+`.claude/skills/contribute/` skill that walks an LLM agent through adding a
+new network adapter end-to-end. [`AGENTS.md`](./AGENTS.md) is the primer for
+AI coding agents — it covers the file layout, conventions, and the "what not
+to do" list. The full human-side contributor workflow lives in
+[`CONTRIBUTING.md`](./CONTRIBUTING.md) (shipped alongside this README). The
+per-chunk handoffs in `handoffs/` remain a useful entry point for
+understanding how the codebase fits together.
 
 Local development:
 

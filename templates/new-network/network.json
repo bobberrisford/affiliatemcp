@@ -1,15 +1,40 @@
 {
+  "_comment_slug": "TODO: lowercase, kebab-case. Must match the directory name under src/networks/.",
   "slug": "template-network",
+
+  "_comment_name": "TODO: human-readable name, e.g. 'eBay Partner Network'.",
   "name": "Template Network",
+
+  "_comment_base_url": "TODO: production API base URL. Must be a valid URL.",
   "base_url": "https://api.example.com",
+
+  "_comment_auth_model": "TODO: one of bearer | oauth2 | basic | custom. Must match the authModel in adapter.ts META.",
   "auth_model": "bearer",
+
+  "_comment_env_vars": "TODO: array of env-var names, each /^[A-Z][A-Z0-9_]*$/. Non-empty. Must match the fields your auth.ts reads via requireCredential and the fields exposed by setupSteps().",
   "env_vars": ["TEMPLATE_NETWORK_API_TOKEN"],
+
+  "_comment_setup_time": "TODO: honest estimate in minutes for a user who already has the dashboard open.",
   "setup_time_estimate_minutes": 10,
+
+  "_comment_setup_approval": "TODO: true if the network gates API access behind manual approval. If true, also set setup_approval_days_typical.",
   "setup_requires_approval": false,
+
+  "_comment_known_limitations": "TODO: array of specific, verifiable limitations. 'No click data via the public API' is fine if true; vague hedging is not. Mirror META.knownLimitations in adapter.ts.",
   "known_limitations": [],
+
+  "_comment_claim_status": "TODO: one of production | partial | experimental | unsupported. Fresh adapters ship 'experimental' or 'partial'. Promotion to 'production' requires a live acceptance test against a real publisher account.",
   "claim_status": "experimental",
+
+  "_comment_adapter_version": "TODO: semver starting at 0.1.0. Bump patch on bug fixes, minor on capability additions.",
   "adapter_version": "0.0.1",
+
+  "_comment_last_verified": "TODO: ISO date YYYY-MM-DD. The date you last ran the live diagnostic against a real account. Bumped by Task 2 (fix) and Task 4 (setup docs).",
   "last_verified": "2026-01-01",
+
+  "_comment_supports_brand_ops": "TODO: false at v0.1 for every network. Lights up in v0.2 when a network implements listPublishers / listPublisherSectors.",
   "supports_brand_ops": false,
+
+  "_comment_docs_url": "TODO: optional but include where possible. Link to the API documentation home.",
   "docs_url": "https://example.com/docs"
 }
