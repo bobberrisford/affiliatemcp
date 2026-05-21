@@ -2,7 +2,7 @@
 
 **Orchestrator branch**: `claude/affiliate-mcp-orchestration-qfKw4`
 **PRD**: v0.4 (Ready for build)
-**Status**: Bootstrapping — Day 1 about to start
+**Status**: Day 1 — foundations landed, Awin adapter in flight
 **Last updated**: 2026-05-21
 
 This document maps the PRD §13 build sequence to discrete sub-agent assignments. The orchestrator delegates one chunk at a time, reviews the handoff document at `handoffs/<branch>.md`, verifies against the relevant PRD §15 quality bars, then merges to `main` (the working integration branch on `claude/affiliate-mcp-orchestration-qfKw4`).
@@ -75,7 +75,8 @@ This document maps the PRD §13 build sequence to discrete sub-agent assignments
 ## Current state
 
 - ✅ Orchestration scaffolding (this doc + `handoffs/` directory)
-- ⏳ **NEXT**: Chunk 1 — `feature/foundations`
+- ✅ **Chunk 1 — `feature/foundations`** merged at `8ad594f`. Quality bars 23/24/25/26 pass. 30/30 tests green.
+- ⏳ **NEXT**: Chunk 2 — `feature/network-awin` (with worktree isolation this time)
 
 ## Handoff index
 
@@ -83,8 +84,8 @@ This document maps the PRD §13 build sequence to discrete sub-agent assignments
 
 | Chunk | Branch | Status | Handoff |
 |---|---|---|---|
-| 1 | feature/foundations | pending | — |
-| 2 | feature/network-awin | blocked on 1 | — |
+| 1 | feature/foundations | ✅ merged (8ad594f) | [handoffs/feature-foundations.md](handoffs/feature-foundations.md) |
+| 2 | feature/network-awin | in flight | — |
 | 3 | feature/network-cj | blocked on 1,2 | — |
 | 4 | feature/setup-wizard | blocked on 1,2,3 | — |
 | 5 | feature/network-impact | blocked on 1,2 | — |
