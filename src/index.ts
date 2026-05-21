@@ -15,6 +15,10 @@
 
 import { isFirstRun, loadConfig, CONFIG_ENV_FILE } from './shared/config.js';
 
+// Side-effect import: registers every network adapter with the shared registry.
+// Must precede any subcommand path (validate/setup/test/doctor) that consults it.
+import './networks/index.js';
+
 function write(line: string): void {
   process.stderr.write(line.endsWith('\n') ? line : `${line}\n`);
 }
