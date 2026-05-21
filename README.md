@@ -2,16 +2,28 @@
 
 > An MCP server for affiliate networks. Bring your own keys.
 
-`affiliate-mcp` exposes four affiliate networks — Awin, CJ Affiliate, Impact,
-and Rakuten Advertising — through the Model Context Protocol, so an MCP-capable
-client (Claude Desktop, Claude Code, or any other) can answer questions like
-"which programmes are still pending after 90 days?" without you having to log
-into four dashboards.
+**Status:** pre-launch. The four bundled adapters ship with `claim_status: partial` until they have been exercised against real publisher accounts.
 
-The project is pre-launch. The companion document `REPORT.md` describes the
-state of each network's API surface in matter-of-fact terms.
+## What this is
 
-## Quick start
+`affiliate-mcp` is a Model Context Protocol server that exposes affiliate
+network APIs as MCP tools. With four networks bundled — Awin, CJ Affiliate,
+Impact, and Rakuten Advertising — it surfaces roughly 30 tools that a
+publisher can call from any MCP-capable client (Claude Desktop, Claude Code,
+or any other) to answer questions like "which programmes are still pending
+after 90 days?" without logging in to four dashboards.
+
+The server runs locally on your machine. There is no hosted service, no
+account, and no telemetry. Credentials live in `~/.affiliate-mcp/.env` with
+file mode `0600`; they never leave your host. You bring your own publisher
+keys for each network you want wired in.
+
+The companion document [`REPORT.md`](./REPORT.md) describes — in matter-of-fact
+terms — what each network's API supports, what it does not, and what is known
+to be flaky. It is regenerated from each adapter's `network.json` and findings
+docs, so it stays in step with the code.
+
+## Quick-start
 
 Install and run the interactive setup wizard:
 
@@ -23,8 +35,9 @@ The wizard walks one network at a time, validates each credential against the
 live API as you enter it, and writes the configuration to
 `~/.affiliate-mcp/.env` with permissions `0600`. No telemetry. No phone-home.
 
-Once configured, point your MCP client at the server. Example (Claude Desktop
-`claude_desktop_config.json`):
+Once configured, point your MCP client at the server. A sample Claude Desktop
+config lives at [`examples/claude-desktop-config.json`](./examples/claude-desktop-config.json)
+(with explanatory notes at [`examples/claude-desktop-config.md`](./examples/claude-desktop-config.md)):
 
 ```json
 {
@@ -56,12 +69,15 @@ The table above is regenerated from each adapter's `network.json` by
 support, latency, known limitations, and full findings prose — see
 [`REPORT.md`](./REPORT.md).
 
-Per-network setup notes live under `docs/networks/`:
+## Per-network setup
 
-- [Awin](./docs/networks/awin.md)
-- [CJ Affiliate](./docs/networks/cj.md)
-- [Impact](./docs/networks/impact.md)
-- [Rakuten Advertising](./docs/networks/rakuten.md)
+Each bundled network has a short setup document covering dashboard navigation,
+credential locations, and common stumbling blocks:
+
+- [Awin](./docs/networks/awin.md) — API token + publisher ID.
+- [CJ Affiliate](./docs/networks/cj.md) — Developer Key (GraphQL).
+- [Impact](./docs/networks/impact.md) — Account SID + Auth Token.
+- [Rakuten Advertising](./docs/networks/rakuten.md) — OAuth client + SID; approval required.
 
 ## Tool surface
 
@@ -79,23 +95,38 @@ configured: `affiliate_list_networks` and `affiliate_run_diagnostic`. They let
 a client enumerate the active adapters and check live capabilities without
 calling each per-network tool one by one.
 
-## Status
+## Skills
 
-Pre-launch. The state of each network's adapter — what is implemented, what is
-stubbed, what known limitations apply — is described in
-[`REPORT.md`](./REPORT.md). All four adapters currently ship with
-`claim_status: partial`; promotion to `production` happens after live
-acceptance testing against real publisher accounts (a later chunk).
+Four packaged skills nudge an MCP-capable client toward useful workflows
+without you having to remember tool names. Each lives under
+`src/skills/<name>/` and ships with examples:
+
+- [`affiliate-earnings-report`](./src/skills/affiliate-earnings-report/SKILL.md)
+  — consolidated period earnings across every configured network.
+- [`affiliate-network-status`](./src/skills/affiliate-network-status/SKILL.md)
+  — health check: auth, reachability, supported operations.
+- [`affiliate-network-setup-help`](./src/skills/affiliate-network-setup-help/SKILL.md)
+  — guides the user through setup for a specific network.
+- [`audit-affiliate-links`](./src/skills/audit-affiliate-links/SKILL.md)
+  — checks that affiliate links on a page or sitemap still resolve to active
+  programmes.
+
+## Status report
+
+[`REPORT.md`](./REPORT.md) is the editorial position: per-network capability,
+known limitations, and where the upstream API surprised us. It is regenerated
+on every adapter merge; treat it as the source of truth before opening an
+issue.
 
 ## For developers
 
-`affiliate-mcp` is designed to be contributed to with the help of Claude Code.
-The repository ships a `templates/new-network/` scaffold and (in a future
-chunk) a `.claude/skills/contribute/` skill that walks an LLM agent through
-adding a new network adapter end-to-end. A `CONTRIBUTING.md` covering the
-human-side workflow is on the roadmap; until then, the per-chunk handoffs in
-`handoffs/` are the best entry point for understanding how the codebase fits
-together.
+Contributions are welcome — especially new network adapters. Start with
+[`CONTRIBUTING.md`](./CONTRIBUTING.md) for the human-side workflow, then read
+the [`AGENTS.md`](./AGENTS.md) note (if you are using Claude Code) and the
+`.claude/skills/contribute/SKILL.md` playbook. [`WANTED.md`](./WANTED.md)
+lists networks and ideas that are explicitly on the roadmap.
+[`REPORT.md`](./REPORT.md) is the editorial baseline for any new claim about
+a network's API.
 
 Local development:
 
@@ -117,4 +148,11 @@ npm run generate:report-image # renders the summary table as a PNG (needs Playwr
 
 ## Licence
 
-MIT. See [`LICENSE`](./LICENSE).
+MIT. See [`LICENCE`](./LICENCE).
+
+## Acknowledgements
+
+This project is only possible because the engineering teams at Awin, CJ
+Affiliate, Impact, and Rakuten Advertising publish public, documented APIs
+for their publisher data. The adapters here read those APIs; they do not
+scrape, simulate, or work around any rate or access limits.
