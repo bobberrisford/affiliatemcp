@@ -2,7 +2,7 @@
 
 **Orchestrator branch**: `claude/affiliate-mcp-orchestration-qfKw4`
 **PRD**: v0.4 (Ready for build)
-**Status**: Day 1–3 complete (all four adapters merged). Day 2 wizard + Day 4 report generator launching in parallel.
+**Status**: Days 1–4 complete (adapters, wizard, report generator). Day 5 (setup docs + publisher skills) + Day 6 polish next.
 **Last updated**: 2026-05-21
 
 This document maps the PRD §13 build sequence to discrete sub-agent assignments. The orchestrator delegates one chunk at a time, reviews the handoff document at `handoffs/<branch>.md`, verifies against the relevant PRD §15 quality bars, then merges to `main` (the working integration branch on `claude/affiliate-mcp-orchestration-qfKw4`).
@@ -88,13 +88,13 @@ This document maps the PRD §13 build sequence to discrete sub-agent assignments
 | 2 | feature/network-awin | ✅ merged (7da8022) | [handoffs/feature-network-awin.md](handoffs/feature-network-awin.md) |
 | 2.5 | feature/wire-registry | ✅ merged | [handoffs/feature-wire-registry.md](handoffs/feature-wire-registry.md) |
 | 3 | feature/network-cj | ✅ merged | [handoffs/feature-network-cj.md](handoffs/feature-network-cj.md) |
-| 4 | feature/setup-wizard | in flight | — |
+| 4 | feature/setup-wizard | ✅ merged | [handoffs/feature-setup-wizard.md](handoffs/feature-setup-wizard.md) |
 | 5 | feature/network-impact | ✅ merged | [handoffs/feature-network-impact.md](handoffs/feature-network-impact.md) |
 | 6 | feature/network-rakuten | ✅ merged | [handoffs/feature-network-rakuten.md](handoffs/feature-network-rakuten.md) |
-| 7 | feature/report-generator | in flight | — |
-| 8 | feature/setup-docs | blocked on 2,3,5,6 | — |
-| 9 | feature/publisher-skills | blocked on 2,3,5,6 | — |
-| 10 | feature/adapter-polish | blocked on 2,3,5,6 | — |
+| 7 | feature/report-generator | ✅ merged | [handoffs/feature-report-generator.md](handoffs/feature-report-generator.md) |
+| 8 | feature/setup-docs | in flight | — |
+| 9 | feature/publisher-skills | in flight | — |
+| 10 | feature/adapter-polish | in flight | — |
 | 11 | feature/contribute-infra | blocked on 2,10 | — |
 | 12 | feature/governance | blocked on 7,8,9,10 | — |
 | 13 | feature/launch-prep | blocked on all | — |
