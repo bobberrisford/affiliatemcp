@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Contributing guide
+    url: https://github.com/bobberrisford/affiliatemcp/blob/main/CONTRIBUTING.md
+    about: Read this before opening an issue if you'd like to contribute a fix
+  - name: Discussions
+    url: https://github.com/bobberrisford/affiliatemcp/discussions
+    about: Use Discussions for open-ended questions

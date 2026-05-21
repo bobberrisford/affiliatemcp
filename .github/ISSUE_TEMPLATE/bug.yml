@@ -1,0 +1,42 @@
+name: Bug report
+description: Something is wrong that does not fit the more specific templates
+title: "[bug] <short summary>"
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For network-specific failures, the `network-broken` and
+        `network-api-changed` templates collect better diagnostic information.
+        Use this generic template for everything else.
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: A minimal sequence of steps that reproduces the bug.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Node version, OS, MCP client (Claude Desktop, Claude Code, etc.), and `affiliate-mcp` version.
+      placeholder: |
+        Node:
+        OS:
+        MCP client:
+        affiliate-mcp version:
+    validations:
+      required: true

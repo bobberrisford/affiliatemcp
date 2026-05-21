@@ -1,0 +1,40 @@
+name: Correction
+description: A claim in REPORT.md, a finding, or a setup doc is factually wrong
+title: "[correction] <file or section>"
+labels: ["correction"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        See [`CORRECTIONS.md`](../../CORRECTIONS.md) for the full editorial
+        policy. The short version: corrections must be backed by a verifiable
+        source — link, screenshot, HTTP trace, or reproducible fixture.
+  - type: input
+    id: file-section
+    attributes:
+      label: Which file or section
+      description: Path and heading or line range. E.g. `REPORT.md` > "Rakuten Advertising" > "Clicks".
+      placeholder: REPORT.md > Awin > Transactions
+    validations:
+      required: true
+  - type: textarea
+    id: what-is-wrong
+    attributes:
+      label: What is wrong
+      description: Quote what the document currently says, and explain why it is incorrect.
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Source / evidence
+      description: Link to the network's official documentation, a dashboard screenshot, an HTTP trace, or a changelog entry.
+    validations:
+      required: true
+  - type: textarea
+    id: suggested
+    attributes:
+      label: Suggested correction
+      description: What should the document say instead?
+    validations:
+      required: true

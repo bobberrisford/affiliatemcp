@@ -13,8 +13,9 @@
   "files": [
     "dist",
     "templates",
+    "src/skills",
     "README.md",
-    "LICENSE"
+    "LICENCE"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

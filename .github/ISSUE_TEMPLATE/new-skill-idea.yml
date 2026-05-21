@@ -1,0 +1,41 @@
+name: New skill idea
+description: Propose a publisher skill that composes existing tools in a useful way
+title: "[skill-idea] <short name>"
+labels: ["skill-idea", "discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Skills are markdown playbooks under `src/skills/<name>/SKILL.md` that the
+        MCP client picks up. They compose existing tools — they do not introduce
+        new ones. If your idea needs a new tool or a new network, file a
+        different template.
+  - type: input
+    id: skill-name
+    attributes:
+      label: Skill name
+      description: Short hyphenated name for the skill directory.
+      placeholder: e.g. seasonal-coupon-finder
+    validations:
+      required: true
+  - type: textarea
+    id: triggers
+    attributes:
+      label: Trigger phrases
+      description: What would a user say that should activate this skill? List several.
+    validations:
+      required: true
+  - type: textarea
+    id: what-it-does
+    attributes:
+      label: What it does
+      description: Two or three sentences. What problem does it solve, and what is the output?
+    validations:
+      required: true
+  - type: textarea
+    id: tools-used
+    attributes:
+      label: What tools it uses
+      description: Which `affiliate_*` tools does the skill call, and in what order?
+    validations:
+      required: true

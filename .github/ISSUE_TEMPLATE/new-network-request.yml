@@ -1,0 +1,58 @@
+name: New network request
+description: Request a new affiliate network adapter
+title: "[network-request] <network name>"
+labels: ["new-network", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this to request a new network adapter. Check `WANTED.md` first — your
+        network may already be on the queue. Per the PRD non-goals, we only add
+        networks that publish a real REST or GraphQL API; browser-automation
+        adapters are out of scope.
+  - type: input
+    id: network-name
+    attributes:
+      label: Network name
+      description: The publisher-facing brand name.
+      placeholder: e.g. Skimlinks
+    validations:
+      required: true
+  - type: input
+    id: slug
+    attributes:
+      label: Slug
+      description: Short lowercase identifier to use throughout the codebase.
+      placeholder: e.g. skimlinks
+    validations:
+      required: true
+  - type: input
+    id: dashboard-url
+    attributes:
+      label: Publisher dashboard URL
+      description: Where a publisher logs in.
+      placeholder: https://...
+    validations:
+      required: true
+  - type: input
+    id: api-docs
+    attributes:
+      label: API documentation URL
+      description: Link to the public API reference.
+      placeholder: https://...
+    validations:
+      required: true
+  - type: textarea
+    id: account-requirements
+    attributes:
+      label: Account requirements
+      description: What does a publisher need to do to get API access? Approval? Tier? Minimum revenue?
+    validations:
+      required: true
+  - type: textarea
+    id: why-useful
+    attributes:
+      label: Why this is useful for publishers
+      description: Who uses this network and what problem does covering it solve?
+    validations:
+      required: true
