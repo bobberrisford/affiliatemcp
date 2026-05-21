@@ -1,0 +1,18 @@
+{
+  "slug": "impact",
+  "name": "Impact",
+  "base_url": "https://api.impact.com",
+  "auth_model": "basic",
+  "env_vars": ["IMPACT_ACCOUNT_SID", "IMPACT_AUTH_TOKEN"],
+  "setup_time_estimate_minutes": 6,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Action listings on wide date windows return intermittent 5xx; the adapter chunks ≤30-day slices and bumps retries to absorb upstream flakiness.",
+    "Pagination headers are inconsistent across endpoints (some return @nextpageuri, some @page); both are honoured."
+  ],
+  "claim_status": "partial",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-05-21",
+  "supports_brand_ops": false,
+  "docs_url": "https://integrations.impact.com/impact-publisher/reference"
+}
