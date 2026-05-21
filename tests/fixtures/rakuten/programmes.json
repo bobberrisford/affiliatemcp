@@ -1,0 +1,35 @@
+{
+  "programs": [
+    {
+      "mid": 50001,
+      "advertiser_name": "Atolls Bookshop US",
+      "status": "active",
+      "application_status": "approved",
+      "currency": "USD",
+      "primary_category": { "name": "Books & Media" },
+      "categories": [{ "name": "Books & Media" }, { "name": "Education" }],
+      "merchant_url": "https://www.atolls-bookshop-us.example.com",
+      "commission": {
+        "type": "percent",
+        "rate": 8.0,
+        "description": "8% across all categories",
+        "currency": "USD"
+      }
+    },
+    {
+      "mid": 50002,
+      "advertiser_name": "Reef Outfitters North America",
+      "status": "active",
+      "application_status": "pending",
+      "currency": "USD",
+      "categories": [{ "name": "Outdoor" }]
+    },
+    {
+      "mid": 50003,
+      "advertiser_name": "Lagoon Lighting",
+      "status": "inactive",
+      "application_status": "",
+      "currency": "USD"
+    }
+  ]
+}
