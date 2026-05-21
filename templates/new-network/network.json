@@ -1,0 +1,15 @@
+{
+  "slug": "template-network",
+  "name": "Template Network",
+  "base_url": "https://api.example.com",
+  "auth_model": "bearer",
+  "env_vars": ["TEMPLATE_NETWORK_API_TOKEN"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [],
+  "claim_status": "experimental",
+  "adapter_version": "0.0.1",
+  "last_verified": "2026-01-01",
+  "supports_brand_ops": false,
+  "docs_url": "https://example.com/docs"
+}

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.env
+.env.local
+~/.affiliate-mcp/
+.affiliate-mcp/
+scratch/
+.DS_Store
+*.log
+.idea/
+.vscode/
