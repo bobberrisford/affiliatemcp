@@ -23,6 +23,13 @@ describe('network aggregator boot', () => {
     expect(awin?.name).toBe('Awin');
   });
 
+  it('registers the impact adapter on import', () => {
+    const impact = getAdapter('impact');
+    expect(impact).toBeTruthy();
+    expect(impact?.slug).toBe('impact');
+    expect(impact?.name).toBe('Impact');
+  });
+
   it('populates the registry with at least one adapter', () => {
     expect(getAdapters().length).toBeGreaterThanOrEqual(1);
   });
