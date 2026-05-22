@@ -68,7 +68,7 @@ If you can see your publisher dashboard after signing in — including the
 ## What success looks like
 
 The wizard prints a confirmation line that the token validated against the
-`/publishers` endpoint, shows the human-readable name of your publisher
+`/accounts?type=publisher` endpoint, shows the human-readable name of your publisher
 account, and writes the two values to `~/.affiliate-mcp/.env` with file
 permissions `0600`. From that point on, `affiliate-networks-mcp test awin` should
 report `ok` for all Awin operations except `listClicks` (Awin does not

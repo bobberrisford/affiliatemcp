@@ -17,7 +17,7 @@ been exercised against a live publisher account.
   client attaches it to every request. The token is generated from the Awin
   publisher dashboard → Account → API credentials.
 
-- **`/publishers` doubles as auth-check + identity discovery**: a single call
+- **`/accounts?type=publisher` doubles as auth-check + identity discovery**: a single call
   validates the token, returns the publisher ID, and gives a human-readable
   name. This is the canonical example of the `derivedValues` pattern: one
   credential bootstraps another, the wizard shows "press enter to accept"
@@ -57,10 +57,11 @@ been exercised against a live publisher account.
   may have similar quirks — the lesson is "treat both string and boolean
   signals as inputs to the normalisation".
 
-- **Schema drift between tenants.** The `/publishers` response uses
-  `publisherId` in newer tenants and `id`/`accountId` in older ones. We
-  accept all three rather than picking one. This is the kind of compatibility
-  shim that should NOT be promoted into a shared layer — it's Awin-specific.
+- **Schema drift between identity endpoints.** The current `/accounts` response
+  uses `accounts[].accountId`, while older `/publishers` shapes and fixtures use
+  `publisherId`, `id`, or `accountId`. We accept all of them rather than picking
+  one. This is the kind of compatibility shim that should NOT be promoted into
+  a shared layer — it's Awin-specific.
 
 - **Two date fields, two meanings.** `transactionDate` is the conversion;
   `validationDate` is when Awin approved the commission. The unpaid-age
@@ -83,7 +84,7 @@ been exercised against a live publisher account.
   exceeded. Our resilience layer retries 429 by policy with exponential
   backoff + jitter, which is the right default.
 
-- **Latency**: `/publishers` returns in ~100–200ms; `/programmes` in
+- **Latency**: `/accounts` returns in ~100–200ms; `/programmes` in
   ~300–800ms; `/transactions` is the outlier, occasionally 5–15s for a busy
   publisher across a full 31-day window. We bump the `listTransactions`
   timeout to 60s and retries to 3 to absorb the upstream variability.

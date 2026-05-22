@@ -1,0 +1,11 @@
+{
+  "userId": 699645,
+  "accounts": [
+    {
+      "accountId": 123456,
+      "accountName": "Atolls Test Publisher",
+      "accountType": "publisher",
+      "userRole": "userAdmin"
+    }
+  ]
+}

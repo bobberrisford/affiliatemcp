@@ -41,8 +41,8 @@
  *
  * --- Awin API map (verify against https://wiki.awin.com/index.php/API_Get_Started) ---
  *
- *   GET  /publishers
- *     → list of publishers; used by verifyAuth and to derive AWIN_PUBLISHER_ID.
+ *   GET  /accounts?type=publisher
+ *     → list of publisher accounts; used by verifyAuth and to derive AWIN_PUBLISHER_ID.
  *   GET  /publishers/{publisherId}/programmes
  *     → joined / pending / available programmes. Supports `relationship` filter.
  *   GET  /publishers/{publisherId}/programmedetails?advertiserId=...
@@ -138,7 +138,7 @@ const META: NetworkMeta = {
  * transient gateway 502 during heavy hours still resolves rather than failing
  * the whole call.
  *
- * Why we don't lower the timeout for fast ops (`/publishers`): the default is
+ * Why we don't lower the timeout for fast ops (`/accounts`): the default is
  * already comfortable; making it shorter only saves time when the network is
  * already broken, where the resilience layer's own timeout would catch it.
  */
@@ -841,7 +841,7 @@ export class AwinAdapter implements NetworkAdapter {
 
   /**
    * Delegate to `auth.verifyAuth` which encapsulates the credential read,
-   * /publishers call, and `derivedValues` extraction. The adapter surface
+   * /accounts call, and `derivedValues` extraction. The adapter surface
    * returns the contract type `{ ok: true, identity? } | { ok: false, reason }`;
    * the additional `derivedValues` field travels on the underlying type so the
    * wizard can pick it up while still respecting the public contract.

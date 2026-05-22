@@ -252,9 +252,9 @@ describe('Awin.generateTrackingLink', () => {
 // ---------------------------------------------------------------------------
 
 describe('Awin.verifyAuth (happy path)', () => {
-  it('returns ok:true and identity when /publishers responds 200', async () => {
+  it('returns ok:true and identity when /accounts responds 200', async () => {
     delete process.env['AWIN_PUBLISHER_ID']; // exercise derivation
-    mockFetchQueue([fakeResponse(loadFixture('publishers.json'))]);
+    mockFetchQueue([fakeResponse(loadFixture('accounts.json'))]);
     const r = await awinAdapter.verifyAuth();
     expect(r.ok).toBe(true);
     if (r.ok) {
@@ -289,8 +289,8 @@ describe('Awin.validateCredential', () => {
     expect(r.ok).toBe(true);
   });
 
-  it('validates AWIN_API_TOKEN by calling /publishers', async () => {
-    mockFetchQueue([fakeResponse(loadFixture('publishers.json'))]);
+  it('validates AWIN_API_TOKEN by calling /accounts', async () => {
+    mockFetchQueue([fakeResponse(loadFixture('accounts.json'))]);
     const r = await awinAdapter.validateCredential('AWIN_API_TOKEN', 'fresh-token');
     expect(r.ok).toBe(true);
   });
@@ -315,7 +315,7 @@ describe('Awin.capabilitiesCheck', () => {
       fakeResponse([]), // listProgrammes
       fakeResponse([]), // listTransactions probe
       fakeResponse([]), // getEarningsSummary → listTransactions
-      fakeResponse(loadFixture('publishers.json')), // verifyAuth
+      fakeResponse(loadFixture('accounts.json')), // verifyAuth
     ]);
     const caps = await awinAdapter.capabilitiesCheck();
     expect(caps.network).toBe('awin');

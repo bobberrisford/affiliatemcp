@@ -50,7 +50,7 @@ export function setupSteps(): SetupStep[] {
       type: 'text',
       example: '123456',
       description:
-        'Your numeric Awin publisher ID. The wizard normally extracts this from the GET /publishers ' +
+        'Your numeric Awin publisher ID. The wizard normally extracts this from the GET /accounts?type=publisher ' +
         'response after the token validates — you only need to set it manually if your token has access ' +
         'to multiple publisher accounts and the wrong one was picked.',
       validateOnEntry: (v) => validateCredential('AWIN_PUBLISHER_ID', v),
