@@ -71,10 +71,17 @@ to confirm.
 These cannot be automated against real accounts in CI; the maintainer
 runs them by hand.
 
-- [ ] `git clone … && npm install` succeeds on a fresh checkout in a
-      clean directory (Node ≥ 20).
-- [ ] `npm run build` produces a working `dist/` (run
-      `node dist/index.js --help`).
+- [x] `git clone … && npm install` succeeds on a fresh checkout in a
+      clean directory (Node ≥ 20). _Verified 2026-05-22 on macOS._
+- [x] `npm run build` produces a working `dist/` (run
+      `node dist/index.js --help`). _Verified 2026-05-22._
+- [x] **npm publish** — `affiliate-networks-mcp@0.1.0` published to
+      https://www.npmjs.com/package/affiliate-networks-mcp on 2026-05-22.
+      `npx affiliate-networks-mcp --help` resolves the package over the
+      registry. (Note: the npm name `affiliate-mcp` was already taken
+      by an unrelated HLOS package; the brand-visible surface was
+      renamed to `affiliate-networks-mcp` before publish. See
+      `handoffs/feature-rename-publish.md` for the rename audit.)
 - [ ] `affiliate-networks-mcp setup` runs interactively against ALL five
       networks with real credentials:
   - [ ] Awin
@@ -220,7 +227,7 @@ unticked, the answer is NO-GO regardless of the rest of the checklist.
 Order of operations on launch day:
 1. Confirm CI green.
 2. Tag the release locally (`git tag v0.1.0 && git push --tags`).
-3. Publish to npm (`npm publish`).
+3. Publish to npm (`npm publish`). _Done 2026-05-22 — `affiliate-networks-mcp@0.1.0`._
 4. Submit to the three registries in parallel.
 5. File the 14 GitHub issues via `seed.sh`.
 6. Publish the LinkedIn launch beat (demo 01 attached).
