@@ -1,49 +1,42 @@
 # affiliate-mcp
 
-> Talk to your affiliate networks the way you talk to a colleague.
-> Five dashboards, one conversation.
+> Integrate your affiliate networks with Claude or ChatGPT.
 
-If you run affiliate sites, you already know the routine. Monday morning,
-five tabs open: Awin, CJ, eBay, Impact, Rakuten. Each one a different login,
-a different layout, a different way of saying "pending." You export five
-CSVs, paste them into a spreadsheet, and by the time the numbers line up
-the working day is half gone.
+I wanted to chat to my affiliate network data with Claude and none of the
+networks have shipped a Claude integration yet, so I built them all one
+(well, the biggest ones).
 
-`affiliate-mcp` puts that routine behind a single conversation. You point
-Claude (Desktop or Code) at it once, and from then on you ask questions in
-plain English:
+So you can now add this to Claude and ask:
 
 > *"What did I earn across all networks last month?"*
 >
 > *"Which programmes have transactions still pending after 90 days?"*
 >
-> *"Check every affiliate link on this sitemap and tell me which ones are
-> dead."*
+> *"Compare my earnings month on month."*
 >
-> *"Are my Awin credentials still valid? Run a health check across every
-> network."*
+> *"Find me some opportunities to grow."*
 
-Claude figures out which networks to call, fetches the data live, and
-gives you the answer — usually with a table, sometimes with a flag against
-the programme that's about to drop you.
+Claude figures out which networks to call, fetches the data live from
+their API, and gives you the answer. You can use Claude to turn it into
+a sheet, an artifact, an email to your boss, whatever you want.
+
+Free and open source. MIT licensed. Bring your own keys.
 
 ## Who this is for
 
-You are an affiliate marketer, a content site owner, or a media buyer.
-Someone recently sat you down in front of Claude Code or Claude Desktop
-and said "you can build things now." This repo is one of those things,
-already built, that you can use today.
+You are an affiliate marketer. You have started using AI in your daily
+life and your affiliate network isn't helping.
 
 You do **not** need to know what an API is. You do not need to write code.
 You need:
 
 - Your existing logins to the affiliate networks you already work with.
-- About ten minutes to run the setup wizard.
-- Claude Desktop (or Claude Code, if you've been given that) installed.
+- Five minutes to run the setup wizard.
+- Claude Desktop installed.
 
 That is the whole list.
 
-## Why this beats the dashboards
+## Why bother?
 
 **One question, every network.** "Show me earnings by programme" hits
 Awin, CJ, eBay, Impact and Rakuten in parallel and merges the results.
@@ -53,11 +46,11 @@ The dashboards can't do that — they don't know about each other.
 and saved views. "Last quarter, status pending, sorted by amount" is
 the whole prompt.
 
-**Your data, your machine.** The server runs locally. Your publisher
-keys live in a file on your own computer (`~/.affiliate-mcp/.env`,
-locked to your user account). Nothing is sent to a third party, no
-account to sign up for, no telemetry. The networks see the same API
-calls they'd see if you used their own dashboard.
+**Your data, your machine.** It runs locally. Your publisher keys live
+in a file on your own computer (`~/.affiliate-mcp/.env`, locked to your
+user account). Nothing is sent to a third party, no account to sign up
+for, no telemetry. The networks see the same API calls they'd see if
+you used their own dashboard.
 
 **Catches what dashboards bury.** Stale transactions, programmes that
 have quietly gone inactive, links pointing at deeplinks that no longer
