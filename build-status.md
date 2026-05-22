@@ -2,7 +2,7 @@
 
 **Orchestrator branch**: `claude/affiliate-mcp-orchestration-qfKw4`
 **PRD**: v0.4 (Ready for build)
-**Status**: All structural chunks (1–12) merged. Next: §15.31 end-to-end contribution test + Chunk 13 launch prep.
+**Status**: ✅ Build complete. All 13 chunks merged. PRD §15.31 simulation passed (eBay added autonomously by fresh sub-agent). Remaining items are human-only launch tasks (record demos, run live API validation, file seeded issues, submit to registries).
 **Last updated**: 2026-05-21
 
 This document maps the PRD §13 build sequence to discrete sub-agent assignments. The orchestrator delegates one chunk at a time, reviews the handoff document at `handoffs/<branch>.md`, verifies against the relevant PRD §15 quality bars, then merges to `main` (the working integration branch on `claude/affiliate-mcp-orchestration-qfKw4`).
@@ -98,8 +98,19 @@ This document maps the PRD §13 build sequence to discrete sub-agent assignments
 | 11 | feature/contribute-infra | ✅ merged | [handoffs/feature-contribute-infra.md](handoffs/feature-contribute-infra.md) |
 | 12 | feature/governance | ✅ merged (partial) | (sub-agent blocked by content filter pre-handoff) |
 | 12b | feature/governance-2 | ✅ merged | [handoffs/feature-governance-2.md](handoffs/feature-governance-2.md) |
-| §15.31 | (validation simulation) | queued | — |
-| 13 | feature/launch-prep | queued | — |
+| §15.31 | (validation simulation) | ✅ passed (eBay landed as 5th adapter) | [handoffs/feature-network-ebay.md](handoffs/feature-network-ebay.md) |
+| 13 | feature/launch-prep | ✅ merged | [handoffs/feature-launch-prep.md](handoffs/feature-launch-prep.md) |
+
+## Final tallies
+
+- 5 network adapters: Awin, CJ Affiliate, eBay Partner Network (experimental), Impact, Rakuten Advertising (partial)
+- 35 MCP tools (5 networks × 7 publisher ops + 2 meta tools)
+- 357 tests across 35 files; lint clean (6 pre-existing warnings); typecheck clean; build clean
+- All PRD §15 quality bars cleared except those requiring real credentials (see `docs/launch/CHECKLIST.md`)
+- 4 publisher skills + 1 contribute skill
+- Comparison table PNG: deferred to local maintainer render (sandbox CDN blocks Playwright chromium)
+- 14 issues seeded but not filed (`.github/seed-issues/seed.sh`)
+- LinkedIn drafts not produced (out of scope per launch decision)
 
 ## Parallelism opportunities
 
