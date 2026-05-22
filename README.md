@@ -20,7 +20,8 @@ plain English:
 > *"Check every affiliate link on this sitemap and tell me which ones are
 > dead."*
 >
-> *"Has my Rakuten application been approved yet?"*
+> *"Are my Awin credentials still valid? Run a health check across every
+> network."*
 
 Claude figures out which networks to call, fetches the data live, and
 gives you the answer — usually with a table, sometimes with a flag against
@@ -85,7 +86,8 @@ wrong, you'll know in the same minute you typed it.
 npx affiliate-networks-mcp test
 ```
 
-You should see a green tick next to every network you configured.
+You should see one line per network: `ok` for everything that's healthy,
+`error — <reason>` for anything that isn't.
 
 **3. Tell Claude about it.** If you're on Claude Desktop, open the
 config file (the example at
@@ -122,11 +124,14 @@ type. A few starting points:
 - **"Are all my affiliate networks healthy?"** — a one-shot status
   check: auth working, API reachable, which operations the network
   supports.
-- **"Help me add Skimlinks"** *(or any unconfigured network)* — guides
-  you through credential setup conversationally.
-- **"Audit the affiliate links on https://mysite.com/best-headphones"**
-  — fetches the page, finds the affiliate links, checks each one
-  resolves to an active programme, flags the dead ones.
+- **"Help me set up Awin"** *(or CJ, Impact, Rakuten)* — guides you
+  through credential setup for one of the bundled networks
+  conversationally, with the dashboard menu paths quoted verbatim.
+- **"Audit the affiliate links in my sitemap at https://mysite.com/sitemap.xml"**
+  — reads the sitemap, classifies every affiliate link by network,
+  checks each programme is still active, and flags the dead or
+  declined ones. You can also paste a list of URLs or an HTML/markdown
+  document directly.
 
 The networks bundled today are listed below. Each one supports the same
 seven operations: list programmes, get a single programme, list
