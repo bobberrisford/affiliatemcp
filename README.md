@@ -2,16 +2,17 @@
 
 > An MCP server for affiliate networks. Bring your own keys.
 
-**Status:** pre-launch. The four bundled adapters ship with `claim_status: partial` until they have been exercised against real publisher accounts.
+**Status:** pre-launch. The five bundled adapters ship with `claim_status: partial` (or `experimental`, for the most recent addition) until they have been exercised against real publisher accounts.
 
 ## What this is
 
 `affiliate-mcp` is a Model Context Protocol server that exposes affiliate
-network APIs as MCP tools. With four networks bundled — Awin, CJ Affiliate,
-Impact, and Rakuten Advertising — it surfaces roughly 30 tools that a
-publisher can call from any MCP-capable client (Claude Desktop, Claude Code,
-or any other) to answer questions like "which programmes are still pending
-after 90 days?" without logging in to four dashboards.
+network APIs as MCP tools. With five networks bundled — Awin, CJ Affiliate,
+eBay Partner Network, Impact, and Rakuten Advertising — it surfaces roughly
+35 tools that a publisher can call from any MCP-capable client (Claude
+Desktop, Claude Code, or any other) to answer questions like "which
+programmes are still pending after 90 days?" without logging in to five
+dashboards.
 
 The server runs locally on your machine. There is no hosted service, no
 account, and no telemetry. Credentials live in `~/.affiliate-mcp/.env` with
