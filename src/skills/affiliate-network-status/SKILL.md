@@ -30,7 +30,7 @@ Call `affiliate_run_diagnostic` with no arguments. It returns one `NetworkCapabi
 }
 ```
 
-If `affiliate_run_diagnostic` itself returns an empty array, no networks are wired up — tell the user to run `affiliate-mcp setup`.
+If `affiliate_run_diagnostic` itself returns an empty array, no networks are wired up — tell the user to run `affiliate-networks-mcp setup`.
 
 ## Step 2 — interpret per-network
 
@@ -55,8 +55,8 @@ Two-part output:
 
 Bullet list, one per affected network. Be specific:
 
-- Auth failing: "Awin auth check failed: `<verbatim message>`. Run `affiliate-mcp doctor awin` for the full diagnostic JSON. Likely cause: rotated or revoked API token (regenerate at https://ui.awin.com under your publisher profile)."
-- Operation failing unexpectedly: "CJ listTransactions returned an error: `<verbatim>`. Run `affiliate-mcp doctor cj` to capture the full response body."
+- Auth failing: "Awin auth check failed: `<verbatim message>`. Run `affiliate-networks-mcp doctor awin` for the full diagnostic JSON. Likely cause: rotated or revoked API token (regenerate at https://ui.awin.com under your publisher profile)."
+- Operation failing unexpectedly: "CJ listTransactions returned an error: `<verbatim>`. Run `affiliate-networks-mcp doctor cj` to capture the full response body."
 - Latency unusually high: "Impact listTransactions p95 is 8.4s — upstream is flaky today. The adapter retries automatically; expect intermittent slowness."
 
 If everything is green: a single line — "All N networks healthy as of `<iso>`."
@@ -65,5 +65,5 @@ If everything is green: a single line — "All N networks healthy as of `<iso>`.
 
 - Never invent operation results. The diagnostic is the source of truth.
 - Surface verbatim error bodies from the envelope when an operation fails — do not paraphrase.
-- Recommend `affiliate-mcp doctor <slug>` (not raw curl commands) when the user wants the full JSON.
+- Recommend `affiliate-networks-mcp doctor <slug>` (not raw curl commands) when the user wants the full JSON.
 - Pair this skill with per-network `affiliate_<slug>_verify_auth` if the user wants to re-check a single network after rotating credentials.

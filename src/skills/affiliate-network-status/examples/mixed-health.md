@@ -15,7 +15,7 @@ A publisher with Awin and CJ configured. CJ's token was rotated yesterday and no
 
 ## Recommendations
 
-- **CJ Affiliate — FAILING.** `verifyAuth` returned `{ httpStatus: 401, networkErrorBody: '{"error":"invalid_token"}' }`. Run `affiliate-mcp doctor cj` for the full JSON. Likely cause: the CJ Personal Access Token has been rotated or revoked. Generate a new one at https://developers.cj.com/account/personal-access-tokens and update `CJ_API_TOKEN` in your environment.
+- **CJ Affiliate — FAILING.** `verifyAuth` returned `{ httpStatus: 401, networkErrorBody: '{"error":"invalid_token"}' }`. Run `affiliate-networks-mcp doctor cj` for the full JSON. Likely cause: the CJ Personal Access Token has been rotated or revoked. Generate a new one at https://developers.cj.com/account/personal-access-tokens and update `CJ_API_TOKEN` in your environment.
 - **Awin — OK.** Click data (listClicks) is unsupported, but that's a known limitation, not a failure.
 
 Generated at 2026-05-21T19:50:11Z.

@@ -222,7 +222,7 @@ function requireCompanyId(operation: string): string {
     network: SLUG,
     operation,
     hint:
-      'Run `affiliate-mcp setup cj` so the wizard can derive CJ_COMPANY_ID from your token, ' +
+      'Run `affiliate-networks-mcp setup cj` so the wizard can derive CJ_COMPANY_ID from your token, ' +
       'or set it explicitly in ~/.affiliate-mcp/.env.',
   });
 }

@@ -23,7 +23,7 @@ end to end. Voiceover ~120 words per minute (≈180 words for 90s).
 | # | T (s) | Action | On-screen text / terminal command |
 |---|------:|--------|-----------------------------------|
 | 1 | 0–4   | Title card: "affiliate-mcp — setup wizard". Plain text, no logo. | "affiliate-mcp — setup wizard" |
-| 2 | 4–10  | Clean terminal. Type the install command. | `npx affiliate-mcp setup` |
+| 2 | 4–10  | Clean terminal. Type the install command. | `npx affiliate-networks-mcp setup` |
 | 3 | 10–18 | npx fetches the package. Wait for the wizard banner ("affiliate-mcp setup wizard — pick a network"). | (terminal output) |
 | 4 | 18–24 | Wizard lists the five networks. Highlight Awin with arrow key, press Enter. | `> Awin` |
 | 5 | 24–35 | Wizard prompts for `AWIN_API_TOKEN`. Paste the token (do not type it on camera; the value should be off-screen on the clipboard). | `AWIN_API_TOKEN: ●●●●●●●●` |
@@ -31,7 +31,7 @@ end to end. Voiceover ~120 words per minute (≈180 words for 90s).
 | 7 | 45–50 | Press Enter to accept the derived publisher ID. | (Enter) |
 | 8 | 50–58 | Wizard writes the env file. Show the path + mode confirmation line. | `Wrote ~/.affiliate-mcp/.env (mode 0600).` |
 | 9 | 58–68 | Run `ls -l ~/.affiliate-mcp/.env`. **Cut to highlight**: the `-rw-------` mode. Zoom 1.5×. | `-rw------- 1 user user 84 ... .env` |
-| 10 | 68–82 | Run `affiliate-mcp test awin`. Watch each operation tick green. | `✓ listProgrammes  ✓ getProgramme  …` |
+| 10 | 68–82 | Run `affiliate-networks-mcp test awin`. Watch each operation tick green. | `✓ listProgrammes  ✓ getProgramme  …` |
 | 11 | 82–88 | Final frame: the green summary line. | `5 of 7 operations supported (Awin does not expose listClicks).` |
 | 12 | 88–90 | End card: repo URL + "Bring your own keys. No telemetry." | (text card) |
 
@@ -56,7 +56,7 @@ end to end. Voiceover ~120 words per minute (≈180 words for 90s).
 > The wizard writes the configuration to a file under your home
 > directory. The file is mode `0600` — readable only by you.
 >
-> `affiliate-mcp test awin` runs the diagnostic against your real
+> `affiliate-networks-mcp test awin` runs the diagnostic against your real
 > account. Each supported operation is exercised with the minimum
 > viable query. `listClicks` is reported as unsupported, with the
 > reason from Awin's documentation.

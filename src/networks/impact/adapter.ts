@@ -232,7 +232,7 @@ function requireAccountSid(operation: string): string {
     network: SLUG,
     operation,
     hint:
-      'Run `affiliate-mcp setup impact` to provide IMPACT_ACCOUNT_SID, or set it in ~/.affiliate-mcp/.env. ' +
+      'Run `affiliate-networks-mcp setup impact` to provide IMPACT_ACCOUNT_SID, or set it in ~/.affiliate-mcp/.env. ' +
       'Find it at Impact dashboard → Settings → API → "Account SID and Auth Token".',
   });
 }

@@ -60,5 +60,5 @@ Discussed during PRD planning; none of these are implemented yet.
   pitfalls are reported.
 - Expand `docs/network-claim-process.md` once the first adapter is
   promoted from `partial` to `production`.
-- Walkthrough video / asciinema cast for `affiliate-mcp setup` (linked
+- Walkthrough video / asciinema cast for `affiliate-networks-mcp setup` (linked
   from each setup doc, not bundled in the package).

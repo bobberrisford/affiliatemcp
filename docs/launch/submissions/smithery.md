@@ -11,7 +11,7 @@ fields marked `[FILL IN]` are filled at submission time.
 - [ ] Maintainer handle on Smithery: `[FILL IN]`
 - [ ] Listing icon / logo (optional): `[FILL IN]` (project ships none at v0.1)
 - [ ] Screenshot(s): `docs/images/report-table.png` once rendered; a
-      terminal capture of `affiliate-mcp setup` running. Both `[FILL IN]`.
+      terminal capture of `affiliate-networks-mcp setup` running. Both `[FILL IN]`.
 - [ ] Category tag: **publisher tools** (preferred). Fallback: **data**.
 
 ## Name
@@ -44,7 +44,7 @@ At five networks this is 35 tools.
 The server runs locally on the publisher's machine. There is no hosted
 service, no sign-up, and no telemetry. Credentials sit in
 `~/.affiliate-mcp/.env` with file mode `0600`; they never leave the
-host. An interactive setup wizard (`affiliate-mcp setup`) walks one
+host. An interactive setup wizard (`affiliate-networks-mcp setup`) walks one
 network at a time and validates each credential against the live API
 before writing it.
 
@@ -58,19 +58,19 @@ project is in a given operation.
 ## Install
 
 ```
-npm install -g affiliate-mcp
+npm install -g affiliate-networks-mcp
 ```
 
 Or run on demand without installing:
 
 ```
-npx affiliate-mcp
+npx affiliate-networks-mcp
 ```
 
 Then run the interactive wizard once:
 
 ```
-affiliate-mcp setup
+affiliate-networks-mcp setup
 ```
 
 ## Sample client configuration
@@ -81,9 +81,9 @@ shape (Claude Desktop):
 ```json
 {
   "mcpServers": {
-    "affiliate-mcp": {
+    "affiliate": {
       "command": "npx",
-      "args": ["affiliate-mcp"]
+      "args": ["affiliate-networks-mcp"]
     }
   }
 }

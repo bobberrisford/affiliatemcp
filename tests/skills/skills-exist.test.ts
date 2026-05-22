@@ -130,7 +130,7 @@ describe('publisher skills (PRD §15.21)', () => {
     expect(content).toMatch(/docs\/networks\//);
     expect(content).toMatch(/setupSteps\(\)/);
     // It must reference the wizard command.
-    expect(content).toMatch(/affiliate-mcp setup/);
+    expect(content).toMatch(/affiliate-networks-mcp setup/);
   });
 
   it('setup-help skill names every supported network with its env vars (PRD §15.17)', () => {

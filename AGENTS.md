@@ -131,10 +131,10 @@ guess at the shape of `src/shared/types.ts`.
 
 CLI entry points (built or via `npm run dev`):
 
-- `affiliate-mcp` — start the MCP server (default).
-- `affiliate-mcp setup [slug]` — interactive credential wizard.
-- `affiliate-mcp test [slug]` — run capability checks per network.
-- `affiliate-mcp doctor` — environment + config diagnostic.
+- `affiliate-networks-mcp` — start the MCP server (default).
+- `affiliate-networks-mcp setup [slug]` — interactive credential wizard.
+- `affiliate-networks-mcp test [slug]` — run capability checks per network.
+- `affiliate-networks-mcp doctor` — environment + config diagnostic.
 
 ## What not to do
 

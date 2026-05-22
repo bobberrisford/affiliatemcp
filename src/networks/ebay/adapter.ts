@@ -222,7 +222,7 @@ function requireCampaignId(operation: string): string {
     network: SLUG,
     operation,
     hint:
-      'Run `affiliate-mcp setup ebay` to provide EBAY_CAMPAIGN_ID, or set it in ~/.affiliate-mcp/.env. ' +
+      'Run `affiliate-networks-mcp setup ebay` to provide EBAY_CAMPAIGN_ID, or set it in ~/.affiliate-mcp/.env. ' +
       'Find the numeric ID at https://partnernetwork.ebay.com/ → Campaigns.',
   });
 }
@@ -766,7 +766,7 @@ export class EbayAdapter implements NetworkAdapter {
     requireCredential('EBAY_CLIENT_ID', {
       network: SLUG,
       operation: 'generateTrackingLink',
-      hint: 'Run `affiliate-mcp setup ebay` to provide EBAY_CLIENT_ID.',
+      hint: 'Run `affiliate-networks-mcp setup ebay` to provide EBAY_CLIENT_ID.',
     });
 
     const campaignId = requireCampaignId('generateTrackingLink');

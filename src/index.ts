@@ -25,24 +25,24 @@ function write(line: string): void {
 
 function printFirstRunBanner(): void {
   write('');
-  write('  affiliate-mcp — first run detected');
-  write('  --------------------------------');
+  write('  affiliate-networks-mcp — first run detected');
+  write('  -----------------------------------------');
   write(`  No config file at ${CONFIG_ENV_FILE}.`);
-  write('  Run `affiliate-mcp setup` to configure your networks.');
+  write('  Run `affiliate-networks-mcp setup` to configure your networks.');
   write('  See https://github.com/atolls/affiliate-mcp for documentation.');
   write('');
 }
 
 function printHelp(): void {
-  write('affiliate-mcp — MCP server for affiliate networks (Awin, CJ, Impact, Rakuten)');
+  write('affiliate-networks-mcp — MCP server for affiliate networks (Awin, CJ, Impact, Rakuten)');
   write('');
   write('Usage:');
-  write('  affiliate-mcp                 Start the MCP server on stdio');
-  write('  affiliate-mcp setup           Interactive setup wizard');
-  write('  affiliate-mcp test            Friendly diagnostic against configured networks');
-  write('  affiliate-mcp doctor          Verbose diagnostic with raw responses');
-  write('  affiliate-mcp validate <slug> Run the full validation suite against one network');
-  write('  affiliate-mcp --help          Show this help');
+  write('  affiliate-networks-mcp                 Start the MCP server on stdio');
+  write('  affiliate-networks-mcp setup           Interactive setup wizard');
+  write('  affiliate-networks-mcp test            Friendly diagnostic against configured networks');
+  write('  affiliate-networks-mcp doctor          Verbose diagnostic with raw responses');
+  write('  affiliate-networks-mcp validate <slug> Run the full validation suite against one network');
+  write('  affiliate-networks-mcp --help          Show this help');
   write('');
 }
 
@@ -84,7 +84,7 @@ async function main(argv: string[]): Promise<number> {
     case 'validate': {
       const slug = rest[0];
       if (!slug) {
-        write('Usage: affiliate-mcp validate <network-slug>');
+        write('Usage: affiliate-networks-mcp validate <network-slug>');
         return 2;
       }
       const { validateNetwork } = await import('./shared/diagnostic.js');
@@ -105,7 +105,7 @@ main(process.argv.slice(2)).then(
     process.exit(code);
   },
   (err) => {
-    process.stderr.write(`affiliate-mcp fatal: ${(err as Error).stack ?? String(err)}\n`);
+    process.stderr.write(`affiliate-networks-mcp fatal: ${(err as Error).stack ?? String(err)}\n`);
     process.exit(1);
   },
 );

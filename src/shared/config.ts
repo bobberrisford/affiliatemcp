@@ -130,7 +130,7 @@ export function requireCredential(
         message: `Missing required credential ${name}.`,
         hint:
           context.hint ??
-          `Run \`affiliate-mcp setup\` to provide ${name}, or set it in ${CONFIG_ENV_FILE}.`,
+          `Run \`affiliate-networks-mcp setup\` to provide ${name}, or set it in ${CONFIG_ENV_FILE}.`,
       }),
     );
   }

@@ -15,7 +15,7 @@ elsewhere in this document.
 - API access on a CJ publisher account does not require a separate
   approval step. As long as your publisher account is active, you can
   generate a Personal Access Token at any time.
-- A terminal in which you can run `npx affiliate-mcp setup` once the
+- A terminal in which you can run `npx affiliate-networks-mcp setup` once the
   steps below are complete.
 
 If you can see your publisher dashboard after signing in — including the
@@ -57,7 +57,7 @@ If you can see your publisher dashboard after signing in — including the
 
    [SCREENSHOT: docs/networks/images/cj/5-company-id.png]
 
-6. Back in your terminal, run `npx affiliate-mcp setup` and select
+6. Back in your terminal, run `npx affiliate-networks-mcp setup` and select
    **CJ Affiliate** when prompted. Paste the Personal Access Token when
    the wizard asks for `CJ_API_TOKEN`. Press Enter to accept the
    auto-derived company ID when the wizard offers it.
@@ -70,7 +70,7 @@ The wizard prints a confirmation line that the token validated against
 CJ's GraphQL `me` query, shows the publisher company name CJ associates
 with the token, and writes the two values to `~/.affiliate-mcp/.env`
 with file permissions `0600`. From that point on,
-`affiliate-mcp test cj` should report `ok` for all CJ operations except
+`affiliate-networks-mcp test cj` should report `ok` for all CJ operations except
 `listClicks` (CJ does not expose click-level data on the modern GraphQL
 surface — see `REPORT.md` for the full known-limitation note).
 

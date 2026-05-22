@@ -29,7 +29,7 @@ Requires Node.js 20 or newer.
 Run the interactive setup wizard:
 
 ```
-npx affiliate-mcp setup
+npx affiliate-networks-mcp setup
 ```
 
 The wizard walks one network at a time, validates each credential against the
@@ -39,7 +39,7 @@ live API as you enter it, and writes the configuration to
 Check that everything is wired up:
 
 ```
-npx affiliate-mcp test
+npx affiliate-networks-mcp test
 ```
 
 Then point your MCP client at the server. A sample Claude Desktop config
@@ -49,9 +49,9 @@ lives at [`examples/claude-desktop-config.json`](./examples/claude-desktop-confi
 ```json
 {
   "mcpServers": {
-    "affiliate-mcp": {
+    "affiliate": {
       "command": "npx",
-      "args": ["affiliate-mcp"]
+      "args": ["affiliate-networks-mcp"]
     }
   }
 }

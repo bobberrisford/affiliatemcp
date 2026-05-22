@@ -12,7 +12,7 @@ are filled at submission time.
 - [ ] Maintainer handle on Glama (or GitHub if Glama auto-links): `[FILL IN]`
 - [ ] Logo / icon (optional, v0.1 ships none): `[FILL IN]`
 - [ ] Screenshot(s): `docs/images/report-table.png` (the summary table)
-      and a terminal capture of `affiliate-mcp setup` running. Both
+      and a terminal capture of `affiliate-networks-mcp setup` running. Both
       `[FILL IN]` until captured.
 - [ ] Tag(s) (Glama allows multiple): `publisher`, `data`, `affiliate`,
       `local-only`. Pick whichever ≤3 the form accepts.
@@ -41,9 +41,9 @@ networks the server exposes 35 tools (7 × 5 + 2 meta tools).
 The server is local-only: no hosted version, no account, no telemetry.
 Publisher credentials live in `~/.affiliate-mcp/.env` with file mode
 `0600` and never leave the host. An interactive setup wizard
-(`affiliate-mcp setup`) walks one network at a time and validates each
+(`affiliate-networks-mcp setup`) walks one network at a time and validates each
 credential against the live API before writing it. A diagnostic CLI
-(`affiliate-mcp test`, `affiliate-mcp doctor`) produces issue-paste-ready
+(`affiliate-networks-mcp test`, `affiliate-networks-mcp doctor`) produces issue-paste-ready
 JSON for triage.
 
 Adapter quality is graded explicitly. Each adapter declares a
@@ -57,19 +57,19 @@ report regenerates from the manifests on every adapter change.
 ## Install
 
 ```
-npm install -g affiliate-mcp
+npm install -g affiliate-networks-mcp
 ```
 
 Or:
 
 ```
-npx affiliate-mcp
+npx affiliate-networks-mcp
 ```
 
 Then:
 
 ```
-affiliate-mcp setup
+affiliate-networks-mcp setup
 ```
 
 ## Sample MCP client configuration
@@ -80,9 +80,9 @@ maintained reference. Minimum shape:
 ```json
 {
   "mcpServers": {
-    "affiliate-mcp": {
+    "affiliate": {
       "command": "npx",
-      "args": ["affiliate-mcp"]
+      "args": ["affiliate-networks-mcp"]
     }
   }
 }

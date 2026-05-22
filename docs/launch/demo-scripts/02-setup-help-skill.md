@@ -35,7 +35,7 @@ and walks the conversation.
 | 5 | 24–38 | Claude reads `docs/networks/cj.md` (the tool call is visible in the side panel), then replies with the dashboard path: Account → Personal Access Tokens, click "Generate". Quote the doc, do not paraphrase. | (chat reply) |
 | 6 | 38–46 | User asks the follow-up: "Where's the company ID?" | (chat) |
 | 7 | 46–54 | Claude explains the company ID is read from the token's `me` query and the wizard derives it automatically — no separate lookup needed. **Cut to highlight**: the line "the setup wizard will derive `CJ_COMPANY_ID` from your token". | (chat reply) |
-| 8 | 54–58 | Final reply: Claude offers to run `affiliate-mcp setup cj` for the user; user declines (this is a documentation demo, not a setup demo). | (chat) |
+| 8 | 54–58 | Final reply: Claude offers to run `affiliate-networks-mcp setup cj` for the user; user declines (this is a documentation demo, not a setup demo). | (chat) |
 | 9 | 58–60 | End card: "Skill files under `src/skills/`. The user does not write any tool calls by hand." | (text card) |
 
 ## Voiceover (≈120 words)

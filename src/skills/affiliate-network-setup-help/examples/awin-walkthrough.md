@@ -12,7 +12,7 @@ Reading `docs/networks/awin.md`...
 4. Click **Create new token**. Copy the token shown — it's only displayed once. That value goes into `AWIN_API_TOKEN`.
 5. The publisher id is the number next to your account name at the top of the dashboard, e.g. `12345`. That goes into `AWIN_PUBLISHER_ID`. (If you forget, our wizard can derive it for you from the token.)
 
-Once you have both, run `affiliate-mcp setup awin` and paste them when prompted. The wizard validates the token by calling `verifyAuth` before saving.
+Once you have both, run `affiliate-networks-mcp setup awin` and paste them when prompted. The wizard validates the token by calling `verifyAuth` before saving.
 
 **User**: I'm in the dashboard but I don't see "API Credentials" in the left nav.
 
