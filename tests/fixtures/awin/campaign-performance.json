@@ -1,0 +1,22 @@
+{
+  "body": [
+    {
+      "date": "2026-05-01",
+      "advertiserId": 1001,
+      "advertiserName": "Atolls Bookshop",
+      "campaign": "newsletter",
+      "quantity": {
+        "clicks": 80,
+        "total": 4
+      },
+      "saleAmount": {
+        "total": 260
+      },
+      "commissionAmount": {
+        "total": 15.6
+      }
+    }
+  ],
+  "statusCode": "200 OK",
+  "statusCodeValue": 200
+}

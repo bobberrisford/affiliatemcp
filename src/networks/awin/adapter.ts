@@ -39,7 +39,7 @@
  *   6. Use UK English in every user-visible string. The user-visible noun is
  *      "programme" not "program".
  *
- * --- Awin API map (verify against https://wiki.awin.com/index.php/API_Get_Started) ---
+ * --- Awin API map (verify against https://help.awin.com/apidocs/introduction-1) ---
  *
  *   GET  /accounts?type=publisher
  *     → list of publisher accounts; used by verifyAuth and to derive AWIN_PUBLISHER_ID.
@@ -67,7 +67,7 @@
 import { awinRequest } from './client.js';
 import { verifyAuth as authVerify, validateCredential as authValidate } from './auth.js';
 import { setupSteps } from './setup.js';
-import { requireCredential } from '../../shared/config.js';
+import { requirePublisherId, requireToken } from './endpoints/shared.js';
 import { buildErrorEnvelope, NetworkError } from '../../shared/errors.js';
 import { DEFAULT_RESILIENCE } from '../../shared/resilience.js';
 import { registerAdapter } from '../../shared/registry.js';
@@ -106,7 +106,7 @@ const META: NetworkMeta = {
   name: NAME,
   baseUrl: 'https://api.awin.com',
   authModel: 'bearer',
-  docsUrl: 'https://wiki.awin.com/index.php/API_Get_Started',
+  docsUrl: 'https://help.awin.com/apidocs/introduction-1',
   adapterVersion: '0.1.0',
   lastVerified: '2026-05-21',
   // `partial` rather than `production`: listClicks is structurally unsupported
@@ -217,29 +217,6 @@ interface AwinTransactionRaw {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/**
- * Resolve the publisher ID for an op call. We use a strict required-credential
- * path (will throw a `config_error` envelope if absent) because every op below
- * needs it; verifyAuth's `derivedValues` flow ensures it's present after setup.
- */
-function requirePublisherId(operation: string): string {
-  return requireCredential('AWIN_PUBLISHER_ID', {
-    network: SLUG,
-    operation,
-    hint:
-      'Run `affiliate-networks-mcp setup awin` so the wizard can derive AWIN_PUBLISHER_ID ' +
-      'from your token, or set it explicitly in ~/.affiliate-mcp/.env.',
-  });
-}
-
-function requireToken(operation: string): string {
-  return requireCredential('AWIN_API_TOKEN', {
-    network: SLUG,
-    operation,
-    hint: 'Generate a token at the Awin publisher dashboard → Account → API credentials.',
-  });
-}
 
 /**
  * Status normalisation: Awin → canonical.

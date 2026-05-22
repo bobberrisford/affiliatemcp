@@ -1,0 +1,17 @@
+{
+  "body": [
+    {
+      "advertiserId": 1001,
+      "advertiserName": "Atolls Bookshop",
+      "creativeId": 555,
+      "creativeName": "Spring books banner",
+      "tagName": "spring",
+      "currency": "GBP",
+      "impressions": 3000,
+      "clicks": 120,
+      "totalComm": 24
+    }
+  ],
+  "statusCode": "200 OK",
+  "statusCodeValue": 200
+}

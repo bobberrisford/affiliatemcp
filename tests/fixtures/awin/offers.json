@@ -1,0 +1,39 @@
+{
+  "offers": [
+    {
+      "promotionId": 9001,
+      "type": "voucher",
+      "advertiser": {
+        "id": 1001,
+        "name": "Atolls Bookshop",
+        "joined": true
+      },
+      "title": "10% off paperbacks",
+      "description": "A seasonal voucher for paperback books.",
+      "terms": "Valid this week only.",
+      "startDate": "2026-05-01T00:00:00.000",
+      "endDate": "2026-05-31T00:00:00.000",
+      "url": "https://www.atolls-bookshop.example.com/paperbacks",
+      "urlTracking": "https://www.awin1.com/cread.php?awinmid=1001&awinaffid=123456",
+      "regions": {
+        "all": false,
+        "list": [
+          {
+            "name": "United Kingdom",
+            "countryCode": "GB"
+          }
+        ]
+      },
+      "voucher": {
+        "code": "PAPER10",
+        "exclusive": true,
+        "attributable": false
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 100,
+    "totalPages": 1
+  }
+}

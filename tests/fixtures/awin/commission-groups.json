@@ -1,0 +1,29 @@
+{
+  "advertiser": 1001,
+  "publisher": 123456,
+  "commissionGroups": [
+    {
+      "groupId": 123,
+      "groupCode": "DEFAULT",
+      "groupName": "Default",
+      "type": "percentage",
+      "percentage": 5,
+      "ratesStart": "2026-01-01T00:00:00Z"
+    },
+    {
+      "groupId": 124,
+      "groupCode": "BOOKS_NEW",
+      "groupName": "Books - new customer",
+      "type": "percentage",
+      "percentage": 8,
+      "conditions": [
+        {
+          "type": "customerAcquisition",
+          "operator": "equals",
+          "values": ["NEW"]
+        }
+      ],
+      "ratesStart": "2026-01-01T00:00:00Z"
+    }
+  ]
+}

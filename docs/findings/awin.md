@@ -111,6 +111,10 @@ back to an API call only when the network mints a per-link tracking ID.
 - **Live validation**: bump `claim_status` from `partial` to `production`
   after Chunk 8 acceptance testing exercises the adapter against a real Awin
   publisher account.
+- **Awin-specific endpoint coverage**: the reference implementation now tracks
+  endpoint-by-endpoint status in `docs/networks/awin/api-inventory.md`. Keep
+  that inventory updated whenever adding a tool, changing live-test status, or
+  discovering a gated requirement.
 - **Pagination cursor support**: the current adapter returns the full result
   set; if a future query window produces tens of thousands of transactions
   we'll want a cursor abstraction. Awin doesn't natively cursor — we'd chunk

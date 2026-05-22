@@ -75,6 +75,63 @@ report `ok` for all Awin operations except `listClicks` (Awin does not
 expose click-level data via the public publisher API — see `REPORT.md` for
 the full known-limitation note).
 
+## Awin reference implementation
+
+Awin is the repo's reference implementation for AI-native affiliate data. In
+addition to the canonical cross-network tools, Awin exposes network-specific
+tools for accounts, programme details, commission groups, commission-sharing
+rules, transaction-by-ID lookup, transaction queries, advertiser/creative/
+campaign reports, Link Builder, Offers, and actionable gated stubs.
+
+See the endpoint-by-endpoint inventory:
+[`docs/networks/awin/api-inventory.md`](./awin/api-inventory.md).
+
+### Environment variables
+
+- `AWIN_API_TOKEN` — the bearer token from Awin's API credentials screen.
+- `AWIN_PUBLISHER_ID` — derived from `GET /accounts?type=publisher` by setup,
+  or set manually when the token can access multiple publisher accounts.
+- `AWIN_PRODUCT_FEED_API_KEY` — not used by this PR yet. Product Feed list and
+  download tools return actionable stubs until separate feed-key and
+  large-file handling are implemented.
+- `AWIN_PROOF_OF_PURCHASE_API_KEY` — not used by this PR yet. Proof of Purchase
+  is activation-gated and write-capable, so the tool documents requirements
+  and does not submit live orders.
+
+### Read-only live tests
+
+Use the ignored workspace-local config file for live validation:
+
+```sh
+AFFILIATE_MCP_CONFIG_DIR=/Users/othmanb/Desktop/affiliate/affiliatemcp/.affiliate-mcp npm run dev -- test awin
+```
+
+For the Awin-specific endpoint set, validate only read endpoints unless a
+maintainer explicitly approves a write test. Empty-but-200 responses count as
+successful endpoint validation when the account has no data for the period.
+
+Recommended live checks:
+
+- Accounts: list publisher accounts and confirm the derived publisher ID.
+- Programmes: list joined programmes, then fetch details and commission groups
+  for one joined advertiser.
+- Transactions: list a recent narrow window, then fetch by ID if a sample row
+  exists.
+- Reports: advertiser, creative, and campaign performance for a recent period.
+- Offers: retrieve joined active offers with pagination.
+- Link Builder: check quota, then generate one non-shortened long URL only
+  for a joined advertiser.
+
+Do not submit Proof of Purchase transactions during routine validation.
+
+### Link Builder behaviour
+
+The canonical `affiliate_awin_generate_tracking_link` tool still constructs
+the stable `awin1.com/cread.php` long URL locally. The Awin-specific
+`affiliate_awin_generate_tracking_links` tool calls Awin's official Link
+Builder API when you want Awin to validate deeplink support, return per-request
+errors, or generate batches up to Awin's documented limit of 100 requests.
+
 ## Common failures
 
 ### Failure: the *API credentials* tab is missing from the Account page

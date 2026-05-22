@@ -1,0 +1,28 @@
+{
+  "body": [
+    {
+      "advertiserId": 1001,
+      "advertiserName": "Atolls Bookshop",
+      "publisherId": 123456,
+      "publisherName": "Revenue Stack",
+      "region": "GB",
+      "currency": "GBP",
+      "impressions": 12000,
+      "clicks": 450,
+      "pendingNo": 3,
+      "pendingValue": 300,
+      "pendingComm": 18,
+      "confirmedNo": 9,
+      "confirmedValue": 900,
+      "confirmedComm": 54,
+      "declinedNo": 1,
+      "declinedValue": 75,
+      "declinedComm": 4.5,
+      "totalNo": 13,
+      "totalValue": 1275,
+      "totalComm": 76.5
+    }
+  ],
+  "statusCode": "200 OK",
+  "statusCodeValue": 200
+}

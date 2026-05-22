@@ -24,6 +24,10 @@ AWIN_API_TOKEN=<redacted>
 AWIN_PUBLISHER_ID=<numeric publisher id once known>
 ```
 
+Do not commit this file. Product Feed and Proof of Purchase credentials are
+not required for the current Awin PR because those surfaces intentionally
+return actionable stubs.
+
 ## Current Finding
 
 The Awin token supplied for testing does not behave like a generic invalid
@@ -41,6 +45,14 @@ The current publisher account discovery endpoint is `GET /accounts?type=publishe
 That endpoint succeeds with the supplied token and returns publisher account
 `2272397` (`Revenue Stack`). The adapter should use `/accounts?type=publisher`
 for `verifyAuth` and `AWIN_PUBLISHER_ID` derivation.
+
+Expanded read-only validation on 2026-05-22 also confirmed programmes,
+programme details, commission groups, advertiser performance, empty creative
+and campaign reports, empty recent transactions, Link Builder quota, and gated
+stubs. Offers reached the documented singular endpoint
+`POST /publisher/2272397/promotions` but Awin returned HTTP 500 for the
+supplied account; the plural path returned 404, so the endpoint shape remains
+documented with a live caveat in `docs/networks/awin/api-inventory.md`.
 
 ## Phase 1: Credential Classification
 
@@ -135,6 +147,51 @@ After the smoke test, call each tool or adapter operation with explicit inputs:
 
 7. `listClicks`
    - Confirm it returns a `not_implemented` envelope, not an empty list.
+
+## Phase 4b: Awin-Specific Public API Checks
+
+The Awin reference implementation adds endpoint-specific tools beyond the
+canonical seven operations. Exercise these read-only surfaces with fixture
+tests first, then live calls where the account has relevant data:
+
+1. `affiliate_awin_list_accounts`
+   - Confirm `/accounts?type=publisher` returns the expected publisher account.
+
+2. `affiliate_awin_get_programme_details`
+   - Use an advertiser ID returned by `listProgrammes`.
+
+3. `affiliate_awin_list_commission_groups`
+   - Use the same joined advertiser ID.
+
+4. `affiliate_awin_list_commission_sharing_rules`
+   - Empty or forbidden responses can be acceptable for non-service-partner
+     accounts; document the exact outcome.
+
+5. `affiliate_awin_get_transactions_by_id`
+   - Run only if `listTransactions` produced a sample transaction ID.
+
+6. `affiliate_awin_list_transaction_queries`
+   - Treat empty-but-200 as valid when there are no current enquiries.
+
+7. `affiliate_awin_get_advertiser_performance`,
+   `affiliate_awin_get_creative_performance`, and
+   `affiliate_awin_get_campaign_performance`
+   - Use a recent period, `region=GB` unless the account is tied to another
+     region, and accept empty-but-200 as endpoint validation.
+
+8. `affiliate_awin_list_offers`
+   - Validate joined active offers first, then broader filters if useful.
+
+9. `affiliate_awin_get_link_builder_quota`
+   - Read-only; safe to run before link generation.
+
+10. `affiliate_awin_generate_tracking_links`
+    - Generate one non-shortened URL only when a joined advertiser ID is
+      available. Do not run broad batch generation as a routine live test.
+
+11. Product Feed and Proof of Purchase tools
+    - Confirm they return actionable stubs.
+    - Do not submit Proof of Purchase transactions.
 
 ## Phase 5: Regression And Documentation
 

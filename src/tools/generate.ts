@@ -14,18 +14,11 @@
 import { z } from 'zod';
 import type { NetworkAdapter, PublisherOperation } from '../shared/types.js';
 import { getAdapters } from '../shared/registry.js';
+import { generateAwinTools } from '../networks/awin/tools.js';
+import type { ToolDefinition } from './types.js';
+import { toJsonSchema } from './schema.js';
 
-/**
- * The shape we return for each tool. JSON Schema input shapes are derived from
- * Zod definitions so adapter generators can share them with the validator.
- */
-export interface ToolDefinition {
-  name: string;
-  description: string;
-  inputSchema: Record<string, unknown>;
-  /** Bound handler. Resolves to the result the MCP server should return as content. */
-  handle: (args: unknown) => Promise<unknown>;
-}
+export type { ToolDefinition } from './types.js';
 
 // Re-usable Zod schemas for tool inputs.
 const ProgrammeQuerySchema = z
@@ -66,39 +59,6 @@ const GenerateTrackingLinkSchema = z
   .object({ programmeId: z.string(), destinationUrl: z.string() })
   .strict();
 const EmptySchema = z.object({}).strict();
-
-// JSON-Schema-ish projections (the MCP SDK expects a plain object, not a Zod schema).
-function toJsonSchema(zodSchema: z.ZodTypeAny): Record<string, unknown> {
-  // Minimal hand-rolled projection. Enough for the SDK to advertise inputs.
-  // Detailed JSON Schema generation isn't a goal at v0.1 — adapters validate
-  // arguments via the Zod schema at call time.
-  if (zodSchema instanceof z.ZodObject) {
-    const shape = zodSchema.shape as Record<string, z.ZodTypeAny>;
-    const properties: Record<string, unknown> = {};
-    const required: string[] = [];
-    for (const [k, v] of Object.entries(shape)) {
-      properties[k] = describe(v);
-      if (!v.isOptional()) required.push(k);
-    }
-    const out: Record<string, unknown> = { type: 'object', properties, additionalProperties: false };
-    if (required.length > 0) out['required'] = required;
-    return out;
-  }
-  return { type: 'object', additionalProperties: true };
-}
-
-function describe(t: z.ZodTypeAny): Record<string, unknown> {
-  if (t instanceof z.ZodOptional) return describe(t.unwrap());
-  if (t instanceof z.ZodString) return { type: 'string' };
-  if (t instanceof z.ZodNumber) return { type: 'number' };
-  if (t instanceof z.ZodBoolean) return { type: 'boolean' };
-  if (t instanceof z.ZodArray) return { type: 'array', items: describe(t.element) };
-  if (t instanceof z.ZodUnion) {
-    return { oneOf: (t.options as z.ZodTypeAny[]).map(describe) };
-  }
-  if (t instanceof z.ZodObject) return toJsonSchema(t);
-  return {};
-}
 
 function toolNameFor(network: string, op: PublisherOperation): string {
   // e.g. `affiliate_awin_list_programmes`
@@ -229,6 +189,9 @@ export function generateMetaTools(): ToolDefinition[] {
 }
 
 export function generateAllTools(): ToolDefinition[] {
-  const adapterTools = getAdapters().flatMap((a) => generateToolsFor(a));
+  const adapterTools = getAdapters().flatMap((a) => [
+    ...generateToolsFor(a),
+    ...(a.slug === 'awin' ? generateAwinTools() : []),
+  ]);
   return [...generateMetaTools(), ...adapterTools];
 }

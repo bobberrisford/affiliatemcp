@@ -21,6 +21,19 @@ network's `network.json` under the `claim_status` key. Permitted values:
   exposed. A `broken` adapter blocks `npm run build` from completing if
   the network is still referenced in `src/shared/registry.ts`.
 
+## Tracking granularity
+
+Claims are tracked at two levels:
+
+- **Adapter claim status** in `src/networks/<slug>/network.json`, used for the
+  public table and release posture.
+- **Endpoint and journey status** in `docs/networks/<slug>/api-inventory.md`,
+  used to show exactly which public API surfaces are implemented,
+  fixture-tested, live-tested, gated, or intentionally unsupported.
+
+For Awin, the endpoint inventory is mandatory PR context. A future network
+should follow the same pattern once it becomes the reference-quality focus.
+
 ## Promotion criteria (draft)
 
 To move an adapter from `partial` to `production`:
@@ -28,10 +41,17 @@ To move an adapter from `partial` to `production`:
 1. The full set of canonical operations declared `supported` in
    `network.json` returns valid envelopes against a real publisher
    account, with at least one non-trivial result per operation.
-2. `npx affiliate-networks-mcp doctor <slug>` is green on a clean install.
-3. The findings doc records the test date and the (redacted) shape of the
+2. Every endpoint marked `Supported` in that network's API inventory has
+   fixture coverage and a live-test status of either validated or explicitly
+   empty-but-200 for the tested account.
+3. Every user journey listed in the inventory has a fixture-backed test and a
+   documented live-test outcome where live data is available.
+4. Gated or write-capable endpoints have clear activation requirements and do
+   not run live writes unless the maintainer explicitly approved that test.
+5. `npx affiliate-networks-mcp doctor <slug>` is green on a clean install.
+6. The findings doc records the test date and the (redacted) shape of the
    response for each operation.
-4. A maintainer signs off on the promotion PR.
+7. A maintainer signs off on the promotion PR.
 
 ## Demotion criteria
 
