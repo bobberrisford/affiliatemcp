@@ -15,7 +15,7 @@ the Account SID acts as the username and the Auth Token as the password.
 - API access on an Impact publisher account does not require a separate
   approval step. Both credentials are visible on the Settings → API
   screen as soon as the account is active.
-- A terminal in which you can run `npx affiliate-mcp setup` once the
+- A terminal in which you can run `npx affiliate-networks-mcp setup` once the
   steps below are complete.
 
 If you can see your Mediapartner dashboard after signing in — including
@@ -58,7 +58,7 @@ the *Partnerships*, *Reports*, and *Settings* navigation items — you are
 
    [SCREENSHOT: docs/networks/images/impact/5-auth-token.png]
 
-6. Back in your terminal, run `npx affiliate-mcp setup` and select
+6. Back in your terminal, run `npx affiliate-networks-mcp setup` and select
    **Impact** when prompted. Paste the Account SID when the wizard
    asks for `IMPACT_ACCOUNT_SID`, then paste the Auth Token when it
    asks for `IMPACT_AUTH_TOKEN`. The wizard validates the pair by
@@ -72,7 +72,7 @@ the *Partnerships*, *Reports*, and *Settings* navigation items — you are
 The wizard prints a confirmation line that the credential pair
 validated against Impact's `/Campaigns` endpoint and writes the two
 values to `~/.affiliate-mcp/.env` with file permissions `0600`. From
-that point on, `affiliate-mcp test impact` should report `ok` for all
+that point on, `affiliate-networks-mcp test impact` should report `ok` for all
 seven publisher operations. Impact is the only one of the four
 supported networks that exposes click-level data on the public
 publisher surface.
@@ -95,7 +95,7 @@ Impact's `/Actions` endpoint is documented to return intermittent 5xx
 responses when the report engine is warm-loading, and the same
 behaviour occasionally affects other endpoints. The setup wizard
 retries up to three times; if all three attempts fail with 5xx,
-wait a minute and re-run `npx affiliate-mcp setup`. If the failure
+wait a minute and re-run `npx affiliate-networks-mcp setup`. If the failure
 persists for more than ten minutes, check the Impact status page
 before assuming the credentials are wrong.
 

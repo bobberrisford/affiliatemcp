@@ -41,7 +41,7 @@ body:
     id: doctor-output
     attributes:
       label: Full doctor output
-      description: Run `affiliate-mcp doctor <slug>` and paste the entire JSON envelope.
+      description: Run `affiliate-networks-mcp doctor <slug>` and paste the entire JSON envelope.
       render: json
     validations:
       required: true

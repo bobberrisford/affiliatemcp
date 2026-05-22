@@ -228,7 +228,7 @@ function requirePublisherId(operation: string): string {
     network: SLUG,
     operation,
     hint:
-      'Run `affiliate-mcp setup awin` so the wizard can derive AWIN_PUBLISHER_ID ' +
+      'Run `affiliate-networks-mcp setup awin` so the wizard can derive AWIN_PUBLISHER_ID ' +
       'from your token, or set it explicitly in ~/.affiliate-mcp/.env.',
   });
 }

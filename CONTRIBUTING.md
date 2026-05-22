@@ -61,7 +61,7 @@ At the human level the path is:
 
 ## Fixing a broken adapter
 
-1. Reproduce the failure with `npx affiliate-mcp doctor <slug>`. Capture the
+1. Reproduce the failure with `npx affiliate-networks-mcp doctor <slug>`. Capture the
    verbatim diagnostic envelope.
 2. Open an issue using the `network-broken.yml` template before sending a
    PR — that lets other people pile on if they are seeing the same thing.

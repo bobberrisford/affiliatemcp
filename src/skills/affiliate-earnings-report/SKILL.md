@@ -11,7 +11,7 @@ You are producing a consolidated earnings report across all configured affiliate
 
 ## Step 1 — discover the wired networks
 
-Call `affiliate_list_networks`. The response is a `NetworkMeta[]`. If the list is empty, tell the user no networks are configured and suggest they run `affiliate-mcp setup`. Stop.
+Call `affiliate_list_networks`. The response is a `NetworkMeta[]`. If the list is empty, tell the user no networks are configured and suggest they run `affiliate-networks-mcp setup`. Stop.
 
 ## Step 2 — pick a period
 
@@ -50,7 +50,7 @@ Keep the table compact. Matter-of-fact tone, UK spelling.
 
 If the user asks for "this month vs last month", or hints at "is anything weird?", call `affiliate_<s>_earnings_summary` twice per network (current window and prior comparable window) and compare:
 
-- A network that produced > £0 in the prior window and £0 in the current window — flag as a potential outage and recommend `affiliate-mcp doctor <slug>`.
+- A network that produced > £0 in the prior window and £0 in the current window — flag as a potential outage and recommend `affiliate-networks-mcp doctor <slug>`.
 - A programme that contributed > 25% of a network's total in the prior window and 0% in the current window — flag as a potential programme drop.
 
 Be precise. Do not call something an anomaly without quoting the prior and current figures.

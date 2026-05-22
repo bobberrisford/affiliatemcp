@@ -217,7 +217,7 @@ export async function verifyAuth(): Promise<VerifyAuthOk | VerifyAuthFail> {
     clientId = requireCredential('EBAY_CLIENT_ID', {
       network: 'ebay',
       operation: 'verifyAuth',
-      hint: 'Run `affiliate-mcp setup ebay` to provide EBAY_CLIENT_ID.',
+      hint: 'Run `affiliate-networks-mcp setup ebay` to provide EBAY_CLIENT_ID.',
     });
   } catch (err) {
     if (err instanceof NetworkError) {

@@ -75,17 +75,17 @@ runs them by hand.
       clean directory (Node ≥ 20).
 - [ ] `npm run build` produces a working `dist/` (run
       `node dist/index.js --help`).
-- [ ] `affiliate-mcp setup` runs interactively against ALL five
+- [ ] `affiliate-networks-mcp setup` runs interactively against ALL five
       networks with real credentials:
   - [ ] Awin
   - [ ] CJ Affiliate
   - [ ] eBay Partner Network
   - [ ] Impact
   - [ ] Rakuten Advertising
-- [ ] `affiliate-mcp test` reports green on all five configured
+- [ ] `affiliate-networks-mcp test` reports green on all five configured
       networks (or reports specific known limitations cleanly — no
       generic errors).
-- [ ] `affiliate-mcp doctor awin` (and the equivalent per other
+- [ ] `affiliate-networks-mcp doctor awin` (and the equivalent per other
       networks) produces issue-paste-ready JSON: env paths resolved,
       config file mode `0600` confirmed, no secret values leaked.
 

@@ -22,7 +22,7 @@ Restart Claude Desktop after editing the file.
   "mcpServers": {
     "affiliate": {
       "command": "npx",
-      "args": ["affiliate-mcp"],
+      "args": ["affiliate-networks-mcp"],
       "env": {
         "AWIN_API_TOKEN": "your-token-here",
         "AWIN_PUBLISHER_ID": "your-id-here"
@@ -35,10 +35,10 @@ Restart Claude Desktop after editing the file.
 - `mcpServers.affiliate` — the key is the local name Claude Desktop uses to
   refer to this server in its UI. You can rename it to anything; tools will
   still be exposed under their `affiliate_<network>_…` names.
-- `command` — `npx` runs the published `affiliate-mcp` binary without a
+- `command` — `npx` runs the published `affiliate-networks-mcp` binary without a
   global install. If you have installed the package globally
-  (`npm install -g affiliate-mcp`), you can replace this with
-  `affiliate-mcp` and drop the `args` entry.
+  (`npm install -g affiliate-networks-mcp`), you can replace this with
+  `affiliate-networks-mcp` and drop the `args` entry.
 - `args` — the package name when invoked via `npx`. Add `--config-dir
   /some/path` here if you want to override the default `~/.affiliate-mcp/`
   config directory.
@@ -50,16 +50,16 @@ Restart Claude Desktop after editing the file.
 
 ## The recommended flow
 
-1. Run `npx affiliate-mcp setup` once. The wizard validates each credential
+1. Run `npx affiliate-networks-mcp setup` once. The wizard validates each credential
    against the live network and writes `~/.affiliate-mcp/.env`.
 2. Add the minimal config to Claude Desktop — only `command` and `args`:
 
    ```json
    {
      "mcpServers": {
-       "affiliate-mcp": {
+       "affiliate": {
          "command": "npx",
-         "args": ["affiliate-mcp"]
+         "args": ["affiliate-networks-mcp"]
        }
      }
    }
@@ -71,10 +71,10 @@ Restart Claude Desktop after editing the file.
 ## Troubleshooting
 
 - Tools do not appear: check the Claude Desktop logs (Settings → Developer →
-  View logs). Run `npx affiliate-mcp doctor` in a terminal to confirm the
+  View logs). Run `npx affiliate-networks-mcp doctor` in a terminal to confirm the
   server can start.
-- A specific network errors: run `npx affiliate-mcp doctor <slug>` (for
-  example `npx affiliate-mcp doctor awin`) and follow the suggested
+- A specific network errors: run `npx affiliate-networks-mcp doctor <slug>` (for
+  example `npx affiliate-networks-mcp doctor awin`) and follow the suggested
   remediation in the output.
 - You see no `affiliate_*` tools at all: the server probably failed to start
   because no credentials were configured. Run the wizard.

@@ -165,7 +165,7 @@ returned `TrackingLink` so the link's construction is fully auditable.
 ## Recommended next steps
 
 1. **Live validation in Chunk 8**: once a real Rakuten test account is
-   provisioned, run `affiliate-mcp validate rakuten` end-to-end and decide
+   provisioned, run `affiliate-networks-mcp validate rakuten` end-to-end and decide
    whether to bump `claim_status` to `production` (if all live ops pass) or
    leave at `partial` (if clicks remain inaccessible).
 

@@ -30,7 +30,7 @@ The canonical source per network is `docs/networks/<slug>.md` in this repo (e.g.
 
 ## Step 3 — fallback if the doc is missing
 
-If `docs/networks/<slug>.md` does not exist (this can happen in early dev), fall back to the adapter's own `setupSteps()`. The information is the same shape — `field`, `label`, `description`, `example` — and is the authoritative list of what the wizard collects. You can surface this by suggesting the user run `affiliate-mcp setup` and walking through what each prompt will ask for, based on the adapter's setup steps. The setup step descriptions per network:
+If `docs/networks/<slug>.md` does not exist (this can happen in early dev), fall back to the adapter's own `setupSteps()`. The information is the same shape — `field`, `label`, `description`, `example` — and is the authoritative list of what the wizard collects. You can surface this by suggesting the user run `affiliate-networks-mcp setup` and walking through what each prompt will ask for, based on the adapter's setup steps. The setup step descriptions per network:
 
 - **Awin** (`AWIN_API_TOKEN`, `AWIN_PUBLISHER_ID`): token from https://ui.awin.com/awin/publisher/profile/api; publisher id derived after auth.
 - **CJ Affiliate** (`CJ_API_TOKEN`, `CJ_COMPANY_ID`): personal access token from https://developers.cj.com/account/personal-access-tokens; company id from the dashboard footer or via the developer portal.
@@ -46,20 +46,20 @@ The user will ask things like:
 - "Where is that menu?" — name the exact UI path. If the doc lists it, quote it verbatim.
 - "I don't see the option." — ask which account type they have (publisher vs advertiser). Setup credentials live under the publisher dashboard for all four networks supported here.
 - "It says I'm not approved yet." — confirm approval timelines: Awin/CJ/Impact are usually instant for the API surface; Rakuten requires manual review.
-- "Where do I paste these?" — they get persisted into `.env` (or whatever `affiliate-mcp setup` writes to). Suggest running `affiliate-mcp setup` and pasting them when prompted — the wizard validates each before persisting.
+- "Where do I paste these?" — they get persisted into `.env` (or whatever `affiliate-networks-mcp setup` writes to). Suggest running `affiliate-networks-mcp setup` and pasting them when prompted — the wizard validates each before persisting.
 
 ## Step 5 — offer to launch the wizard
 
-Once the user says "I have the credentials" — recommend running `affiliate-mcp setup` (or `affiliate-mcp setup <slug>` to target one network). Tell them:
+Once the user says "I have the credentials" — recommend running `affiliate-networks-mcp setup` (or `affiliate-networks-mcp setup <slug>` to target one network). Tell them:
 
 - It validates each credential before saving by calling the adapter's `verifyAuth`.
 - It will refuse to overwrite an existing `.env` unless `--force` is passed.
-- After setup, `affiliate-mcp doctor` runs the full capabilities diagnostic, which is the same thing the `affiliate_run_diagnostic` MCP tool produces.
+- After setup, `affiliate-networks-mcp doctor` runs the full capabilities diagnostic, which is the same thing the `affiliate_run_diagnostic` MCP tool produces.
 
 ## Constraints
 
 - UK spelling.
 - Reference exact env var names (capitalised, underscored — `AWIN_API_TOKEN`, not "the Awin token").
-- Reference exact CLI commands (`affiliate-mcp setup`, `affiliate-mcp doctor <slug>`, `affiliate-mcp test <slug>`).
+- Reference exact CLI commands (`affiliate-networks-mcp setup`, `affiliate-networks-mcp doctor <slug>`, `affiliate-networks-mcp test <slug>`).
 - Do not invent dashboard UI elements. If the doc doesn't say where something lives and you don't remember, ask the user what they see.
 - Do not solve the problem for them — guide. The credentials must come from their dashboard, not yours.

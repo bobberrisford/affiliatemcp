@@ -15,7 +15,7 @@ time are flagged `[FILL IN]`.
 - [ ] Author / maintainer GitHub handle: `[FILL IN]`
 - [ ] Contact email for the registry's records: `[FILL IN]`
 - [ ] Screenshot(s) for the listing (if requested): `docs/images/report-table.png`
-      once rendered, plus a terminal screenshot of `affiliate-mcp setup`
+      once rendered, plus a terminal screenshot of `affiliate-networks-mcp setup`
       running; both `[FILL IN]` until captured.
 
 ## Short description (one sentence)
@@ -38,15 +38,15 @@ Affiliate, eBay Partner Network, Impact, and Rakuten Advertising, exposing
 locally on the publisher's machine; there is no hosted service, no
 account, and no telemetry. Credentials live in `~/.affiliate-mcp/.env`
 with file mode `0600` and never leave the host. An interactive setup
-wizard (`affiliate-mcp setup`) validates each credential against the
+wizard (`affiliate-networks-mcp setup`) validates each credential against the
 live API as it is entered.
 
 ## Install
 
 ```
-npm install -g affiliate-mcp
+npm install -g affiliate-networks-mcp
 # or, no install required:
-npx affiliate-mcp
+npx affiliate-networks-mcp
 ```
 
 ## Example MCP client configuration
@@ -58,9 +58,9 @@ shape:
 ```json
 {
   "mcpServers": {
-    "affiliate-mcp": {
+    "affiliate": {
       "command": "npx",
-      "args": ["affiliate-mcp"]
+      "args": ["affiliate-networks-mcp"]
     }
   }
 }

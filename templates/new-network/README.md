@@ -45,7 +45,7 @@ is not.
 ## Verifying
 
 ```
-affiliate-mcp test <slug>
+affiliate-networks-mcp test <slug>
 ```
 
 The CLI runs the live diagnostic — same engine as

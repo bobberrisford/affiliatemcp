@@ -80,7 +80,7 @@ describe('README.md (PRD §15.20)', () => {
     const quickStartMatch = body.match(/##\s+Quick[- ]start[\s\S]*?(?=^##\s)/im);
     expect(quickStartMatch).not.toBeNull();
     const quickStart = quickStartMatch![0];
-    const re = /npx\s+affiliate-mcp(?:\s+([a-z]+))?/g;
+    const re = /npx\s+affiliate-networks-mcp(?:\s+([a-z]+))?/g;
     let m: RegExpExecArray | null;
     while ((m = re.exec(quickStart)) !== null) {
       const sub = m[1];

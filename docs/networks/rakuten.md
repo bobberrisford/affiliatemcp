@@ -20,7 +20,7 @@ by hand.
   tab visible. The Publisher Solutions team must explicitly grant
   API access; documented turnaround is 3–7 business days, and the
   orchestrator's working estimate is 5 business days.
-- A terminal in which you can run `npx affiliate-mcp setup` once
+- A terminal in which you can run `npx affiliate-networks-mcp setup` once
   Rakuten has provisioned the credentials.
 
 "Approved" for the purposes of this guide means that when you open
@@ -62,7 +62,7 @@ before continuing (see step 1 below).
 
    [SCREENSHOT: docs/networks/images/rakuten/4-sites-sid.png]
 
-5. Back in your terminal, run `npx affiliate-mcp setup` and select
+5. Back in your terminal, run `npx affiliate-networks-mcp setup` and select
    **Rakuten Advertising** when prompted. Paste the *Client ID* when
    the wizard asks for `RAKUTEN_CLIENT_ID`, the *Client Secret* when
    it asks for `RAKUTEN_CLIENT_SECRET`, and the numeric Site ID when
@@ -84,7 +84,7 @@ before continuing (see step 1 below).
 The wizard prints a confirmation line that an OAuth2 access token was
 successfully exchanged at Rakuten's `/token` endpoint and writes the
 three values to `~/.affiliate-mcp/.env` with file permissions `0600`.
-From that point on, `affiliate-mcp test rakuten` should report `ok`
+From that point on, `affiliate-networks-mcp test rakuten` should report `ok`
 for all Rakuten operations except `listClicks`. Click-level reporting
 is gated by Rakuten as a paid tier and is unavailable on accounts
 that have not been upgraded; see `REPORT.md` for the full
@@ -105,7 +105,7 @@ affiliate-mcp will work normally with the other configured networks.
 
 Your tenant is provisioned against a different token host than the
 default. Set `RAKUTEN_TOKEN_URL=https://api.rakutenmarketing.com/token`
-in `~/.affiliate-mcp/.env` and re-run `npx affiliate-mcp setup`. Both
+in `~/.affiliate-mcp/.env` and re-run `npx affiliate-networks-mcp setup`. Both
 `api.linksynergy.com` and `api.rakutenmarketing.com` are valid
 Rakuten token hosts; the adapter defaults to `linksynergy.com` and
 accepts the environment-variable override for the other.
@@ -117,4 +117,4 @@ Secret is shown in full only at credential-generation time, so if
 you no longer have a copy you will need to regenerate the credential
 pair from the *API Credentials* tab — note that regenerating
 invalidates the previous secret. After generating fresh credentials,
-re-run `npx affiliate-mcp setup` and paste the new values.
+re-run `npx affiliate-networks-mcp setup` and paste the new values.

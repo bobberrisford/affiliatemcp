@@ -135,7 +135,7 @@ export async function runSetup(opts: SetupOptions = {}): Promise<number> {
 
   out('');
   out(`Wrote ${paths.envFile}.`);
-  out('You are set up. Test with `affiliate-mcp test`.');
+  out('You are set up. Test with `affiliate-networks-mcp test`.');
   return 0;
 }
 
@@ -214,12 +214,12 @@ async function runNetworkSetup(
       out(
         `${adapter.name} verifyAuth failed: ${result.reason}`,
       );
-      out('Credentials saved anyway so you can edit and re-run `affiliate-mcp test`.');
+      out('Credentials saved anyway so you can edit and re-run `affiliate-networks-mcp test`.');
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     out(`${adapter.name} verifyAuth raised an error: ${msg}`);
-    out('Credentials saved anyway so you can edit and re-run `affiliate-mcp test`.');
+    out('Credentials saved anyway so you can edit and re-run `affiliate-networks-mcp test`.');
   }
 
   return captured;

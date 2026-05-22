@@ -183,7 +183,7 @@ Use `docs/networks/awin.md` as the template. Sections:
 - Setup steps (numbered, screenshot-able).
 - Common failures (what the user sees, how to recover).
 - Known limitations (mirror `known_limitations` in `network.json`).
-- Verifying (`affiliate-mcp test <slug>`).
+- Verifying (`affiliate-networks-mcp test <slug>`).
 
 Tone: matter-of-fact, UK English. No marketing.
 
@@ -253,7 +253,7 @@ A network's API is misbehaving, or the adapter has a bug.
 
 1. **Reproduce.** Ask the user for the exact tool call that failed and the
    verbatim error envelope they received. If they cannot reproduce, ask them
-   to run `affiliate-mcp doctor` and share the output.
+   to run `affiliate-networks-mcp doctor` and share the output.
 2. **Read the existing adapter.** Find the operation in
    `src/networks/<slug>/adapter.ts`. Read it carefully. Look for an existing
    "why" comment near the suspicious behaviour.
@@ -353,7 +353,7 @@ reminder:
   at v0.1 depends on the current shape. Talk to the maintainers first.
 - **Setup wizard works locally but fails for the user.** Check
   `AFFILIATE_MCP_CONFIG_DIR` — the wizard honours an override that you may not
-  have set. Run `affiliate-mcp doctor` to see the resolved paths.
+  have set. Run `affiliate-networks-mcp doctor` to see the resolved paths.
 - **Tests pass locally but fail in CI.** Check the date in any test that uses
   `new Date()` without injection. The Awin adapter accepts a `now` argument
   on its helpers; CJ/Impact/Rakuten follow the same pattern. Tests that drift

@@ -17,7 +17,7 @@ alongside.
 - API access on an Awin publisher account does not require a separate
   approval step. As long as your publisher account itself is active, you can
   generate an API token on demand.
-- A terminal in which you can run `npx affiliate-mcp setup` once the steps
+- A terminal in which you can run `npx affiliate-networks-mcp setup` once the steps
   below are complete.
 
 If you can see your publisher dashboard after signing in — including the
@@ -57,7 +57,7 @@ If you can see your publisher dashboard after signing in — including the
 
    [SCREENSHOT: docs/networks/images/awin/5-publisher-id.png]
 
-6. Back in your terminal, run `npx affiliate-mcp setup` and select **Awin**
+6. Back in your terminal, run `npx affiliate-networks-mcp setup` and select **Awin**
    when prompted. Paste the API token when the wizard asks for
    `AWIN_API_TOKEN`. Press Enter to accept the auto-derived publisher ID
    when the wizard offers it (or override it if your token has access to
@@ -70,7 +70,7 @@ If you can see your publisher dashboard after signing in — including the
 The wizard prints a confirmation line that the token validated against the
 `/publishers` endpoint, shows the human-readable name of your publisher
 account, and writes the two values to `~/.affiliate-mcp/.env` with file
-permissions `0600`. From that point on, `affiliate-mcp test awin` should
+permissions `0600`. From that point on, `affiliate-networks-mcp test awin` should
 report `ok` for all Awin operations except `listClicks` (Awin does not
 expose click-level data via the public publisher API — see `REPORT.md` for
 the full known-limitation note).
@@ -100,5 +100,5 @@ This happens when an API token has access to more than one publisher
 account and Awin returns them in an order that does not match your
 expectations. Override the auto-derived value at the wizard's confirmation
 prompt by typing the numeric publisher ID you can see at the top of your
-publisher dashboard. You can re-run `npx affiliate-mcp setup` at any time
+publisher dashboard. You can re-run `npx affiliate-networks-mcp setup` at any time
 to change the stored value.

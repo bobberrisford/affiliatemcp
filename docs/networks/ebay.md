@@ -61,7 +61,7 @@ at least one campaign listed, your publisher account is good.
    creation form asks for a name, a default landing URL, and a
    marketplace).
 
-5. Back in your terminal, run `npx affiliate-mcp setup` and select
+5. Back in your terminal, run `npx affiliate-networks-mcp setup` and select
    **eBay Partner Network** when prompted.
 
    [SCREENSHOT: docs/networks/images/ebay/5-wizard-prompt.png]
@@ -76,7 +76,7 @@ at least one campaign listed, your publisher account is good.
 
 The wizard prints a confirmation line that the credentials exchanged for an
 access token, and writes the three values to `~/.affiliate-mcp/.env` with
-file permissions `0600`. From that point on, `affiliate-mcp test ebay`
+file permissions `0600`. From that point on, `affiliate-networks-mcp test ebay`
 should report `ok` for all seven publisher operations, with the caveat that
 new transactions take approximately 24-48 hours to appear in EPN's
 reporting endpoints — a fresh account's `listTransactions` call may return

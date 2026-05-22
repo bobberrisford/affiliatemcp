@@ -89,7 +89,7 @@ ID — not a merchant ID. This is documented in both `network.json`
 - **Reporting delay.** EPN's transaction reporting is documented to be
   delayed approximately 24-48 hours. A user calling `listTransactions`
   for "today" will not see today's clicks. This is honest behaviour but
-  worth flagging in the setup doc so the wizard's `affiliate-mcp test
+  worth flagging in the setup doc so the wizard's `affiliate-networks-mcp test
   ebay` output is interpretable on a fresh account.
 
 - **90-day window cap on reporting endpoints.** Both `/transaction` and

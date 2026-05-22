@@ -136,12 +136,12 @@ export async function refreshToken(opts: { reason: string }): Promise<string> {
       const clientId = requireCredential('RAKUTEN_CLIENT_ID', {
         network: 'rakuten',
         operation: 'auth.refreshToken',
-        hint: 'Set RAKUTEN_CLIENT_ID in ~/.affiliate-mcp/.env or run `affiliate-mcp setup rakuten`.',
+        hint: 'Set RAKUTEN_CLIENT_ID in ~/.affiliate-mcp/.env or run `affiliate-networks-mcp setup rakuten`.',
       });
       const clientSecret = requireCredential('RAKUTEN_CLIENT_SECRET', {
         network: 'rakuten',
         operation: 'auth.refreshToken',
-        hint: 'Set RAKUTEN_CLIENT_SECRET in ~/.affiliate-mcp/.env or run `affiliate-mcp setup rakuten`.',
+        hint: 'Set RAKUTEN_CLIENT_SECRET in ~/.affiliate-mcp/.env or run `affiliate-networks-mcp setup rakuten`.',
       });
       const sid = requireCredential('RAKUTEN_SID', {
         network: 'rakuten',

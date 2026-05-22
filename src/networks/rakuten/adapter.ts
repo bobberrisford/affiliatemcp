@@ -200,7 +200,7 @@ function requireSid(operation: string): string {
   return requireCredential('RAKUTEN_SID', {
     network: SLUG,
     operation,
-    hint: 'Set RAKUTEN_SID (publisher Site ID) — run `affiliate-mcp setup rakuten`.',
+    hint: 'Set RAKUTEN_SID (publisher Site ID) — run `affiliate-networks-mcp setup rakuten`.',
   });
 }
 

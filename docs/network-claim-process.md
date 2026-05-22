@@ -28,7 +28,7 @@ To move an adapter from `partial` to `production`:
 1. The full set of canonical operations declared `supported` in
    `network.json` returns valid envelopes against a real publisher
    account, with at least one non-trivial result per operation.
-2. `npx affiliate-mcp doctor <slug>` is green on a clean install.
+2. `npx affiliate-networks-mcp doctor <slug>` is green on a clean install.
 3. The findings doc records the test date and the (redacted) shape of the
    response for each operation.
 4. A maintainer signs off on the promotion PR.
