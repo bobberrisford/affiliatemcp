@@ -11,7 +11,7 @@
  * legitimately match within quoted upstream field names.
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -64,6 +64,29 @@ describe('README.md (PRD §15.20)', () => {
   it('links to at least one per-network setup doc', () => {
     const body = readReadme();
     expect(body).toMatch(/docs\/networks\/[a-z0-9-]+\.md/);
+  });
+
+  it('links every per-network setup doc that exists on disk', () => {
+    const body = readReadme();
+    const networksDir = path.join(REPO_ROOT, 'docs', 'networks');
+    const onDisk = readdirSync(networksDir).filter((f) => f.endsWith('.md'));
+    const missing = onDisk.filter((f) => !body.includes(`docs/networks/${f}`));
+    expect(missing, `README is missing links to: ${missing.join(', ')}`).toEqual([]);
+  });
+
+  it('quick-start npx commands reference real CLI subcommands', () => {
+    const body = readReadme();
+    const validSubcommands = new Set(['setup', 'test', 'doctor', 'validate']);
+    const quickStartMatch = body.match(/##\s+Quick[- ]start[\s\S]*?(?=^##\s)/im);
+    expect(quickStartMatch).not.toBeNull();
+    const quickStart = quickStartMatch![0];
+    const re = /npx\s+affiliate-mcp(?:\s+([a-z]+))?/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(quickStart)) !== null) {
+      const sub = m[1];
+      if (sub === undefined) continue; // bare invocation = start the server
+      expect(validSubcommands.has(sub), `unknown subcommand: ${sub}`).toBe(true);
+    }
   });
 
   it('contains the generated network table block', () => {

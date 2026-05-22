@@ -2,31 +2,31 @@
 
 > An MCP server for affiliate networks. Bring your own keys.
 
-**Status:** pre-launch. The five bundled adapters ship with `claim_status: partial` (or `experimental`, for the most recent addition) until they have been exercised against real publisher accounts.
+**Status:** pre-launch. The five bundled adapters ship as `claim_status: partial` (or `experimental`, for the most recent addition) until they have been exercised against real publisher accounts.
 
 ## What this is
 
 `affiliate-mcp` is a Model Context Protocol server that exposes affiliate
-network APIs as MCP tools. With five networks bundled — Awin, CJ Affiliate,
-eBay Partner Network, Impact, and Rakuten Advertising — it surfaces roughly
-35 tools that a publisher can call from any MCP-capable client (Claude
-Desktop, Claude Code, or any other) to answer questions like "which
-programmes are still pending after 90 days?" without logging in to five
-dashboards.
+network APIs as MCP tools. It bundles five networks — Awin, CJ Affiliate,
+eBay Partner Network, Impact, and Rakuten Advertising — so a publisher can ask
+an MCP client (Claude Desktop, Claude Code, others) questions like "which
+programmes are still pending after 90 days?" across all of them without
+opening five dashboards.
 
-The server runs locally on your machine. There is no hosted service, no
-account, and no telemetry. Credentials live in `~/.affiliate-mcp/.env` with
-file mode `0600`; they never leave your host. You bring your own publisher
-keys for each network you want wired in.
+The server runs locally. There is no hosted service, no account, and no
+telemetry. Credentials live in `~/.affiliate-mcp/.env` at file mode `0600`
+and never leave your host. You bring your own publisher keys for each
+network you want wired in.
 
-The companion document [`REPORT.md`](./REPORT.md) describes — in matter-of-fact
-terms — what each network's API supports, what it does not, and what is known
-to be flaky. It is regenerated from each adapter's `network.json` and findings
-docs, so it stays in step with the code.
+For per-network capability, known limitations, and the editorial baseline,
+see [`REPORT.md`](./REPORT.md). It is regenerated from each adapter's
+`network.json` and findings docs, so it stays in step with the code.
 
 ## Quick-start
 
-Install and run the interactive setup wizard:
+Requires Node.js 20 or newer.
+
+Run the interactive setup wizard:
 
 ```
 npx affiliate-mcp setup
@@ -34,11 +34,17 @@ npx affiliate-mcp setup
 
 The wizard walks one network at a time, validates each credential against the
 live API as you enter it, and writes the configuration to
-`~/.affiliate-mcp/.env` with permissions `0600`. No telemetry. No phone-home.
+`~/.affiliate-mcp/.env` at file mode `0600`.
 
-Once configured, point your MCP client at the server. A sample Claude Desktop
-config lives at [`examples/claude-desktop-config.json`](./examples/claude-desktop-config.json)
-(with explanatory notes at [`examples/claude-desktop-config.md`](./examples/claude-desktop-config.md)):
+Check that everything is wired up:
+
+```
+npx affiliate-mcp test
+```
+
+Then point your MCP client at the server. A sample Claude Desktop config
+lives at [`examples/claude-desktop-config.json`](./examples/claude-desktop-config.json)
+(with notes at [`examples/claude-desktop-config.md`](./examples/claude-desktop-config.md)):
 
 ```json
 {
@@ -51,8 +57,8 @@ config lives at [`examples/claude-desktop-config.json`](./examples/claude-deskto
 }
 ```
 
-Restart your client. The networks you configured will appear as tool calls
-prefixed `affiliate_<network>_…`.
+Restart your client. The configured networks appear as tool calls prefixed
+`affiliate_<network>_…`.
 
 ## Networks
 
@@ -78,6 +84,7 @@ credential locations, and common stumbling blocks:
 
 - [Awin](./docs/networks/awin.md) — API token + publisher ID.
 - [CJ Affiliate](./docs/networks/cj.md) — Developer Key (GraphQL).
+- [eBay Partner Network](./docs/networks/ebay.md) — OAuth client + secret + campaign ID; approval required.
 - [Impact](./docs/networks/impact.md) — Account SID + Auth Token.
 - [Rakuten Advertising](./docs/networks/rakuten.md) — OAuth client + SID; approval required.
 
@@ -92,16 +99,14 @@ MCP tools, named `affiliate_<network>_<snake_case_op>`:
 - `generate_tracking_link` — mint or construct a deeplink.
 - `verify_auth` — confirm credentials and surface the publisher identity.
 
-Two meta tools are always present regardless of how many networks are
-configured: `affiliate_list_networks` and `affiliate_run_diagnostic`. They let
-a client enumerate the active adapters and check live capabilities without
-calling each per-network tool one by one.
+Two meta tools are always present: `affiliate_list_networks` and
+`affiliate_run_diagnostic`. They let a client enumerate the active adapters
+and check live capabilities in a single call.
 
 ## Skills
 
-Four packaged skills nudge an MCP-capable client toward useful workflows
-without you having to remember tool names. Each lives under
-`src/skills/<name>/` and ships with examples:
+Four packaged skills wrap common workflows so the client picks the right
+tools without you naming them. Each lives under `src/skills/<name>/`:
 
 - [`affiliate-earnings-report`](./src/skills/affiliate-earnings-report/SKILL.md)
   — consolidated period earnings across every configured network.
@@ -116,9 +121,8 @@ without you having to remember tool names. Each lives under
 ## Status report
 
 [`REPORT.md`](./REPORT.md) is the editorial position: per-network capability,
-known limitations, and where the upstream API surprised us. It is regenerated
-on every adapter merge; treat it as the source of truth before opening an
-issue.
+known limitations, and where the upstream API surprised us. Regenerated on
+every adapter merge. Treat it as the source of truth before opening an issue.
 
 ## For developers
 
@@ -157,6 +161,7 @@ MIT. See [`LICENCE`](./LICENCE).
 ## Acknowledgements
 
 This project is only possible because the engineering teams at Awin, CJ
-Affiliate, Impact, and Rakuten Advertising publish public, documented APIs
-for their publisher data. The adapters here read those APIs; they do not
-scrape, simulate, or work around any rate or access limits.
+Affiliate, eBay Partner Network, Impact, and Rakuten Advertising publish
+public, documented APIs for their publisher data. The adapters here read
+those APIs; they do not scrape, simulate, or work around any rate or access
+limits.
