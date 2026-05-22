@@ -133,6 +133,8 @@ type. A few starting points:
   declined ones. You can also paste a list of URLs or an HTML/markdown
   document directly.
 
+## Networks
+
 The networks bundled today are listed below. Each one supports the same
 seven operations: list programmes, get a single programme, list
 transactions, list clicks, summarise earnings for a period, mint a
