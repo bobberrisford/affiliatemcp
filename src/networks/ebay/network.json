@@ -1,0 +1,20 @@
+{
+  "slug": "ebay",
+  "name": "eBay Partner Network",
+  "base_url": "https://api.ebay.com",
+  "auth_model": "oauth2",
+  "env_vars": ["EBAY_CLIENT_ID", "EBAY_CLIENT_SECRET", "EBAY_CAMPAIGN_ID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": true,
+  "setup_approval_days_typical": 3,
+  "known_limitations": [
+    "eBay Partner Network exposes eBay itself as the sole advertiser; \"programmes\" in this adapter map to EPN campaigns, not to third-party merchants.",
+    "Transaction (\"earnings\") reporting is delayed approximately 24-48 hours; today's clicks rarely appear in listTransactions until the next reporting cycle.",
+    "Click-level reporting is paginated and capped at 90-day windows per EPN's reporting API; the adapter chunks wider ranges."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-05-21",
+  "supports_brand_ops": false,
+  "docs_url": "https://partnernetwork.ebay.com/help/integration-center/api-documentation"
+}

@@ -1,0 +1,68 @@
+{
+  "transactions": [
+    {
+      "transactionId": "txn-2025-001",
+      "campaignId": "5338000001",
+      "campaignName": "Atolls Bookshop — UK site",
+      "itemId": "385123456789",
+      "itemTitle": "Vintage Penguin paperback bundle",
+      "eventDate": "2024-09-01T10:00:00Z",
+      "earningsDate": "2024-09-01T10:00:00Z",
+      "clearedDate": "2024-09-15T00:00:00Z",
+      "status": "CLEARED",
+      "saleAmount": { "value": "100.00", "currency": "GBP" },
+      "earningsAmount": { "value": "4.00", "currency": "GBP" },
+      "quantity": 1,
+      "marketplaceId": "EBAY_GB"
+    },
+    {
+      "transactionId": "txn-2025-002",
+      "campaignId": "5338000001",
+      "campaignName": "Atolls Bookshop — UK site",
+      "itemId": "385234567890",
+      "itemTitle": "Reef field guide hardback",
+      "eventDate": "2025-12-20T18:00:00Z",
+      "earningsDate": "2025-12-20T18:00:00Z",
+      "status": "PENDING",
+      "saleAmount": { "value": "50.00", "currency": "GBP" },
+      "earningsAmount": { "value": "2.00", "currency": "GBP" },
+      "quantity": 1,
+      "marketplaceId": "EBAY_GB"
+    },
+    {
+      "transactionId": "txn-2025-003",
+      "campaignId": "5338000001",
+      "campaignName": "Atolls Bookshop — UK site",
+      "itemId": "385345678901",
+      "itemTitle": "Atoll postcards (set of 12)",
+      "eventDate": "2025-08-01T09:00:00Z",
+      "earningsDate": "2025-08-01T09:00:00Z",
+      "clearedDate": "2025-08-20T00:00:00Z",
+      "status": "CANCELLED",
+      "saleAmount": { "value": "200.00", "currency": "GBP" },
+      "earningsAmount": { "value": "0.00", "currency": "GBP" },
+      "quantity": 1,
+      "cancelReason": "Buyer cancelled within return window",
+      "marketplaceId": "EBAY_GB"
+    },
+    {
+      "transactionId": "txn-2025-004",
+      "campaignId": "5338000001",
+      "campaignName": "Atolls Bookshop — UK site",
+      "itemId": "385456789012",
+      "itemTitle": "Snorkel set — beginner",
+      "eventDate": "2024-01-05T12:00:00Z",
+      "earningsDate": "2024-01-05T12:00:00Z",
+      "clearedDate": "2024-01-20T00:00:00Z",
+      "paidDate": "2024-02-15T00:00:00Z",
+      "status": "PAID",
+      "saleAmount": { "value": "75.00", "currency": "GBP" },
+      "earningsAmount": { "value": "3.00", "currency": "GBP" },
+      "quantity": 1,
+      "marketplaceId": "EBAY_GB"
+    }
+  ],
+  "total": 4,
+  "offset": 0,
+  "limit": 100
+}
