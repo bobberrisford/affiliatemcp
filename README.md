@@ -137,6 +137,7 @@ tracking link, and confirm auth.
 | Network | Setup time | Approval required | Supported ops | Notes |
 | --- | ---: | --- | ---: | --- |
 | Awin | 5 min | no | 6 / 7 | no clicks |
+| Awin (advertiser) | 6 min | no | 7 / 7 | see notes |
 | CJ Affiliate | 8 min | no | 6 / 7 | no clicks |
 | CJ Affiliate (advertiser) | 8 min | no | 7 / 7 | pagination quirks |
 | eBay Partner Network | 10 min | yes (~3 days) | 7 / 7 | see notes |
@@ -208,6 +209,7 @@ Each network has a short page covering dashboard navigation, where to
 click for credentials, and common stumbling blocks:
 
 - [Awin](./docs/networks/awin.md) — API token + publisher ID.
+- [Awin (advertiser)](./docs/networks/awin-advertiser.md) — OAuth bearer token; multi-brand via `GET /accounts`; read-only.
 - [CJ Affiliate](./docs/networks/cj.md) — Developer Key (GraphQL).
 - [CJ Affiliate (advertiser)](./docs/networks/cj-advertiser.md) — Personal Access Token (GraphQL); multi-brand via CID list; read-only.
 - [eBay Partner Network](./docs/networks/ebay.md) — OAuth client + secret + campaign ID; approval required.

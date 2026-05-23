@@ -15,6 +15,7 @@
  */
 
 import './awin/adapter.js';
+import './awin-advertiser/adapter.js';
 import './cj/adapter.js';
 import './cj-advertiser/adapter.js';
 import './ebay/adapter.js';

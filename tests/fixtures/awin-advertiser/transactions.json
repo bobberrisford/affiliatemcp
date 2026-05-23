@@ -1,0 +1,40 @@
+[
+  {
+    "id": 9001,
+    "url": "https://acme.example.com/checkout",
+    "advertiserId": 100001,
+    "publisherId": 555001,
+    "publisherName": "BestDeals.com",
+    "campaign": "Spring Sale",
+    "commissionStatus": "approved",
+    "saleAmount": { "amount": 129.99, "currency": "GBP" },
+    "commissionAmount": { "amount": 12.99, "currency": "GBP" },
+    "clickDate": "2026-04-15T09:55:00Z",
+    "transactionDate": "2026-04-15T10:00:00Z",
+    "validationDate": "2026-04-20T10:00:00Z"
+  },
+  {
+    "id": 9002,
+    "advertiserId": 100001,
+    "publisherId": 555002,
+    "publisherName": "Coupon Cabin",
+    "campaign": "Spring Sale",
+    "commissionStatus": "pending",
+    "saleAmount": { "amount": 199.0, "currency": "GBP" },
+    "commissionAmount": { "amount": 19.9, "currency": "GBP" },
+    "transactionDate": "2026-05-01T10:00:00Z"
+  },
+  {
+    "id": 9003,
+    "advertiserId": 100001,
+    "publisherId": 555001,
+    "publisherName": "BestDeals.com",
+    "campaign": "Spring Sale",
+    "commissionStatus": "declined",
+    "saleAmount": { "amount": 50.0, "currency": "GBP" },
+    "commissionAmount": { "amount": 5.0, "currency": "GBP" },
+    "transactionDate": "2026-03-15T10:00:00Z",
+    "validationDate": "2026-03-20T10:00:00Z",
+    "declineReason": "Customer returned the item within 14 days"
+  }
+]

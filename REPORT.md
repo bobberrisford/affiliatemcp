@@ -32,6 +32,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Network | Setup time (min) | Approval | Ops supported | Known limitations | Claim status | Adapter | Last verified |
 | --- | ---: | --- | ---: | ---: | --- | --- | --- |
 | Awin | 5 | no | 6 / 7 | 1 | partial | 0.1.0 | 2026-05-21 |
+| Awin (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-05-23 |
 | CJ Affiliate | 8 | no | 6 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
 | CJ Affiliate (advertiser) | 8 | no | 7 / 7 | 7 | experimental | 0.1.0 | 2026-05-23 |
 | eBay Partner Network | 10 | yes (~3 days) | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-21 |
@@ -193,6 +194,46 @@ back to an API call only when the network mints a per-link tracking ID.
   provided we stay inside Awin's burst tolerance.
 - **`/reports/aggregated` shortcut**: an optimisation for callers who want
   totals only and don't need per-transaction `ageDays`. Not needed for v0.1.
+
+## Awin (advertiser)
+
+### Quick facts
+
+- **Slug**: `awin-advertiser`
+- **Auth model**: oauth2
+- **Base URL**: https://api.awin.com
+- **Environment variables**: `AWIN_ADVERTISER_API_TOKEN`
+- **Setup time estimate**: 6 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-05-23
+- **Documentation**: https://developer.awin.com/apidocs
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Read-only at v0.1. The HTTP client refuses any non-GET method client-side; pair this with a token scoped to read-only operations at Awin for defence in depth.
+- Hard rate limit: Awin permits 20 API calls per minute per user. The client enforces a process-wide token bucket at 20 requests per 60 seconds and queues bursty multi-brand operations rather than failing fast.
+- Awin's advertiser API is gated to the Accelerate and Advanced advertiser plans. Brands on the Entry-tier plan appear in `/accounts` output but data endpoints return 401/403; the adapter does not probe each brand (rate-budget reasons — see next entry), so the wizard surfaces a graceful 'found but not API-accessible — upgrade or skip' message at brand-registration time instead.
+- `listBrands` calls `GET /accounts` and filters `type === 'advertiser'`. To stay under the 20-per-minute rate budget on accounts with many advertisers, the adapter does NOT issue per-brand probes — all advertiser accounts are reported with `apiEnabled: true`.
+- `listProgrammes` is synthetic: Awin programmes are configured in the UI and not enumerated under `/advertisers/{id}/programmes` on every tenant. The adapter returns one Programme per advertiserId keyed on the call context. `// TODO(verify)` against a live Accelerate tenant.
+- `listTransactions` maps Awin's `declined` status onto the canonical `reversed` value. Awin's `dateType` is exposed as `transaction` (default) or `validation`.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/awin-advertiser.md`._
 
 ## CJ Affiliate
 
@@ -1145,4 +1186,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-05-23 09:32 UTC._
+_Last regenerated 2026-05-23 09:49 UTC._
