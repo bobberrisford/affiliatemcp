@@ -39,8 +39,9 @@ describe('README.md (PRD §15.20)', () => {
   it('contains the required sections', () => {
     const body = readReadme();
 
-    // "Quick-start" (or "Quick start")
-    expect(body).toMatch(/^##\s+Quick[- ]start\b/im);
+    // "Quick-start" / "Quick start" / "Getting started" — accept the
+    // publisher-friendly rephrasing as long as the section exists.
+    expect(body).toMatch(/^##\s+(Quick[- ]start|Getting started)\b/im);
 
     // "Networks" — top-level mention is enough.
     expect(body).toMatch(/^##\s+Networks\b/im);
@@ -48,8 +49,9 @@ describe('README.md (PRD §15.20)', () => {
     // "Per-network setup" or "setup docs" — be permissive.
     expect(body).toMatch(/^##\s+(Per-network setup|Setup docs?)\b/im);
 
-    // "Tool surface" or "Tools".
-    expect(body).toMatch(/^##\s+(Tool surface|Tools)\b/im);
+    // "Tool surface" / "Tools" / "For the curious" — the technical
+    // section can be framed for either audience.
+    expect(body).toMatch(/^##\s+(Tool surface|Tools|For the curious)\b/im);
 
     // "Licence" or "License" — UK spelling is the project default but both
     // are accepted defensively.
@@ -77,7 +79,7 @@ describe('README.md (PRD §15.20)', () => {
   it('quick-start npx commands reference real CLI subcommands', () => {
     const body = readReadme();
     const validSubcommands = new Set(['setup', 'test', 'doctor', 'validate']);
-    const quickStartMatch = body.match(/##\s+Quick[- ]start[\s\S]*?(?=^##\s)/im);
+    const quickStartMatch = body.match(/##\s+(?:Quick[- ]start|Getting started)[\s\S]*?(?=^##\s)/im);
     expect(quickStartMatch).not.toBeNull();
     const quickStart = quickStartMatch![0];
     const re = /npx\s+affiliate-networks-mcp(?:\s+([a-z]+))?/g;

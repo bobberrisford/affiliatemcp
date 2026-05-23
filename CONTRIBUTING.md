@@ -1,7 +1,10 @@
 # Contributing to affiliate-mcp
 
-Thanks for considering a contribution. This document is the human-facing
-companion to `.claude/skills/contribute/SKILL.md` (which targets Claude
+Thanks for considering a contribution.
+
+If you work for an affiliate network i would love for you to add your network APIs and or optimise what i have added already
+
+This document is the human-facing companion to `.claude/skills/contribute/SKILL.md` (which targets Claude
 Code). You do not need to use Claude Code to contribute — everything here
 can be done by hand.
 
