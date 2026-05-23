@@ -12,7 +12,7 @@
  */
 
 import { z } from 'zod';
-import type { NetworkAdapter, PublisherOperation } from '../shared/types.js';
+import type { NetworkAdapter, AdapterOperation } from '../shared/types.js';
 import { getAdapters } from '../shared/registry.js';
 
 /**
@@ -100,14 +100,14 @@ function describe(t: z.ZodTypeAny): Record<string, unknown> {
   return {};
 }
 
-function toolNameFor(network: string, op: PublisherOperation): string {
+function toolNameFor(network: string, op: AdapterOperation): string {
   // e.g. `affiliate_awin_list_programmes`
   const snake = op.replace(/([A-Z])/g, '_$1').toLowerCase();
   return `affiliate_${network}_${snake}`.replace(/__+/g, '_');
 }
 
 interface OpSpec {
-  op: PublisherOperation;
+  op: AdapterOperation;
   description: (networkName: string) => string;
   schema: z.ZodTypeAny;
   invoke: (adapter: NetworkAdapter, args: unknown) => Promise<unknown>;

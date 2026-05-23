@@ -36,6 +36,8 @@ function makeFixture(): string {
       adapter_version: '0.1.0',
       last_verified: '2026-05-21',
       supports_brand_ops: false,
+      side: 'publisher',
+      credential_scope: 'single-brand',
     },
     {
       slug: 'rakuten',
@@ -53,6 +55,8 @@ function makeFixture(): string {
       adapter_version: '0.1.0',
       last_verified: '2026-05-21',
       supports_brand_ops: false,
+      side: 'publisher',
+      credential_scope: 'single-brand',
     },
   ];
   for (const n of networks) {

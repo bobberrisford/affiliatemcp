@@ -118,6 +118,8 @@ const META: NetworkMeta = {
   setupTimeEstimateMinutes: 10,
   setupRequiresApproval: true,
   setupApprovalDaysTypical: 3,
+  side: 'publisher',
+  credentialScope: 'single-brand',
 };
 
 // ---------------------------------------------------------------------------

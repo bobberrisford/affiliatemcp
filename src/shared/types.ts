@@ -24,7 +24,7 @@ export type NetworkSlug = string;
  * Two further admin operations (`listPublishers`, `listPublisherSectors`) are
  * defined on `NetworkAdapter` but throw `NotImplementedError` at v0.1.
  */
-export type PublisherOperation =
+export type AdapterOperation =
   | 'listProgrammes'
   | 'getProgramme'
   | 'listTransactions'
@@ -35,7 +35,7 @@ export type PublisherOperation =
 
 export type AdminOperation = 'listPublishers' | 'listPublisherSectors';
 
-export type AnyOperation = PublisherOperation | AdminOperation;
+export type AnyOperation = AdapterOperation | AdminOperation;
 
 export interface NetworkMeta {
   slug: NetworkSlug;
@@ -51,6 +51,16 @@ export interface NetworkMeta {
   setupTimeEstimateMinutes: number;
   setupRequiresApproval: boolean;
   setupApprovalDaysTypical?: number;
+  /**
+   * Which side of the affiliate relationship this adapter integrates with.
+   * Inert metadata at this stage — no code path branches on it yet.
+   */
+  side: 'publisher' | 'advertiser';
+  /**
+   * Whether a single set of credentials addresses one brand or many.
+   * Inert metadata at this stage — no code path branches on it yet.
+   */
+  credentialScope: 'single-brand' | 'multi-brand';
 }
 
 export interface OperationCapability {

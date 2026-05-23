@@ -35,6 +35,12 @@
   "_comment_supports_brand_ops": "TODO: false at v0.1 for every network. Lights up in v0.2 when a network implements listPublishers / listPublisherSectors.",
   "supports_brand_ops": false,
 
+  "_comment_side": "TODO: one of publisher | advertiser. Which side of the affiliate relationship this adapter integrates with. 'publisher' for adapters that act on behalf of a publisher account (the norm at v0.1); 'advertiser' reserved for future brand-side adapters. Inert metadata at this stage — no code path branches on it yet.",
+  "side": "publisher",
+
+  "_comment_credential_scope": "TODO: one of single-brand | multi-brand. Whether one set of credentials addresses one brand or many. 'single-brand' for one publisher account per credentials set (the norm at v0.1); 'multi-brand' reserved for network credentials that span multiple brands. Inert metadata at this stage — no code path branches on it yet.",
+  "credential_scope": "single-brand",
+
   "_comment_docs_url": "TODO: optional but include where possible. Link to the API documentation home.",
   "docs_url": "https://example.com/docs"
 }

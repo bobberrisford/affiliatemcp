@@ -39,6 +39,8 @@ export const NetworkJsonSchema = z
     adapter_version: z.string().regex(/^\d+\.\d+\.\d+/),
     last_verified: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     supports_brand_ops: z.boolean(),
+    side: z.enum(['publisher', 'advertiser']),
+    credential_scope: z.enum(['single-brand', 'multi-brand']),
     docs_url: z.string().url().optional(),
   })
   .strict();

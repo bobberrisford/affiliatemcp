@@ -23,6 +23,8 @@ function fakeAdapter(slug: string): NetworkAdapter {
       supportsBrandOps: false,
       setupTimeEstimateMinutes: 1,
       setupRequiresApproval: false,
+      side: 'publisher',
+      credentialScope: 'single-brand',
     },
     resilienceConfig: { default: DEFAULT_RESILIENCE },
     listProgrammes: async () => [],

@@ -16,6 +16,8 @@ describe('NetworkJsonSchema', () => {
       adapter_version: '0.1.0',
       last_verified: '2026-01-01',
       supports_brand_ops: false,
+      side: 'publisher',
+      credential_scope: 'single-brand',
     });
     expect(r.success).toBe(true);
   });
@@ -34,6 +36,8 @@ describe('NetworkJsonSchema', () => {
       adapter_version: '0.1.0',
       last_verified: '2026-01-01',
       supports_brand_ops: false,
+      side: 'publisher',
+      credential_scope: 'single-brand',
     });
     expect(r.success).toBe(false);
   });
@@ -52,6 +56,8 @@ describe('NetworkJsonSchema', () => {
       adapter_version: '0.1.0',
       last_verified: '2026-01-01',
       supports_brand_ops: false,
+      side: 'publisher',
+      credential_scope: 'single-brand',
     });
     expect(r.success).toBe(false);
   });

@@ -83,6 +83,17 @@ const META: NetworkMeta = {
   setupTimeEstimateMinutes: 10,
   // TODO: true if the network gates API access behind manual approval.
   setupRequiresApproval: false,
+  // TODO: which side of the affiliate relationship this adapter integrates with.
+  // `publisher` for adapters that act on behalf of a publisher account (the
+  // norm at v0.1); `advertiser` reserved for future brand-side adapters.
+  // Inert metadata at this stage — no code path branches on it yet.
+  side: 'publisher',
+  // TODO: whether a single set of credentials addresses one brand or many.
+  // `single-brand` for one publisher account per credentials set (the norm
+  // at v0.1); `multi-brand` reserved for network credentials that span
+  // multiple brands. Inert metadata at this stage — no code path branches
+  // on it yet.
+  credentialScope: 'single-brand',
 };
 
 export class TemplateNetworkAdapter implements NetworkAdapter {

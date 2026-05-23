@@ -31,6 +31,8 @@ function fakeAdapter(slug: string, name: string): NetworkAdapter {
       supportsBrandOps: false,
       setupTimeEstimateMinutes: 0,
       setupRequiresApproval: false,
+      side: 'publisher',
+      credentialScope: 'single-brand',
     },
     resilienceConfig: {
       default: {

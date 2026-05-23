@@ -25,7 +25,7 @@ import path from 'node:path';
 import type {
   AnyOperation,
   NetworkCapabilities,
-  PublisherOperation,
+  AdapterOperation,
 } from '../src/shared/types.js';
 
 // ---------------------------------------------------------------------------
@@ -48,6 +48,8 @@ export interface NetworkManifest {
   adapter_version: string;
   last_verified: string;
   supports_brand_ops: boolean;
+  side: 'publisher' | 'advertiser';
+  credential_scope: 'single-brand' | 'multi-brand';
   docs_url?: string;
 }
 
@@ -74,7 +76,7 @@ export interface ReportData {
  * capability table, plus listClicks (already in the canonical set). Kept
  * here for the generators so the table column order stays deterministic.
  */
-export const REPORTED_OPERATIONS: ReadonlyArray<PublisherOperation> = [
+export const REPORTED_OPERATIONS: ReadonlyArray<AdapterOperation> = [
   'listProgrammes',
   'getProgramme',
   'listTransactions',
