@@ -28,17 +28,25 @@ export function requirePositiveIntegerId(
 ): string {
   const id = String(value);
   if (!/^\d+$/.test(id) || Number(id) <= 0) {
-    throw new NetworkError(
-      buildErrorEnvelope({
-        type: 'config_error',
-        network: AWIN_SLUG,
-        operation,
-        message: `${fieldName} must be a positive integer; received "${id}".`,
-        hint: 'Use the numeric Awin advertiser/publisher ID shown in the Awin dashboard or returned by list tools.',
-      }),
+    throw configError(
+      operation,
+      `${fieldName} must be a positive integer; received "${id}".`,
+      'Use the numeric Awin advertiser/publisher ID shown in the Awin dashboard or returned by list tools.',
     );
   }
   return id;
+}
+
+export function configError(operation: string, message: string, hint?: string): NetworkError {
+  return new NetworkError(
+    buildErrorEnvelope({
+      type: 'config_error',
+      network: AWIN_SLUG,
+      operation,
+      message,
+      hint,
+    }),
+  );
 }
 
 export function toDateOnly(value: string | undefined, fallback: Date): string {

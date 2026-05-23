@@ -11,10 +11,10 @@ for current Awin API behavior.
 ## Local Setup
 
 Use the workspace-local config directory so credentials stay out of git and do
-not depend on a global machine setup:
+not depend on a global machine setup. From the repo root:
 
 ```sh
-export AFFILIATE_MCP_CONFIG_DIR=/Users/othmanb/Desktop/affiliate/affiliatemcp/.affiliate-mcp
+export AFFILIATE_MCP_CONFIG_DIR="$(pwd)/.affiliate-mcp"
 ```
 
 The local `.affiliate-mcp/.env` file is git-ignored and should contain:
@@ -101,7 +101,7 @@ Acceptance criteria:
 Once a usable token and publisher ID are configured:
 
 ```sh
-AFFILIATE_MCP_CONFIG_DIR=/Users/othmanb/Desktop/affiliate/affiliatemcp/.affiliate-mcp npm run dev -- test awin
+AFFILIATE_MCP_CONFIG_DIR="$(pwd)/.affiliate-mcp" npm run dev -- test awin
 ```
 
 Expected result:

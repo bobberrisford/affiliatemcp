@@ -86,7 +86,7 @@ describe('Awin fixture-backed user journeys', () => {
   it('discovers joined offers and generates a tracking link', async () => {
     mockFetchQueue([
       fakeResponse(loadFixture('offers.json')),
-      fakeResponse(loadFixture('link-builder.json')),
+      fakeResponse(loadFixture('link-builder-batch.json')),
     ]);
     const offers = await tool('affiliate_awin_list_offers').handle({
       membership: 'joined',
@@ -99,12 +99,14 @@ describe('Awin fixture-backed user journeys', () => {
           advertiserId: 1001,
           destinationUrl: 'https://www.atolls-bookshop.example.com/paperbacks',
         },
+        {
+          advertiserId: 1001,
+          destinationUrl: 'https://www.atolls-bookshop.example.com/stationery',
+        },
       ],
     });
     expect((offers as { offers: unknown[] }).offers).toHaveLength(1);
-    expect((link as { links: Array<{ trackingUrl?: string }> }).links[0]?.trackingUrl).toContain(
-      'awin1.com',
-    );
+    expect((link as { responses: unknown[] }).responses).toHaveLength(2);
   });
 
   it('inspects programme details and commission groups before promotion', async () => {

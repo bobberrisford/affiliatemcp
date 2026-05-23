@@ -38,7 +38,7 @@ Summarise total commission, sales, clicks if available, top advertisers, biggest
     ],
     render: (args) => `Find useful Awin offers for the publisher.
 
-Call affiliate_awin_list_offers with membership=${args.membership ?? 'joined'}, regionCodes=${args.region ?? 'GB'}${args.type ? `, and type=${args.type}` : ''}${args.exclusiveOnly ? `, and exclusiveOnly=${args.exclusiveOnly}` : ''}. If the user has a specific advertiser or topic in mind, filter or rank the returned offers accordingly.
+Call affiliate_awin_list_offers with membership=${args.membership ?? 'joined'}, regionCodes=["${args.region ?? 'GB'}"]${args.type ? `, and type=${args.type}` : ''}${args.exclusiveOnly ? `, and exclusiveOnly=${args.exclusiveOnly}` : ''}. If the user has a specific advertiser or topic in mind, filter or rank the returned offers accordingly.
 
 Return a short shortlist with advertiser, offer title, type, dates, voucher visibility, destination URL, tracking URL when present, and any caveats about not-joined advertisers or hidden voucher codes.`,
   },

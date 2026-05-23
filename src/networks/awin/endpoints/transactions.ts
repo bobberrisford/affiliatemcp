@@ -2,6 +2,7 @@ import { awinRequest } from '../client.js';
 import { DEFAULT_RESILIENCE } from '../../../shared/resilience.js';
 import {
   AWIN_SLUG,
+  configError,
   csv,
   defaultReportWindow,
   requirePositiveIntegerId,
@@ -55,7 +56,11 @@ export async function getTransactionsByIds(
   const token = requireToken(operation);
   const ids = input.ids.map((id) => requirePositiveIntegerId(id, 'ids', operation));
   if (ids.length === 0) {
-    throw new Error('ids must contain at least one Awin transaction id.');
+    throw configError(
+      operation,
+      'ids must contain at least one Awin transaction id.',
+      'Pass one or more numeric transaction IDs returned by affiliate_awin_list_transactions.',
+    );
   }
 
   const raw = await awinRequest<unknown>({

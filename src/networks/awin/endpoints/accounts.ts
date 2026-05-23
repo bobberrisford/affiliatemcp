@@ -49,7 +49,12 @@ export async function listAccounts(
 
   const rawAccounts = normaliseAccountsResponse(response);
   const accounts = rawAccounts
-    .filter((account) => accountType === 'all' || account.accountType === accountType)
+    .filter(
+      (account) =>
+        accountType === 'all' ||
+        account.accountType === undefined ||
+        account.accountType === accountType,
+    )
     .map(toAccount);
 
   return {

@@ -30,6 +30,16 @@ describe('Awin MCP prompts', () => {
     }
   });
 
+  it('renders offer filters with array-shaped regionCodes', () => {
+    const prompt = getPrompt('awin_offer_finder', { region: 'GB' });
+    const content = prompt.messages[0]?.content;
+    expect(content?.type).toBe('text');
+    if (content?.type === 'text') {
+      expect(content.text).toContain('regionCodes=["GB"]');
+      expect(content.text).not.toContain('regionCodes=GB');
+    }
+  });
+
   it('throws a clear error for an unknown prompt', () => {
     expect(() => getPrompt('not_a_real_prompt')).toThrow(/No prompt named/);
   });

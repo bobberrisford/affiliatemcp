@@ -3,7 +3,6 @@ import type { ToolDefinition } from '../../tools/types.js';
 import { toJsonSchema } from '../../tools/schema.js';
 import {
   downloadProductFeed,
-  generateLink,
   generateLinksBatch,
   getAdvertiserPerformance,
   getCampaignPerformance,
@@ -19,6 +18,7 @@ import {
   listTransactionQueries,
   submitProofOfPurchaseTransaction,
 } from './endpoints/index.js';
+import { configError } from './endpoints/shared.js';
 
 const EmptySchema = z.object({}).strict();
 const IdSchema = z.union([z.string(), z.number()]);
@@ -48,7 +48,7 @@ const CommissionGroupsSchema = z
 
 const TransactionsByIdSchema = z
   .object({
-    ids: z.array(IdSchema).min(1),
+    ids: z.array(IdSchema),
     showBasketProducts: z.boolean().optional(),
     timezone: z.string().optional(),
   })
@@ -108,7 +108,7 @@ const LinkRequestSchema = z
 
 const GenerateTrackingLinksSchema = z
   .object({
-    requests: z.array(LinkRequestSchema).min(1).max(100),
+    requests: z.array(LinkRequestSchema),
   })
   .strict();
 
@@ -207,17 +207,12 @@ export function generateAwinTools(): ToolDefinition[] {
       GenerateTrackingLinksSchema,
       async (args) => {
         const parsed = GenerateTrackingLinksSchema.parse(args ?? {});
-        if (parsed.requests.length === 1) {
-          const first = parsed.requests[0];
-          if (!first) throw new Error('requests must contain at least one link-builder request.');
-          return {
-            network: 'awin',
-            mode: 'single',
-            links: [await generateLink(first)],
-          };
-        }
         if (parsed.requests.some((request) => request.shorten === true)) {
-          throw new Error('Awin batch Link Builder does not support short links; remove shorten or send one request.');
+          throw configError(
+            'generateLinksBatch',
+            'Awin batch Link Builder does not support short links.',
+            'Remove `shorten` from affiliate_awin_generate_tracking_links requests, or use the canonical single-link tool for local long-link construction.',
+          );
         }
         return generateLinksBatch(parsed.requests);
       },
@@ -230,7 +225,7 @@ export function generateAwinTools(): ToolDefinition[] {
     ),
     tool(
       'affiliate_awin_list_offers',
-      'Retrieve Awin promotions and voucher offers visible to the publisher. Use this to find joined or not-joined offers by advertiser, region, membership, offer type, status, exclusivity, or updated-since date. Returns offer rows with voucher visibility exactly as Awin provides it.',
+      'Experimentally retrieve Awin promotions and voucher offers visible to the publisher; live validation currently returned Awin HTTP 500 for the supplied account. Use this to find joined or not-joined offers by advertiser, region, membership, offer type, status, exclusivity, or updated-since date once the endpoint is validated for the account. Returns offer rows with voucher visibility exactly as Awin provides it when Awin responds 200.',
       OffersSchema,
       (args) => listOffers(OffersSchema.parse(args ?? {})),
     ),

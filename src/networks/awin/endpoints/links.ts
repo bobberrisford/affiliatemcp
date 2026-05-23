@@ -1,8 +1,11 @@
+import { z } from 'zod';
+
 import { awinRequest } from '../client.js';
 import { DEFAULT_RESILIENCE } from '../../../shared/resilience.js';
 import {
   AWIN_SLUG,
   compactObject,
+  configError,
   requirePositiveIntegerId,
   requirePublisherId,
   requireToken,
@@ -41,12 +44,16 @@ export interface AwinGeneratedLink {
   rawNetworkData: unknown;
 }
 
-export interface AwinBatchGeneratedLinksResult {
-  network: 'awin';
-  publisherId: string;
-  responses: unknown[];
-  rawNetworkData: unknown;
-}
+export const AwinBatchGeneratedLinksResultSchema = z
+  .object({
+    network: z.literal('awin'),
+    publisherId: z.string(),
+    responses: z.array(z.unknown()),
+    rawNetworkData: z.unknown(),
+  })
+  .strict();
+
+export type AwinBatchGeneratedLinksResult = z.infer<typeof AwinBatchGeneratedLinksResultSchema>;
 
 export interface AwinLinkBuilderQuotaResult {
   network: 'awin';
@@ -95,10 +102,14 @@ export async function generateLinksBatch(
   const publisherId = requirePublisherId(operation);
   const token = requireToken(operation);
   if (requests.length === 0) {
-    throw new Error('requests must contain at least one link-builder request.');
+    throw configError(operation, 'requests must contain at least one link-builder request.');
   }
   if (requests.length > 100) {
-    throw new Error('Awin Link Builder batch generation supports at most 100 requests.');
+    throw configError(
+      operation,
+      'Awin Link Builder batch generation supports at most 100 requests.',
+      'Split the request into batches of 100 links or fewer.',
+    );
   }
 
   const normalised = requests.map((request) => ({
@@ -117,12 +128,12 @@ export async function generateLinksBatch(
   });
 
   const record = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
-  return {
+  return AwinBatchGeneratedLinksResultSchema.parse({
     network: AWIN_SLUG,
     publisherId,
     responses: Array.isArray(record['responses']) ? record['responses'] : [],
     rawNetworkData: raw,
-  };
+  });
 }
 
 export async function getLinkBuilderQuota(): Promise<AwinLinkBuilderQuotaResult> {

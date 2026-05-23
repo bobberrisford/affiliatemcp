@@ -80,6 +80,17 @@ describe('Awin endpoint modules', () => {
     expect(url.searchParams.get('type')).toBe('publisher');
   });
 
+  it('keeps legacy account rows that omit accountType', async () => {
+    mockFetchQueue([
+      fakeResponse([
+        { publisherId: 98765, name: 'Legacy Publisher' },
+        { id: 87654, name: 'Older Publisher' },
+      ]),
+    ]);
+    const result = await listAccounts('publisher');
+    expect(result.accounts.map((account) => account.id)).toEqual(['98765', '87654']);
+  });
+
   it('fetches programme details with advertiserId and relationship', async () => {
     const spy = mockFetchQueue([fakeResponse(loadFixture('programme-details.json'))]);
     const result = await getProgrammeDetails({ advertiserId: 1001, relationship: 'any' });
@@ -202,6 +213,25 @@ describe('Awin endpoint modules', () => {
     expect(new URL(String(spy.mock.calls[2]?.[0])).pathname).toBe(
       '/publishers/123456/linkbuilder/quota',
     );
+  });
+
+  it('returns config_error envelopes for local validation failures', async () => {
+    await expect(generateLinksBatch([])).rejects.toMatchObject({
+      envelope: { type: 'config_error', operation: 'generateLinksBatch' },
+    });
+    await expect(
+      generateLinksBatch(
+        Array.from({ length: 101 }, (_, i) => ({
+          advertiserId: 1000 + i,
+          destinationUrl: 'https://www.atolls-bookshop.example.com/',
+        })),
+      ),
+    ).rejects.toMatchObject({
+      envelope: { type: 'config_error', operation: 'generateLinksBatch' },
+    });
+    await expect(getTransactionsByIds({ ids: [] })).rejects.toMatchObject({
+      envelope: { type: 'config_error', operation: 'getTransactionsByIds' },
+    });
   });
 
   it('returns actionable stubs for gated product feed and Proof of Purchase APIs', () => {

@@ -43,4 +43,22 @@ describe('Awin-specific MCP tools', () => {
       required: ['requests'],
     });
   });
+
+  it('keeps Link Builder response shape stable and surfaces config_error for rejecting inputs', async () => {
+    process.env['AWIN_API_TOKEN'] = 'test-token-please-ignore';
+    process.env['AWIN_PUBLISHER_ID'] = '123456';
+    const links = generateAwinTools().find(
+      (tool) => tool.name === 'affiliate_awin_generate_tracking_links',
+    );
+    if (!links) throw new Error('missing Link Builder tool');
+    await expect(
+      links.handle({
+        requests: [{ advertiserId: 1001, destinationUrl: 'https://example.com', shorten: true }],
+      }),
+    ).rejects.toMatchObject({
+      envelope: { type: 'config_error', operation: 'generateLinksBatch' },
+    });
+    delete process.env['AWIN_API_TOKEN'];
+    delete process.env['AWIN_PUBLISHER_ID'];
+  });
 });
