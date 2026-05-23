@@ -1,0 +1,24 @@
+{
+  "responses": [
+    {
+      "status": 200,
+      "body": {
+        "url": "https://www.awin1.com/cread.php?awinmid=1001&awinaffid=123456"
+      },
+      "request": {
+        "advertiserId": 1001,
+        "destinationUrl": "https://www.atolls-bookshop.example.com/"
+      }
+    },
+    {
+      "status": 400,
+      "body": {
+        "description": "deeplinkNotPermitted"
+      },
+      "request": {
+        "advertiserId": 1002,
+        "destinationUrl": "https://no-deeplink.example.com/"
+      }
+    }
+  ]
+}

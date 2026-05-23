@@ -18,10 +18,15 @@ import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
   CallToolRequestSchema,
+  ErrorCode,
+  GetPromptRequestSchema,
+  ListPromptsRequestSchema,
   ListToolsRequestSchema,
+  McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { generateAllTools, type ToolDefinition } from './tools/generate.js';
+import { getPrompt, listPrompts } from './prompts/generate.js';
 import { isErrorEnvelope, NetworkError, toErrorEnvelope } from './shared/errors.js';
 import { createLogger } from './shared/logging.js';
 
@@ -42,7 +47,7 @@ export async function startServer(): Promise<void> {
 
   const server = new Server(
     { name: SERVER_INFO.name, version: SERVER_INFO.version },
-    { capabilities: { tools: {} } },
+    { capabilities: { tools: {}, prompts: {} } },
   );
 
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
@@ -104,6 +109,21 @@ export async function startServer(): Promise<void> {
           },
         ],
       };
+    }
+  });
+
+  server.setRequestHandler(ListPromptsRequestSchema, async () => ({
+    prompts: listPrompts(),
+  }));
+
+  server.setRequestHandler(GetPromptRequestSchema, async (req) => {
+    try {
+      return getPrompt(req.params.name, req.params.arguments ?? {});
+    } catch (err) {
+      throw new McpError(
+        ErrorCode.InvalidParams,
+        err instanceof Error ? err.message : String(err),
+      );
     }
   });
 

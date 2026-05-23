@@ -1,6 +1,6 @@
 # Contributing to affiliate-mcp
 
-Thanks for considering a contribution. 
+Thanks for considering a contribution.
 
 If you work for an affiliate network i would love for you to add your network APIs and or optimise what i have added already
 

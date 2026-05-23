@@ -1,0 +1,12 @@
+[
+  {
+    "ruleId": 42,
+    "servicePartnerId": 9876,
+    "publisherID": 123456,
+    "servicePartnerShare": 20,
+    "publisherShare": 80,
+    "ruleTitle": "Widget commission share",
+    "created": "2026-01-02T10:00:00Z",
+    "modified": "2026-03-04T10:00:00Z"
+  }
+]

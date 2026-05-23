@@ -1,0 +1,29 @@
+{
+  "pageItems": [
+    {
+      "advertiserId": 1001,
+      "advertiserName": "Atolls Bookshop",
+      "clickRef": "newsletter-42",
+      "commissionAmount": {
+        "amount": 4.2,
+        "currency": "GBP"
+      },
+      "declineReason": "Awaiting advertiser review",
+      "description": "Missing transaction query",
+      "enquiryDate": "2026-05-05T10:00:00Z",
+      "enquiryId": 7001,
+      "enquiryStatus": "pending",
+      "enquiryType": "untracked",
+      "orderRef": "ORDER-42",
+      "saleAmount": {
+        "amount": 70,
+        "currency": "GBP"
+      },
+      "transactionDate": "2026-05-04T10:00:00Z"
+    }
+  ],
+  "pageNumber": 1,
+  "pageSize": 100,
+  "totalPagesAvailable": 1,
+  "totalRowsAvailable": 1
+}

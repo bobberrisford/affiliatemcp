@@ -150,6 +150,20 @@ itself doesn't expose that data to publishers — not a missing feature
 on our side. The full editorial position lives in
 [`REPORT.md`](./REPORT.md).
 
+## Awin reference implementation
+
+Awin is the current reference slice for the repo's future shape. It keeps the
+seven canonical publisher tools and adds Awin-specific tools for accounts,
+programme details, commission groups, transaction-by-ID lookup, transaction
+queries, advertiser/creative/campaign reports, Link Builder, Offers, and safe
+stubs for gated Product Feed and Proof of Purchase APIs.
+
+Start here if you want to understand the product direction:
+
+- [AI-native affiliate data rationale](./docs/product/ai-native-affiliate-data.md)
+- [Awin public API inventory](./docs/networks/awin/api-inventory.md)
+- [Awin setup and live validation notes](./docs/networks/awin.md)
+
 ## Where your credentials live
 
 When you run the setup wizard it writes a single file at
