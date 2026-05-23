@@ -340,4 +340,50 @@ export interface NetworkAdapter {
   setupSteps(): SetupStep[];
   derivedValues?(): Promise<DerivedValueResult[]>;
   capabilitiesCheck(): Promise<NetworkCapabilities>;
+
+  /**
+   * List the brands addressable by this adapter's configured credentials.
+   *
+   * Required at runtime for adapters whose `meta.credentialScope === 'multi-brand'` —
+   * the brand-discovery sub-flow in the setup wizard calls this after auth has
+   * been verified. Optional and unused for `single-brand` adapters.
+   */
+  listBrands?(): Promise<DiscoveredBrand[]>;
+}
+
+/**
+ * A brand discovered via an advertiser-side adapter's `listBrands()` method.
+ *
+ * `networkBrandId` is the network's own identifier for the brand (e.g. Impact
+ * `CampaignId`, CJ advertiser id). `apiEnabled` is `false` for brands the
+ * credential set knows about but cannot transact against (paused, in-onboarding).
+ */
+export interface DiscoveredBrand {
+  networkBrandId: string;
+  displayName: string;
+  apiEnabled: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// brands.json — agency-side mapping of logical brand slugs to network identifiers
+// ---------------------------------------------------------------------------
+
+/**
+ * One entry binds a logical brand (`acme`) to a (network, credentialId,
+ * networkBrandId) tuple. The same logical brand can appear under several
+ * networks; that is how cross-network rollups are produced.
+ */
+export interface BrandBinding {
+  network: NetworkSlug;
+  credentialId: string;
+  networkBrandId: string;
+}
+
+/**
+ * The shape of `~/.affiliate-mcp/brands.json`. Owned by the wizard but readable
+ * by the MCP server at request-dispatch time.
+ */
+export interface BrandsFile {
+  version: 1;
+  brands: Record<string, BrandBinding[]>;
 }

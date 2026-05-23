@@ -172,7 +172,37 @@ The schema is enforced by `scripts/validate-network-json.ts`. Required fields:
 - `last_verified` — ISO date `YYYY-MM-DD`. The date you last ran the live
   diagnostic against a real account.
 - `supports_brand_ops` — boolean. False at v0.1 for everyone.
+- `side` — one of `publisher | advertiser`. See below.
+- `credential_scope` — one of `single-brand | multi-brand`. See below.
 - `docs_url` — optional, but include it.
+
+#### Choosing `side` and `credential_scope`
+
+These two fields together describe the relationship between the credential set
+and the brands it can act for. Get them right at the start — the wizard, the
+brand resolver, and the tool generator all branch on them.
+
+- **`side: 'publisher'`** — the adapter acts on behalf of a publisher account
+  (the norm; every bundled adapter at v0.1 is publisher-side). Tools generated
+  from the adapter do not take a `brand` argument.
+- **`side: 'advertiser'`** — the adapter integrates with the brand-running
+  side of the network. Tools generated from the adapter take a required
+  `brand` argument; the resolver translates `brand` to a `networkBrandId`
+  via `brands.json` before calling the adapter.
+
+- **`credential_scope: 'single-brand'`** — one credential set addresses one
+  publisher account or one brand. Every bundled adapter at v0.1.
+- **`credential_scope: 'multi-brand'`** — one credential set addresses many
+  brands (the norm for advertiser-side networks: Impact, CJ, Awin advertiser).
+  Multi-brand adapters MUST implement `listBrands()` — the setup wizard's
+  brand-discovery sub-flow calls it after `verifyAuth()` succeeds, and the
+  registry throws a clear error at startup if the method is missing.
+
+Combinations: every adapter today is `publisher` + `single-brand`. Advertiser
+adapters are typically `advertiser` + `multi-brand`. The other two corners
+(advertiser + single-brand, publisher + multi-brand) are valid but rare —
+if you find yourself in one, leave a one-line note in `known_limitations`
+explaining why.
 
 ### Step 9. Write `docs/networks/<slug>.md`
 

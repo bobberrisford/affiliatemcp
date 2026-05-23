@@ -111,3 +111,24 @@ export class NetworkError extends Error {
     this.envelope = envelope;
   }
 }
+
+/**
+ * Thrown when an advertiser-side tool is invoked with a `brand` argument that
+ * has not been bound to the named network in `brands.json`. Surfaces as a
+ * `config_error` envelope at the MCP layer. Distinct from `NetworkError`
+ * because the brand-resolution layer fails before any network call is made.
+ */
+export class BrandNotRegistered extends Error {
+  public readonly brand: string;
+  public readonly network: NetworkSlug;
+  constructor(brand: string, network: NetworkSlug) {
+    super(
+      `Brand "${brand}" is not registered for network "${network}" in brands.json. ` +
+        `Run \`affiliate-networks-mcp setup\` and add the brand, or call ` +
+        `\`affiliate_resolve_brand\` to see what is registered.`,
+    );
+    this.name = 'BrandNotRegistered';
+    this.brand = brand;
+    this.network = network;
+  }
+}

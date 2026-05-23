@@ -159,8 +159,28 @@ outside the network dashboards themselves. You can open it in any
 text editor; you can delete it to start over; you can copy it to a
 new machine when you upgrade your laptop.
 
+If you are running brand-side programmes (see "Multiple brands" below),
+the wizard also writes a `~/.affiliate-mcp/brands.json` file next to
+the `.env`. It maps your local nickname for each brand (e.g. `acme`)
+to the network's own brand id. Same file mode, same machine, same
+deal — open, edit, delete, copy. It is empty until you register a
+brand, and it stays empty for the publisher-only path.
+
 There is no hosted service. There is no account to create with us.
 There is nothing to cancel.
+
+## Multiple brands
+
+If you are an agency or in-house brand-side team managing several
+clients across the same advertiser network credentials, this is the
+shape it takes. Each advertiser-side network (Impact, CJ, Awin
+advertiser, when those land) uses one credentials set per network and
+selects the brand per call. The wizard discovers the brands the
+credentials can reach, you pick local nicknames for them (e.g.
+`acme`, `globex`), and Claude routes a question like *"show me Acme's
+earnings across CJ and Impact"* to the right brand id on each network.
+The publisher flow above is unchanged; this is an alternative path,
+not a replacement.
 
 ## When something goes wrong
 

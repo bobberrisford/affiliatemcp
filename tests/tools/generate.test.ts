@@ -1,13 +1,31 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import {
   generateAllTools,
   generateMetaTools,
   generateToolsFor,
 } from '../../src/tools/generate.js';
 import { _clearRegistry } from '../../src/shared/registry.js';
+import { saveBrands } from '../../src/shared/brands.js';
+import { BrandNotRegistered } from '../../src/shared/errors.js';
 import type { NetworkAdapter } from '../../src/shared/types.js';
 
-beforeEach(() => _clearRegistry());
+let tmp: string;
+let originalConfigDir: string | undefined;
+
+beforeEach(() => {
+  _clearRegistry();
+  tmp = mkdtempSync(path.join(tmpdir(), 'amcp-tool-gen-'));
+  originalConfigDir = process.env['AFFILIATE_MCP_CONFIG_DIR'];
+  process.env['AFFILIATE_MCP_CONFIG_DIR'] = tmp;
+});
+
+afterEach(() => {
+  if (originalConfigDir === undefined) delete process.env['AFFILIATE_MCP_CONFIG_DIR'];
+  else process.env['AFFILIATE_MCP_CONFIG_DIR'] = originalConfigDir;
+});
 
 /**
  * Build a minimal fake adapter for description-generation tests. We never call
@@ -58,16 +76,21 @@ function fakeAdapter(slug: string, name: string): NetworkAdapter {
 }
 
 describe('tool generator', () => {
-  it('always emits the two meta tools', () => {
+  it('always emits the three meta tools', () => {
     const meta = generateMetaTools();
     const names = meta.map((t) => t.name).sort();
-    expect(names).toEqual(['affiliate_list_networks', 'affiliate_run_diagnostic']);
+    expect(names).toEqual([
+      'affiliate_list_networks',
+      'affiliate_resolve_brand',
+      'affiliate_run_diagnostic',
+    ]);
   });
 
   it('with no adapters registered, only meta tools are present', () => {
     const all = generateAllTools();
     expect(all.map((t) => t.name).sort()).toEqual([
       'affiliate_list_networks',
+      'affiliate_resolve_brand',
       'affiliate_run_diagnostic',
     ]);
   });
@@ -107,6 +130,112 @@ describe('tool generator', () => {
         t.description.toLowerCase(),
         `tool ${t.name} description should mention a pairing tool ("pair with ...")`,
       ).toMatch(/pair[s]? with|pairs naturally|pair with/);
+    }
+  });
+});
+
+describe('affiliate_resolve_brand meta-tool', () => {
+  function findResolveBrand() {
+    return generateMetaTools().find((t) => t.name === 'affiliate_resolve_brand')!;
+  }
+
+  it('returns [] when brands.json is missing', async () => {
+    const tool = findResolveBrand();
+    expect(await tool.handle({})).toEqual([]);
+  });
+
+  it('returns every binding shaped as {brand, network, networkBrandId}', async () => {
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [
+          { network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-1' },
+          { network: 'cj-advertiser', credentialId: 'default', networkBrandId: 'CJ-1' },
+        ],
+        globex: [
+          { network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-9' },
+        ],
+      },
+    });
+    const tool = findResolveBrand();
+    const rows = (await tool.handle({})) as Array<{ brand: string; network: string; networkBrandId: string }>;
+    expect(rows).toHaveLength(3);
+    const sorted = [...rows].sort((a, b) => a.brand.localeCompare(b.brand) || a.network.localeCompare(b.network));
+    expect(sorted).toEqual([
+      { brand: 'acme', network: 'cj-advertiser', networkBrandId: 'CJ-1' },
+      { brand: 'acme', network: 'impact-advertiser', networkBrandId: 'IA-1' },
+      { brand: 'globex', network: 'impact-advertiser', networkBrandId: 'IA-9' },
+    ]);
+  });
+
+  it('filters by network when the optional argument is supplied', async () => {
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [
+          { network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-1' },
+          { network: 'cj-advertiser', credentialId: 'default', networkBrandId: 'CJ-1' },
+        ],
+      },
+    });
+    const tool = findResolveBrand();
+    const rows = (await tool.handle({ network: 'impact-advertiser' })) as Array<{ network: string }>;
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.network).toBe('impact-advertiser');
+  });
+});
+
+describe('advertiser-side tool generation', () => {
+  function advertiserAdapter(): NetworkAdapter {
+    const a = fakeAdapter('imp-adv', 'Impact Advertiser');
+    (a as { meta: { side: string; credentialScope: string } }).meta.side = 'advertiser';
+    (a as { meta: { side: string; credentialScope: string } }).meta.credentialScope = 'multi-brand';
+    a.listBrands = async () => [];
+    // Override listProgrammes to return a sentinel so we can assert the
+    // adapter call still fires after the brand resolution step.
+    (a as unknown as { listProgrammes: () => Promise<unknown> }).listProgrammes = async () => 'OK';
+    return a;
+  }
+
+  it('adds a required `brand` field to every per-network tool schema', () => {
+    const tools = generateToolsFor(advertiserAdapter());
+    for (const t of tools) {
+      const schema = t.inputSchema as {
+        properties: Record<string, unknown>;
+        required?: string[];
+      };
+      expect(schema.properties).toHaveProperty('brand');
+      expect(schema.required ?? []).toContain('brand');
+    }
+  });
+
+  it('resolves brand via brands.json before invoking the adapter', async () => {
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [{ network: 'imp-adv', credentialId: 'default', networkBrandId: 'IA-1' }],
+      },
+    });
+    const tools = generateToolsFor(advertiserAdapter());
+    const listProgrammes = tools.find((t) => t.name === 'affiliate_imp-adv_list_programmes')!;
+    const result = await listProgrammes.handle({ brand: 'acme' });
+    expect(result).toBe('OK');
+  });
+
+  it('throws BrandNotRegistered when the brand is unknown', async () => {
+    const tools = generateToolsFor(advertiserAdapter());
+    const listProgrammes = tools.find((t) => t.name === 'affiliate_imp-adv_list_programmes')!;
+    await expect(listProgrammes.handle({ brand: 'unknown' })).rejects.toBeInstanceOf(
+      BrandNotRegistered,
+    );
+  });
+
+  it('publisher-side tools never gain a brand argument', () => {
+    const a = fakeAdapter('alpha', 'Alpha');
+    const tools = generateToolsFor(a);
+    for (const t of tools) {
+      const schema = t.inputSchema as { properties?: Record<string, unknown> };
+      expect(schema.properties ?? {}).not.toHaveProperty('brand');
     }
   });
 });

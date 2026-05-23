@@ -14,6 +14,7 @@
 import { z } from 'zod';
 import type { NetworkAdapter, AdapterOperation } from '../shared/types.js';
 import { getAdapters } from '../shared/registry.js';
+import { loadBrands } from '../shared/brands.js';
 
 /**
  * The shape we return for each tool. JSON Schema input shapes are derived from
@@ -186,12 +187,50 @@ const OP_SPECS: OpSpec[] = [
 ];
 
 export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
-  return OP_SPECS.map((spec) => ({
-    name: toolNameFor(adapter.slug, spec.op),
-    description: spec.description(adapter.name),
-    inputSchema: toJsonSchema(spec.schema),
-    handle: (args) => spec.invoke(adapter, args),
-  }));
+  const isAdvertiser = adapter.meta.side === 'advertiser';
+  return OP_SPECS.map((spec) => {
+    if (!isAdvertiser) {
+      return {
+        name: toolNameFor(adapter.slug, spec.op),
+        description: spec.description(adapter.name),
+        inputSchema: toJsonSchema(spec.schema),
+        handle: (args: unknown) => spec.invoke(adapter, args),
+      };
+    }
+
+    // Advertiser-side: add a required `brand` argument. At call time we
+    // resolve it to a `networkBrandId` via brands.json; the adapter call
+    // itself is unchanged (the adapter is responsible for pulling the
+    // network brand id from the resolved binding when the next PR wires
+    // advertiser ops through). We perform the resolution here so the
+    // operator gets a `BrandNotRegistered` error before any network call
+    // is made.
+    const advertiserSchema = withBrandArg(spec.schema);
+    return {
+      name: toolNameFor(adapter.slug, spec.op),
+      description: spec.description(adapter.name),
+      inputSchema: toJsonSchema(advertiserSchema),
+      handle: async (args: unknown) => {
+        const parsed = advertiserSchema.parse(args ?? {}) as { brand: string } & Record<string, unknown>;
+        const { resolveBrandForNetwork } = await import('../shared/brand-resolver.js');
+        // Resolver call has the side effect of throwing BrandNotRegistered
+        // if the brand isn't bound; we strip `brand` before passing the rest
+        // of the args to the adapter's existing invoke.
+        resolveBrandForNetwork(parsed.brand, adapter.slug);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { brand: _brand, ...rest } = parsed;
+        return spec.invoke(adapter, rest);
+      },
+    };
+  });
+}
+
+/** Attach a required `brand: string` field to an existing Zod object schema. */
+function withBrandArg(schema: z.ZodTypeAny): z.ZodTypeAny {
+  if (schema instanceof z.ZodObject) {
+    return schema.extend({ brand: z.string().min(1) });
+  }
+  return z.object({ brand: z.string().min(1) }).strict();
 }
 
 export function generateMetaTools(): ToolDefinition[] {
@@ -224,6 +263,33 @@ export function generateMetaTools(): ToolDefinition[] {
         'Returns a NetworkMeta[] array; pair with affiliate_run_diagnostic for live capability data.',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
       handle: async () => getAdapters().map((a) => a.meta),
+    },
+    {
+      name: 'affiliate_resolve_brand',
+      description:
+        'List the logical brands the operator has bound in brands.json, optionally filtered by network slug. ' +
+        'Use this when the user asks "which brands do I have on Impact?" or "show me everything I have registered for Acme" before invoking an advertiser-side tool. ' +
+        'Returns an array of {brand, network, networkBrandId} entries; pair with the per-network advertiser tools, each of which requires the `brand` argument shown here.',
+      inputSchema: {
+        type: 'object',
+        properties: { network: { type: 'string' } },
+        additionalProperties: false,
+      },
+      handle: async (args) => {
+        const parsed = z
+          .object({ network: z.string().optional() })
+          .strict()
+          .parse(args ?? {});
+        const file = loadBrands();
+        const rows: Array<{ brand: string; network: string; networkBrandId: string }> = [];
+        for (const [slug, bindings] of Object.entries(file.brands)) {
+          for (const b of bindings) {
+            if (parsed.network && b.network !== parsed.network) continue;
+            rows.push({ brand: slug, network: b.network, networkBrandId: b.networkBrandId });
+          }
+        }
+        return rows;
+      },
     },
   ];
 }
