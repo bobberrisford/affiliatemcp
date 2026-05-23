@@ -1,0 +1,444 @@
+/**
+ * Impact advertiser adapter — unit tests.
+ *
+ * Exercises every operation, asserts the URL path shape (agency-passthrough
+ * vs brand-direct), confirms status mapping, and confirms the read-only
+ * guard refuses non-GETs.
+ */
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
+
+import {
+  impactAdvertiserAdapter,
+  _internals,
+} from '../../../src/networks/impact-advertiser/adapter.js';
+import { _resetCredentialCache } from '../../../src/networks/impact-advertiser/auth.js';
+import { buildUrl, impactAdvRequest } from '../../../src/networks/impact-advertiser/client.js';
+import { _resetBreakers } from '../../../src/shared/resilience.js';
+import { NetworkError } from '../../../src/shared/errors.js';
+import { NotImplementedError } from '../../../src/shared/types.js';
+import { DEFAULT_RESILIENCE } from '../../../src/shared/resilience.js';
+
+const FIXTURES = path.join(process.cwd(), 'tests', 'fixtures', 'impact-advertiser');
+
+function loadFixture(name: string): unknown {
+  return JSON.parse(readFileSync(path.join(FIXTURES, name), 'utf8'));
+}
+
+function fakeResponse(body: unknown, init: { status?: number } = {}): Response {
+  const status = init.status ?? 200;
+  const text = typeof body === 'string' ? body : JSON.stringify(body);
+  return new Response(text, {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
+}
+
+/**
+ * Queue mock fetch and capture the URLs called. We make the FIRST response the
+ * shape-detection probe response (configurable per-test), then subsequent
+ * responses for the actual API calls.
+ */
+function mockFetchQueue(responses: Response[]): {
+  spy: ReturnType<typeof vi.fn>;
+  urls: string[];
+} {
+  const urls: string[] = [];
+  const spy = vi.fn(async (input: string | URL | Request) => {
+    urls.push(typeof input === 'string' ? input : input.toString());
+    const r = responses.shift();
+    if (!r) throw new Error('mock fetch queue exhausted');
+    return r;
+  });
+  globalThis.fetch = spy as unknown as typeof fetch;
+  return { spy, urls };
+}
+
+// Useful shorthands for the two credential tiers. The shape-detection probe
+// reads /Agencies/{SID}; we either succeed (agency) or 404 (brand-direct).
+function expectAgency(): Response {
+  return fakeResponse({ Id: 'IRA-AGENCY-1', Name: 'Test Agency' });
+}
+function expectBrandDirect(): Response {
+  return fakeResponse('not found', { status: 404 });
+}
+
+beforeEach(() => {
+  _resetBreakers();
+  _resetCredentialCache();
+  process.env['IMPACT_ADVERTISER_ACCOUNT_SID'] = 'IRA-AGENCY-1';
+  process.env['IMPACT_ADVERTISER_AUTH_TOKEN'] = 'fake-token';
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  delete process.env['IMPACT_ADVERTISER_ACCOUNT_SID'];
+  delete process.env['IMPACT_ADVERTISER_AUTH_TOKEN'];
+  _resetCredentialCache();
+});
+
+// ---------------------------------------------------------------------------
+// Transformers and helpers
+// ---------------------------------------------------------------------------
+
+describe('Impact advertiser transformers', () => {
+  it('maps Impact action State to canonical TransactionStatus', () => {
+    expect(_internals.mapActionStatus({ State: 'PENDING' })).toBe('pending');
+    expect(_internals.mapActionStatus({ State: 'APPROVED' })).toBe('approved');
+    expect(_internals.mapActionStatus({ State: 'LOCKED' })).toBe('approved');
+    expect(_internals.mapActionStatus({ State: 'REVERSED' })).toBe('reversed');
+    expect(_internals.mapActionStatus({ State: 'PAID' })).toBe('paid');
+    expect(_internals.mapActionStatus({ State: 'WEIRD' })).toBe('other');
+  });
+
+  it('maps media-partner status to active|pending|inactive|unknown', () => {
+    expect(_internals.mapMediaPartnerStatus({ AccountStatus: 'Active' })).toBe('active');
+    expect(_internals.mapMediaPartnerStatus({ AccountStatus: 'Pending' })).toBe('pending');
+    expect(_internals.mapMediaPartnerStatus({ AccountStatus: 'Inactive' })).toBe('inactive');
+    expect(_internals.mapMediaPartnerStatus({ AccountStatus: 'Declined' })).toBe('inactive');
+    expect(_internals.mapMediaPartnerStatus({ AccountStatus: 'unrecognised' })).toBe('unknown');
+  });
+
+  it('preserves raw network data on every domain transform', () => {
+    const raw = (loadFixture('actions.json') as { Actions: Array<Record<string, unknown>> })
+      .Actions[0];
+    const t = _internals.toTransaction(raw as never);
+    expect(t.rawNetworkData).toBe(raw);
+
+    const mp = (loadFixture('media-partners.json') as { MediaPartners: Array<Record<string, unknown>> })
+      .MediaPartners[0];
+    const p = _internals.toMediaPartner(mp as never);
+    expect(p.rawNetworkData).toBe(mp);
+  });
+
+  it('surfaces reversalReason on reversed transactions', () => {
+    const raw = (loadFixture('actions.json') as { Actions: Array<Record<string, unknown>> })
+      .Actions[2];
+    const t = _internals.toTransaction(raw as never);
+    expect(t.status).toBe('reversed');
+    expect(t.reversalReason).toBe('Customer returned the item within 14 days');
+  });
+
+  it('normalises performance report dates to yyyy-mm-dd', () => {
+    const row = _internals.toPerformanceRow({
+      Date: '2026-05-01T00:00:00Z',
+      MediaPartnerId: 'MP-1',
+      MediaPartner: 'BestDeals',
+      Clicks: 100,
+      Actions: 5,
+      SaleAmount: '500.00',
+      Payout: '50.00',
+      Currency: 'USD',
+      State: 'APPROVED',
+    });
+    expect(row.date).toBe('2026-05-01');
+    expect(row.clicks).toBe(100);
+    expect(row.conversions).toBe(5);
+    expect(row.grossSale).toBe(500);
+    expect(row.commission).toBe(50);
+    expect(row.status).toBe('approved');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// URL shape — the agency vs brand-direct pathing is the highest-risk piece
+// ---------------------------------------------------------------------------
+
+describe('Impact advertiser URL shape', () => {
+  it('agency tier builds /Agencies/{AgencySID}/Advertisers/{BrandSID}/Campaigns', () => {
+    const url = buildUrl(
+      'agency',
+      'IRA-AGENCY-1',
+      '/Campaigns',
+      undefined,
+      'BRAND-42',
+    );
+    expect(url).toBe(
+      'https://api.impact.com/Agencies/IRA-AGENCY-1/Advertisers/BRAND-42/Campaigns',
+    );
+  });
+
+  it('brand-direct tier builds /Advertisers/{BrandSID}/Campaigns', () => {
+    const url = buildUrl(
+      'brand-direct',
+      'IRA-BRAND-1',
+      '/Campaigns',
+      undefined,
+      'IRA-BRAND-1',
+    );
+    expect(url).toBe('https://api.impact.com/Advertisers/IRA-BRAND-1/Campaigns');
+  });
+
+  it('agencyPath is reserved for agency credentials', () => {
+    expect(() =>
+      buildUrl('brand-direct', 'X', undefined, '/Advertisers', undefined),
+    ).toThrow(/agency-tier/);
+  });
+
+  it('rejects both paths or neither', () => {
+    expect(() => buildUrl('agency', 'X', '/Campaigns', '/Advertisers', 'Y')).toThrow();
+    expect(() => buildUrl('agency', 'X', undefined, undefined, undefined)).toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Read-only guard
+// ---------------------------------------------------------------------------
+
+describe('Impact advertiser read-only guard', () => {
+  it('refuses any non-GET method with a config_error envelope', async () => {
+    // We pass method via type assertion since the public type only allows
+    // 'GET' — the guard exists for runtime safety regardless.
+    const promise = impactAdvRequest({
+      operation: 'verifyAuth',
+      brandPath: '/Foo',
+      networkBrandId: 'X',
+      method: 'POST' as 'GET',
+      resilience: DEFAULT_RESILIENCE,
+    });
+    await expect(promise).rejects.toBeInstanceOf(NetworkError);
+    try {
+      await promise;
+    } catch (err) {
+      const e = err as NetworkError;
+      expect(e.envelope.type).toBe('config_error');
+      expect(e.envelope.message).toMatch(/read-only/);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// listBrands — agency tier and brand-direct tier
+// ---------------------------------------------------------------------------
+
+describe('Impact advertiser.listBrands', () => {
+  it('agency tier enumerates brands via GET /Agencies/{SID}/Advertisers', async () => {
+    const advertisers = loadFixture('agencies-advertisers.json');
+    const { urls } = mockFetchQueue([expectAgency(), fakeResponse(advertisers)]);
+
+    const brands = await impactAdvertiserAdapter.listBrands();
+    expect(brands).toHaveLength(3);
+    expect(brands[0]?.networkBrandId).toBe('IA-1001');
+    expect(brands[0]?.displayName).toBe('Acme Widgets');
+    expect(brands[2]?.apiEnabled).toBe(false);
+
+    // The second URL (after detection) MUST be the agency advertisers path.
+    expect(urls[1]).toContain('/Agencies/IRA-AGENCY-1/Advertisers');
+  });
+
+  it('brand-direct tier returns a single synthetic entry', async () => {
+    const { urls } = mockFetchQueue([
+      expectBrandDirect(),
+      // /Company lookup
+      fakeResponse({ CompanyName: 'Acme Widgets' }),
+    ]);
+
+    const brands = await impactAdvertiserAdapter.listBrands();
+    expect(brands).toHaveLength(1);
+    expect(brands[0]?.networkBrandId).toBe('IRA-AGENCY-1');
+    expect(brands[0]?.displayName).toBe('Acme Widgets');
+
+    // The /Company lookup is under /Advertisers/{SID}/Company — no /Agencies prefix.
+    expect(urls[1]).toContain('/Advertisers/IRA-AGENCY-1/Company');
+    expect(urls[1]).not.toContain('/Agencies/');
+  });
+
+  it('brand-direct tier falls back to a synthetic name when /Company fails', async () => {
+    mockFetchQueue([
+      expectBrandDirect(),
+      // /Company lookup fails with 404 — we expect the resilience layer to give up
+      fakeResponse('not found', { status: 404 }),
+      fakeResponse('not found', { status: 404 }),
+      fakeResponse('not found', { status: 404 }),
+    ]);
+
+    const brands = await impactAdvertiserAdapter.listBrands();
+    expect(brands).toHaveLength(1);
+    expect(brands[0]?.displayName).toContain('Impact advertiser');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// listProgrammes
+// ---------------------------------------------------------------------------
+
+describe('Impact advertiser.listProgrammes', () => {
+  it('uses agency-passthrough path when creds are agency-tier', async () => {
+    const { urls } = mockFetchQueue([expectAgency(), fakeResponse(loadFixture('campaigns.json'))]);
+
+    const r = await impactAdvertiserAdapter.listProgrammes(undefined, {
+      networkBrandId: 'BRAND-42',
+    });
+    expect(r).toHaveLength(2);
+    expect(urls[1]).toContain('/Agencies/IRA-AGENCY-1/Advertisers/BRAND-42/Campaigns');
+  });
+
+  it('uses brand-direct path when creds are brand-direct', async () => {
+    const { urls } = mockFetchQueue([
+      expectBrandDirect(),
+      fakeResponse(loadFixture('campaigns.json')),
+    ]);
+    await impactAdvertiserAdapter.listProgrammes(undefined, { networkBrandId: 'BRAND-42' });
+    expect(urls[1]).toContain('/Advertisers/BRAND-42/Campaigns');
+    expect(urls[1]).not.toContain('/Agencies/');
+  });
+
+  it('refuses to run without a brand context (config_error)', async () => {
+    // Even with creds in env, missing ctx must surface as config_error.
+    await expect(impactAdvertiserAdapter.listProgrammes()).rejects.toBeInstanceOf(NetworkError);
+    try {
+      await impactAdvertiserAdapter.listProgrammes();
+    } catch (err) {
+      expect((err as NetworkError).envelope.type).toBe('config_error');
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// listTransactions
+// ---------------------------------------------------------------------------
+
+describe('Impact advertiser.listTransactions', () => {
+  it('returns transformed actions for a brand under agency creds', async () => {
+    mockFetchQueue([expectAgency(), fakeResponse(loadFixture('actions.json'))]);
+    const r = await impactAdvertiserAdapter.listTransactions(undefined, {
+      networkBrandId: 'BRAND-42',
+    });
+    expect(r).toHaveLength(3);
+    expect(r.map((t) => t.status).sort()).toEqual(['approved', 'pending', 'reversed']);
+  });
+
+  it('filters by status client-side', async () => {
+    mockFetchQueue([expectAgency(), fakeResponse(loadFixture('actions.json'))]);
+    const r = await impactAdvertiserAdapter.listTransactions(
+      { status: 'reversed' },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(r).toHaveLength(1);
+    expect(r[0]?.reversalReason).toBe('Customer returned the item within 14 days');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// listMediaPartners
+// ---------------------------------------------------------------------------
+
+describe('Impact advertiser.listMediaPartners', () => {
+  it('returns the brand publisher roster with normalised status', async () => {
+    const { urls } = mockFetchQueue([
+      expectAgency(),
+      fakeResponse(loadFixture('media-partners.json')),
+    ]);
+    const r = await impactAdvertiserAdapter.listMediaPartners(undefined, {
+      networkBrandId: 'BRAND-42',
+    });
+    expect(r).toHaveLength(3);
+    expect(r.map((p) => p.status).sort()).toEqual(['active', 'inactive', 'pending']);
+    expect(urls[1]).toContain('/Advertisers/BRAND-42/MediaPartners');
+  });
+
+  it('filters by status array', async () => {
+    mockFetchQueue([expectAgency(), fakeResponse(loadFixture('media-partners.json'))]);
+    const r = await impactAdvertiserAdapter.listMediaPartners(
+      { status: ['active'] },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(r).toHaveLength(1);
+    expect(r[0]?.name).toBe('BestDeals.com');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getProgrammePerformance — sync path and async-polling path
+// ---------------------------------------------------------------------------
+
+describe('Impact advertiser.getProgrammePerformance', () => {
+  it('returns rows inline when the report is synchronous', async () => {
+    const { urls } = mockFetchQueue([
+      expectAgency(),
+      fakeResponse(loadFixture('performance-report-sync.json')),
+    ]);
+    const r = await impactAdvertiserAdapter.getProgrammePerformance(
+      { from: '2026-05-01', to: '2026-05-31' },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(r).toHaveLength(2);
+    expect(r[0]?.publisherName).toBe('BestDeals.com');
+    expect(r[0]?.clicks).toBe(1200);
+    expect(urls[1]).toContain('/Advertisers/BRAND-42/Reports/adv_performance_by_media');
+  });
+
+  it(
+    'follows ResultUri when the report runs asynchronously',
+    async () => {
+      // First call returns {ResultUri}, then poll-1 returns the rows.
+      mockFetchQueue([
+        expectAgency(),
+        fakeResponse({ ResultUri: '/ReportExport/abc123', Status: 'queued' }),
+        fakeResponse(loadFixture('performance-report-sync.json')),
+      ]);
+      const r = await impactAdvertiserAdapter.getProgrammePerformance(undefined, {
+        networkBrandId: 'BRAND-42',
+      });
+      expect(r).toHaveLength(2);
+    },
+    10_000,
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Ops not implemented at v0.1
+// ---------------------------------------------------------------------------
+
+describe('Impact advertiser unimplemented ops', () => {
+  it('throws NotImplementedError on getProgramme / getEarningsSummary / listClicks / generateTrackingLink', async () => {
+    await expect(impactAdvertiserAdapter.getProgramme('X')).rejects.toBeInstanceOf(
+      NotImplementedError,
+    );
+    await expect(impactAdvertiserAdapter.getEarningsSummary()).rejects.toBeInstanceOf(
+      NotImplementedError,
+    );
+    await expect(impactAdvertiserAdapter.listClicks()).rejects.toBeInstanceOf(
+      NotImplementedError,
+    );
+    await expect(
+      impactAdvertiserAdapter.generateTrackingLink({
+        programmeId: 'X',
+        destinationUrl: 'https://example.com',
+      }),
+    ).rejects.toBeInstanceOf(NotImplementedError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// verifyAuth uses shape detection
+// ---------------------------------------------------------------------------
+
+describe('Impact advertiser.verifyAuth', () => {
+  it('returns ok with detected shape identity on success', async () => {
+    mockFetchQueue([expectAgency()]);
+    const r = await impactAdvertiserAdapter.verifyAuth();
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.identity).toContain('agency');
+      expect(r.identity).toContain('IRA-AGENCY-1');
+    }
+  });
+
+  it('returns ok with brand-direct identity on a 404 to /Agencies', async () => {
+    mockFetchQueue([expectBrandDirect()]);
+    const r = await impactAdvertiserAdapter.verifyAuth();
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.identity).toContain('brand-direct');
+    }
+  });
+
+  it('returns {ok:false} on 401', async () => {
+    mockFetchQueue([fakeResponse('unauthorized', { status: 401 })]);
+    const r = await impactAdvertiserAdapter.verifyAuth();
+    expect(r.ok).toBe(false);
+  });
+});

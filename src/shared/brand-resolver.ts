@@ -18,7 +18,7 @@
 
 import { resolveBrand } from './brands.js';
 import { BrandNotRegistered } from './errors.js';
-import type { NetworkAdapter, NetworkSlug } from './types.js';
+import type { AdapterCallContext, NetworkAdapter, NetworkSlug } from './types.js';
 
 export interface ResolvedBrand {
   /** The logical brand slug the caller asked about (echoed for logging). */
@@ -55,6 +55,20 @@ export function resolveBrandForNetwork(
     credentialId: binding.credentialId,
     networkBrandId: binding.networkBrandId,
   };
+}
+
+/**
+ * Build the `AdapterCallContext` the tool dispatcher threads into every
+ * advertiser-side adapter method invocation. Thin wrapper over
+ * `resolveBrandForNetwork` so the call site in `src/tools/generate.ts` reads
+ * declaratively.
+ */
+export function buildAdapterCallContext(
+  brand: string,
+  network: NetworkSlug,
+): AdapterCallContext {
+  const resolved = resolveBrandForNetwork(brand, network);
+  return { networkBrandId: resolved.networkBrandId };
 }
 
 /**

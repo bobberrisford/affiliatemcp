@@ -140,6 +140,7 @@ tracking link, and confirm auth.
 | CJ Affiliate | 8 min | no | 6 / 7 | no clicks |
 | eBay Partner Network | 10 min | yes (~3 days) | 7 / 7 | see notes |
 | Impact | 6 min | no | 7 / 7 | upstream variability |
+| Impact (advertiser) | 8 min | no | 7 / 7 | see notes |
 | Rakuten Advertising | 12 min | yes (~5 days) | 6 / 7 | clicks gated |
 <!-- AFFILIATE_MCP_NETWORK_TABLE_END -->
 
@@ -209,6 +210,7 @@ click for credentials, and common stumbling blocks:
 - [CJ Affiliate](./docs/networks/cj.md) — Developer Key (GraphQL).
 - [eBay Partner Network](./docs/networks/ebay.md) — OAuth client + secret + campaign ID; approval required.
 - [Impact](./docs/networks/impact.md) — Account SID + Auth Token.
+- [Impact (advertiser)](./docs/networks/impact-advertiser.md) — Account SID + Auth Token; agency or brand-direct; read-only.
 - [Rakuten Advertising](./docs/networks/rakuten.md) — OAuth client + SID; approval required.
 
 ## For the curious (or technical)

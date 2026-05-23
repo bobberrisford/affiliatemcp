@@ -1,0 +1,22 @@
+{
+  "Advertisers": [
+    {
+      "Id": "IA-1001",
+      "CompanyName": "Acme Widgets",
+      "AccountStatus": "Active",
+      "ApiEnabled": true
+    },
+    {
+      "Id": "IA-1002",
+      "CompanyName": "Globex Coffee",
+      "AccountStatus": "Active",
+      "ApiEnabled": true
+    },
+    {
+      "Id": "IA-1003",
+      "CompanyName": "Initech Software",
+      "AccountStatus": "Paused",
+      "ApiEnabled": false
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # affiliate-mcp Report — the state of affiliate-network APIs in May 2026
 
-_Date-stamped: 2026-05-21._
+_Date-stamped: 2026-05-23._
 
 This report describes the state of four affiliate-network APIs as observed
 during the construction of the affiliate-mcp MCP server: Awin, CJ Affiliate,
@@ -35,6 +35,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | CJ Affiliate | 8 | no | 6 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
 | eBay Partner Network | 10 | yes (~3 days) | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-21 |
 | Impact | 6 | no | 7 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
+| Impact (advertiser) | 8 | no | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-23 |
 | Rakuten Advertising | 12 | yes (~5 days) | 6 / 7 | 3 | partial | 0.1.0 | 2026-05-21 |
 
 ## Awin
@@ -523,7 +524,7 @@ ID — not a merchant ID. This is documented in both `network.json`
 - **Reporting delay.** EPN's transaction reporting is documented to be
   delayed approximately 24-48 hours. A user calling `listTransactions`
   for "today" will not see today's clicks. This is honest behaviour but
-  worth flagging in the setup doc so the wizard's `affiliate-mcp test
+  worth flagging in the setup doc so the wizard's `affiliate-networks-mcp test
   ebay` output is interpretable on a fresh account.
 
 - **90-day window cap on reporting endpoints.** Both `/transaction` and
@@ -831,6 +832,43 @@ returning a half-formed link.
   inconsistencies), the right move is to consider promoting the helper into
   the shared layer — but only with full justification.
 
+## Impact (advertiser)
+
+### Quick facts
+
+- **Slug**: `impact-advertiser`
+- **Auth model**: basic
+- **Base URL**: https://api.impact.com
+- **Environment variables**: `IMPACT_ADVERTISER_ACCOUNT_SID`, `IMPACT_ADVERTISER_AUTH_TOKEN`
+- **Setup time estimate**: 8 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-05-23
+- **Documentation**: https://integrations.impact.com/impact-brand/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Read-only at v0.1. The adapter refuses any non-GET HTTP method client-side; pair this with Impact's read-only credential tier in the dashboard for defence in depth.
+- Two credential shapes auto-detected at runtime: agency-passthrough (one SID addresses many brands) and brand-direct (one SID, one brand). `listBrands()` returns the discovered set; advertiser tools take `brand` and resolve via brands.json.
+- `getProgrammePerformance` uses Impact's pre-built `adv_performance_by_media` report template. Endpoint shape verified from docs; live behaviour (sync vs async polling) has // TODO(verify) annotations until a live agency tenant is available.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/impact-advertiser.md`._
+
 ## Rakuten Advertising
 
 ### Quick facts
@@ -1033,7 +1071,7 @@ returned `TrackingLink` so the link's construction is fully auditable.
 ## Recommended next steps
 
 1. **Live validation in Chunk 8**: once a real Rakuten test account is
-   provisioned, run `affiliate-mcp validate rakuten` end-to-end and decide
+   provisioned, run `affiliate-networks-mcp validate rakuten` end-to-end and decide
    whether to bump `claim_status` to `production` (if all live ops pass) or
    leave at `partial` (if clicks remain inaccessible).
 
@@ -1065,4 +1103,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-05-21 20:36 UTC._
+_Last regenerated 2026-05-23 09:05 UTC._

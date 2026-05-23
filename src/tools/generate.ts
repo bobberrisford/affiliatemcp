@@ -12,7 +12,12 @@
  */
 
 import { z } from 'zod';
-import type { NetworkAdapter, AdapterOperation } from '../shared/types.js';
+import type {
+  AdapterCallContext,
+  AdapterOperation,
+  NetworkAdapter,
+} from '../shared/types.js';
+import { NotImplementedError } from '../shared/types.js';
 import { getAdapters } from '../shared/registry.js';
 import { loadBrands } from '../shared/brands.js';
 
@@ -68,6 +73,26 @@ const GenerateTrackingLinkSchema = z
   .strict();
 const EmptySchema = z.object({}).strict();
 
+const MediaPartnerQuerySchema = z
+  .object({
+    status: z.union([z.string(), z.array(z.string())]).optional(),
+    search: z.string().optional(),
+    limit: z.number().int().positive().optional(),
+    cursor: z.string().optional(),
+  })
+  .strict();
+
+const ProgrammePerformanceQuerySchema = z
+  .object({
+    from: z.string().optional(),
+    to: z.string().optional(),
+    programmeId: z.string().optional(),
+    publisherId: z.string().optional(),
+    limit: z.number().int().positive().optional(),
+    cursor: z.string().optional(),
+  })
+  .strict();
+
 // JSON-Schema-ish projections (the MCP SDK expects a plain object, not a Zod schema).
 function toJsonSchema(zodSchema: z.ZodTypeAny): Record<string, unknown> {
   // Minimal hand-rolled projection. Enough for the SDK to advertise inputs.
@@ -111,7 +136,22 @@ interface OpSpec {
   op: AdapterOperation;
   description: (networkName: string) => string;
   schema: z.ZodTypeAny;
-  invoke: (adapter: NetworkAdapter, args: unknown) => Promise<unknown>;
+  /**
+   * Set on advertiser-only ops (e.g. listMediaPartners, getProgrammePerformance).
+   * Such ops are wired on advertiser-side adapters only; the publisher side
+   * never exposes them as tools.
+   */
+  advertiserOnly?: boolean;
+  /**
+   * Invoke the adapter method. `ctx` is `undefined` for publisher-side calls
+   * and populated for advertiser-side calls (`networkBrandId` resolved via
+   * brand-resolver before this fires).
+   */
+  invoke: (
+    adapter: NetworkAdapter,
+    args: unknown,
+    ctx?: AdapterCallContext,
+  ) => Promise<unknown>;
 }
 
 const OP_SPECS: OpSpec[] = [
@@ -122,7 +162,8 @@ const OP_SPECS: OpSpec[] = [
       `Use this when the user asks "which merchants am I working with?", "what programmes do I have on ${n}?", or wants a partner inventory. ` +
       `Returns an array of Programme records and pairs naturally with get_programme for drill-down and list_transactions for activity.`,
     schema: ProgrammeQuerySchema,
-    invoke: (a, args) => a.listProgrammes(ProgrammeQuerySchema.parse(args ?? {}) as never),
+    invoke: (a, args, ctx) =>
+      a.listProgrammes(ProgrammeQuerySchema.parse(args ?? {}) as never, ctx),
   },
   {
     op: 'getProgramme',
@@ -131,9 +172,9 @@ const OP_SPECS: OpSpec[] = [
       `Use this when you already know the programme id and need its full record (commission, status, advertiser URL). ` +
       `Returns a single Programme; pair with list_programmes when you need to discover the id first.`,
     schema: GetProgrammeSchema,
-    invoke: (a, args) => {
+    invoke: (a, args, ctx) => {
       const { programmeId } = GetProgrammeSchema.parse(args ?? {});
-      return a.getProgramme(programmeId);
+      return a.getProgramme(programmeId, ctx);
     },
   },
   {
@@ -143,7 +184,8 @@ const OP_SPECS: OpSpec[] = [
       `Use this when the user asks "what did I earn last month?", "what's still pending?", or "show me reversed sales". ` +
       `Returns Transaction records including derived ageDays; pair with get_earnings_summary for aggregate totals.`,
     schema: TransactionQuerySchema,
-    invoke: (a, args) => a.listTransactions(TransactionQuerySchema.parse(args ?? {}) as never),
+    invoke: (a, args, ctx) =>
+      a.listTransactions(TransactionQuerySchema.parse(args ?? {}) as never, ctx),
   },
   {
     op: 'getEarningsSummary',
@@ -152,7 +194,8 @@ const OP_SPECS: OpSpec[] = [
       `Use this when the user wants a single-figure answer plus context — e.g. "total earnings in Q1 with status split". ` +
       `Returns an EarningsSummary including oldestUnpaidAgeDays; pair with list_transactions to drill into the underlying records.`,
     schema: TransactionQuerySchema,
-    invoke: (a, args) => a.getEarningsSummary(TransactionQuerySchema.parse(args ?? {}) as never),
+    invoke: (a, args, ctx) =>
+      a.getEarningsSummary(TransactionQuerySchema.parse(args ?? {}) as never, ctx),
   },
   {
     op: 'listClicks',
@@ -161,7 +204,8 @@ const OP_SPECS: OpSpec[] = [
       `Use this for traffic-side debugging — e.g. "are my links being clicked at all?" or "where is traffic going on ${n}?". ` +
       `Returns Click records; pair with list_transactions to compare clicks vs conversions.`,
     schema: ClickQuerySchema,
-    invoke: (a, args) => a.listClicks(ClickQuerySchema.parse(args ?? {}) as never),
+    invoke: (a, args, ctx) =>
+      a.listClicks(ClickQuerySchema.parse(args ?? {}) as never, ctx),
   },
   {
     op: 'generateTrackingLink',
@@ -170,9 +214,9 @@ const OP_SPECS: OpSpec[] = [
       `Use this when the user wants to share an affiliate link to a specific product or page on a merchant they have joined. ` +
       `Returns a TrackingLink; pair with list_programmes to confirm the programmeId before calling.`,
     schema: GenerateTrackingLinkSchema,
-    invoke: (a, args) => {
+    invoke: (a, args, ctx) => {
       const parsed = GenerateTrackingLinkSchema.parse(args ?? {});
-      return a.generateTrackingLink(parsed);
+      return a.generateTrackingLink(parsed, ctx);
     },
   },
   {
@@ -182,13 +226,55 @@ const OP_SPECS: OpSpec[] = [
       `Use this at the start of a session, after rotating keys, or when another operation returns an auth error. ` +
       `Returns {ok:true, identity?} or {ok:false, reason}; pair with affiliate_run_diagnostic for a full health check.`,
     schema: EmptySchema,
-    invoke: (a) => a.verifyAuth(),
+    invoke: (a, _args, ctx) => a.verifyAuth(ctx),
+  },
+  // -- advertiser-only ops below. Wired only when adapter.meta.side === 'advertiser'.
+  {
+    op: 'listMediaPartners',
+    advertiserOnly: true,
+    description: (n) =>
+      `List the media partners (publishers) running on the brand's programme at ${n}. ` +
+      `Use this when the user asks "who is promoting us on ${n}?", "which publishers are active on our programme?", or wants an outbound roster. ` +
+      `Returns MediaPartner records with normalised status; pair with the matching get_programme_performance tool on ${n} to drill into per-publisher performance.`,
+    schema: MediaPartnerQuerySchema,
+    invoke: (a, args, ctx) => {
+      if (typeof a.listMediaPartners !== 'function') {
+        throw new NotImplementedError(
+          `Adapter "${a.slug}" does not implement listMediaPartners; advertiser adapters must override it.`,
+        );
+      }
+      return a.listMediaPartners(MediaPartnerQuerySchema.parse(args ?? {}) as never, ctx);
+    },
+  },
+  {
+    op: 'getProgrammePerformance',
+    advertiserOnly: true,
+    description: (n) =>
+      `Fetch per-publisher performance for the brand's programme at ${n} — clicks, conversions, gross sale, and commission, by date. ` +
+      `Use this when the user asks "how is each publisher performing on ${n}?", "show me the top-earning partners last month", or wants the per-publisher rollup. ` +
+      `Returns ProgrammePerformanceRow records; pair with list_media_partners to discover publisher ids and list_transactions for transaction-level drill-down.`,
+    schema: ProgrammePerformanceQuerySchema,
+    invoke: (a, args, ctx) => {
+      if (typeof a.getProgrammePerformance !== 'function') {
+        throw new NotImplementedError(
+          `Adapter "${a.slug}" does not implement getProgrammePerformance; advertiser adapters must override it.`,
+        );
+      }
+      return a.getProgrammePerformance(
+        ProgrammePerformanceQuerySchema.parse(args ?? {}) as never,
+        ctx,
+      );
+    },
   },
 ];
 
 export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
   const isAdvertiser = adapter.meta.side === 'advertiser';
-  return OP_SPECS.map((spec) => {
+  // Publisher adapters never see advertiser-only operations; advertiser
+  // adapters get the full op set.
+  const specs = OP_SPECS.filter((s) => isAdvertiser || !s.advertiserOnly);
+
+  return specs.map((spec) => {
     if (!isAdvertiser) {
       return {
         name: toolNameFor(adapter.slug, spec.op),
@@ -198,28 +284,27 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
       };
     }
 
-    // Advertiser-side: add a required `brand` argument. At call time we
-    // resolve it to a `networkBrandId` via brands.json; the adapter call
-    // itself is unchanged (the adapter is responsible for pulling the
-    // network brand id from the resolved binding when the next PR wires
-    // advertiser ops through). We perform the resolution here so the
-    // operator gets a `BrandNotRegistered` error before any network call
-    // is made.
+    // Advertiser-side: add a required `brand` argument and resolve it to a
+    // `networkBrandId` via brands.json before the adapter is called. The
+    // resolved ctx is threaded into the adapter invocation so each method
+    // knows which brand under the multi-brand credential set to address.
     const advertiserSchema = withBrandArg(spec.schema);
     return {
       name: toolNameFor(adapter.slug, spec.op),
       description: spec.description(adapter.name),
       inputSchema: toJsonSchema(advertiserSchema),
       handle: async (args: unknown) => {
-        const parsed = advertiserSchema.parse(args ?? {}) as { brand: string } & Record<string, unknown>;
-        const { resolveBrandForNetwork } = await import('../shared/brand-resolver.js');
-        // Resolver call has the side effect of throwing BrandNotRegistered
-        // if the brand isn't bound; we strip `brand` before passing the rest
-        // of the args to the adapter's existing invoke.
-        resolveBrandForNetwork(parsed.brand, adapter.slug);
+        const parsed = advertiserSchema.parse(args ?? {}) as {
+          brand: string;
+        } & Record<string, unknown>;
+        const { buildAdapterCallContext } = await import('../shared/brand-resolver.js');
+        // Throws BrandNotRegistered (config_error envelope) if the brand
+        // isn't bound to this network in brands.json. Happens BEFORE any
+        // network call goes out.
+        const ctx = buildAdapterCallContext(parsed.brand, adapter.slug);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { brand: _brand, ...rest } = parsed;
-        return spec.invoke(adapter, rest);
+        return spec.invoke(adapter, rest, ctx);
       },
     };
   });

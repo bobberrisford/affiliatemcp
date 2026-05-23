@@ -1,0 +1,17 @@
+{
+  "Campaigns": [
+    {
+      "CampaignId": "CAM-9001",
+      "CampaignName": "Acme Spring Sale",
+      "CampaignStatus": "Active",
+      "CampaignCurrency": "USD",
+      "CampaignUrl": "https://acme.example.com"
+    },
+    {
+      "CampaignId": "CAM-9002",
+      "CampaignName": "Acme Loyalty Programme",
+      "CampaignStatus": "Paused",
+      "CampaignCurrency": "USD"
+    }
+  ]
+}

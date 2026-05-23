@@ -18,4 +18,5 @@ import './awin/adapter.js';
 import './cj/adapter.js';
 import './ebay/adapter.js';
 import './impact/adapter.js';
+import './impact-advertiser/adapter.js';
 import './rakuten/adapter.js';

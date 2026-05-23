@@ -1,0 +1,42 @@
+{
+  "Actions": [
+    {
+      "Id": "ACT-1",
+      "CampaignId": "CAM-9001",
+      "CampaignName": "Acme Spring Sale",
+      "State": "APPROVED",
+      "EventDate": "2026-04-15T10:00:00Z",
+      "LockingDate": "2026-04-20T10:00:00Z",
+      "ReferringDate": "2026-04-15T09:55:00Z",
+      "IntendedAmount": "129.99",
+      "Payout": "12.99",
+      "Currency": "USD",
+      "MediaPartnerId": "MP-1",
+      "MediaPartnerName": "BestDeals.com"
+    },
+    {
+      "Id": "ACT-2",
+      "CampaignId": "CAM-9001",
+      "CampaignName": "Acme Spring Sale",
+      "State": "PENDING",
+      "EventDate": "2026-05-01T10:00:00Z",
+      "IntendedAmount": "199.00",
+      "Payout": "19.90",
+      "Currency": "USD",
+      "MediaPartnerId": "MP-2"
+    },
+    {
+      "Id": "ACT-3",
+      "CampaignId": "CAM-9001",
+      "CampaignName": "Acme Spring Sale",
+      "State": "REVERSED",
+      "EventDate": "2026-03-15T10:00:00Z",
+      "LockingDate": "2026-03-20T10:00:00Z",
+      "IntendedAmount": "50.00",
+      "Payout": "5.00",
+      "Currency": "USD",
+      "ReversalReason": "Customer returned the item within 14 days",
+      "MediaPartnerId": "MP-1"
+    }
+  ]
+}

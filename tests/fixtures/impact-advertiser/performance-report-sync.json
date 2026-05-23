@@ -1,0 +1,26 @@
+{
+  "Records": [
+    {
+      "Date": "2026-05-01",
+      "MediaPartnerId": "MP-1",
+      "MediaPartner": "BestDeals.com",
+      "Clicks": 1200,
+      "Actions": 24,
+      "SaleAmount": "2400.00",
+      "Payout": "240.00",
+      "Currency": "USD",
+      "State": "APPROVED"
+    },
+    {
+      "Date": "2026-05-01",
+      "MediaPartnerId": "MP-2",
+      "MediaPartner": "Coupon Cabin",
+      "Clicks": 350,
+      "Actions": 5,
+      "SaleAmount": "500.00",
+      "Payout": "50.00",
+      "Currency": "USD",
+      "State": "PENDING"
+    }
+  ]
+}
