@@ -1,0 +1,25 @@
+{
+  "slug": "cj-advertiser",
+  "name": "CJ Affiliate (advertiser)",
+  "base_url": "https://commissions.api.cj.com",
+  "auth_model": "bearer",
+  "env_vars": ["CJ_ADVERTISER_API_TOKEN"],
+  "setup_time_estimate_minutes": 8,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Read-only at v0.1. The GraphQL client refuses any operation that is not `query` (no mutations, no subscriptions); pair this with a personal-access token scoped read-only at CJ for defence in depth.",
+    "`listBrands` reads CJ's GraphQL `viewer` (a.k.a. `me`) for the company memberships the PAT can see. The exact field name `// TODO(verify)` — if CJ's schema rejects it the adapter throws and the user is instructed to add brands manually to `brands.json`.",
+    "`listProgrammes` is synthetic: CJ has no advertiser-programmes query, so the adapter returns one Programme per CID using `advertiserLookup` metadata.",
+    "`getProgrammePerformance` is computed client-side from `commissionDetails`. Clicks are NOT available from `commissionDetails` and are reported as 0; document the gap with `// TODO(verify)`.",
+    "Status mapping for performance rows is based on CJ `actionStatus`: EXTENDED / LOCKED → pending, CLOSED → approved, CORRECTED / REVERSED → reversed. `CLOSED` semantics `// TODO(verify)`.",
+    "All amounts use CJ's USD-normalised fields (`saleAmountUsd`, `commissionAmountUsd`); reports are emitted with `currency: USD`.",
+    "Pagination on `commissionDetails` is capped at ~10,000 rows per page via `maxRows`; wider windows should be split by the caller."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-05-23",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "multi-brand",
+  "docs_url": "https://developers.cj.com/"
+}

@@ -1,0 +1,80 @@
+{
+  "data": {
+    "commissionDetails": {
+      "payloadComplete": true,
+      "count": 5,
+      "records": [
+        {
+          "commissionId": "C-A-1001",
+          "advertiserId": "1234567",
+          "advertiserName": "Acme Brand",
+          "publisherId": "PUB-1",
+          "publisherName": "BestDeals.com",
+          "postingDate": "2026-05-01T10:00:00Z",
+          "eventDate": "2026-04-28T09:00:00Z",
+          "actionStatus": "LOCKED",
+          "actionType": "advance",
+          "saleAmountUsd": "200.00",
+          "commissionAmountUsd": "20.00",
+          "items": []
+        },
+        {
+          "commissionId": "C-A-1002",
+          "advertiserId": "1234567",
+          "advertiserName": "Acme Brand",
+          "publisherId": "PUB-1",
+          "publisherName": "BestDeals.com",
+          "postingDate": "2026-05-01T12:00:00Z",
+          "eventDate": "2026-04-29T09:00:00Z",
+          "actionStatus": "EXTENDED",
+          "actionType": "advance",
+          "saleAmountUsd": "50.00",
+          "commissionAmountUsd": "5.00",
+          "items": []
+        },
+        {
+          "commissionId": "C-A-1003",
+          "advertiserId": "1234567",
+          "advertiserName": "Acme Brand",
+          "publisherId": "PUB-2",
+          "publisherName": "Coupon Cabin",
+          "postingDate": "2026-05-02T08:00:00Z",
+          "eventDate": "2026-04-30T09:00:00Z",
+          "actionStatus": "CLOSED",
+          "actionType": "advance",
+          "saleAmountUsd": "120.00",
+          "commissionAmountUsd": "12.00",
+          "items": []
+        },
+        {
+          "commissionId": "C-A-1004",
+          "advertiserId": "1234567",
+          "advertiserName": "Acme Brand",
+          "publisherId": "PUB-2",
+          "publisherName": "Coupon Cabin",
+          "postingDate": "2026-05-02T12:00:00Z",
+          "eventDate": "2026-04-30T10:00:00Z",
+          "actionStatus": "CORRECTED",
+          "actionType": "advance",
+          "saleAmountUsd": "30.00",
+          "commissionAmountUsd": "3.00",
+          "items": []
+        },
+        {
+          "commissionId": "C-A-1005",
+          "advertiserId": "1234567",
+          "advertiserName": "Acme Brand",
+          "publisherId": "PUB-3",
+          "publisherName": "Niche Reviewer",
+          "postingDate": "2026-05-03T11:00:00Z",
+          "eventDate": "2026-05-01T09:00:00Z",
+          "actionStatus": "REVERSED",
+          "actionType": "advance",
+          "saleAmountUsd": "75.00",
+          "commissionAmountUsd": "7.50",
+          "items": []
+        }
+      ]
+    }
+  }
+}

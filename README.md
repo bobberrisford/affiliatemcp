@@ -138,6 +138,7 @@ tracking link, and confirm auth.
 | --- | ---: | --- | ---: | --- |
 | Awin | 5 min | no | 6 / 7 | no clicks |
 | CJ Affiliate | 8 min | no | 6 / 7 | no clicks |
+| CJ Affiliate (advertiser) | 8 min | no | 7 / 7 | pagination quirks |
 | eBay Partner Network | 10 min | yes (~3 days) | 7 / 7 | see notes |
 | Impact | 6 min | no | 7 / 7 | upstream variability |
 | Impact (advertiser) | 8 min | no | 7 / 7 | see notes |
@@ -208,6 +209,7 @@ click for credentials, and common stumbling blocks:
 
 - [Awin](./docs/networks/awin.md) — API token + publisher ID.
 - [CJ Affiliate](./docs/networks/cj.md) — Developer Key (GraphQL).
+- [CJ Affiliate (advertiser)](./docs/networks/cj-advertiser.md) — Personal Access Token (GraphQL); multi-brand via CID list; read-only.
 - [eBay Partner Network](./docs/networks/ebay.md) — OAuth client + secret + campaign ID; approval required.
 - [Impact](./docs/networks/impact.md) — Account SID + Auth Token.
 - [Impact (advertiser)](./docs/networks/impact-advertiser.md) — Account SID + Auth Token; agency or brand-direct; read-only.
