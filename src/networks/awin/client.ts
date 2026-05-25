@@ -31,7 +31,7 @@ import {
   type WithResilienceContext,
 } from '../../shared/resilience.js';
 import { buildErrorEnvelope, NetworkError } from '../../shared/errors.js';
-import type { AnyOperation, ResilienceConfig } from '../../shared/types.js';
+import type { ResilienceConfig } from '../../shared/types.js';
 import { createLogger } from '../../shared/logging.js';
 
 const log = createLogger('awin.client');
@@ -45,7 +45,7 @@ export const AWIN_BASE_URL = 'https://api.awin.com';
 
 export interface AwinRequestInput {
   /** The canonical operation name. Used as the breaker key and in error envelopes. */
-  operation: AnyOperation;
+  operation: string;
   /** Path beginning with `/` — joined to `AWIN_BASE_URL`. */
   path: string;
   /** Bearer token. Passed in so callers can fetch from `requireCredential` once. */

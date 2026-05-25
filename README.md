@@ -145,36 +145,29 @@ type.
 
 ### Publisher side
 
-- **"What did I earn last month?"** — pulls a consolidated earnings
-  report across every configured publisher network, splits by status
-  (pending, approved, paid, reversed), and flags anything sitting
-  unpaid for more than 90 days.
-- **"Are all my affiliate networks healthy?"** — a one-shot status
-  check: auth working, API reachable, which operations the network
-  supports.
-- **"Help me set up Awin"** *(or CJ, Impact, Rakuten)* — guides you
-  through credential setup for one of the bundled networks
-  conversationally, with the dashboard menu paths quoted verbatim.
+- **"What did I earn last month?"** — consolidated earnings report
+  across every publisher network, split by status (pending, approved,
+  paid, reversed), with anything unpaid >90 days flagged.
+- **"Are all my affiliate networks healthy?"** — one-shot auth and
+  capability check.
+- **"Help me set up Awin"** *(or CJ, Impact, Rakuten)* — guided
+  credential setup with dashboard menu paths quoted verbatim.
 - **"Audit the affiliate links in my sitemap at https://mysite.com/sitemap.xml"**
   — reads the sitemap, classifies every affiliate link by network,
-  checks each programme is still active, and flags the dead or
-  declined ones. You can also paste a list of URLs or an HTML /
-  markdown document directly.
+  and flags the dead or declined ones. URLs, HTML, or markdown also
+  accepted directly.
 
 ### Brand side
 
-- **"How is Acme performing this quarter?"** — a single-brand report
-  across whichever networks that brand is registered on. Top
-  publishers by revenue, status splits, period-over-period delta.
-- **"Show me revenue across all my clients this week."** — a
-  portfolio rollup across every brand and every network in the book.
-  Brand-aggregated, with a "needs attention" subsection for brands
-  trending down.
-- **"Any anomalies in the affiliate data this week?"** — a
-  week-over-week scan for revenue drops, reversal spikes, top-10
-  publisher dropouts, and dead programmes. Designed to run on a
-  schedule via Claude's own scheduling so you learn about problems
-  before clients do.
+- **"How is Acme performing this quarter?"** — single-brand report
+  across that brand's bound networks. Top publishers, status splits,
+  period-over-period delta.
+- **"Show me revenue across all my clients this week."** — portfolio
+  rollup, brand-aggregated, with a "needs attention" subsection for
+  brands trending down.
+- **"Any anomalies in the affiliate data this week?"** — week-over-week
+  scan for revenue drops, reversal spikes, top-10 dropouts, dead
+  programmes. Designed to run on a schedule via Claude's own scheduling.
 
 ## Networks
 
@@ -184,8 +177,7 @@ publisher and the advertiser side, so the same network appears on
 two rows. **eBay Partner Network** is publisher-only (eBay is the
 sole advertiser on its own network — no brand-side product to
 integrate with). **Rakuten Advertising** is publisher-only at v0.1;
-the brand-side has a more complex auth model and we skipped it for
-now.
+the brand-side has a more complex auth model and we skipped it.
 
 <!-- AFFILIATE_MCP_NETWORK_TABLE_START -->
 | Network | Setup time | Approval required | Supported ops | Notes |
@@ -215,32 +207,42 @@ v0.1 — the client refuses any non-GET HTTP method before it leaves
 your machine. The full editorial position, including known upstream
 quirks and the read-only stance, lives in [`REPORT.md`](./REPORT.md).
 
+## Awin reference implementation
+
+Awin is the current reference slice for the repo's future shape. It keeps the
+seven canonical publisher tools and adds Awin-specific tools for accounts,
+programme details, commission groups, transaction-by-ID lookup, transaction
+queries, advertiser/creative/campaign reports, Link Builder, Offers, and safe
+stubs for gated Product Feed and Proof of Purchase APIs.
+
+Start here if you want to understand the product direction:
+
+- [AI-native affiliate data rationale](./docs/product/ai-native-affiliate-data.md)
+- [Awin public API inventory](./docs/networks/awin/api-inventory.md)
+- [Awin setup and live validation notes](./docs/networks/awin.md)
+
 ## Where your credentials live
 
 When you run the setup wizard it writes a single file at
 `~/.affiliate-mcp/.env` on your machine, locked to your user account
-(file mode `0600`). That file is the only place your API keys exist
-outside the network dashboards themselves. The same file holds both
-publisher and brand-side credentials, each keyed by network slug.
-You can open it in any text editor; you can delete it to start over;
-you can copy it to a new machine when you upgrade your laptop.
+(file mode `0600`). That's the only place your API keys exist outside
+the network dashboards. Both publisher and brand-side credentials live
+here, each keyed by network slug. Open, edit, delete, or copy it like
+any other file.
 
-If you registered any brand-side networks, the wizard also writes a
-`~/.affiliate-mcp/brands.json` file next to the `.env`. It maps your
-local nickname for each brand (e.g. `acme`) to the network's own
-brand id, and lists every network that brand is bound to. Same file
-mode, same machine, same deal — open, edit, delete, copy. The file
-stays empty for the publisher-only path.
+If you registered any brand-side networks, the wizard also writes
+`~/.affiliate-mcp/brands.json` next to it. That file maps your local
+nickname for each brand (e.g. `acme`) to the network's brand id on
+every network the brand is bound to. Empty for the publisher-only path.
 
 There is no hosted service. There is no account to create with us.
-There is nothing to cancel.
 
 ## Managing brands
 
-The brand-side flow has one extra concept the publisher flow doesn't:
-the local **brand slug**. You give each client (or each of your own
-brands) a short nickname, and the tool maps that nickname onto the
-network's own brand id on every network the brand is registered on.
+The brand-side flow adds one concept: a local **brand slug**. You give
+each client (or each of your own brands) a short nickname; the tool
+maps it to the network's own brand id on every network the brand is
+registered on.
 
 A real `brands.json` looks like this:
 
@@ -377,13 +379,11 @@ npm run build
 
 Pre-launch. The five publisher adapters ship as `claim_status:
 partial`. The three brand-side adapters (Awin, CJ, Impact) ship as
-`claim_status: experimental` until they've been exercised against
-real agency or in-house brand accounts — the read-only stance and
-per-network rate handling are in, but a few endpoint shapes are
-still marked `// TODO(verify)` in the adapter code until we can
-confirm them against a live tenant. If you hit something that
-doesn't behave on either side, open an issue — we treat every bug
-report as evidence about the underlying API, not just our code.
+`experimental` until exercised against real agency or in-house brand
+accounts — read-only stance and rate handling are in, but a few
+endpoint shapes remain `// TODO(verify)` until live confirmation. If
+you hit something odd on either side, open an issue — we treat every
+bug report as evidence about the underlying API.
 
 ## Licence
 

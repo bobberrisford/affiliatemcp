@@ -6,7 +6,7 @@
  *   - No refresh flow is required for v0.1 — we treat the token as a static
  *     secret loaded from `AWIN_API_TOKEN`. If Awin moves to rotating tokens,
  *     this is the only file that needs to change.
- *   - The auth-check endpoint is `GET /publishers`, which doubles as the source
+ *   - The auth-check endpoint is `GET /accounts?type=publisher`, which doubles as the source
  *     of the publisher ID (see `verifyAuth` below).
  *
  * --- The `derivedValues` pattern ---------------------------------------------
@@ -22,7 +22,7 @@
  *
  *     1. User enters AWIN_API_TOKEN.
  *     2. Wizard calls `verifyAuth()`.
- *     3. `verifyAuth()` calls GET /publishers, finds the publisher ID, returns
+ *     3. `verifyAuth()` calls GET /accounts?type=publisher, finds the publisher ID, returns
  *        `{ ok: true, derivedValues: { AWIN_PUBLISHER_ID: '<id>' } }`.
  *     4. Wizard persists both credentials. The AWIN_PUBLISHER_ID step is shown
  *        as "auto-derived; press enter to accept" rather than a blank prompt.
@@ -38,7 +38,7 @@
  * field, the data is harmless — adapters fall back to a separate prompt.
  *
  * Future contributors: keep `verifyAuth` cheap. The wizard calls it during
- * interactive setup; latency here is user-visible. Awin's `/publishers`
+ * interactive setup; latency here is user-visible. Awin's `/accounts`
  * endpoint is small and fast, so a 30s timeout is plenty.
  */
 
@@ -55,15 +55,26 @@ import { createLogger } from '../../shared/logging.js';
 const log = createLogger('awin.auth');
 
 /**
- * The minimal shape we read off Awin's `GET /publishers` response. Awin returns
- * an array of publisher objects with id + name. We do not over-specify the
- * shape — see `client.ts` for the rationale.
+ * The minimal shape we read off Awin's `GET /accounts?type=publisher` response.
+ * Awin returns an envelope with account rows. We also keep legacy publisher
+ * field fallbacks so older fixtures or endpoint variants do not break
+ * derivation. We do not over-specify the shape — see `client.ts` for the
+ * rationale.
  */
-interface AwinPublisher {
+interface AwinAccount {
+  accountId?: number;
+  accountName?: string;
+  accountType?: string;
+  userRole?: string;
+  // Legacy / old-fixture fallbacks.
   publisherId?: number; // newer schema
   id?: number; // older schema fallback
-  accountId?: number; // alternative key seen in some tenants
   name?: string;
+}
+
+interface AwinAccountsEnvelope {
+  userId?: number;
+  accounts?: AwinAccount[];
 }
 
 /**
@@ -83,11 +94,11 @@ export interface VerifyAuthFail {
 }
 
 /**
- * Verify the Awin token by hitting `GET /publishers`.
+ * Verify the Awin token by hitting `GET /accounts?type=publisher`.
  *
  * Why this endpoint specifically:
- *   - It's the smallest authenticated call in the Awin surface (returns one
- *     row per publisher the token has access to).
+ *   - It's the smallest authenticated call in the current Awin surface (returns
+ *     one row per publisher account the token has access to).
  *   - It also returns the publisher ID, which downstream operations need —
  *     so the same call powers validation AND the derivedValues pattern.
  *   - It rejects with a clean 401 on a bad token (not a generic 5xx), so the
@@ -117,9 +128,10 @@ export async function verifyAuth(): Promise<VerifyAuthOk | VerifyAuthFail> {
   }
 
   try {
-    const publishers = await awinRequest<AwinPublisher[]>({
+    const response = await awinRequest<AwinAccountsEnvelope | AwinAccount[]>({
       operation: 'verifyAuth',
-      path: '/publishers',
+      path: '/accounts',
+      query: { type: 'publisher' },
       token,
       resilience: DEFAULT_RESILIENCE,
     });
@@ -129,14 +141,14 @@ export async function verifyAuth(): Promise<VerifyAuthOk | VerifyAuthFail> {
     // already set) and otherwise pick the first. We do NOT silently auto-pick
     // when there are multiple; we surface the choice in `derivedValues` so the
     // wizard can confirm.
-    const list = Array.isArray(publishers) ? publishers : [];
+    const list = normaliseAccountsResponse(response);
     const preferred = pickPublisherId(list);
 
     log.debug({ count: list.length, preferred }, 'awin verifyAuth succeeded');
 
     return {
       ok: true,
-      identity: list.length > 0 ? identityFor(list[0]) : 'awin (no publishers on token)',
+      identity: list.length > 0 ? identityFor(list[0]) : 'awin (no publisher accounts on token)',
       derivedValues: preferred ? { AWIN_PUBLISHER_ID: preferred } : undefined,
     };
   } catch (err) {
@@ -163,19 +175,24 @@ export async function verifyAuth(): Promise<VerifyAuthOk | VerifyAuthFail> {
  * in older ones; we accept either. A future Awin schema change becomes a
  * one-line addition here.
  */
-function pickPublisherId(list: AwinPublisher[]): string | undefined {
+function normaliseAccountsResponse(response: AwinAccountsEnvelope | AwinAccount[]): AwinAccount[] {
+  if (Array.isArray(response)) return response;
+  return Array.isArray(response.accounts) ? response.accounts : [];
+}
+
+function pickPublisherId(list: AwinAccount[]): string | undefined {
   const existing = getCredential('AWIN_PUBLISHER_ID');
   if (existing) return existing;
-  const first = list[0];
+  const first = list.find((account) => account.accountType === 'publisher') ?? list[0];
   if (!first) return undefined;
   const id = first.publisherId ?? first.id ?? first.accountId;
   return id !== undefined ? String(id) : undefined;
 }
 
-function identityFor(p: AwinPublisher | undefined): string {
+function identityFor(p: AwinAccount | undefined): string {
   if (!p) return 'awin';
   const id = p.publisherId ?? p.id ?? p.accountId;
-  const name = p.name ?? '';
+  const name = p.accountName ?? p.name ?? '';
   return name ? `awin/${id} (${name})` : `awin/${id ?? 'unknown'}`;
 }
 
