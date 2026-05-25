@@ -45,6 +45,7 @@ function printHelp(): void {
   write('  affiliate-networks-mcp doctor          Verbose diagnostic with raw responses');
   write('  affiliate-networks-mcp cowork-mirror   Create a private GitHub mirror for Claude Cowork');
   write('  affiliate-networks-mcp validate <slug> Run the full validation suite against one network');
+  write('  affiliate-networks-mcp cache clear     Delete every cached response');
   write('  affiliate-networks-mcp --help          Show this help');
   write('');
   write('install/uninstall flags:');
@@ -241,6 +242,10 @@ async function main(argv: string[]): Promise<number> {
       const result = await validateNetwork(slug);
       write(JSON.stringify(result, null, 2));
       return result.ok ? 0 : 1;
+    }
+    case 'cache': {
+      const { runCache } = await import('./cli/cache.js');
+      return runCache({ subcommand: rest[0] });
     }
     default: {
       write(`Unknown command: ${cmd}`);
