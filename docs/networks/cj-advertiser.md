@@ -67,7 +67,21 @@ To bind a CJ advertiser to a logical brand name in affiliate-mcp:
 1. Find the CID in the CJ advertiser dashboard. It is shown at the top
    of the *Account* page and is also embedded in the URL of most
    dashboard pages.
-2. Edit (or have the wizard edit) `~/.affiliate-mcp/brands.json`:
+2. Either run the setup wizard (recommended) or hand-edit the file:
+
+   - **Wizard-driven (recommended).** Run `npx affiliate-networks-mcp
+     setup` and choose **CJ Affiliate (advertiser)**. When the wizard
+     reaches brand discovery the adapter throws
+     `NotImplementedError` (CJ has no enumeration endpoint), the
+     wizard prints *"this network's API doesn't expose brand
+     discovery (this is normal for CJ). You'll need to add brands
+     manually."*, and drops you into a small loop that prompts for a
+     local brand slug + CID + optional display name. The wizard
+     writes each entry to `brands.json` for you and loops until you
+     decline to add another.
+
+   - **Hand-edit.** Open `~/.affiliate-mcp/brands.json` and add an
+     entry directly:
 
    ```json
    {

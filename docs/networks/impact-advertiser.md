@@ -90,6 +90,13 @@ or 403 means brand-direct. A 401 means the credentials are wrong.
    discovery sub-flow: it lists every advertiser the agency credential
    can address, defaults each apiEnabled brand to ticked, and prompts
    you for the local slug to bind each one to under `brands.json`.
+   If `listBrands` fails (network down, schema drift) or comes back
+   empty, the wizard explains what happened and drops into a manual-
+   entry sub-flow that asks for a local slug + Advertiser SID + display
+   name and writes each entry to `brands.json` for you. The same
+   manual path is also offered if you prefer it — see the CJ
+   advertiser guide (`docs/networks/cj-advertiser.md`) for the
+   wizard-driven manual workflow.
 
 ## What success looks like
 

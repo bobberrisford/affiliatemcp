@@ -68,6 +68,14 @@ If Awin ever exposes a per-account `tier` or `apiEnabled` flag on the
 `/accounts` response we will flip the heuristic to read that directly;
 the adapter has a `// TODO(verify)` for the eventuality.
 
+If `listBrands` fails (e.g. transient `/accounts` outage) or returns
+an empty list the wizard surfaces the reason and drops into a manual-
+entry sub-flow that prompts for `(slug, advertiser id, display name)`
+tuples — the same path documented for the CJ advertiser at
+`docs/networks/cj-advertiser.md`. The manual path is also a fine way
+to register Entry-tier brands while you wait for the upgrade — the
+binding lives in `brands.json` independent of API access.
+
 ## Rate limiting
 
 The 20-calls-per-minute limit is enforced both by Awin's edge and by
