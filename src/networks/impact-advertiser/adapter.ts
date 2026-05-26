@@ -724,13 +724,21 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
       supported: true,
       note: 'Live probe runs at wizard time; not re-probed here to avoid hitting the network during diagnostic.',
     };
-    operations['listBrands'] = { supported: true, note: 'Multi-brand discovery hook.' };
+    operations['listBrands'] = {
+      supported: true,
+      note:
+        'Multi-brand discovery hook. Marked experimental: under brand-direct mode the ' +
+        '`/Advertisers/{SID}/Company` endpoint shape is `// TODO(verify)` against a live tenant. ' +
+        'Conservative — set regardless of detected credential mode at v0.1.',
+      claimStatus: 'experimental',
+    };
     operations['listProgrammes'] = { supported: true };
     operations['listTransactions'] = { supported: true };
     operations['listMediaPartners'] = { supported: true };
     operations['getProgrammePerformance'] = {
       supported: true,
-      note: 'Uses Impact adv_performance_by_media report; sync/async path TODO(verify).',
+      note: 'Uses Impact adv_performance_by_media report; sync/async path TODO(verify) — async ResultUri polling unverified against a live tenant.',
+      claimStatus: 'experimental',
     };
     operations['getProgramme'] = { supported: false, note: 'Not implemented at v0.1.' };
     operations['getEarningsSummary'] = { supported: false, note: 'Not implemented at v0.1.' };

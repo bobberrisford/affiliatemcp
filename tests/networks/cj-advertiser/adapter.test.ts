@@ -389,3 +389,30 @@ describe('CJ advertiser.verifyAuth', () => {
     expect(r.ok).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Per-operation claimStatus (review feedback workstream 1)
+// ---------------------------------------------------------------------------
+
+describe('CJ advertiser.capabilitiesCheck — per-op claimStatus', () => {
+  it('marks listBrands as experimental (throws NotImplementedError)', async () => {
+    const caps = await cjAdvertiserAdapter.capabilitiesCheck();
+    expect(caps.operations['listBrands']?.claimStatus).toBe('experimental');
+  });
+
+  it('marks getProgrammePerformance as experimental (CLOSED status mapping unverified)', async () => {
+    const caps = await cjAdvertiserAdapter.capabilitiesCheck();
+    expect(caps.operations['getProgrammePerformance']?.claimStatus).toBe('experimental');
+  });
+
+  it('marks listTransactions as partial (status mapping `// TODO(verify)`)', async () => {
+    const caps = await cjAdvertiserAdapter.capabilitiesCheck();
+    expect(caps.operations['listTransactions']?.claimStatus).toBe('partial');
+  });
+
+  it('does NOT mark listMediaPartners — no override (falls back to network-level)', async () => {
+    const caps = await cjAdvertiserAdapter.capabilitiesCheck();
+    expect(caps.operations['listMediaPartners']?.claimStatus).toBeUndefined();
+    expect(caps.operations['listProgrammes']?.claimStatus).toBeUndefined();
+  });
+});

@@ -780,11 +780,13 @@ export class AwinAdvertiserAdapter implements NetworkAdapter {
     };
     operations['listBrands'] = {
       supported: true,
-      note: 'GET /accounts filtered to type === advertiser; per-brand API-enabled probing is skipped to conserve the 20-per-minute rate budget.',
+      note: 'GET /accounts filtered to type === advertiser; per-brand API-enabled probing is skipped to conserve the 20-per-minute rate budget — Entry-tier brands appear here but their data endpoints 401/403.',
+      claimStatus: 'partial',
     };
     operations['listProgrammes'] = {
       supported: true,
-      note: 'Synthetic per-advertiser Programme; Awin programmes are UI-configured.',
+      note: 'Synthetic single-row Programme per advertiserId; Awin programmes are UI-configured and not enumerable via /programmes on every tenant.',
+      claimStatus: 'experimental',
     };
     operations['listTransactions'] = {
       supported: true,
@@ -796,7 +798,8 @@ export class AwinAdvertiserAdapter implements NetworkAdapter {
     };
     operations['getProgrammePerformance'] = {
       supported: true,
-      note: 'GET /advertisers/{id}/reports/publisher; pre-built per-publisher report.',
+      note: 'GET /advertisers/{id}/reports/publisher; pre-built per-publisher report. Column aliases (pendingNo vs pendingNumber, etc.) `// TODO(verify)` against a live tenant.',
+      claimStatus: 'experimental',
     };
     operations['getProgramme'] = { supported: false, note: 'Not implemented at v0.1.' };
     operations['getEarningsSummary'] = { supported: false, note: 'Not implemented at v0.1.' };

@@ -73,6 +73,21 @@ export interface OperationCapability {
   latencyMs?: number;
   sampleSize?: number;
   note?: string;
+  /**
+   * Optional per-operation claim status. Overrides the network-level
+   * `meta.claimStatus` for THIS operation only. When absent, consumers
+   * (doctor surface, list-networks meta tool, diagnostic meta tool) fall
+   * back to the adapter's `meta.claimStatus`.
+   *
+   * Use this to flag operations that are less verified than the rest of
+   * the adapter — e.g. an op whose endpoint shape carries `// TODO(verify)`
+   * annotations against a live tenant, or a synthesised/derived view whose
+   * upstream payloads have not been confirmed.
+   *
+   * Strictly additive at v0.1: every existing capabilities consumer treats
+   * the absence of this field the same as before this field existed.
+   */
+  claimStatus?: 'production' | 'partial' | 'experimental';
 }
 
 export interface NetworkCapabilities {

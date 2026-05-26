@@ -239,3 +239,115 @@ describe('advertiser-side tool generation', () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------
+// Workstream 1: affiliate_list_networks surfaces per-op claimStatus
+// ---------------------------------------------------------------------------
+
+describe('affiliate_list_networks — operationClaimStatuses (review feedback)', () => {
+  function adapterWithCaps(slug: string, name: string): NetworkAdapter {
+    const a = fakeAdapter(slug, name);
+    (a as { capabilitiesCheck: () => Promise<unknown> }).capabilitiesCheck = async () => ({
+      network: slug,
+      generatedAt: new Date().toISOString(),
+      operations: {
+        listProgrammes: { supported: true },
+        getProgrammePerformance: {
+          supported: true,
+          claimStatus: 'experimental',
+        },
+        listBrands: { supported: false, claimStatus: 'partial' },
+      },
+      knownLimitations: [],
+    });
+    return a;
+  }
+
+  it('surfaces per-op claimStatus on the list_networks response without removing meta fields', async () => {
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(adapterWithCaps('demo-adv', 'Demo Advertiser'));
+
+    const tool = generateMetaTools().find((t) => t.name === 'affiliate_list_networks')!;
+    const rows = (await tool.handle({})) as Array<{
+      slug: string;
+      name: string;
+      claimStatus: string;
+      operationClaimStatuses: Record<string, string>;
+    }>;
+
+    expect(rows).toHaveLength(1);
+    const row = rows[0]!;
+
+    // Original NetworkMeta fields preserved (additive).
+    expect(row.slug).toBe('demo-adv');
+    expect(row.name).toBe('Demo Advertiser');
+    expect(row.claimStatus).toBe('experimental');
+
+    // New field carries the per-op overrides.
+    expect(row.operationClaimStatuses).toEqual({
+      getProgrammePerformance: 'experimental',
+      listBrands: 'partial',
+    });
+  });
+
+  it('emits an empty operationClaimStatuses object when no ops declare overrides', async () => {
+    const a = fakeAdapter('plain', 'Plain Network');
+    (a as { capabilitiesCheck: () => Promise<unknown> }).capabilitiesCheck = async () => ({
+      network: 'plain',
+      generatedAt: new Date().toISOString(),
+      operations: {
+        listProgrammes: { supported: true },
+        listTransactions: { supported: true },
+      },
+      knownLimitations: [],
+    });
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(a);
+
+    const tool = generateMetaTools().find((t) => t.name === 'affiliate_list_networks')!;
+    const rows = (await tool.handle({})) as Array<{
+      slug: string;
+      operationClaimStatuses: Record<string, string>;
+    }>;
+    expect(rows[0]!.operationClaimStatuses).toEqual({});
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Workstream 1: affiliate_run_diagnostic preserves per-op claimStatus
+// ---------------------------------------------------------------------------
+
+describe('affiliate_run_diagnostic — preserves per-op claimStatus (review feedback)', () => {
+  it('threads OperationCapability.claimStatus through to the diagnostic payload', async () => {
+    const a = fakeAdapter('diag-adv', 'Diag Advertiser');
+    (a as { capabilitiesCheck: () => Promise<unknown> }).capabilitiesCheck = async () => ({
+      network: 'diag-adv',
+      generatedAt: new Date().toISOString(),
+      operations: {
+        listProgrammes: { supported: true },
+        getProgrammePerformance: {
+          supported: true,
+          claimStatus: 'experimental',
+          note: 'async ResultUri polling unverified',
+        },
+      },
+      knownLimitations: [],
+    });
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(a);
+
+    const tool = generateMetaTools().find((t) => t.name === 'affiliate_run_diagnostic')!;
+    const result = (await tool.handle({ network: 'diag-adv' })) as {
+      results: Array<{
+        network: string;
+        capabilities?: {
+          operations: Record<string, { supported: boolean; claimStatus?: string }>;
+        };
+      }>;
+    };
+
+    const ops = result.results[0]!.capabilities!.operations;
+    expect(ops['getProgrammePerformance']!.claimStatus).toBe('experimental');
+    expect(ops['listProgrammes']!.claimStatus).toBeUndefined();
+  });
+});

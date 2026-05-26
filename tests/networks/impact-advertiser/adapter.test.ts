@@ -442,3 +442,26 @@ describe('Impact advertiser.verifyAuth', () => {
     expect(r.ok).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Per-operation claimStatus (review feedback workstream 1)
+// ---------------------------------------------------------------------------
+
+describe('Impact advertiser.capabilitiesCheck — per-op claimStatus', () => {
+  it('marks listBrands as experimental (brand-direct /Company shape unverified)', async () => {
+    const caps = await impactAdvertiserAdapter.capabilitiesCheck();
+    expect(caps.operations['listBrands']?.claimStatus).toBe('experimental');
+  });
+
+  it('marks getProgrammePerformance as experimental (async ResultUri polling unverified)', async () => {
+    const caps = await impactAdvertiserAdapter.capabilitiesCheck();
+    expect(caps.operations['getProgrammePerformance']?.claimStatus).toBe('experimental');
+  });
+
+  it('does NOT mark every op — listProgrammes and listTransactions have no override', async () => {
+    const caps = await impactAdvertiserAdapter.capabilitiesCheck();
+    expect(caps.operations['listProgrammes']?.claimStatus).toBeUndefined();
+    expect(caps.operations['listTransactions']?.claimStatus).toBeUndefined();
+    expect(caps.operations['listMediaPartners']?.claimStatus).toBeUndefined();
+  });
+});

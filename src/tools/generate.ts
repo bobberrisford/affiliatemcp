@@ -16,6 +16,7 @@ import type {
   AdapterCallContext,
   AdapterOperation,
   NetworkAdapter,
+  OperationCapability,
 } from '../shared/types.js';
 import { NotImplementedError } from '../shared/types.js';
 import { getAdapters } from '../shared/registry.js';
@@ -305,9 +306,33 @@ export function generateMetaTools(): ToolDefinition[] {
       description:
         'List the affiliate networks this server has adapters registered for, along with their adapter version and claim_status. ' +
         'Use this to discover which networks are wired up before invoking a per-network tool. ' +
-        'Returns a NetworkMeta[] array; pair with affiliate_run_diagnostic for live capability data.',
+        'Returns a NetworkMeta[] array (additively extended with `operationClaimStatuses` — per-op claim-status overrides emitted by an adapter\'s capabilities()); pair with affiliate_run_diagnostic for live capability data.',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
-      handle: async () => getAdapters().map((a) => a.meta),
+      handle: async () => {
+        // Additive shape: original NetworkMeta fields are preserved verbatim;
+        // `operationClaimStatuses` is a NEW optional field that surfaces
+        // per-op claimStatus overrides for callers that want to distinguish
+        // a fully-verified op from one whose underlying contract is only
+        // partially verified. Empty object when an adapter emits no overrides.
+        const adapters = getAdapters();
+        const enriched = await Promise.all(
+          adapters.map(async (a) => {
+            let operationClaimStatuses: Record<string, OperationCapability['claimStatus']> = {};
+            try {
+              const caps = await a.capabilitiesCheck();
+              for (const [op, cap] of Object.entries(caps.operations)) {
+                if (cap.claimStatus) operationClaimStatuses[op] = cap.claimStatus;
+              }
+            } catch {
+              // Adapter capabilitiesCheck failed — surface meta unchanged.
+              // The diagnostic tool is the right place to expose that failure.
+              operationClaimStatuses = {};
+            }
+            return { ...a.meta, operationClaimStatuses };
+          }),
+        );
+        return enriched;
+      },
     },
     {
       name: 'affiliate_resolve_brand',

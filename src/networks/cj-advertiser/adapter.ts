@@ -739,20 +739,26 @@ export class CjAdvertiserAdapter implements NetworkAdapter {
     };
     operations['listBrands'] = {
       supported: false,
-      note: 'CJ has no clean enumeration endpoint; users must add brands manually to brands.json.',
+      note: 'CJ has no clean enumeration endpoint; users must add brands manually to brands.json. Throws NotImplementedError.',
+      claimStatus: 'experimental',
     };
     operations['listProgrammes'] = {
       supported: true,
       note: 'Synthetic per-CID Programme (CJ has no advertiser-programmes query).',
     };
-    operations['listTransactions'] = { supported: true, note: 'commissionDetails query.' };
+    operations['listTransactions'] = {
+      supported: true,
+      note: 'commissionDetails query. Status mapping (CLOSED → approved, LOCKED → pending, etc.) is `// TODO(verify)` against a live tenant.',
+      claimStatus: 'partial',
+    };
     operations['listMediaPartners'] = {
       supported: true,
       note: 'Derived from commissionDetails aggregation, not a dedicated endpoint.',
     };
     operations['getProgrammePerformance'] = {
       supported: true,
-      note: 'Client-side aggregation from commissionDetails; clicks always 0 (gap).',
+      note: 'Client-side aggregation from commissionDetails; clicks always 0 (gap). CLOSED status semantics `// TODO(verify)` against a live tenant.',
+      claimStatus: 'experimental',
     };
     operations['getProgramme'] = { supported: false, note: 'Not implemented at v0.1.' };
     operations['getEarningsSummary'] = { supported: false, note: 'Not implemented at v0.1.' };

@@ -425,3 +425,30 @@ describe('Awin advertiser unimplemented ops', () => {
     ).rejects.toBeInstanceOf(NotImplementedError);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Per-operation claimStatus (review feedback workstream 1)
+// ---------------------------------------------------------------------------
+
+describe('Awin advertiser.capabilitiesCheck — per-op claimStatus', () => {
+  it('marks listBrands as partial (tier-probing skipped)', async () => {
+    const caps = await awinAdvertiserAdapter.capabilitiesCheck();
+    expect(caps.operations['listBrands']?.claimStatus).toBe('partial');
+  });
+
+  it('marks getProgrammePerformance as experimental (report column aliases unverified)', async () => {
+    const caps = await awinAdvertiserAdapter.capabilitiesCheck();
+    expect(caps.operations['getProgrammePerformance']?.claimStatus).toBe('experimental');
+  });
+
+  it('marks listProgrammes as experimental (synthetic single-row fallback)', async () => {
+    const caps = await awinAdvertiserAdapter.capabilitiesCheck();
+    expect(caps.operations['listProgrammes']?.claimStatus).toBe('experimental');
+  });
+
+  it('does NOT mark listTransactions or listMediaPartners — no override', async () => {
+    const caps = await awinAdvertiserAdapter.capabilitiesCheck();
+    expect(caps.operations['listTransactions']?.claimStatus).toBeUndefined();
+    expect(caps.operations['listMediaPartners']?.claimStatus).toBeUndefined();
+  });
+});
