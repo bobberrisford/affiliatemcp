@@ -1,0 +1,23 @@
+[
+  {
+    "id": 555001,
+    "name": "BestDeals.com",
+    "status": "active",
+    "region": "GB",
+    "promotionType": "Content"
+  },
+  {
+    "id": 555002,
+    "name": "Coupon Cabin",
+    "status": "pending",
+    "region": "GB",
+    "promotionType": "Voucher"
+  },
+  {
+    "id": 555003,
+    "name": "Retired Influencer",
+    "status": "inactive",
+    "region": "US",
+    "promotionType": "Content"
+  }
+]

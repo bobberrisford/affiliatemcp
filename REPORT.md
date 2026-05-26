@@ -1,6 +1,6 @@
 # affiliate-mcp Report — the state of affiliate-network APIs in May 2026
 
-_Date-stamped: 2026-05-21._
+_Date-stamped: 2026-05-23._
 
 This report describes the state of four affiliate-network APIs as observed
 during the construction of the affiliate-mcp MCP server: Awin, CJ Affiliate,
@@ -32,9 +32,12 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Network | Setup time (min) | Approval | Ops supported | Known limitations | Claim status | Adapter | Last verified |
 | --- | ---: | --- | ---: | ---: | --- | --- | --- |
 | Awin | 5 | no | 6 / 7 | 1 | partial | 0.1.0 | 2026-05-21 |
+| Awin (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-05-23 |
 | CJ Affiliate | 8 | no | 6 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
+| CJ Affiliate (advertiser) | 8 | no | 7 / 7 | 7 | experimental | 0.1.0 | 2026-05-23 |
 | eBay Partner Network | 10 | yes (~3 days) | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-21 |
 | Impact | 6 | no | 7 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
+| Impact (advertiser) | 8 | no | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-23 |
 | Rakuten Advertising | 12 | yes (~5 days) | 6 / 7 | 3 | partial | 0.1.0 | 2026-05-21 |
 
 ## Awin
@@ -191,6 +194,46 @@ back to an API call only when the network mints a per-link tracking ID.
   provided we stay inside Awin's burst tolerance.
 - **`/reports/aggregated` shortcut**: an optimisation for callers who want
   totals only and don't need per-transaction `ageDays`. Not needed for v0.1.
+
+## Awin (advertiser)
+
+### Quick facts
+
+- **Slug**: `awin-advertiser`
+- **Auth model**: oauth2
+- **Base URL**: https://api.awin.com
+- **Environment variables**: `AWIN_ADVERTISER_API_TOKEN`
+- **Setup time estimate**: 6 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-05-23
+- **Documentation**: https://developer.awin.com/apidocs
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Read-only at v0.1. The HTTP client refuses any non-GET method client-side; pair this with a token scoped to read-only operations at Awin for defence in depth.
+- Hard rate limit: Awin permits 20 API calls per minute per user. The client enforces a process-wide token bucket at 20 requests per 60 seconds and queues bursty multi-brand operations rather than failing fast.
+- Awin's advertiser API is gated to the Accelerate and Advanced advertiser plans. Brands on the Entry-tier plan appear in `/accounts` output but data endpoints return 401/403; the adapter does not probe each brand (rate-budget reasons — see next entry), so the wizard surfaces a graceful 'found but not API-accessible — upgrade or skip' message at brand-registration time instead.
+- `listBrands` calls `GET /accounts` and filters `type === 'advertiser'`. To stay under the 20-per-minute rate budget on accounts with many advertisers, the adapter does NOT issue per-brand probes — all advertiser accounts are reported with `apiEnabled: true`.
+- `listProgrammes` is synthetic: Awin programmes are configured in the UI and not enumerated under `/advertisers/{id}/programmes` on every tenant. The adapter returns one Programme per advertiserId keyed on the call context. `// TODO(verify)` against a live Accelerate tenant.
+- `listTransactions` maps Awin's `declined` status onto the canonical `reversed` value. Awin's `dateType` is exposed as `transaction` (default) or `validation`.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/awin-advertiser.md`._
 
 ## CJ Affiliate
 
@@ -397,6 +440,47 @@ without re-running the auth check.
   publisher identifier in the URL path. Most accounts have a single web-site
   PID; multi-site publishers may need an explicit `CJ_WEBSITE_ID`.
 
+## CJ Affiliate (advertiser)
+
+### Quick facts
+
+- **Slug**: `cj-advertiser`
+- **Auth model**: bearer
+- **Base URL**: https://commissions.api.cj.com
+- **Environment variables**: `CJ_ADVERTISER_API_TOKEN`
+- **Setup time estimate**: 8 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-05-23
+- **Documentation**: https://developers.cj.com/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Read-only at v0.1. The GraphQL client refuses any operation that is not `query` (no mutations, no subscriptions); pair this with a personal-access token scoped read-only at CJ for defence in depth.
+- `listBrands` reads CJ's GraphQL `viewer` (a.k.a. `me`) for the company memberships the PAT can see. The exact field name `// TODO(verify)` — if CJ's schema rejects it the adapter throws and the user is instructed to add brands manually to `brands.json`.
+- `listProgrammes` is synthetic: CJ has no advertiser-programmes query, so the adapter returns one Programme per CID using `advertiserLookup` metadata.
+- `getProgrammePerformance` is computed client-side from `commissionDetails`. Clicks are NOT available from `commissionDetails` and are reported as 0; document the gap with `// TODO(verify)`.
+- Status mapping for performance rows is based on CJ `actionStatus`: EXTENDED / LOCKED → pending, CLOSED → approved, CORRECTED / REVERSED → reversed. `CLOSED` semantics `// TODO(verify)`.
+- All amounts use CJ's USD-normalised fields (`saleAmountUsd`, `commissionAmountUsd`); reports are emitted with `currency: USD`.
+- Pagination on `commissionDetails` is capped at ~10,000 rows per page via `maxRows`; wider windows should be split by the caller.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/cj-advertiser.md`._
+
 ## eBay Partner Network
 
 ### Quick facts
@@ -523,7 +607,7 @@ ID — not a merchant ID. This is documented in both `network.json`
 - **Reporting delay.** EPN's transaction reporting is documented to be
   delayed approximately 24-48 hours. A user calling `listTransactions`
   for "today" will not see today's clicks. This is honest behaviour but
-  worth flagging in the setup doc so the wizard's `affiliate-mcp test
+  worth flagging in the setup doc so the wizard's `affiliate-networks-mcp test
   ebay` output is interpretable on a fresh account.
 
 - **90-day window cap on reporting endpoints.** Both `/transaction` and
@@ -831,6 +915,43 @@ returning a half-formed link.
   inconsistencies), the right move is to consider promoting the helper into
   the shared layer — but only with full justification.
 
+## Impact (advertiser)
+
+### Quick facts
+
+- **Slug**: `impact-advertiser`
+- **Auth model**: basic
+- **Base URL**: https://api.impact.com
+- **Environment variables**: `IMPACT_ADVERTISER_ACCOUNT_SID`, `IMPACT_ADVERTISER_AUTH_TOKEN`
+- **Setup time estimate**: 8 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-05-23
+- **Documentation**: https://integrations.impact.com/impact-brand/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Read-only at v0.1. The adapter refuses any non-GET HTTP method client-side; pair this with Impact's read-only credential tier in the dashboard for defence in depth.
+- Two credential shapes auto-detected at runtime: agency-passthrough (one SID addresses many brands) and brand-direct (one SID, one brand). `listBrands()` returns the discovered set; advertiser tools take `brand` and resolve via brands.json.
+- `getProgrammePerformance` uses Impact's pre-built `adv_performance_by_media` report template. Endpoint shape verified from docs; live behaviour (sync vs async polling) has // TODO(verify) annotations until a live agency tenant is available.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/impact-advertiser.md`._
+
 ## Rakuten Advertising
 
 ### Quick facts
@@ -1033,7 +1154,7 @@ returned `TrackingLink` so the link's construction is fully auditable.
 ## Recommended next steps
 
 1. **Live validation in Chunk 8**: once a real Rakuten test account is
-   provisioned, run `affiliate-mcp validate rakuten` end-to-end and decide
+   provisioned, run `affiliate-networks-mcp validate rakuten` end-to-end and decide
    whether to bump `claim_status` to `production` (if all live ops pass) or
    leave at `partial` (if clicks remain inaccessible).
 
@@ -1065,4 +1186,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-05-21 20:36 UTC._
+_Last regenerated 2026-05-23 09:49 UTC._

@@ -1,0 +1,19 @@
+{
+  "MediaPartners": [
+    {
+      "Id": "MP-1",
+      "Name": "BestDeals.com",
+      "AccountStatus": "Active"
+    },
+    {
+      "Id": "MP-2",
+      "Name": "Coupon Cabin",
+      "AccountStatus": "Pending"
+    },
+    {
+      "Id": "MP-3",
+      "Name": "Retired Influencer",
+      "AccountStatus": "Inactive"
+    }
+  ]
+}

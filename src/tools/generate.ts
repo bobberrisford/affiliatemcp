@@ -12,8 +12,15 @@
  */
 
 import { z } from 'zod';
-import type { NetworkAdapter, PublisherOperation } from '../shared/types.js';
+import type {
+  AdapterCallContext,
+  AdapterOperation,
+  NetworkAdapter,
+  OperationCapability,
+} from '../shared/types.js';
+import { NotImplementedError } from '../shared/types.js';
 import { getAdapters } from '../shared/registry.js';
+import { loadBrands } from '../shared/brands.js';
 import { generateAwinTools } from '../networks/awin/tools.js';
 import type { ToolDefinition } from './types.js';
 import { toJsonSchema } from './schema.js';
@@ -60,17 +67,52 @@ const GenerateTrackingLinkSchema = z
   .strict();
 const EmptySchema = z.object({}).strict();
 
-function toolNameFor(network: string, op: PublisherOperation): string {
+const MediaPartnerQuerySchema = z
+  .object({
+    status: z.union([z.string(), z.array(z.string())]).optional(),
+    search: z.string().optional(),
+    limit: z.number().int().positive().optional(),
+    cursor: z.string().optional(),
+  })
+  .strict();
+
+const ProgrammePerformanceQuerySchema = z
+  .object({
+    from: z.string().optional(),
+    to: z.string().optional(),
+    programmeId: z.string().optional(),
+    publisherId: z.string().optional(),
+    limit: z.number().int().positive().optional(),
+    cursor: z.string().optional(),
+  })
+  .strict();
+
+function toolNameFor(network: string, op: AdapterOperation): string {
   // e.g. `affiliate_awin_list_programmes`
   const snake = op.replace(/([A-Z])/g, '_$1').toLowerCase();
   return `affiliate_${network}_${snake}`.replace(/__+/g, '_');
 }
 
 interface OpSpec {
-  op: PublisherOperation;
+  op: AdapterOperation;
   description: (networkName: string) => string;
   schema: z.ZodTypeAny;
-  invoke: (adapter: NetworkAdapter, args: unknown) => Promise<unknown>;
+  /**
+   * Set on advertiser-only ops (e.g. listMediaPartners, getProgrammePerformance).
+   * Such ops are wired on advertiser-side adapters only; the publisher side
+   * never exposes them as tools.
+   */
+  advertiserOnly?: boolean;
+  /**
+   * Invoke the adapter method. `ctx` is `undefined` for publisher-side calls
+   * and populated for advertiser-side calls (`networkBrandId` resolved via
+   * brand-resolver before this fires).
+   */
+  invoke: (
+    adapter: NetworkAdapter,
+    args: unknown,
+    ctx?: AdapterCallContext,
+  ) => Promise<unknown>;
 }
 
 const OP_SPECS: OpSpec[] = [
@@ -81,7 +123,8 @@ const OP_SPECS: OpSpec[] = [
       `Use this when the user asks "which merchants am I working with?", "what programmes do I have on ${n}?", or wants a partner inventory. ` +
       `Returns an array of Programme records and pairs naturally with get_programme for drill-down and list_transactions for activity.`,
     schema: ProgrammeQuerySchema,
-    invoke: (a, args) => a.listProgrammes(ProgrammeQuerySchema.parse(args ?? {}) as never),
+    invoke: (a, args, ctx) =>
+      a.listProgrammes(ProgrammeQuerySchema.parse(args ?? {}) as never, ctx),
   },
   {
     op: 'getProgramme',
@@ -90,9 +133,9 @@ const OP_SPECS: OpSpec[] = [
       `Use this when you already know the programme id and need its full record (commission, status, advertiser URL). ` +
       `Returns a single Programme; pair with list_programmes when you need to discover the id first.`,
     schema: GetProgrammeSchema,
-    invoke: (a, args) => {
+    invoke: (a, args, ctx) => {
       const { programmeId } = GetProgrammeSchema.parse(args ?? {});
-      return a.getProgramme(programmeId);
+      return a.getProgramme(programmeId, ctx);
     },
   },
   {
@@ -102,7 +145,8 @@ const OP_SPECS: OpSpec[] = [
       `Use this when the user asks "what did I earn last month?", "what's still pending?", or "show me reversed sales". ` +
       `Returns Transaction records including derived ageDays; pair with get_earnings_summary for aggregate totals.`,
     schema: TransactionQuerySchema,
-    invoke: (a, args) => a.listTransactions(TransactionQuerySchema.parse(args ?? {}) as never),
+    invoke: (a, args, ctx) =>
+      a.listTransactions(TransactionQuerySchema.parse(args ?? {}) as never, ctx),
   },
   {
     op: 'getEarningsSummary',
@@ -111,7 +155,8 @@ const OP_SPECS: OpSpec[] = [
       `Use this when the user wants a single-figure answer plus context — e.g. "total earnings in Q1 with status split". ` +
       `Returns an EarningsSummary including oldestUnpaidAgeDays; pair with list_transactions to drill into the underlying records.`,
     schema: TransactionQuerySchema,
-    invoke: (a, args) => a.getEarningsSummary(TransactionQuerySchema.parse(args ?? {}) as never),
+    invoke: (a, args, ctx) =>
+      a.getEarningsSummary(TransactionQuerySchema.parse(args ?? {}) as never, ctx),
   },
   {
     op: 'listClicks',
@@ -120,7 +165,8 @@ const OP_SPECS: OpSpec[] = [
       `Use this for traffic-side debugging — e.g. "are my links being clicked at all?" or "where is traffic going on ${n}?". ` +
       `Returns Click records; pair with list_transactions to compare clicks vs conversions.`,
     schema: ClickQuerySchema,
-    invoke: (a, args) => a.listClicks(ClickQuerySchema.parse(args ?? {}) as never),
+    invoke: (a, args, ctx) =>
+      a.listClicks(ClickQuerySchema.parse(args ?? {}) as never, ctx),
   },
   {
     op: 'generateTrackingLink',
@@ -129,9 +175,9 @@ const OP_SPECS: OpSpec[] = [
       `Use this when the user wants to share an affiliate link to a specific product or page on a merchant they have joined. ` +
       `Returns a TrackingLink; pair with list_programmes to confirm the programmeId before calling.`,
     schema: GenerateTrackingLinkSchema,
-    invoke: (a, args) => {
+    invoke: (a, args, ctx) => {
       const parsed = GenerateTrackingLinkSchema.parse(args ?? {});
-      return a.generateTrackingLink(parsed);
+      return a.generateTrackingLink(parsed, ctx);
     },
   },
   {
@@ -141,17 +187,96 @@ const OP_SPECS: OpSpec[] = [
       `Use this at the start of a session, after rotating keys, or when another operation returns an auth error. ` +
       `Returns {ok:true, identity?} or {ok:false, reason}; pair with affiliate_run_diagnostic for a full health check.`,
     schema: EmptySchema,
-    invoke: (a) => a.verifyAuth(),
+    invoke: (a, _args, ctx) => a.verifyAuth(ctx),
+  },
+  // -- advertiser-only ops below. Wired only when adapter.meta.side === 'advertiser'.
+  {
+    op: 'listMediaPartners',
+    advertiserOnly: true,
+    description: (n) =>
+      `List the media partners (publishers) running on the brand's programme at ${n}. ` +
+      `Use this when the user asks "who is promoting us on ${n}?", "which publishers are active on our programme?", or wants an outbound roster. ` +
+      `Returns MediaPartner records with normalised status; pair with the matching get_programme_performance tool on ${n} to drill into per-publisher performance.`,
+    schema: MediaPartnerQuerySchema,
+    invoke: (a, args, ctx) => {
+      if (typeof a.listMediaPartners !== 'function') {
+        throw new NotImplementedError(
+          `Adapter "${a.slug}" does not implement listMediaPartners; advertiser adapters must override it.`,
+        );
+      }
+      return a.listMediaPartners(MediaPartnerQuerySchema.parse(args ?? {}) as never, ctx);
+    },
+  },
+  {
+    op: 'getProgrammePerformance',
+    advertiserOnly: true,
+    description: (n) =>
+      `Fetch per-publisher performance for the brand's programme at ${n} — clicks, conversions, gross sale, and commission, by date. ` +
+      `Use this when the user asks "how is each publisher performing on ${n}?", "show me the top-earning partners last month", or wants the per-publisher rollup. ` +
+      `Returns ProgrammePerformanceRow records; pair with list_media_partners to discover publisher ids and list_transactions for transaction-level drill-down.`,
+    schema: ProgrammePerformanceQuerySchema,
+    invoke: (a, args, ctx) => {
+      if (typeof a.getProgrammePerformance !== 'function') {
+        throw new NotImplementedError(
+          `Adapter "${a.slug}" does not implement getProgrammePerformance; advertiser adapters must override it.`,
+        );
+      }
+      return a.getProgrammePerformance(
+        ProgrammePerformanceQuerySchema.parse(args ?? {}) as never,
+        ctx,
+      );
+    },
   },
 ];
 
 export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
-  return OP_SPECS.map((spec) => ({
-    name: toolNameFor(adapter.slug, spec.op),
-    description: spec.description(adapter.name),
-    inputSchema: toJsonSchema(spec.schema),
-    handle: (args) => spec.invoke(adapter, args),
-  }));
+  const isAdvertiser = adapter.meta.side === 'advertiser';
+  // Publisher adapters never see advertiser-only operations; advertiser
+  // adapters get the full op set.
+  const specs = OP_SPECS.filter((s) => isAdvertiser || !s.advertiserOnly);
+
+  return specs.map((spec) => {
+    if (!isAdvertiser) {
+      return {
+        name: toolNameFor(adapter.slug, spec.op),
+        description: spec.description(adapter.name),
+        inputSchema: toJsonSchema(spec.schema),
+        handle: (args: unknown) => spec.invoke(adapter, args),
+      };
+    }
+
+    // Advertiser-side: add a required `brand` argument and resolve it to a
+    // `networkBrandId` via brands.json before the adapter is called. The
+    // resolved ctx is threaded into the adapter invocation so each method
+    // knows which brand under the multi-brand credential set to address.
+    const advertiserSchema = withBrandArg(spec.schema);
+    return {
+      name: toolNameFor(adapter.slug, spec.op),
+      description: spec.description(adapter.name),
+      inputSchema: toJsonSchema(advertiserSchema),
+      handle: async (args: unknown) => {
+        const parsed = advertiserSchema.parse(args ?? {}) as {
+          brand: string;
+        } & Record<string, unknown>;
+        const { buildAdapterCallContext } = await import('../shared/brand-resolver.js');
+        // Throws BrandNotRegistered (config_error envelope) if the brand
+        // isn't bound to this network in brands.json. Happens BEFORE any
+        // network call goes out.
+        const ctx = buildAdapterCallContext(parsed.brand, adapter.slug);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { brand: _brand, ...rest } = parsed;
+        return spec.invoke(adapter, rest, ctx);
+      },
+    };
+  });
+}
+
+/** Attach a required `brand: string` field to an existing Zod object schema. */
+function withBrandArg(schema: z.ZodTypeAny): z.ZodTypeAny {
+  if (schema instanceof z.ZodObject) {
+    return schema.extend({ brand: z.string().min(1) });
+  }
+  return z.object({ brand: z.string().min(1) }).strict();
 }
 
 export function generateMetaTools(): ToolDefinition[] {
@@ -181,9 +306,60 @@ export function generateMetaTools(): ToolDefinition[] {
       description:
         'List the affiliate networks this server has adapters registered for, along with their adapter version and claim_status. ' +
         'Use this to discover which networks are wired up before invoking a per-network tool. ' +
-        'Returns a NetworkMeta[] array; pair with affiliate_run_diagnostic for live capability data.',
+        'Returns a NetworkMeta[] array (additively extended with `operationClaimStatuses` — per-op claim-status overrides emitted by an adapter\'s capabilities()); pair with affiliate_run_diagnostic for live capability data.',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
-      handle: async () => getAdapters().map((a) => a.meta),
+      handle: async () => {
+        // Additive shape: original NetworkMeta fields are preserved verbatim;
+        // `operationClaimStatuses` is a NEW optional field that surfaces
+        // per-op claimStatus overrides for callers that want to distinguish
+        // a fully-verified op from one whose underlying contract is only
+        // partially verified. Empty object when an adapter emits no overrides.
+        const adapters = getAdapters();
+        const enriched = await Promise.all(
+          adapters.map(async (a) => {
+            let operationClaimStatuses: Record<string, OperationCapability['claimStatus']> = {};
+            try {
+              const caps = await a.capabilitiesCheck();
+              for (const [op, cap] of Object.entries(caps.operations)) {
+                if (cap.claimStatus) operationClaimStatuses[op] = cap.claimStatus;
+              }
+            } catch {
+              // Adapter capabilitiesCheck failed — surface meta unchanged.
+              // The diagnostic tool is the right place to expose that failure.
+              operationClaimStatuses = {};
+            }
+            return { ...a.meta, operationClaimStatuses };
+          }),
+        );
+        return enriched;
+      },
+    },
+    {
+      name: 'affiliate_resolve_brand',
+      description:
+        'List the logical brands the operator has bound in brands.json, optionally filtered by network slug. ' +
+        'Use this when the user asks "which brands do I have on Impact?" or "show me everything I have registered for Acme" before invoking an advertiser-side tool. ' +
+        'Returns an array of {brand, network, networkBrandId} entries; pair with the per-network advertiser tools, each of which requires the `brand` argument shown here.',
+      inputSchema: {
+        type: 'object',
+        properties: { network: { type: 'string' } },
+        additionalProperties: false,
+      },
+      handle: async (args) => {
+        const parsed = z
+          .object({ network: z.string().optional() })
+          .strict()
+          .parse(args ?? {});
+        const file = loadBrands();
+        const rows: Array<{ brand: string; network: string; networkBrandId: string }> = [];
+        for (const [slug, bindings] of Object.entries(file.brands)) {
+          for (const b of bindings) {
+            if (parsed.network && b.network !== parsed.network) continue;
+            rows.push({ brand: slug, network: b.network, networkBrandId: b.networkBrandId });
+          }
+        }
+        return rows;
+      },
     },
   ];
 }

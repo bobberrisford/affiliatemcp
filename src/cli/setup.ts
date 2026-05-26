@@ -29,6 +29,7 @@ import { getAdapters } from '../shared/registry.js';
 import { getPrompter, type Prompter } from './wizard/prompts.js';
 import { resolveConfigPaths } from './wizard/paths.js';
 import { filterOutKeys, mergeEnv, readEnv, writeEnv } from './wizard/envfile.js';
+import { runBrandDiscovery } from './wizard/brand-discovery.js';
 
 function out(line = ''): void {
   process.stdout.write(line.endsWith('\n') ? line : `${line}\n`);
@@ -208,6 +209,20 @@ async function runNetworkSetup(
           captured[k] = v;
           process.env[k] = v;
           out(`Derived ${k} = ${v} from your credentials (no manual entry needed).`);
+        }
+      }
+      // Brand discovery — only runs for multi-brand adapters. The check
+      // here mirrors the runtime requirement in `brand-resolver.ts`:
+      // adapters with `meta.credentialScope === 'multi-brand'` must
+      // implement `listBrands()`. Failures inside the sub-flow are
+      // surfaced verbatim; the env file still gets written.
+      if (adapter.meta.credentialScope === 'multi-brand') {
+        try {
+          await runBrandDiscovery(adapter, prompter);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          out(`${adapter.name} brand discovery failed: ${msg}`);
+          out('Credentials saved; you can re-run setup once the issue is fixed.');
         }
       }
     } else {

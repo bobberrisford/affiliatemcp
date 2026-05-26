@@ -79,6 +79,8 @@ export function makeFakeAdapter(opts: FakeAdapterOpts): NetworkAdapter {
     supportsBrandOps: false,
     setupTimeEstimateMinutes: opts.setupTimeEstimateMinutes ?? 5,
     setupRequiresApproval: opts.setupRequiresApproval ?? false,
+    side: 'publisher',
+    credentialScope: 'single-brand',
   };
   const resilience: ResilienceConfigMap = {
     default: {

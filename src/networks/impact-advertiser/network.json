@@ -1,0 +1,21 @@
+{
+  "slug": "impact-advertiser",
+  "name": "Impact (advertiser)",
+  "base_url": "https://api.impact.com",
+  "auth_model": "basic",
+  "env_vars": ["IMPACT_ADVERTISER_ACCOUNT_SID", "IMPACT_ADVERTISER_AUTH_TOKEN"],
+  "setup_time_estimate_minutes": 8,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Read-only at v0.1. The adapter refuses any non-GET HTTP method client-side; pair this with Impact's read-only credential tier in the dashboard for defence in depth.",
+    "Two credential shapes auto-detected at runtime: agency-passthrough (one SID addresses many brands) and brand-direct (one SID, one brand). `listBrands()` returns the discovered set; advertiser tools take `brand` and resolve via brands.json.",
+    "`getProgrammePerformance` uses Impact's pre-built `adv_performance_by_media` report template. Endpoint shape verified from docs; live behaviour (sync vs async polling) has // TODO(verify) annotations until a live agency tenant is available."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-05-23",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "multi-brand",
+  "docs_url": "https://integrations.impact.com/impact-brand/"
+}

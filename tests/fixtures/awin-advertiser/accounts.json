@@ -1,0 +1,22 @@
+[
+  {
+    "accountId": 100001,
+    "accountName": "Acme Widgets",
+    "type": "advertiser"
+  },
+  {
+    "accountId": 100002,
+    "accountName": "Globex Coffee",
+    "type": "advertiser"
+  },
+  {
+    "accountId": 200001,
+    "accountName": "My Personal Publisher Site",
+    "type": "publisher"
+  },
+  {
+    "accountId": 100003,
+    "accountName": "Initech Software",
+    "type": "ADVERTISER"
+  }
+]

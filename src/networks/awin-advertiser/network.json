@@ -1,0 +1,24 @@
+{
+  "slug": "awin-advertiser",
+  "name": "Awin (advertiser)",
+  "base_url": "https://api.awin.com",
+  "auth_model": "oauth2",
+  "env_vars": ["AWIN_ADVERTISER_API_TOKEN"],
+  "setup_time_estimate_minutes": 6,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Read-only at v0.1. The HTTP client refuses any non-GET method client-side; pair this with a token scoped to read-only operations at Awin for defence in depth.",
+    "Hard rate limit: Awin permits 20 API calls per minute per user. The client enforces a process-wide token bucket at 20 requests per 60 seconds and queues bursty multi-brand operations rather than failing fast.",
+    "Awin's advertiser API is gated to the Accelerate and Advanced advertiser plans. Brands on the Entry-tier plan appear in `/accounts` output but data endpoints return 401/403; the adapter does not probe each brand (rate-budget reasons — see next entry), so the wizard surfaces a graceful 'found but not API-accessible — upgrade or skip' message at brand-registration time instead.",
+    "`listBrands` calls `GET /accounts` and filters `type === 'advertiser'`. To stay under the 20-per-minute rate budget on accounts with many advertisers, the adapter does NOT issue per-brand probes — all advertiser accounts are reported with `apiEnabled: true`.",
+    "`listProgrammes` is synthetic: Awin programmes are configured in the UI and not enumerated under `/advertisers/{id}/programmes` on every tenant. The adapter returns one Programme per advertiserId keyed on the call context. `// TODO(verify)` against a live Accelerate tenant.",
+    "`listTransactions` maps Awin's `declined` status onto the canonical `reversed` value. Awin's `dateType` is exposed as `transaction` (default) or `validation`."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-05-23",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "multi-brand",
+  "docs_url": "https://developer.awin.com/apidocs"
+}

@@ -120,6 +120,8 @@ const META: NetworkMeta = {
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 8,
   setupRequiresApproval: false,
+  side: 'publisher',
+  credentialScope: 'single-brand',
 };
 
 // ---------------------------------------------------------------------------

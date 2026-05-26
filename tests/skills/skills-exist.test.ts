@@ -15,6 +15,8 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import '../../src/networks/index.js';
+import { generateAllTools } from '../../src/tools/generate.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const skillsRoot = join(here, '..', '..', 'src', 'skills');
@@ -24,6 +26,14 @@ const SKILLS = [
   'affiliate-earnings-report',
   'affiliate-network-status',
   'affiliate-network-setup-help',
+] as const;
+
+// Agency-side skills (PR 4). Same tests apply; plus tool-name validation
+// against the generator's actual output.
+const AGENCY_SKILLS = [
+  'programme-performance-report',
+  'agency-portfolio-rollup',
+  'programme-anomaly-watch',
 ] as const;
 
 /** Crude but adequate YAML frontmatter parser — captures the leading `---` block. */
@@ -151,4 +161,76 @@ describe('publisher skills (PRD §15.21)', () => {
       expect(content, `expected env var ${envVar} to appear in setup-help skill`).toMatch(envVar);
     }
   });
+});
+
+// Match every `affiliate_*` mention. Network slugs include hyphens
+// (e.g. `impact-advertiser`), so the character class allows `[a-z_<>-]`.
+// The trailing `[a-z_]` boundary stops the match before adjacent punctuation
+// (a closing backtick, comma, full stop, etc.) leaks into the captured name.
+const TOOL_NAME_RE = /affiliate_[a-z][a-z0-9_<>-]*[a-z0-9]/g;
+
+/**
+ * Tool names cited in skill bodies that aren't expected to resolve to a real
+ * tool because they're network-slug placeholders (e.g. `affiliate_<slug>_…`).
+ * The runtime skills are written with these so they generalise across all
+ * registered networks; the validator below strips them out before comparing
+ * against the real tool registry.
+ */
+function isPlaceholder(name: string): boolean {
+  return /<[^>]+>/.test(name);
+}
+
+describe('agency-side skills (PR 4)', () => {
+  const realToolNames = new Set(generateAllTools().map((t) => t.name));
+
+  for (const slug of AGENCY_SKILLS) {
+    describe(slug, () => {
+      const skillDir = join(skillsRoot, slug);
+      const skillPath = join(skillDir, 'SKILL.md');
+
+      it('SKILL.md exists', () => {
+        expect(existsSync(skillPath), `expected ${skillPath} to exist`).toBe(true);
+      });
+
+      it('has valid frontmatter with name + description', () => {
+        const content = readFileSync(skillPath, 'utf8');
+        const { name, description } = parseFrontmatter(content);
+        expect(name).toBe(slug);
+        expect(description, 'description must be present').toBeTruthy();
+        expect(description!.length).toBeGreaterThan(20);
+      });
+
+      it('description quotes at least one trigger phrase', () => {
+        const content = readFileSync(skillPath, 'utf8');
+        const { description } = parseFrontmatter(content);
+        const triggerMatches = description!.match(/"[^"]{8,}"/g) ?? [];
+        expect(
+          triggerMatches.length,
+          `expected at least one quoted trigger phrase in description; got: ${description}`,
+        ).toBeGreaterThanOrEqual(1);
+      });
+
+      it('every cited affiliate_* tool actually exists in the registry', () => {
+        const content = readFileSync(skillPath, 'utf8');
+        const { body } = parseFrontmatter(content);
+        const cited = (body.match(TOOL_NAME_RE) ?? []).filter((n) => !isPlaceholder(n));
+        expect(cited.length, `expected ${slug} to cite at least one tool`).toBeGreaterThan(0);
+        const unknown = cited.filter((n) => !realToolNames.has(n));
+        expect(
+          unknown,
+          `${slug} cites tools the generator does not produce: ${unknown.join(', ')}`,
+        ).toEqual([]);
+      });
+
+      it('has at least one example file', () => {
+        const examplesDir = join(skillDir, 'examples');
+        expect(existsSync(examplesDir), `expected ${examplesDir} to exist`).toBe(true);
+        const entries = readdirSync(examplesDir).filter((f) => f.endsWith('.md'));
+        expect(
+          entries.length,
+          `expected at least one example markdown in ${examplesDir}`,
+        ).toBeGreaterThanOrEqual(1);
+      });
+    });
+  }
 });

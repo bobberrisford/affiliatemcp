@@ -24,18 +24,23 @@ export type NetworkSlug = string;
  * Two further admin operations (`listPublishers`, `listPublisherSectors`) are
  * defined on `NetworkAdapter` but throw `NotImplementedError` at v0.1.
  */
-export type PublisherOperation =
+export type AdapterOperation =
   | 'listProgrammes'
   | 'getProgramme'
   | 'listTransactions'
   | 'getEarningsSummary'
   | 'listClicks'
   | 'generateTrackingLink'
-  | 'verifyAuth';
+  | 'verifyAuth'
+  // Advertiser-side operations. Publisher adapters throw NotImplementedError
+  // on these; advertiser adapters implement them. Kept generic so CJ and Awin
+  // advertiser adapters (later PRs) reuse the same names.
+  | 'listMediaPartners'
+  | 'getProgrammePerformance';
 
 export type AdminOperation = 'listPublishers' | 'listPublisherSectors';
 
-export type AnyOperation = PublisherOperation | AdminOperation;
+export type AnyOperation = AdapterOperation | AdminOperation;
 
 export interface NetworkMeta {
   slug: NetworkSlug;
@@ -51,6 +56,16 @@ export interface NetworkMeta {
   setupTimeEstimateMinutes: number;
   setupRequiresApproval: boolean;
   setupApprovalDaysTypical?: number;
+  /**
+   * Which side of the affiliate relationship this adapter integrates with.
+   * Inert metadata at this stage — no code path branches on it yet.
+   */
+  side: 'publisher' | 'advertiser';
+  /**
+   * Whether a single set of credentials addresses one brand or many.
+   * Inert metadata at this stage — no code path branches on it yet.
+   */
+  credentialScope: 'single-brand' | 'multi-brand';
 }
 
 export interface OperationCapability {
@@ -58,6 +73,21 @@ export interface OperationCapability {
   latencyMs?: number;
   sampleSize?: number;
   note?: string;
+  /**
+   * Optional per-operation claim status. Overrides the network-level
+   * `meta.claimStatus` for THIS operation only. When absent, consumers
+   * (doctor surface, list-networks meta tool, diagnostic meta tool) fall
+   * back to the adapter's `meta.claimStatus`.
+   *
+   * Use this to flag operations that are less verified than the rest of
+   * the adapter — e.g. an op whose endpoint shape carries `// TODO(verify)`
+   * annotations against a live tenant, or a synthesised/derived view whose
+   * upstream payloads have not been confirmed.
+   *
+   * Strictly additive at v0.1: every existing capabilities consumer treats
+   * the absence of this field the same as before this field existed.
+   */
+  claimStatus?: 'production' | 'partial' | 'experimental';
 }
 
 export interface NetworkCapabilities {
@@ -178,6 +208,52 @@ export interface EarningsSummary {
 }
 
 // ---------------------------------------------------------------------------
+// Advertiser-side domain types
+// ---------------------------------------------------------------------------
+
+/**
+ * A publisher (a.k.a. media partner / affiliate) running on a brand's
+ * programme — surfaced by advertiser-side adapters via `listMediaPartners`.
+ *
+ * The shape is deliberately generic across networks: Impact calls these
+ * `MediaPartners`, CJ uses `Publishers`, Awin uses `Publishers` too.
+ * `status` is the canonical normalised state; the verbatim upstream payload
+ * lives on `rawNetworkData` so the operator can drill in.
+ */
+export interface MediaPartner {
+  id: string;
+  name: string;
+  status: 'active' | 'pending' | 'inactive' | 'unknown';
+  rawNetworkData: unknown;
+}
+
+/**
+ * One row of the unified per-publisher / per-period performance report.
+ *
+ * Networks vary wildly in which fields they actually populate. Convention:
+ *  - missing numeric fields use `0` (never invent values upstream did not
+ *    provide; the user can disambiguate via `rawNetworkData`).
+ *  - missing string statuses fall back to `'pending'` only when the upstream
+ *    semantically means "not yet approved"; otherwise leave the raw value on
+ *    `rawNetworkData` and pick the closest of the three canonical states.
+ */
+export interface ProgrammePerformanceRow {
+  /** ISO `YYYY-MM-DD` (or `YYYY-MM` if the network only reports monthly). */
+  date: string;
+  publisherId: string;
+  publisherName: string;
+  clicks: number;
+  conversions: number;
+  /** Gross sale amount, in `currency`. */
+  grossSale: number;
+  /** Commission paid to the publisher, in `currency`. */
+  commission: number;
+  currency: string;
+  status: 'pending' | 'approved' | 'reversed';
+  rawNetworkData: unknown;
+}
+
+// ---------------------------------------------------------------------------
 // Query shapes — passed to adapter ops
 // ---------------------------------------------------------------------------
 
@@ -210,6 +286,50 @@ export interface ClickQuery {
   to?: string;
   limit?: number;
   cursor?: string;
+}
+
+export interface MediaPartnerQuery {
+  status?: MediaPartner['status'] | Array<MediaPartner['status']>;
+  search?: string;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface ProgrammePerformanceQuery {
+  from?: string;
+  to?: string;
+  /** Optional: scope to a single programme/campaign id on the brand. */
+  programmeId?: string;
+  /** Optional: scope to a single publisher/media-partner id. */
+  publisherId?: string;
+  limit?: number;
+  cursor?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Adapter call context (advertiser-side)
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-call context threaded through from the tool dispatcher into advertiser-
+ * side adapter methods after `resolveBrandForNetwork` has translated the
+ * caller-supplied `brand` slug into a `networkBrandId`.
+ *
+ * Publisher adapter methods do not receive a context (they address a single
+ * publisher account from credentials in env). Advertiser adapter methods take
+ * this as an optional second argument — optional at the type level so the
+ * cross-cutting `NetworkAdapter` interface remains backward-compatible with
+ * the five existing publisher adapters. Advertiser implementations are
+ * expected to require it at runtime.
+ */
+export interface AdapterCallContext {
+  /**
+   * The network's own brand identifier (e.g. an Impact Advertiser SID, a CJ
+   * advertiser id). Resolved from `(brand, network)` via brand-resolver and
+   * passed verbatim to the adapter so the adapter can address the right
+   * brand under multi-brand credentials.
+   */
+  networkBrandId: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -309,25 +429,93 @@ export interface NetworkAdapter {
   readonly meta: NetworkMeta;
   readonly resilienceConfig: ResilienceConfigMap;
 
-  // Publisher ops — the seven canonical operations.
-  listProgrammes(query?: ProgrammeQuery): Promise<Programme[]>;
-  getProgramme(programmeId: string): Promise<Programme>;
-  listTransactions(query?: TransactionQuery): Promise<Transaction[]>;
-  getEarningsSummary(query?: TransactionQuery): Promise<EarningsSummary>;
-  listClicks(query?: ClickQuery): Promise<Click[]>;
-  generateTrackingLink(input: {
-    programmeId: string;
-    destinationUrl: string;
-  }): Promise<TrackingLink>;
-  verifyAuth(): Promise<{ ok: true; identity?: string } | { ok: false; reason: string }>;
+  // Publisher / shared ops — the seven canonical operations.
+  //
+  // Each accepts an optional `ctx?: AdapterCallContext`. Publisher adapters
+  // ignore it (they read credentials from env and address a single account).
+  // Advertiser adapters use `ctx.networkBrandId` to address the right brand
+  // under multi-brand credentials — that ctx is required at runtime for those
+  // adapters, but the interface marks it optional so this cross-cutting
+  // contract does not break any existing publisher adapter signature.
+  listProgrammes(query?: ProgrammeQuery, ctx?: AdapterCallContext): Promise<Programme[]>;
+  getProgramme(programmeId: string, ctx?: AdapterCallContext): Promise<Programme>;
+  listTransactions(query?: TransactionQuery, ctx?: AdapterCallContext): Promise<Transaction[]>;
+  getEarningsSummary(query?: TransactionQuery, ctx?: AdapterCallContext): Promise<EarningsSummary>;
+  listClicks(query?: ClickQuery, ctx?: AdapterCallContext): Promise<Click[]>;
+  generateTrackingLink(
+    input: { programmeId: string; destinationUrl: string },
+    ctx?: AdapterCallContext,
+  ): Promise<TrackingLink>;
+  verifyAuth(
+    ctx?: AdapterCallContext,
+  ): Promise<{ ok: true; identity?: string } | { ok: false; reason: string }>;
 
   // Admin ops — throw NotImplementedError at v0.1.
   listPublishers(): Promise<never>;
   listPublisherSectors(): Promise<never>;
+
+  // Advertiser-side ops. Optional on the interface (publisher adapters do not
+  // implement them); the tool generator only wires these for advertiser-side
+  // adapters, and the chassis throws NotImplementedError if an advertiser
+  // adapter forgets to override them (see `defaultAdvertiserMethods`).
+  listMediaPartners?(
+    query?: MediaPartnerQuery,
+    ctx?: AdapterCallContext,
+  ): Promise<MediaPartner[]>;
+  getProgrammePerformance?(
+    query?: ProgrammePerformanceQuery,
+    ctx?: AdapterCallContext,
+  ): Promise<ProgrammePerformanceRow[]>;
 
   // Setup + diagnostics
   validateCredential(field: string, value: string): Promise<CredentialValidationResult>;
   setupSteps(): SetupStep[];
   derivedValues?(): Promise<DerivedValueResult[]>;
   capabilitiesCheck(): Promise<NetworkCapabilities>;
+
+  /**
+   * List the brands addressable by this adapter's configured credentials.
+   *
+   * Required at runtime for adapters whose `meta.credentialScope === 'multi-brand'` —
+   * the brand-discovery sub-flow in the setup wizard calls this after auth has
+   * been verified. Optional and unused for `single-brand` adapters.
+   */
+  listBrands?(): Promise<DiscoveredBrand[]>;
+}
+
+/**
+ * A brand discovered via an advertiser-side adapter's `listBrands()` method.
+ *
+ * `networkBrandId` is the network's own identifier for the brand (e.g. Impact
+ * `CampaignId`, CJ advertiser id). `apiEnabled` is `false` for brands the
+ * credential set knows about but cannot transact against (paused, in-onboarding).
+ */
+export interface DiscoveredBrand {
+  networkBrandId: string;
+  displayName: string;
+  apiEnabled: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// brands.json — agency-side mapping of logical brand slugs to network identifiers
+// ---------------------------------------------------------------------------
+
+/**
+ * One entry binds a logical brand (`acme`) to a (network, credentialId,
+ * networkBrandId) tuple. The same logical brand can appear under several
+ * networks; that is how cross-network rollups are produced.
+ */
+export interface BrandBinding {
+  network: NetworkSlug;
+  credentialId: string;
+  networkBrandId: string;
+}
+
+/**
+ * The shape of `~/.affiliate-mcp/brands.json`. Owned by the wizard but readable
+ * by the MCP server at request-dispatch time.
+ */
+export interface BrandsFile {
+  version: 1;
+  brands: Record<string, BrandBinding[]>;
 }

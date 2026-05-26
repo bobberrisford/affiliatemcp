@@ -16,5 +16,7 @@
   "adapter_version": "0.1.0",
   "last_verified": "2026-05-21",
   "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
   "docs_url": "https://partnernetwork.ebay.com/help/integration-center/api-documentation"
 }

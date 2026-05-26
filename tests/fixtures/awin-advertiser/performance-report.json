@@ -1,0 +1,40 @@
+[
+  {
+    "publisherId": 555001,
+    "publisherName": "BestDeals.com",
+    "date": "2026-05-01",
+    "impressions": 12000,
+    "clicks": 1200,
+    "conversions": 24,
+    "pendingNo": 5,
+    "declinedNo": 1,
+    "validationNo": 18,
+    "commission": 240.0,
+    "pendingComm": 50.0,
+    "declinedComm": 10.0,
+    "saleValue": 2400.0,
+    "pendingValue": 500.0,
+    "declinedValue": 100.0,
+    "validationValue": 1800.0,
+    "currency": "GBP"
+  },
+  {
+    "publisherId": 555002,
+    "publisherName": "Coupon Cabin",
+    "date": "2026-05-01",
+    "impressions": 3500,
+    "clicks": 350,
+    "conversions": 5,
+    "pendingNo": 5,
+    "declinedNo": 0,
+    "validationNo": 0,
+    "commission": 50.0,
+    "pendingComm": 50.0,
+    "declinedComm": 0.0,
+    "saleValue": 500.0,
+    "pendingValue": 500.0,
+    "declinedValue": 0.0,
+    "validationValue": 0.0,
+    "currency": "GBP"
+  }
+]

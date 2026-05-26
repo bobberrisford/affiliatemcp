@@ -16,6 +16,7 @@ import { runDiagnostic } from '../shared/diagnostic.js';
 import { getAdapter, getAdapters } from '../shared/registry.js';
 import { resolveConfigPaths } from './wizard/paths.js';
 import { parseEnvFile } from '../shared/config.js';
+import { listBrandsForNetwork } from '../shared/brands.js';
 import type { NetworkAdapter, ResilienceConfigMap } from '../shared/types.js';
 
 function out(line: string): void {
@@ -46,6 +47,12 @@ export interface DoctorReport {
     claimStatus: string;
     knownLimitations: string[];
     resilience: ResilienceConfigMap;
+    /**
+     * Present only for advertiser-side adapters. Lists the logical brands
+     * the operator has bound to this network in brands.json. Empty array
+     * when nothing is registered yet.
+     */
+    brands?: Array<{ slug: string; networkBrandId: string; credentialId: string }>;
   }>;
   diagnostic: Awaited<ReturnType<typeof runDiagnostic>>;
 }
@@ -82,13 +89,24 @@ export async function buildReport(opts: DoctorOptions = {}): Promise<DoctorRepor
       present,
       keys,
     },
-    adapters: targets.map((a) => ({
-      slug: a.slug,
-      name: a.name,
-      claimStatus: a.meta.claimStatus,
-      knownLimitations: a.meta.knownLimitations,
-      resilience: a.resilienceConfig,
-    })),
+    adapters: targets.map((a) => {
+      const base = {
+        slug: a.slug,
+        name: a.name,
+        claimStatus: a.meta.claimStatus,
+        knownLimitations: a.meta.knownLimitations,
+        resilience: a.resilienceConfig,
+      };
+      if (a.meta.side !== 'advertiser') return base;
+      let brands: Array<{ slug: string; networkBrandId: string; credentialId: string }> = [];
+      try {
+        brands = listBrandsForNetwork(a.slug);
+      } catch {
+        // brands.json missing or malformed — surface gracefully as empty.
+        brands = [];
+      }
+      return { ...base, brands };
+    }),
     diagnostic,
   };
 }

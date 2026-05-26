@@ -39,6 +39,7 @@ import type {
   ClickQuery,
   CredentialValidationResult,
   DerivedValueResult,
+  DiscoveredBrand,
   EarningsSummary,
   NetworkAdapter,
   NetworkCapabilities,
@@ -83,6 +84,17 @@ const META: NetworkMeta = {
   setupTimeEstimateMinutes: 10,
   // TODO: true if the network gates API access behind manual approval.
   setupRequiresApproval: false,
+  // TODO: which side of the affiliate relationship this adapter integrates with.
+  // `publisher` for adapters that act on behalf of a publisher account (the
+  // norm at v0.1); `advertiser` reserved for future brand-side adapters.
+  // Inert metadata at this stage — no code path branches on it yet.
+  side: 'publisher',
+  // TODO: whether a single set of credentials addresses one brand or many.
+  // `single-brand` for one publisher account per credentials set (the norm
+  // at v0.1); `multi-brand` reserved for network credentials that span
+  // multiple brands. Inert metadata at this stage — no code path branches
+  // on it yet.
+  credentialScope: 'single-brand',
 };
 
 export class TemplateNetworkAdapter implements NetworkAdapter {
@@ -378,6 +390,31 @@ export class TemplateNetworkAdapter implements NetworkAdapter {
   // Return type: Promise<DerivedValueResult[]> — see src/shared/types.ts.
   async derivedValues(): Promise<DerivedValueResult[]> {
     return [];
+  }
+
+  // TODO: Implement listBrands (REQUIRED if credentialScope is 'multi-brand',
+  // otherwise remove this method).
+  //
+  // What to do:
+  //   For an advertiser-side, multi-brand adapter: enumerate every brand the
+  //   configured credential set can address and return a DiscoveredBrand per
+  //   row. The setup wizard's brand-discovery sub-flow calls this immediately
+  //   after verifyAuth() passes; the operator then picks which brands to
+  //   register in brands.json under their own logical slug.
+  //
+  // API behaviour to verify:
+  //   - Which endpoint enumerates the brands / campaigns / accounts the
+  //     credential set owns? (Impact: /Accounts; CJ: advertiser id list.)
+  //   - Does the network expose an "api enabled" flag per brand? If yes,
+  //     surface it via DiscoveredBrand.apiEnabled so the wizard can default
+  //     the tick boxes correctly. If no, set it to true for every row.
+  //
+  // Single-brand adapters: delete this method entirely. The interface marks
+  // it optional and only multi-brand adapters need to implement it.
+  async listBrands(): Promise<DiscoveredBrand[]> {
+    throw new NotImplementedError(
+      `${SLUG}.listBrands is required for multi-brand adapters and is not yet implemented.`,
+    );
   }
 
   // TODO: Implement capabilitiesCheck.
