@@ -33,7 +33,6 @@ under `docs/findings/` set the tone — copy that register.
 ├── vitest.config.ts
 ├── .eslintrc.cjs / .prettierrc
 ├── .env.example                       schema of every env var the project reads
-├── handoffs/                          per-chunk handoff docs (orchestration history)
 ├── docs/
 │   ├── networks/                      per-network setup walkthroughs (user-facing)
 │   └── findings/                      per-network honest findings (verifiable claims)

@@ -110,7 +110,6 @@ describe('contribute skill (PRD §15.28)', () => {
       if (raw.includes('<') || raw.includes('>')) continue;
       if (raw === 'CONTRIBUTING.md') continue;
       if (raw === 'CODEOWNERS') continue;
-      if (raw === 'WANTED.md') continue;
       if (raw === 'PR.md') continue;
       const candidate = join(repoRoot, raw);
       if (!existsSync(candidate)) missing.push(raw);

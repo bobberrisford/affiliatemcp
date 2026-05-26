@@ -35,7 +35,6 @@ the documented unsupported envelope rather than throwing.
 - [ ] README network table regenerated (`npm run generate:readme`)
 - [ ] `REPORT.md` regenerated if findings were touched (`npm run generate:report`)
 - [ ] `.github/CODEOWNERS` updated with the new adapter directory
-- [ ] `WANTED.md` updated — network moved from "wanted" to "shipped"
 - [ ] Per-network setup doc at `docs/networks/<slug>.md` written (screenshots or placeholders)
 - [ ] PR description above names which 7 ops are live vs `NotImplementedError`
 
