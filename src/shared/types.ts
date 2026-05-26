@@ -375,6 +375,53 @@ export class NotImplementedError extends Error {
 }
 
 // ---------------------------------------------------------------------------
+// API gaps + browser handoff
+// ---------------------------------------------------------------------------
+
+/**
+ * A handoff payload describing work the MCP server cannot do via API but a
+ * browser agent (e.g. Claude for Chrome, running in the user's already-
+ * authenticated session) might be able to drive. Shape is intentionally
+ * network-agnostic — one consumer skill in the browser reads the same fields
+ * regardless of which adapter emitted the handoff.
+ */
+export interface BrowserHandoff {
+  /** Plain-English goal, e.g. "Apply to programme 12345 on Impact". */
+  goal: string;
+  /** Where the browser agent should start. https URL the user owns access to. */
+  startingUrl: string;
+  /** Whatever the agent needs to fill in. Schema is per-operation. */
+  inputs: Record<string, unknown>;
+  /** Hard rules the agent MUST obey — e.g. "do not modify payout fields". */
+  constraints: string[];
+  /** True if the flow submits, changes, or sends anything. Forces confirm-before-submit. */
+  mutates: boolean;
+  /** How the agent confirms the change took effect (URL to revisit + text/state to expect). */
+  verify: { url?: string; expect: string };
+  /** Optional stable selectors or steps the adapter happens to know. Best-effort hints, not contracts. */
+  hints?: string[];
+}
+
+/**
+ * Returned by adapter operations the network's API does not expose.
+ *
+ * NEVER thrown — this is a normal return value. The calling agent is
+ * expected to surface `userMessage` to the user verbatim (see
+ * CONTRIBUTING.md → "API gaps and browser handoffs").
+ */
+export interface ApiGapResponse {
+  kind: 'api-gap';
+  network: NetworkSlug;
+  operation: string;
+  /** Factual one-liner, e.g. "Impact's API does not expose programme applications." */
+  reason: string;
+  /** Verbatim sentence the calling agent should show the user. */
+  userMessage: string;
+  /** Null if no fallback path is known — the message itself invites the user to teach us. */
+  browserFallback: BrowserHandoff | null;
+}
+
+// ---------------------------------------------------------------------------
 // Setup + credential validation
 // ---------------------------------------------------------------------------
 

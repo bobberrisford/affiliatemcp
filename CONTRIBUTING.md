@@ -200,6 +200,96 @@ adapter's `network.json`. To add or correct a finding:
   HTTP traces.
 - Run `npm run generate:report`. Commit the regenerated `REPORT.md`.
 
+## API gaps and browser handoffs
+
+Some things the networks let publishers do — apply to a programme, change
+a payout method, download a creative ZIP, accept revised terms — only
+exist in the dashboard. There is no API. Rather than refusing those
+requests or pretending they failed, an adapter operation can return an
+`ApiGapResponse` describing the gap and (when possible) a `BrowserHandoff`
+the calling agent can drive in the user's own authenticated browser
+session (e.g. via Claude for Chrome).
+
+Both types live in `src/shared/types.ts`. An `ApiGapResponse` is **never
+thrown** — it is a normal return value. The calling agent surfaces
+`userMessage` to the user verbatim and waits for an explicit yes.
+
+### When to use it
+
+Use an `ApiGapResponse` when:
+
+- The network's API has no endpoint for the requested operation, **and**
+- The operation does exist in the publisher dashboard, **and**
+- The flow is something a user could reasonably authorise an agent to do
+  on their behalf.
+
+Do **not** use it as a fallback when the API is *down* — that case still
+goes through `NetworkErrorEnvelope` (principle 4.1). API gaps are a
+permanent shape of the network's surface; outages are not.
+
+### `userMessage` — the phrasing rules
+
+`userMessage` is the sentence the calling agent shows the user. It is
+the product. These rules are not stylistic; they preserve trust:
+
+1. **Name the network and the limitation factually.** "X's API doesn't
+   support Y" — not "this isn't supported" (sounds like our bug) and not
+   "X doesn't let you" (sounds like blame).
+2. **Hedge the offer with "try" or "probably".** Browser handoffs are
+   best-effort. Never write "I'll do it" or "I can do this."
+3. **State the prerequisite once, plainly.** "You'll need Claude for
+   Chrome and to be logged in" — no wall of caveats.
+4. **For mutating actions, mention the confirm step in the same
+   sentence as the offer.** Don't bury it.
+5. **End with a question.** The user opts in every time. No silent
+   fallback from API to browser.
+6. **UK spelling.**
+
+When no fallback path is known, set `browserFallback: null` and let
+`userMessage` invite the user to teach us:
+
+> "Rakuten's API doesn't support this, and I don't have a known browser
+> flow for it either. If you can point me at the dashboard page where
+> you'd normally do it, I can try to drive it from there."
+
+### `BrowserHandoff` — the payload
+
+The handoff is consumed by one general-purpose browser-agent skill,
+not a per-operation playbook. Keep it network-agnostic:
+
+- `goal` — plain English, names the network and the specific target
+  (campaign id, payout id, etc.).
+- `startingUrl` — an https URL the user owns access to. Never embed
+  credentials.
+- `inputs` — the data the agent will fill in. Document the schema in
+  the adapter method's docstring; the type is `Record<string, unknown>`
+  by design.
+- `constraints` — hard rules. Every mutating handoff must include
+  "show the user a summary and wait for explicit confirmation before
+  clicking submit". Anything page-specific (don't modify payout
+  fields, don't accept new ToS the user hasn't seen) goes here too.
+- `mutates` — true if the flow submits anything. The consumer skill
+  uses this to enforce the confirm step regardless of constraint
+  wording.
+- `verify` — how to know it worked. A URL to revisit and a string
+  describing what should now be true.
+- `hints` (optional) — selectors or step sequences the adapter
+  happens to know. **Best-effort, not contracts.** If they drift, the
+  agent should retry from the goal, not give up.
+
+### What this is not
+
+- It is not a permission to scrape read paths the API does cover. If an
+  endpoint exists, use it.
+- It is not a permission to automate login, solve captchas, or store
+  credentials. The user is already authenticated in their own browser;
+  that is the whole reason this works.
+- Handoffs do not get their own `findings.md` verdict. They show up in
+  `capabilitiesCheck` as supported with `note: 'via browser handoff'`.
+
+A worked example lives in `src/networks/impact/adapter.ts` →
+`applyToProgram`.
+
 ## PR process
 
 1. Branch from `main`. Use a descriptive name (`feature/network-skimlinks`,
@@ -235,8 +325,11 @@ file PRs that:
   programme terms. Read-only insight ops only at this stage.
 - Add scraping fallbacks when a network's API is down. Surface the
   failure with the verbatim error envelope; do not invent data.
-- Add a network without a real public API. (Browser-automation
-  adapters are out of scope for now.)
+- Add a network without a real public API. Pure browser-automation
+  adapters (a network whose entire surface is scraped) remain out of
+  scope. **Browser handoffs for API gaps** — operations the network's
+  API genuinely does not expose — are in scope; see "API gaps and
+  browser handoffs" above.
 - Mix tiers in one adapter folder. If a network's brand-tier needs a
   separate credential bundle, prefix the env vars (e.g.
   `AWIN_ADVERTISER_*`) and ship a separate `<slug>-advertiser/`

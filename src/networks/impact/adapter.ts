@@ -64,6 +64,7 @@ import { registerAdapter } from '../../shared/registry.js';
 import { createLogger } from '../../shared/logging.js';
 import {
   NotImplementedError,
+  type ApiGapResponse,
   type Click,
   type ClickQuery,
   type CredentialValidationResult,
@@ -916,6 +917,61 @@ export class ImpactAdapter implements NetworkAdapter {
       programmeId: input.programmeId,
       createdAt: new Date().toISOString(),
       rawNetworkData: response,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // applyToProgram — API gap demo
+  //
+  // Impact's publisher API exposes no endpoint for applying to a campaign;
+  // the flow only exists in app.impact.com. This method NEVER throws — it
+  // returns an `ApiGapResponse` describing the gap and (when possible) a
+  // browser handoff a Claude-for-Chrome-style agent can drive in the user's
+  // own authenticated session. See CONTRIBUTING.md → "API gaps and browser
+  // handoffs" for the phrasing rules `userMessage` must follow.
+  //
+  // This method is intentionally NOT on `NetworkAdapter` — extending the
+  // canonical interface waits until at least two networks emit handoffs for
+  // the same goal, per the "two networks first" rule in shared/types.ts.
+  // -------------------------------------------------------------------------
+
+  async applyToProgram(input: {
+    campaignId: string;
+    promotionalMethods?: string[];
+    notes?: string;
+  }): Promise<ApiGapResponse> {
+    return {
+      kind: 'api-gap',
+      network: SLUG,
+      operation: 'applyToProgram',
+      reason: "Impact's publisher API does not expose programme applications.",
+      userMessage:
+        "Impact's API doesn't support applying to programmes — that flow only " +
+        'exists in their publisher portal. I can try to drive it with a browser ' +
+        "agent instead (you'll need Claude for Chrome and to be logged in to " +
+        "app.impact.com). I'll show you what's about to be submitted before " +
+        'anything is clicked. Want me to try?',
+      browserFallback: {
+        goal: `Apply to Impact campaign ${input.campaignId}`,
+        startingUrl: `https://app.impact.com/secure/mediapartner/campaign/${encodeURIComponent(input.campaignId)}.ihtml`,
+        inputs: {
+          campaignId: input.campaignId,
+          promotionalMethods: input.promotionalMethods ?? [],
+          notes: input.notes ?? '',
+        },
+        constraints: [
+          'Stop and report if the active account is not a Publisher account.',
+          'Stop if the apply button is missing or already reads Pending/Approved.',
+          'Do not modify any field outside the application modal.',
+          'Show the user a summary of what will be submitted and wait for explicit confirmation before clicking submit.',
+          'Never accept new ToS or compliance checkboxes the user has not seen.',
+        ],
+        mutates: true,
+        verify: {
+          url: 'https://app.impact.com/secure/mediapartner/myprograms/pending.ihtml',
+          expect: `Campaign ${input.campaignId} appears in the Pending list.`,
+        },
+      },
     };
   }
 

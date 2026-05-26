@@ -558,3 +558,46 @@ describe('Impact.capabilitiesCheck', () => {
     expect(caps.knownLimitations.length).toBeGreaterThan(0);
   });
 });
+
+describe('Impact.applyToProgram — API gap + browser handoff', () => {
+  it('never throws; returns a structured api-gap response with a browser fallback', async () => {
+    const res = await impactAdapter.applyToProgram({
+      campaignId: '12345',
+      promotionalMethods: ['blog', 'email'],
+      notes: 'UK lifestyle audience, 40k monthly readers.',
+    });
+
+    expect(res.kind).toBe('api-gap');
+    expect(res.network).toBe('impact');
+    expect(res.operation).toBe('applyToProgram');
+    expect(res.reason).toMatch(/does not expose/i);
+
+    // userMessage carries the rules from CONTRIBUTING.md → API gaps:
+    //  - names the network factually, offers a fallback, hedges with "try",
+    //    surfaces the confirm step, and ends with a question.
+    expect(res.userMessage).toMatch(/Impact's API/);
+    expect(res.userMessage).toMatch(/browser agent|Claude for Chrome/);
+    expect(res.userMessage).toMatch(/before anything is clicked/);
+    expect(res.userMessage.trim().endsWith('?')).toBe(true);
+
+    const handoff = res.browserFallback;
+    expect(handoff).not.toBeNull();
+    expect(handoff?.mutates).toBe(true);
+    expect(handoff?.startingUrl).toContain('12345');
+    expect(handoff?.inputs).toMatchObject({
+      campaignId: '12345',
+      promotionalMethods: ['blog', 'email'],
+    });
+    expect(handoff?.constraints.some((c) => /confirmation/i.test(c))).toBe(true);
+    expect(handoff?.verify.expect).toMatch(/12345/);
+  });
+
+  it('emits a handoff even when optional inputs are omitted', async () => {
+    const res = await impactAdapter.applyToProgram({ campaignId: '999' });
+    expect(res.browserFallback?.inputs).toMatchObject({
+      campaignId: '999',
+      promotionalMethods: [],
+      notes: '',
+    });
+  });
+});
