@@ -58,6 +58,12 @@ need to write code. You need:
 
 That is the whole list.
 
+**And if you work for an affiliate network**, this is also for you,
+from the other side. The adapters bundled today are placeholders
+until each network adopts its own. We'd rather hand the keys over
+than maintain a guess at your API. See
+[`CONTRIBUTING.md`](./CONTRIBUTING.md) under "Adopting your network".
+
 ## Why bother?
 
 **One question, every network — and every brand.** "Show me earnings
@@ -348,22 +354,51 @@ editorial baseline used when accepting new network claims, see
 [`REPORT.md`](./REPORT.md). It is regenerated from each adapter's
 `network.json` on every merge, so it stays in step with the code.
 
+## Repository layout
+
+If you're poking around the source, the top-level folders are:
+
+- [`src/`](./src) — the MCP server. Entry point `index.ts`; one folder
+  per network under [`src/networks/`](./src/networks) (publisher
+  adapters at `<slug>/`, advertiser adapters at `<slug>-advertiser/`);
+  shared primitives under [`src/shared/`](./src/shared); bundled
+  Claude skills under [`src/skills/`](./src/skills).
+- [`docs/networks/`](./docs/networks) — per-network setup walkthroughs
+  (dashboard navigation, credentials, common failures), publisher and
+  advertiser side.
+- [`templates/new-network/`](./templates/new-network) — scaffold to
+  copy when adding a new network adapter.
+- [`scripts/`](./scripts) — generators and validators
+  (`validate:network`, `generate:readme`, `generate:report`).
+- [`tests/`](./tests) — vitest suite. No live API calls; everything
+  runs against verbatim fixtures.
+- [`examples/`](./examples) — Claude Desktop config snippet.
+
+Each folder has its own short README explaining what lives there.
+
 ## Adding a network
 
-If your favourite network isn't in the table, you can add it — and
-you don't necessarily need to be a developer to do it. Open this
-repo in Claude Code and say *"add [network name] to affiliate-mcp"*.
-The `contribute` skill kicks in and walks the whole process: it asks
-early which side you're adding (publisher, brand-side, or both),
-picks the right scaffold and credential-scope conventions, researches
-the network's API, writes the tests, drafts the docs. You're the
-editor; Claude does the typing.
+**If you work for an affiliate network**, the canonical path is in
+[`CONTRIBUTING.md`](./CONTRIBUTING.md) under "Adopting your network".
+You can take ownership via `.github/CODEOWNERS`, claim
+`claim_status: production` directly, and cover both publisher and
+advertiser sides — whichever your API exposes.
+
+If your favourite network isn't in the table and you don't work for
+it, you can add it anyway — and you don't necessarily need to be a
+developer to do it. Open this repo in Claude Code and say *"add
+[network name] to affiliate-mcp"*. The `contribute` skill kicks in
+and walks the whole process: it asks early which side you're adding
+(publisher, brand-side, or both), picks the right scaffold and
+credential-scope conventions, researches the network's API, writes
+the tests, drafts the docs. You're the editor; Claude does the
+typing.
 
 If you'd rather drive it yourself, [`CONTRIBUTING.md`](./CONTRIBUTING.md)
 is the human-side workflow, [`AGENTS.md`](./AGENTS.md) is the primer
 for AI coding agents, and [`templates/new-network/`](./templates/new-network/)
-is the scaffold to copy. [`WANTED.md`](./WANTED.md) lists networks
-explicitly on the roadmap.
+is the scaffold to copy. Networks people most often ask for are
+tracked in GitHub Issues under the `good first issue` label.
 
 Local development:
 

@@ -257,12 +257,7 @@ between-marker rows of the README network table.
 If the repo has `CODEOWNERS` (it will, once Chunk 12 ships), add a line
 claiming `src/networks/<slug>/` for your handle.
 
-### Step 14. Update `WANTED.md`
-
-If the network was on `WANTED.md`, remove it. If it wasn't there in the first
-place, no action.
-
-### Step 15. Open a draft PR
+### Step 14. Open a draft PR
 
 The PR template (Chunk 12) ships the full checklist. At minimum:
 
@@ -272,7 +267,7 @@ The PR template (Chunk 12) ships the full checklist. At minimum:
 - Confirm: `npm test`, `npm run typecheck`, `npm run lint`, and
   `npm run validate:network -- <slug>` all pass locally.
 
-### Step 16. Hand back to the user
+### Step 15. Hand back to the user
 
 Tell the user what you've done, what is left for them to do (review the diff,
 push the branch, request review), and what they should expect from CI.
@@ -424,7 +419,6 @@ Run through this before the user clicks "Create pull request":
 - [ ] UK spellings throughout. The user-visible noun is "programme".
 - [ ] README network table regenerated via `npm run generate:readme`.
 - [ ] CODEOWNERS updated (if the file exists).
-- [ ] WANTED.md updated (if applicable).
 - [ ] Per-network setup doc written at `docs/networks/<slug>.md`.
 - [ ] PR template filled out — including the live-test evidence section.
 

@@ -1,27 +1,37 @@
 # Contributing to affiliate-mcp
 
-Thanks for considering a contribution.
+**If you work for an affiliate network, this is for you.** The project's
+working assumption is that each network is the canonical author of its
+own adapter — you know your API, your dashboard, your tiers, and your
+quirks better than anyone outside the company. The adapters bundled
+today (Awin, CJ Affiliate, eBay Partner Network, Impact, Rakuten
+Advertising, plus advertiser-side adapters for Awin, CJ, and Impact)
+are placeholders until each network adopts its own. We'd rather hand
+the keys over than maintain a guess at your API.
 
-If you work for an affiliate network i would love for you to add your network APIs and or optimise what i have added already
+If you don't work for the network but want to contribute one anyway,
+that's also welcome — see "Adding a network from outside" below.
 
-This document is the human-facing companion to `.claude/skills/contribute/SKILL.md` (which targets Claude
-Code). You do not need to use Claude Code to contribute — everything here
-can be done by hand.
+This document is the human-facing companion to
+[`.claude/skills/contribute/SKILL.md`](./.claude/skills/contribute/SKILL.md)
+(which targets Claude Code). You do not need to use Claude Code to
+contribute — everything here can be done by hand.
 
 ## Overview
 
-Welcome contributions, roughly in priority order:
+Contributions, in roughly the order we care about:
 
-- **New network adapters.** [`WANTED.md`](./WANTED.md) lists the networks
-  publishers most often ask for. Skimlinks, Webgains, FlexOffers, and Sovrn
-  are the current top of the queue.
+- **Networks adopting their own adapter(s)** — see "Adopting your
+  network" below. This is the canonical path. Adoption can cover the
+  publisher side, the advertiser side, or both.
+- **Adding a network from outside** — same workflow, smaller surface.
 - **Bug fixes and adapter regressions** when a network changes its API.
-- **Setup-doc improvements** — clearer screenshots, additional common-failure
-  entries, dashboard navigation updates.
+- **Setup-doc improvements** — clearer screenshots, additional
+  common-failure entries, dashboard navigation updates.
 - **Corrections to [`REPORT.md`](./REPORT.md)** — if a claim about a
-  network's API is wrong, we want to fix it. See
-  [`CORRECTIONS.md`](./CORRECTIONS.md).
-- **New publisher skills** that compose existing tools in useful ways.
+  network's API is wrong, we want to fix it.
+- **New skills** that compose existing tools in useful ways — publisher
+  or brand/agency side.
 
 ## Code of Conduct
 
@@ -40,39 +50,137 @@ npm run lint
 npm run build
 ```
 
-Node 20+ is required. There are no native dependencies. The test suite does
-not hit any live API — fixtures live under `tests/networks/<slug>/fixtures/`.
+Node 20+ is required. There are no native dependencies. The test suite
+does not hit any live API — fixtures live under
+`tests/networks/<slug>/fixtures/`.
 
-## Adding a new network
+## Adopting your network
 
-The full playbook — including the per-step quality bar — lives in
-[`.claude/skills/contribute/SKILL.md`](./.claude/skills/contribute/SKILL.md).
-At the human level the path is:
+The canonical path: you work for the network, you have access to your
+own API, and you want the adapter that ships in `affiliate-mcp` to be
+the one you stand behind.
 
-1. Copy `templates/new-network/` to `src/networks/<slug>/`. Fill in
-   `network.json`, `adapter.ts`, and a `findings.md` skeleton.
-2. Implement the seven canonical operations from `src/shared/types.ts`.
-   Operations the network does not support must return the documented
+A network adapter has two possible sides:
+
+- **Publisher side** (`src/networks/<slug>/`) — for publishers logging
+  in with publisher-tier credentials. Implements the seven canonical
+  publisher operations from [`src/shared/types.ts`](./src/shared/types.ts):
+  `listProgrammes`, `getProgramme`, `listTransactions`,
+  `getEarningsSummary`, `listClicks`, `generateTrackingLink`,
+  `verifyAuth`.
+- **Advertiser side** (`src/networks/<slug>-advertiser/`) — for brands
+  and agencies logging in with advertiser-tier credentials. Same seven
+  canonical operations, but the resolver translates a `brand` argument
+  to a `networkBrandId` before each call. Awin, CJ, and Impact ship
+  reference advertiser adapters today.
+
+You can adopt one side or both, in one PR or two. Two starting points:
+
+1. **No adapter yet for your network** (one side or both). Scaffold
+   from `templates/new-network/` and follow the steps below. Skip the
+   advertiser side if your network only exposes one side of its API to
+   you.
+2. **A placeholder adapter exists already** (you're one of the
+   currently bundled networks, or a community contributor shipped
+   one). Open an issue saying you want to take ownership; we'll add
+   you to `.github/CODEOWNERS` for the relevant
+   `src/networks/<your-slug>*/` directories and you can replace the
+   implementation against your real API.
+
+Either way, the work per side is:
+
+1. **Implement the seven canonical operations.** Operations your API
+   does not expose to that side must return the documented
    "unsupported" envelope — never throw, never invent data.
-3. Add fixtures and an adapter test under `tests/networks/<slug>/`.
-4. Add a setup doc at `docs/networks/<slug>.md` (use the existing four as
-   templates).
-5. Wire the adapter into `src/shared/registry.ts`.
-6. Run `npm run validate:network -- <slug>` and `npm run generate:readme`.
-   Commit the regenerated README table.
-7. Open a PR using the `new-network.md` template (see PR process below).
+2. **Fill in `network.json`** honestly: `setup_time_estimate_minutes`,
+   `setup_requires_approval` and `setup_approval_days_typical` if
+   applicable, `known_limitations` for anything your API does not yet
+   support, `side: 'publisher' | 'advertiser'`, and
+   `credential_scope: 'single-brand' | 'multi-brand'` (advertiser
+   networks where one credential set reaches many brands — Impact, CJ,
+   Awin advertiser — are `multi-brand`). `claim_status: production`
+   is permissible — you, the network, are the source of truth.
+3. **Write the setup doc** at `docs/networks/<slug>.md` (or
+   `<slug>-advertiser.md`). Use the existing docs as templates. Quote
+   dashboard button names verbatim — anything the user will literally
+   see.
+4. **Add fixtures and adapter tests** under
+   `tests/networks/<slug>/`. Strip credentials and account IDs from
+   the fixtures before committing — scrub then commit, not the other
+   way round. The test suite never makes a live call; everything runs
+   against fixtures.
+5. **Wire the adapter** into `src/networks/index.ts` (one import line).
+6. **For advertiser-side: implement `listBrands()`** if
+   `credential_scope: 'multi-brand'`. The setup wizard's
+   brand-discovery sub-flow calls it after `verifyAuth()` succeeds and
+   uses the result to populate `~/.affiliate-mcp/brands.json`.
+7. **Validate, regenerate, file a finding**:
+
+   ```
+   npm run validate:network -- <slug>
+   npm run generate:readme
+   npm run generate:report
+   ```
+
+   Commit the regenerated `README.md` table and `REPORT.md`.
+8. **Open a PR.** Use the `new-network.md` template for new adapters
+   or the default template for replacing a placeholder. The full
+   per-step quality bar is in
+   [`.claude/skills/contribute/SKILL.md`](./.claude/skills/contribute/SKILL.md).
+
+### What "adopting" buys you
+
+- A `@your-handle` entry in `.github/CODEOWNERS` for your adapter
+  directories so PRs touching them route to you for review.
+- The placeholder is replaced; `claim_status: production` is
+  permissible because the network itself is verifying the adapter.
+- Future API changes route through you. We won't merge community
+  patches to your adapter without your sign-off.
+
+### What we ask in exchange
+
+- A named contact in the PR description (a public alias is fine).
+- Best-effort response to issues opened against your adapter. We
+  don't expect 24/7 support — but if your API changes in a way that
+  breaks the adapter, we'd appreciate a heads-up.
+- That you treat the seven canonical ops as the contract. Network-
+  specific extras can live as additional tools (Awin's publisher
+  adapter does this), but the seven ops must speak the shared shapes.
+
+## Adding a network from outside
+
+Same workflow as adoption, with two adjustments:
+
+- **Publisher side only** is the safer scope. Lighting up the
+  advertiser side needs advertiser-tier credentials, and we'd rather
+  wait for the network itself to do it. If you do have advertiser-tier
+  credentials, the workflow is the same — just expect ownership to
+  transfer to the network when it adopts the adapter.
+- **`claim_status` starts at `partial` or `experimental`**, not
+  `production`. Promotion to `production` happens when the network
+  adopts the adapter, or after enough community evidence accumulates.
+
+Networks people most often ask for (Skimlinks, Webgains, FlexOffers,
+Sovrn) are tracked in GitHub Issues under the `good first issue`
+label. Open an issue before starting so we can flag if the network
+itself is already in conversation about adopting.
 
 ## Fixing a broken adapter
 
-1. Reproduce the failure with `npx affiliate-networks-mcp doctor <slug>`. Capture the
-   verbatim diagnostic envelope.
-2. Open an issue using the `network-broken.yml` template before sending a
-   PR — that lets other people pile on if they are seeing the same thing.
-3. Update the fixture in `tests/networks/<slug>/fixtures/` to capture the
-   new upstream shape. Adjust the adapter. Add a regression test.
-4. If the network's API has changed substantively, also update the relevant
-   section of `docs/findings/<slug>.md` so the change is recorded in
-   `REPORT.md` on the next regeneration.
+1. Reproduce the failure with `npx affiliate-networks-mcp doctor <slug>`.
+   Capture the verbatim diagnostic envelope.
+2. Open an issue using the `network-broken.yml` template before
+   sending a PR — that lets other people pile on if they are seeing
+   the same thing, and it pings the network's CODEOWNER if one is set.
+3. Update the fixture in `tests/networks/<slug>/fixtures/` to capture
+   the new upstream shape. Adjust the adapter. Add a regression test.
+4. If the network's API has changed substantively, also update the
+   relevant section of `docs/findings/<slug>.md` so the change is
+   recorded in `REPORT.md` on the next regeneration.
+
+If the network has a CODEOWNER, they have to approve the PR. If they
+don't respond within a reasonable window and users are stuck, a
+maintainer can merge defensively and ping the CODEOWNER on the PR.
 
 ## Improving setup docs
 
@@ -83,12 +191,13 @@ Stick to that shape. Screenshots are welcome; put them under
 
 ## Filing a finding for REPORT.md
 
-`REPORT.md` is regenerated from `docs/findings/<slug>.md` and the adapter's
-`network.json`. To add or correct a finding:
+`REPORT.md` is regenerated from `docs/findings/<slug>.md` and the
+adapter's `network.json`. To add or correct a finding:
 
-- Edit `docs/findings/<slug>.md`. Each finding has a category, a verdict
-  (`works`, `partial`, `broken`, `unsupported`), and a short evidence
-  paragraph linking to dashboard screenshots, API docs, or HTTP traces.
+- Edit `docs/findings/<slug>.md`. Each finding has a category, a
+  verdict (`works`, `partial`, `broken`, `unsupported`), and a short
+  evidence paragraph linking to dashboard screenshots, API docs, or
+  HTTP traces.
 - Run `npm run generate:report`. Commit the regenerated `REPORT.md`.
 
 ## PR process
@@ -103,31 +212,40 @@ Stick to that shape. Screenshots are welcome; put them under
      (`?template=new-network.md` in the PR-create URL).
    - For everything else, the default template (a short summary + test
      plan) is enough.
-4. Tag a maintainer for review. CI must be green before merge.
-5. Squash-merge is the default. Keep the squashed commit message brief and
-   matter-of-fact.
+4. Tag the CODEOWNER if one is set; otherwise tag a maintainer. CI
+   must be green before merge.
+5. Squash-merge is the default. Keep the squashed commit message brief
+   and matter-of-fact.
 
 ## What not to do
 
-The project has a small number of deliberate non-goals (PRD §18). Please
-do not file PRs that:
+The project has a small number of deliberate non-goals. Please do not
+file PRs that:
 
 - Add telemetry, analytics, error-reporting beacons, or any phone-home.
-- Add a hosted service, dashboard, web UI, or credential broker. This is a
-  local-only MCP server; credentials never leave the user's machine.
-- Bundle credentials, sample tokens, or shared developer keys. Every user
-  brings their own.
+- Add a hosted service, dashboard, web UI, or credential broker. This
+  is a local-only MCP server; credentials never leave the user's
+  machine.
+- Bundle credentials, sample tokens, or shared developer keys. Every
+  user brings their own.
 - Add affiliate-link cloaking, click-spoofing, or anything that would
   violate a network's terms of service.
-- Add scraping fallbacks when a network's API is down. Surface the failure
-  with the verbatim error envelope; do not invent data.
-- Add a network without a real public API. (Browser-automation adapters are
-  out of scope for now.)
+- Add write operations that move money or reputation on the advertiser
+  side — approving publishers, paying out commission, editing
+  programme terms. Read-only insight ops only at this stage.
+- Add scraping fallbacks when a network's API is down. Surface the
+  failure with the verbatim error envelope; do not invent data.
+- Add a network without a real public API. (Browser-automation
+  adapters are out of scope for now.)
+- Mix tiers in one adapter folder. If a network's brand-tier needs a
+  separate credential bundle, prefix the env vars (e.g.
+  `AWIN_ADVERTISER_*`) and ship a separate `<slug>-advertiser/`
+  adapter. Do not silently extend the publisher credential.
 - Marketing or promotional language anywhere in the codebase, docs, or
   generated outputs. Matter-of-fact tone, UK spelling.
 
 ## Licence note
 
 `affiliate-mcp` is released under the MIT licence — see
-[`LICENCE`](./LICENCE). By submitting a contribution you agree that your
-contribution is released under the same terms.
+[`LICENCE`](./LICENCE). By submitting a contribution you agree that
+your contribution is released under the same terms.

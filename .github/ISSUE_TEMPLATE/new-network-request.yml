@@ -6,10 +6,10 @@ body:
   - type: markdown
     attributes:
       value: |
-        Use this to request a new network adapter. Check `WANTED.md` first — your
-        network may already be on the queue. Per the PRD non-goals, we only add
-        networks that publish a real REST or GraphQL API; browser-automation
-        adapters are out of scope.
+        Use this to request a new network adapter. Search existing issues first —
+        your network may already be on the queue. We only add networks that
+        publish a real REST or GraphQL API; browser-automation adapters are out
+        of scope.
   - type: input
     id: network-name
     attributes:
