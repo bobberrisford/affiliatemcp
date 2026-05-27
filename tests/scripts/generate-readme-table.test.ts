@@ -11,9 +11,14 @@ import { describe, expect, it } from 'vitest';
 import { loadReportData } from '../../scripts/report-data.js';
 import {
   applyReadmeTable,
+  applyWantedTable,
   renderReadmeTable,
+  renderWantedTable,
   TABLE_END_MARKER,
   TABLE_START_MARKER,
+  WANTED_END_MARKER,
+  WANTED_START_MARKER,
+  type WantedNetwork,
 } from '../../scripts/generate-readme-table.js';
 
 function makeFixture(): string {
@@ -121,5 +126,40 @@ describe('generate-readme-table', () => {
     const once = applyReadmeTable(before, newTable);
     const twice = applyReadmeTable(once, newTable);
     expect(twice).toEqual(once);
+  });
+});
+
+describe('generate-readme-table wanted list', () => {
+  const wanted: WantedNetwork[] = [
+    { name: 'Tradedoubler', slug: 'tradedoubler', side: 'publisher', note: 'REST API.', issue: null },
+    { name: 'Partnerize', slug: 'partnerize', side: 'both', note: 'Two tiers.', issue: 42 },
+  ];
+
+  it('renders one row per wanted network with the right side label', () => {
+    const table = renderWantedTable(wanted);
+    expect(table).toContain('| Tradedoubler | publisher | REST API. |');
+    expect(table).toContain('| Partnerize | publisher + advertiser | Two tiers. |');
+  });
+
+  it('links to an existing issue number or to the request template when absent', () => {
+    const table = renderWantedTable(wanted);
+    expect(table).toContain('[#42](https://github.com/bobberrisford/affiliatemcp/issues/42)');
+    expect(table).toContain('new-network-request.yml');
+  });
+
+  it('updates only the wanted region, leaving the network table intact', () => {
+    const before = [
+      TABLE_START_MARKER,
+      '| network | row |',
+      TABLE_END_MARKER,
+      '',
+      WANTED_START_MARKER,
+      '| old wanted |',
+      WANTED_END_MARKER,
+    ].join('\n');
+    const after = applyWantedTable(before, renderWantedTable(wanted));
+    expect(after).toContain('| network | row |');
+    expect(after).not.toContain('| old wanted |');
+    expect(after).toContain('| Tradedoubler |');
   });
 });

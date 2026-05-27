@@ -213,6 +213,23 @@ v0.1 — the client refuses any non-GET HTTP method before it leaves
 your machine. The full editorial position, including known upstream
 quirks and the read-only stance, lives in [`REPORT.md`](./REPORT.md).
 
+## Wanted
+
+Networks people have asked for but that don't have an adapter yet. If
+you work for one of these — or just have API access and want to
+contribute — this is the most useful place to start. See
+[`CONTRIBUTING.md`](./CONTRIBUTING.md) for the workflow, and open (or
+pile onto) a tracking issue before you start.
+
+<!-- AFFILIATE_MCP_WANTED_TABLE_START -->
+| Network | Side wanted | Notes | Tracking issue |
+| --- | --- | --- | --- |
+| Tradedoubler | publisher | Public REST API with token auth; publisher reporting and link generation are the priority. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Tradedoubler) |
+| Partnerize | publisher + advertiser | Has publisher- and advertiser-tier APIs; advertiser side should wait for advertiser-tier credentials. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Partnerize) |
+| Skimlinks | publisher | Publisher-only; reporting API plus link APIs. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Skimlinks) |
+| Webgains | publisher | Publisher reporting API; approval may be required for API access. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Webgains) |
+<!-- AFFILIATE_MCP_WANTED_TABLE_END -->
+
 ## Awin reference implementation
 
 Awin is the current reference slice for the repo's future shape. It keeps the
