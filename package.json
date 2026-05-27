@@ -25,6 +25,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:live": "echo \"test:live placeholder — implemented in a later chunk\" && exit 0",
+    "scaffold:network": "tsx scripts/scaffold-network.ts",
     "validate:network": "tsx scripts/validate-network-json.ts",
     "generate:readme": "tsx scripts/generate-readme-table.ts",
     "generate:report": "tsx scripts/generate-report.ts",

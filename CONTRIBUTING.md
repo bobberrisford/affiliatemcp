@@ -17,6 +17,16 @@ This document is the human-facing companion to
 (which targets Claude Code). You do not need to use Claude Code to
 contribute — everything here can be done by hand.
 
+**AI-assisted PRs are welcome.** This repo ships a `contribute` skill
+precisely so you can let Claude Code do the legwork — scaffolding an
+adapter, wiring tests, drafting setup docs. We don't mind how a PR was
+written; we care that it meets the bar. The same rules apply whether
+you typed it or generated it: the seven canonical operations are the
+contract, unsupported ops return the documented envelope rather than
+inventing data, fixtures are scrubbed of real credentials, and CI is
+green. If you used an AI assistant, give the diff the same read you'd
+want a maintainer to give it before you open the PR.
+
 ## Overview
 
 Contributions, in roughly the order we care about:
@@ -77,9 +87,13 @@ A network adapter has two possible sides:
 You can adopt one side or both, in one PR or two. Two starting points:
 
 1. **No adapter yet for your network** (one side or both). Scaffold
-   from `templates/new-network/` and follow the steps below. Skip the
-   advertiser side if your network only exposes one side of its API to
-   you.
+   with `npm run scaffold:network -- <slug>` (add `--advertiser` for
+   the brand side, `--name "Human Name"` to set the display name). That
+   copies `templates/new-network/` into `src/networks/<slug>/`,
+   substitutes the placeholders, drops the setup doc into
+   `docs/networks/<slug>.md`, and stubs `tests/networks/<slug>/`. Then
+   follow the steps below. Skip the advertiser side if your network only
+   exposes one side of its API to you.
 2. **A placeholder adapter exists already** (you're one of the
    currently bundled networks, or a community contributor shipped
    one). Open an issue saying you want to take ownership; we'll add

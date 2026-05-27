@@ -1,0 +1,32 @@
+{
+  "wanted": [
+    {
+      "name": "Tradedoubler",
+      "slug": "tradedoubler",
+      "side": "publisher",
+      "note": "Public REST API with token auth; publisher reporting and link generation are the priority.",
+      "issue": null
+    },
+    {
+      "name": "Partnerize",
+      "slug": "partnerize",
+      "side": "both",
+      "note": "Has publisher- and advertiser-tier APIs; advertiser side should wait for advertiser-tier credentials.",
+      "issue": null
+    },
+    {
+      "name": "Skimlinks",
+      "slug": "skimlinks",
+      "side": "publisher",
+      "note": "Publisher-only; reporting API plus link APIs.",
+      "issue": null
+    },
+    {
+      "name": "Webgains",
+      "slug": "webgains",
+      "side": "publisher",
+      "note": "Publisher reporting API; approval may be required for API access.",
+      "issue": null
+    }
+  ]
+}

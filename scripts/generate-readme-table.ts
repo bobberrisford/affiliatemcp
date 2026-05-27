@@ -30,7 +30,20 @@ import {
 export const TABLE_START_MARKER = '<!-- AFFILIATE_MCP_NETWORK_TABLE_START -->';
 export const TABLE_END_MARKER = '<!-- AFFILIATE_MCP_NETWORK_TABLE_END -->';
 
+export const WANTED_START_MARKER = '<!-- AFFILIATE_MCP_WANTED_TABLE_START -->';
+export const WANTED_END_MARKER = '<!-- AFFILIATE_MCP_WANTED_TABLE_END -->';
+
+const REPO_SLUG = 'bobberrisford/affiliatemcp';
+
 const OP_COUNT = REPORTED_OPERATIONS.length;
+
+export interface WantedNetwork {
+  name: string;
+  slug: string;
+  side: 'publisher' | 'advertiser' | 'both';
+  note: string;
+  issue: number | null;
+}
 
 export function renderReadmeTable(data: ReportData): string {
   const header = [
@@ -46,17 +59,23 @@ export function renderReadmeTable(data: ReportData): string {
 }
 
 /**
- * Replace (or insert) the table block in the README content. Pure function;
- * the IO is at the CLI boundary.
+ * Replace (or insert) a marked block in the README content. Pure function;
+ * the IO is at the CLI boundary. Shared by the network table and the wanted
+ * list so both behave identically.
  */
-export function applyReadmeTable(readmeContent: string, tableMarkdown: string): string {
-  const block = `${TABLE_START_MARKER}\n${tableMarkdown}\n${TABLE_END_MARKER}`;
-  const hasStart = readmeContent.includes(TABLE_START_MARKER);
-  const hasEnd = readmeContent.includes(TABLE_END_MARKER);
+function applyMarkedBlock(
+  readmeContent: string,
+  startMarker: string,
+  endMarker: string,
+  body: string,
+): string {
+  const block = `${startMarker}\n${body}\n${endMarker}`;
+  const hasStart = readmeContent.includes(startMarker);
+  const hasEnd = readmeContent.includes(endMarker);
 
   if (hasStart && hasEnd) {
-    const startIdx = readmeContent.indexOf(TABLE_START_MARKER);
-    const endIdx = readmeContent.indexOf(TABLE_END_MARKER) + TABLE_END_MARKER.length;
+    const startIdx = readmeContent.indexOf(startMarker);
+    const endIdx = readmeContent.indexOf(endMarker) + endMarker.length;
     return readmeContent.slice(0, startIdx) + block + readmeContent.slice(endIdx);
   }
 
@@ -65,16 +84,59 @@ export function applyReadmeTable(readmeContent: string, tableMarkdown: string): 
   return `${trimmed}\n\n${block}\n`;
 }
 
+export function applyReadmeTable(readmeContent: string, tableMarkdown: string): string {
+  return applyMarkedBlock(readmeContent, TABLE_START_MARKER, TABLE_END_MARKER, tableMarkdown);
+}
+
+export function applyWantedTable(readmeContent: string, tableMarkdown: string): string {
+  return applyMarkedBlock(readmeContent, WANTED_START_MARKER, WANTED_END_MARKER, tableMarkdown);
+}
+
+const SIDE_LABEL: Record<WantedNetwork['side'], string> = {
+  publisher: 'publisher',
+  advertiser: 'advertiser',
+  both: 'publisher + advertiser',
+};
+
+function wantedIssueCell(entry: WantedNetwork): string {
+  if (typeof entry.issue === 'number') {
+    return `[#${entry.issue}](https://github.com/${REPO_SLUG}/issues/${entry.issue})`;
+  }
+  const url = `https://github.com/${REPO_SLUG}/issues/new?template=new-network-request.yml&title=${encodeURIComponent(
+    `Add ${entry.name}`,
+  )}`;
+  return `[open one](${url})`;
+}
+
+export function renderWantedTable(entries: WantedNetwork[]): string {
+  const header = [
+    '| Network | Side wanted | Notes | Tracking issue |',
+    '| --- | --- | --- | --- |',
+  ];
+  const rows = entries.map(
+    (e) => `| ${e.name} | ${SIDE_LABEL[e.side]} | ${e.note} | ${wantedIssueCell(e)} |`,
+  );
+  return [...header, ...rows].join('\n');
+}
+
+export function loadWantedNetworks(repoRoot: string): WantedNetwork[] {
+  const file = path.join(repoRoot, 'docs', 'wanted-networks.json');
+  if (!existsSync(file)) return [];
+  const parsed = JSON.parse(readFileSync(file, 'utf8')) as { wanted?: WantedNetwork[] };
+  return parsed.wanted ?? [];
+}
+
 async function runCli(): Promise<number> {
   const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   const data = loadReportData({ repoRoot });
   const tableMarkdown = renderReadmeTable(data);
+  const wantedMarkdown = renderWantedTable(loadWantedNetworks(repoRoot));
 
   const readmePath = path.join(repoRoot, 'README.md');
   const existing = existsSync(readmePath) ? readFileSync(readmePath, 'utf8') : '';
-  const updated = applyReadmeTable(existing, tableMarkdown);
+  const updated = applyWantedTable(applyReadmeTable(existing, tableMarkdown), wantedMarkdown);
   writeFileSync(readmePath, updated, 'utf8');
-  process.stderr.write(`Updated ${readmePath} (table region replaced).\n`);
+  process.stderr.write(`Updated ${readmePath} (network + wanted regions replaced).\n`);
   return 0;
 }
 
