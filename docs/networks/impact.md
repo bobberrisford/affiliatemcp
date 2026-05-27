@@ -28,27 +28,19 @@ the *Partnerships*, *Reports*, and *Settings* navigation items — you are
    [https://app.impact.com/](https://app.impact.com/). Use the same
    credentials you use to read your performance reports.
 
-   [SCREENSHOT: docs/networks/images/impact/1-signin.png]
-
 2. Open *Settings*. The settings link is the gear icon in the bottom-left
    sidebar of the dashboard on the current UI; on the older UI it lives
    under your user-avatar menu in the top-right. Either route leads to
    the same place.
 
-   [SCREENSHOT: docs/networks/images/impact/2-settings.png]
-
 3. In the Settings sidebar, click *API*. The page title reads *Account
    SID and Auth Token*. Both credentials affiliate-mcp needs are on
    this single page.
-
-   [SCREENSHOT: docs/networks/images/impact/3-api-page.png]
 
 4. Copy the value shown in the *Account SID* field. It is an
    alphanumeric string. Copy it exactly as shown without trimming or
    reformatting; leading or trailing whitespace will cause validation
    to fail.
-
-   [SCREENSHOT: docs/networks/images/impact/4-account-sid.png]
 
 5. Click *Show* next to the *Auth Token* field and copy the value.
    Impact treats the auth token like a password: it remains visible
@@ -56,16 +48,12 @@ the *Partnerships*, *Reports*, and *Settings* navigation items — you are
    show this as a *Show / Hide* toggle rather than a *Show* button —
    label exact to TBD by a human reviewer.)
 
-   [SCREENSHOT: docs/networks/images/impact/5-auth-token.png]
-
 6. Back in your terminal, run `npx affiliate-networks-mcp setup` and select
    **Impact** when prompted. Paste the Account SID when the wizard
    asks for `IMPACT_ACCOUNT_SID`, then paste the Auth Token when it
    asks for `IMPACT_AUTH_TOKEN`. The wizard validates the pair by
    calling Impact's `/Mediapartners/{SID}/Campaigns` endpoint with a
    page size of one.
-
-   [SCREENSHOT: docs/networks/images/impact/6-wizard-prompt.png]
 
 ## What success looks like
 

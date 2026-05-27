@@ -32,14 +32,10 @@ at least one campaign listed, your publisher account is good.
    [https://developer.ebay.com/](https://developer.ebay.com/) and open
    *My Account → Application Keys*.
 
-   [SCREENSHOT: docs/networks/images/ebay/1-developer-portal-keys.png]
-
 2. If you have no Production keys yet, click *Create a keyset* and select
    *Production*. If a Production set already exists, you can reuse it.
    eBay shows three values: *App ID (Client ID)*, *Dev ID*, and *Cert ID
    (Client Secret)*. You will need the App ID and the Cert ID.
-
-   [SCREENSHOT: docs/networks/images/ebay/2-production-keyset.png]
 
 3. Confirm your application is enrolled in the Partner Network. From the
    same *Application Keys* screen, follow the *Compliance / API
@@ -47,14 +43,10 @@ at least one campaign listed, your publisher account is good.
    *Enrolled* (or equivalent). If it shows *Pending* or is missing,
    submit the enrolment request and wait for approval before continuing.
 
-   [SCREENSHOT: docs/networks/images/ebay/3-api-subscriptions.png]
-
 4. Sign in to the EPN dashboard at
    [https://partnernetwork.ebay.com/](https://partnernetwork.ebay.com/)
    and open *Campaigns*. Note the numeric *Campaign ID* of the campaign
    you want this client to attribute clicks to.
-
-   [SCREENSHOT: docs/networks/images/ebay/4-epn-campaign-id.png]
 
    The campaign ID is the value in the *Campaign ID* column, not the
    campaign name. If you have no campaigns yet, create one (the campaign
@@ -64,7 +56,6 @@ at least one campaign listed, your publisher account is good.
 5. Back in your terminal, run `npx affiliate-networks-mcp setup` and select
    **eBay Partner Network** when prompted.
 
-   [SCREENSHOT: docs/networks/images/ebay/5-wizard-prompt.png]
    - Paste your *App ID* when the wizard asks for `EBAY_CLIENT_ID`.
    - Paste your *Cert ID* when the wizard asks for `EBAY_CLIENT_SECRET`.
      The wizard exchanges these for an OAuth2 access token to confirm

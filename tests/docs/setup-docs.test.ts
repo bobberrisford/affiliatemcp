@@ -7,7 +7,6 @@
  *   - exists at the expected path,
  *   - opens with a level-1 heading that includes a time estimate,
  *   - declares a "Prerequisites" section,
- *   - contains at least one screenshot placeholder or real image link,
  *   - documents common failures / troubleshooting,
  *   - includes a "What success looks like" (or equivalent) confirmation
  *     section.
@@ -61,17 +60,6 @@ describe('per-network setup docs (docs/networks/<slug>.md)', () => {
       it('has a Prerequisites section', () => {
         const body = readDoc(slug);
         expect(body).toMatch(/^##\s+Prerequisites\b/m);
-      });
-
-      it('contains at least one screenshot placeholder or image link', () => {
-        const body = readDoc(slug);
-        // Either the bracketed placeholder we use throughout, or a real
-        // markdown image link pointing into docs/networks/images/.
-        const hasPlaceholder = /\[SCREENSHOT:[^\]]+\]/.test(body);
-        const hasImageLink = /!\[[^\]]*\]\([^)]*docs\/networks\/images\/[^)]+\)/.test(
-          body,
-        );
-        expect(hasPlaceholder || hasImageLink).toBe(true);
       });
 
       it('has a common-failures or troubleshooting section', () => {
