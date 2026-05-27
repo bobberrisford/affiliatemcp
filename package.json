@@ -1,6 +1,6 @@
 {
   "name": "affiliate-networks-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Chat with your affiliate-network data in Claude or ChatGPT. Publisher and advertiser-side adapters for Awin, CJ, eBay Partner Network, Impact, and Rakuten. Local-only, bring your own keys.",
   "license": "MIT",
   "repository": {
