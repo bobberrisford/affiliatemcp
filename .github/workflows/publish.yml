@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write # create the GitHub release + tag
   id-token: write # required for npm OIDC trusted publishing + provenance
 
 jobs:
@@ -42,3 +42,14 @@ jobs:
         run: npm run build
       - if: steps.check.outputs.publish == 'true'
         run: npm publish
+      - name: Ensure a GitHub release exists for this version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          TAG="v$VERSION"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG already exists; nothing to do."
+          else
+            gh release create "$TAG" --title "$TAG" --target "$GITHUB_SHA" --generate-notes
+          fi
