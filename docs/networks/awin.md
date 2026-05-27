@@ -36,7 +36,7 @@ If you can see your publisher dashboard after signing in — including the
 
 3. On the *Account* page, open the *API credentials* tab. The tab is
    usually in the left-hand sidebar of the account page. (Some publishers
-   see this as *API access* — label exact to TBD by a human reviewer.)
+   see this labelled *API access* instead; both lead to the same screen.)
 
 4. Click *Generate new token* to create a long-lived OAuth2 token. Awin
    shows the token value on screen once; copy it immediately to a secure
@@ -91,7 +91,7 @@ See the endpoint-by-endpoint inventory:
 Use the ignored workspace-local config file for live validation:
 
 ```sh
-AFFILIATE_MCP_CONFIG_DIR=/Users/othmanb/Desktop/affiliate/affiliatemcp/.affiliate-mcp npm run dev -- test awin
+AFFILIATE_MCP_CONFIG_DIR=./.affiliate-mcp npm run dev -- test awin
 ```
 
 For the Awin-specific endpoint set, validate only read endpoints unless a
