@@ -50,32 +50,22 @@ or 403 means brand-direct. A 401 means the credentials are wrong.
 1. Sign in to Impact at [https://app.impact.com/](https://app.impact.com/).
    Pick the brand portal (or the agency portal, if you are an agency).
 
-   [SCREENSHOT: docs/networks/images/impact-advertiser/1-signin.png]
-
 2. Open *Settings* (gear icon in the sidebar) → *API*. The page title
    reads *Account SID and Auth Token*. Both credentials are on this
    page.
-
-   [SCREENSHOT: docs/networks/images/impact-advertiser/2-api-page.png]
 
 3. **Recommended:** create a *read-only* token on this page. Click
    *Create new API token* → role: *Read-only*. This adapter ships with
    a client-side guard that refuses any non-GET request, but a
    read-only token gives you defence in depth at Impact's side too.
 
-   [SCREENSHOT: docs/networks/images/impact-advertiser/3-readonly-token.png]
-
 4. Copy the *Account SID* exactly as shown. For an agency, this is the
    Agency SID; for a single brand, the Advertiser SID. The wizard's
    description prompt explains which to paste; you do not need to know
    in advance — the adapter auto-detects.
 
-   [SCREENSHOT: docs/networks/images/impact-advertiser/4-account-sid.png]
-
 5. Copy the *Auth Token* value (click *Show* if it is masked). Treat
    it as a password.
-
-   [SCREENSHOT: docs/networks/images/impact-advertiser/5-auth-token.png]
 
 6. Back in your terminal, run `npx affiliate-networks-mcp setup` and
    select **Impact (advertiser)** when prompted. Paste the Account SID
@@ -83,8 +73,6 @@ or 403 means brand-direct. A 401 means the credentials are wrong.
    the Auth Token when it asks for `IMPACT_ADVERTISER_AUTH_TOKEN`. The
    wizard probes `GET /Agencies/{SID}` to detect the credential tier
    and prints the result inline.
-
-   [SCREENSHOT: docs/networks/images/impact-advertiser/6-wizard-prompt.png]
 
 7. If the credentials are agency-tier the wizard runs the brand-
    discovery sub-flow: it lists every advertiser the agency credential

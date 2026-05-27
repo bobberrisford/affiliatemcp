@@ -30,40 +30,28 @@ If you can see your publisher dashboard after signing in — including the
    [https://ui.awin.com/](https://ui.awin.com/). Use the same credentials
    you use to read your performance reports.
 
-   [SCREENSHOT: docs/networks/images/awin/1-signin.png]
-
 2. Open your user menu in the top-right corner of the dashboard and click
    *Account*. (On older dashboard versions this item may be labelled
    *My Account*; both lead to the same screen.)
-
-   [SCREENSHOT: docs/networks/images/awin/2-account-menu.png]
 
 3. On the *Account* page, open the *API credentials* tab. The tab is
    usually in the left-hand sidebar of the account page. (Some publishers
    see this as *API access* — label exact to TBD by a human reviewer.)
 
-   [SCREENSHOT: docs/networks/images/awin/3-api-credentials-tab.png]
-
 4. Click *Generate new token* to create a long-lived OAuth2 token. Awin
    shows the token value on screen once; copy it immediately to a secure
    location before leaving the page.
-
-   [SCREENSHOT: docs/networks/images/awin/4-generate-token.png]
 
 5. Note your numeric *Publisher ID* — it is shown at the top of the same
    *Account* page (and also in the URL of most dashboard pages). You can
    skip writing this down: the setup wizard auto-derives it from the token
    in the next step and offers it back to you for confirmation.
 
-   [SCREENSHOT: docs/networks/images/awin/5-publisher-id.png]
-
 6. Back in your terminal, run `npx affiliate-networks-mcp setup` and select **Awin**
    when prompted. Paste the API token when the wizard asks for
    `AWIN_API_TOKEN`. Press Enter to accept the auto-derived publisher ID
    when the wizard offers it (or override it if your token has access to
    multiple publisher accounts and the wrong one was picked).
-
-   [SCREENSHOT: docs/networks/images/awin/6-wizard-prompt.png]
 
 ## What success looks like
 

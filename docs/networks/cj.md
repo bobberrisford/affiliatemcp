@@ -28,26 +28,18 @@ If you can see your publisher dashboard after signing in — including the
    [https://members.cj.com/](https://members.cj.com/). Use the same
    credentials you use to read your performance reports.
 
-   [SCREENSHOT: docs/networks/images/cj/1-signin.png]
-
 2. Open the user-avatar menu in the top-right of the dashboard and click
    *Account*. (The label is sometimes shown as *My Account* on older
    tenants — label exact to TBD by a human reviewer.)
-
-   [SCREENSHOT: docs/networks/images/cj/2-account-menu.png]
 
 3. In the *Account* sidebar, open the *Personal Access Tokens* tab. On
    some tenants this is shown under a *Developer* sub-menu rather than
    directly in the sidebar; both routes lead to the same screen.
 
-   [SCREENSHOT: docs/networks/images/cj/3-pat-tab.png]
-
 4. Click *Create Token* (label may also show as *Generate New Token*
    on older tenants). Give the token a descriptive name such as
    `affiliate-mcp`. CJ shows the token value once and does not show it
    again, so copy it immediately to a secure location.
-
-   [SCREENSHOT: docs/networks/images/cj/4-create-token.png]
 
 5. Note your numeric *Company ID*. It appears at the top of the *Account*
    page and is also embedded in the URL of most dashboard pages. The
@@ -55,14 +47,10 @@ If you can see your publisher dashboard after signing in — including the
    you do not need to copy it by hand unless your token has access to
    more than one publisher company.
 
-   [SCREENSHOT: docs/networks/images/cj/5-company-id.png]
-
 6. Back in your terminal, run `npx affiliate-networks-mcp setup` and select
    **CJ Affiliate** when prompted. Paste the Personal Access Token when
    the wizard asks for `CJ_API_TOKEN`. Press Enter to accept the
    auto-derived company ID when the wizard offers it.
-
-   [SCREENSHOT: docs/networks/images/cj/6-wizard-prompt.png]
 
 ## What success looks like
 

@@ -22,6 +22,5 @@ failures, "what success looks like".
 - [Impact (advertiser)](./impact-advertiser.md) — Account SID + Auth Token,
   advertiser scope.
 
-Screenshots live under [`images/`](./images). Awin also has a
-[deeper API inventory](./awin/api-inventory.md) reflecting its role as
-the reference implementation.
+Awin also has a [deeper API inventory](./awin/api-inventory.md) reflecting
+its role as the reference implementation.

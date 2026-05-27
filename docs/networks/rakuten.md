@@ -38,20 +38,14 @@ before continuing (see step 1 below).
    under *Account*, contact Rakuten Publisher Solutions and request
    API access; typical turnaround is around 5 business days.
 
-   [SCREENSHOT: docs/networks/images/rakuten/1-publisher-view.png]
-
 2. Once API access has been granted, open *Account* in the publisher
    dashboard and click the *API Credentials* tab. (Label exact to TBD
    by a human reviewer; some tenants show this as *API Access*.)
-
-   [SCREENSHOT: docs/networks/images/rakuten/2-api-credentials-tab.png]
 
 3. If a credential pair is not already listed, click *Generate
    Credentials* to create one. Rakuten shows the *Client Secret* in
    full only once at generation time, so copy both the *Client ID*
    and the *Client Secret* immediately to a secure location.
-
-   [SCREENSHOT: docs/networks/images/rakuten/3-generate-credentials.png]
 
 4. Open the *Sites* tab in the same *Account* area. Each publisher
    site has its own numeric *Site ID* (SID). Note the SID for the
@@ -60,15 +54,11 @@ before continuing (see step 1 below).
    is required — affiliate-mcp cannot derive it from the credential
    pair.
 
-   [SCREENSHOT: docs/networks/images/rakuten/4-sites-sid.png]
-
 5. Back in your terminal, run `npx affiliate-networks-mcp setup` and select
    **Rakuten Advertising** when prompted. Paste the *Client ID* when
    the wizard asks for `RAKUTEN_CLIENT_ID`, the *Client Secret* when
    it asks for `RAKUTEN_CLIENT_SECRET`, and the numeric Site ID when
    it asks for `RAKUTEN_SID`.
-
-   [SCREENSHOT: docs/networks/images/rakuten/5-wizard-prompt.png]
 
 6. If the wizard reports a `404` when validating the token endpoint,
    set `RAKUTEN_TOKEN_URL=https://api.rakutenmarketing.com/token` in
@@ -76,8 +66,6 @@ before continuing (see step 1 below).
    provisioned against `api.rakutenmarketing.com` rather than the
    default `api.linksynergy.com`; the override flag is documented in
    `src/networks/rakuten/auth.ts`.
-
-   [SCREENSHOT: docs/networks/images/rakuten/6-token-host-override.png]
 
 ## What success looks like
 
