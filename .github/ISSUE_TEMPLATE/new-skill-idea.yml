@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Skills are markdown playbooks under `src/skills/<name>/SKILL.md` that the
+        Skills are markdown playbooks under `skills/<name>/SKILL.md` that the
         MCP client picks up. They compose existing tools — they do not introduce
         new ones. If your idea needs a new tool or a new network, file a
         different template.

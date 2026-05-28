@@ -30,10 +30,10 @@ describe('README.md (PRD §15.20)', () => {
     expect(existsSync(README_PATH)).toBe(true);
   });
 
-  it('has between 50 and 400 lines', () => {
+  it('has between 50 and 550 lines', () => {
     const lines = readReadme().split(/\r?\n/);
     expect(lines.length).toBeGreaterThanOrEqual(50);
-    expect(lines.length).toBeLessThanOrEqual(500);
+    expect(lines.length).toBeLessThanOrEqual(550);
   });
 
   it('contains the required sections', () => {
@@ -80,7 +80,7 @@ describe('README.md (PRD §15.20)', () => {
 
   it('quick-start npx commands reference real CLI subcommands', () => {
     const body = readReadme();
-    const validSubcommands = new Set(['setup', 'test', 'doctor', 'validate']);
+    const validSubcommands = new Set(['setup', 'test', 'doctor', 'validate', 'install', 'uninstall']);
     const quickStartMatch = body.match(/##\s+(?:Quick[- ]start|Getting started)[\s\S]*?(?=^##\s)/im);
     expect(quickStartMatch).not.toBeNull();
     const quickStart = quickStartMatch![0];

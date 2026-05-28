@@ -106,6 +106,7 @@ describe('runSetup — first-run path (PRD §15.11)', () => {
     const prompter = new FakePrompter([
       ['alpha'], // selectMany
       'tok-1234', // password
+      false, // decline "connect to Claude?" offer
     ]);
 
     const code = await runSetup({ prompter });
@@ -142,6 +143,7 @@ describe('runSetup — validateCredential failure (PRD §15.12)', () => {
       'bad-token', // password
       'retry', // menu after rejection
       'good-token', // password retry
+      false, // decline "connect to Claude?" offer
     ]);
 
     const code = await runSetup({ prompter });
@@ -171,6 +173,7 @@ describe('runSetup — validateCredential failure (PRD §15.12)', () => {
       ['alpha'],
       'bad-token',
       'skip', // menu after rejection — choose skip
+      false, // decline "connect to Claude?" offer
     ]);
 
     const code = await runSetup({ prompter });
@@ -204,6 +207,7 @@ describe('runSetup — reset path (PRD §15.13)', () => {
       'reset', // top-level menu
       ['alpha'],
       'fresh-token',
+      false, // decline "connect to Claude?" offer
     ]);
 
     const code = await runSetup({ prompter });
@@ -240,6 +244,7 @@ describe('runSetup — add-network path (PRD §15.14)', () => {
       ['beta'], // pick only beta
       'beta-tok', // BETA_TOKEN
       '987654', // BETA_ACCOUNT_ID
+      false, // decline "connect to Claude?" offer
     ]);
 
     const code = await runSetup({ prompter });
@@ -283,6 +288,7 @@ describe('runSetup — derivedValues from verifyAuth', () => {
     const prompter = new FakePrompter([
       ['beta'],
       'beta-tok',
+      false, // decline "connect to Claude?" offer
     ]);
 
     const code = await runSetup({ prompter });
@@ -304,7 +310,7 @@ describe('runSetup — AFFILIATE_MCP_CONFIG_DIR (PRD §15.18)', () => {
     registerAdapter(
       makeFakeAdapter({ slug: 'alpha', name: 'Alpha', steps: buildAlphaSteps() }),
     );
-    const prompter = new FakePrompter([['alpha'], 'tok']);
+    const prompter = new FakePrompter([['alpha'], 'tok', false /* decline connect */]);
 
     const code = await runSetup({ prompter });
     expect(code).toBe(0);
@@ -324,7 +330,7 @@ describe('runSetup — file permissions', () => {
     registerAdapter(
       makeFakeAdapter({ slug: 'alpha', name: 'Alpha', steps: buildAlphaSteps() }),
     );
-    const prompter = new FakePrompter([['alpha'], 'tok']);
+    const prompter = new FakePrompter([['alpha'], 'tok', false /* decline connect */]);
     await runSetup({ prompter });
 
     const { statSync } = await import('node:fs');

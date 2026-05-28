@@ -121,10 +121,59 @@ npx affiliate-networks-mcp test
 You should see one line per network: `ok` for everything that's healthy,
 `error — <reason>` for anything that isn't.
 
-**3. Tell Claude about it.** If you're on Claude Desktop, open the
-config file (the example at
-[`examples/claude-desktop-config.md`](./examples/claude-desktop-config.md)
-shows you where it lives on your operating system) and paste:
+**3. Connect it to Claude.** Pick the one that matches how you use Claude.
+
+The setup wizard offers this at the end automatically — say yes and you can
+skip the rest of this step. If you want to run it later, or want to do it
+by hand, the options are below.
+
+**Claude Desktop (Mac/Windows app) — most users:**
+
+```
+npx affiliate-networks-mcp install
+```
+
+This finds your Claude Desktop config, adds the `affiliate` entry alongside
+anything else you already have, and tells you which file it touched. It
+takes a timestamped backup first, so your existing MCP servers are safe.
+Restart Claude Desktop after it finishes.
+
+**Claude Code (terminal):**
+
+```
+claude mcp add affiliate -- npx affiliate-networks-mcp
+```
+
+Or run the same `install` command above — it detects Claude Code too and
+will offer to wire it up.
+
+**Flags:** `--desktop` / `--code` to pick one, `--all` to skip prompting,
+`--dry-run` to preview changes, `--force-overwrite` if your existing config
+is malformed JSON.
+
+**Claude Cowork / plugin marketplace:**
+
+```
+/plugin marketplace add bobberrisford/affiliatemcp
+/plugin install affiliate-networks-mcp@affiliatemcp
+```
+
+Registers the MCP server and bundled skills in one step. Credentials still
+come from your shell environment — the included
+[`affiliate-network-setup-help`](./skills/affiliate-network-setup-help/SKILL.md)
+skill (or `npx affiliate-networks-mcp setup`) walks you through them.
+
+<details>
+<summary>Prefer to edit the config yourself?</summary>
+
+Open the Claude Desktop config file at:
+
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+Add the `affiliate` entry inside `mcpServers`. If `mcpServers` already
+exists, add the entry alongside the others — don't replace the whole
+block.
 
 ```json
 {
@@ -137,11 +186,17 @@ shows you where it lives on your operating system) and paste:
 }
 ```
 
-Restart Claude Desktop. Open a new conversation and type
-**"list my affiliate networks"** — you should see every network you
+Restart Claude Desktop after saving.
+
+</details>
+
+**Check it worked.** In a new Claude conversation, ask **"What affiliate
+networks do you have access to?"** — you should see every network you
 configured. If you registered any brands, also try **"list my brands"**.
 
 That's it. Ask it questions.
+
+To disconnect later, run `npx affiliate-networks-mcp uninstall`.
 
 ## What you can ask
 
@@ -292,13 +347,13 @@ new ones interactively — the wizard skips brands already in the file.
 
 Three skills are tuned for the brand side:
 
-- [`programme-performance-report`](./src/skills/programme-performance-report/SKILL.md)
+- [`programme-performance-report`](./skills/programme-performance-report/SKILL.md)
   — one brand across its bound networks. Per-publisher rollup, status
   split, period-over-period delta.
-- [`agency-portfolio-rollup`](./src/skills/agency-portfolio-rollup/SKILL.md)
+- [`agency-portfolio-rollup`](./skills/agency-portfolio-rollup/SKILL.md)
   — every brand × every network in the book. Brand-aggregated headline
   with week-over-week deltas.
-- [`programme-anomaly-watch`](./src/skills/programme-anomaly-watch/SKILL.md)
+- [`programme-anomaly-watch`](./skills/programme-anomaly-watch/SKILL.md)
   — week-over-week anomaly scan, designed to run on a schedule.
 
 ## When something goes wrong
@@ -350,21 +405,21 @@ brand side. Three meta-tools are always present:
 `affiliate_list_networks`, `affiliate_run_diagnostic`, and
 `affiliate_resolve_brand`.
 
-The packaged skills under [`src/skills/`](./src/skills) are the
+The packaged skills under [`skills/`](./skills) are the
 conversation patterns Claude follows for common requests:
 
 **Publisher side:**
 
-- [`affiliate-earnings-report`](./src/skills/affiliate-earnings-report/SKILL.md)
-- [`affiliate-network-status`](./src/skills/affiliate-network-status/SKILL.md)
-- [`affiliate-network-setup-help`](./src/skills/affiliate-network-setup-help/SKILL.md)
-- [`audit-affiliate-links`](./src/skills/audit-affiliate-links/SKILL.md)
+- [`affiliate-earnings-report`](./skills/affiliate-earnings-report/SKILL.md)
+- [`affiliate-network-status`](./skills/affiliate-network-status/SKILL.md)
+- [`affiliate-network-setup-help`](./skills/affiliate-network-setup-help/SKILL.md)
+- [`audit-affiliate-links`](./skills/audit-affiliate-links/SKILL.md)
 
 **Brand side:**
 
-- [`programme-performance-report`](./src/skills/programme-performance-report/SKILL.md)
-- [`agency-portfolio-rollup`](./src/skills/agency-portfolio-rollup/SKILL.md)
-- [`programme-anomaly-watch`](./src/skills/programme-anomaly-watch/SKILL.md)
+- [`programme-performance-report`](./skills/programme-performance-report/SKILL.md)
+- [`agency-portfolio-rollup`](./skills/agency-portfolio-rollup/SKILL.md)
+- [`programme-anomaly-watch`](./skills/programme-anomaly-watch/SKILL.md)
 
 For per-network capability detail, known upstream quirks, and the
 editorial baseline used when accepting new network claims, see
@@ -379,7 +434,7 @@ If you're poking around the source, the top-level folders are:
   per network under [`src/networks/`](./src/networks) (publisher
   adapters at `<slug>/`, advertiser adapters at `<slug>-advertiser/`);
   shared primitives under [`src/shared/`](./src/shared); bundled
-  Claude skills under [`src/skills/`](./src/skills).
+  Claude skills under [`skills/`](./skills).
 - [`docs/networks/`](./docs/networks) — per-network setup walkthroughs
   (dashboard navigation, credentials, common failures), publisher and
   advertiser side.

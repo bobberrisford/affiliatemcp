@@ -1,4 +1,4 @@
-# `src/skills/`
+# `skills/`
 
 User-facing Claude skills — pre-written conversation patterns Claude
 picks up automatically when a user asks the right kind of question.

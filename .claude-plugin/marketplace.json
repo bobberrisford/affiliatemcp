@@ -1,0 +1,19 @@
+{
+  "name": "affiliatemcp",
+  "owner": {
+    "name": "Robert Berrisford",
+    "url": "https://github.com/bobberrisford"
+  },
+  "metadata": {
+    "description": "Affiliate-network adapters for Claude — publisher and advertiser side."
+  },
+  "plugins": [
+    {
+      "name": "affiliate-networks-mcp",
+      "source": "./",
+      "description": "Chat with your affiliate-network data in Claude. Awin, CJ, eBay Partner Network, Impact, and Rakuten.",
+      "category": "data",
+      "tags": ["affiliate", "mcp", "awin", "cj", "impact", "rakuten", "ebay"]
+    }
+  ]
+}

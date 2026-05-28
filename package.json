@@ -1,6 +1,6 @@
 {
   "name": "affiliate-networks-mcp",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Chat with your affiliate-network data in Claude or ChatGPT. Publisher and advertiser-side adapters for Awin, CJ, eBay Partner Network, Impact, and Rakuten. Local-only, bring your own keys.",
   "license": "MIT",
   "repository": {
@@ -22,7 +22,8 @@
   "files": [
     "dist",
     "templates",
-    "src/skills",
+    "skills",
+    ".claude-plugin",
     "README.md",
     "LICENCE"
   ],
@@ -35,6 +36,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:live": "echo \"test:live placeholder — implemented in a later chunk\" && exit 0",
+    "smoke:mcp": "node scripts/smoke-mcp.mjs",
     "scaffold:network": "tsx scripts/scaffold-network.ts",
     "validate:network": "tsx scripts/validate-network-json.ts",
     "generate:readme": "tsx scripts/generate-readme-table.ts",
