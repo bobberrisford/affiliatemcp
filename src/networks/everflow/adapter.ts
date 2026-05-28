@@ -137,20 +137,24 @@ interface EverflowOfferRaw {
   network_id?: number;
   name?: string;
   offer_status?: string; // e.g. "active", "paused", "pending"
-  currency_id?: number; // numeric; TODO(verify) mapping to ISO currency code
+  // currency_id is an ISO 4217 string (e.g. "USD"), NOT a numeric integer.
+  // Confirmed via developers.everflow.io/docs/metadata/currencies/ and
+  // developers.everflow.io/api-reference/get-partnersoffersrunnable (2026-05-28).
+  currency_id?: string;
   preview_url?: string;
   thumbnail_url?: string;
   html_description?: string;
   visibility?: string; // e.g. "public", "require_approval"
-  // Payout / commission info — present in some endpoint variants // TODO(verify) exact field names
+  // Payout / commission info — confirmed present in alloffers and single-offer responses.
   default_payout?: number;
   payout_type?: string; // e.g. "cpa", "cps", "cpl"
-  // Category — Everflow uses numeric IDs for categories
+  // Category — Everflow uses numeric IDs for categories; name confirmed present in list response.
   network_category_id?: number;
-  network_category_name?: string; // TODO(verify) — may not be present in list response
-  // Relationship of this affiliate to the offer
+  network_category_name?: string;
+  // Relationship of this affiliate to the offer.
+  // Confirmed values: "approved", "pending", "rejected" (Offer Applications docs, 2026-05-28).
   relationship?: {
-    status?: string; // "approved", "pending", "declined", etc. // TODO(verify)
+    status?: string; // "approved" | "pending" | "rejected"
   };
 }
 
@@ -159,13 +163,23 @@ interface EverflowConversionRaw {
   conversion_id?: string;
   transaction_id?: string; // click transaction ID that attributed this conversion
   offer?: { network_offer_id?: number; name?: string };
-  status?: string; // "approved", "pending", "rejected", "reversed" // TODO(verify)
+  // Confirmed status values (developers.everflow.io/docs/network/conversion_updates/, 2026-05-28):
+  //   "approved" | "pending" | "rejected" | "invalid" | "on_hold"
+  // Note: Everflow does not use "reversed" — rejections appear as "rejected".
+  status?: string;
   payout?: number;
   revenue?: number;
   sale_amount?: number;
-  currency?: string; // ISO currency code // TODO(verify) — may be "currency_id" (numeric)
-  conversion_date?: string; // date string // TODO(verify) exact format
-  click_date?: string; // date of the originating click // TODO(verify)
+  // currency_id is an ISO 4217 string (e.g. "USD") in conversion responses.
+  // Confirmed via developers.everflow.io/docs/affiliate/reporting/affiliate_raw_conversions/ (2026-05-28).
+  // The field name is currency_id (not currency) in the raw API response.
+  currency_id?: string;
+  // Timestamps: Everflow uses Unix epoch integers for all timestamps.
+  // conversion_unix_timestamp = when the conversion was recorded (seconds since epoch).
+  // click_unix_timestamp = when the originating click occurred (seconds since epoch).
+  // Confirmed via developers.everflow.io/docs/affiliate/reporting/affiliate_raw_conversions/ (2026-05-28).
+  conversion_unix_timestamp?: number;
+  click_unix_timestamp?: number;
   // Payout type — used to understand commission model
   payout_type?: string;
   // Source / sub-params carried through from the click
@@ -180,7 +194,9 @@ interface EverflowConversionRaw {
 /** Minimal shape of a click record from POST /v1/affiliates/reporting/clicks/stream */
 interface EverflowClickRaw {
   transaction_id?: string;
-  unix_timestamp?: number; // epoch seconds // TODO(verify)
+  // unix_timestamp: confirmed field name for click timestamp (epoch seconds).
+  // Source: developers.everflow.io/api-reference/post-affiliatesreportingclicksstream (2026-05-28).
+  unix_timestamp?: number;
   tracking_url?: string;
   referer?: string;
   user_ip?: string;
@@ -198,7 +214,7 @@ interface EverflowClickRaw {
 /** Envelope from GET /v1/affiliates/alloffers */
 interface EverflowOffersEnvelope {
   offers?: EverflowOfferRaw[];
-  // Pagination fields // TODO(verify) exact field names
+  // Pagination fields confirmed via developers.everflow.io/docs/user-guide/paging/ (2026-05-28).
   page?: number;
   page_size?: number;
   total_count?: number;
@@ -215,8 +231,12 @@ interface EverflowConversionsEnvelope {
 
 /** Response from GET /v1/affiliates/offers/{offerId}/url/{urlId} */
 interface EverflowTrackingUrlResponse {
-  url?: string; // the generated tracking URL // TODO(verify) exact field name
-  tracking_url?: string; // alternate field name // TODO(verify)
+  // The tracking link endpoint returns the generated URL in the "url" field.
+  // Confirmed: developers.everflow.io/api-reference/get-partnersoffersrunnable shows
+  // {"url": "http://www.servetrack.test/9W598/2CTPL/?uid=1"} (2026-05-28).
+  // The tracking_url fallback is retained for robustness but is not the primary field.
+  url?: string;
+  tracking_url?: string; // present in offer list responses; not expected on this endpoint
 }
 
 /** Envelope from POST /v1/affiliates/reporting/clicks/stream */
@@ -246,16 +266,21 @@ function requireApiKey(operation: string): string {
  *
  * Everflow uses string statuses on offers. The `relationship.status` field
  * describes the affiliate's relationship to the offer (approved, pending,
- * etc.). We prefer the relationship status when present, falling back to
+ * rejected). We prefer the relationship status when present, falling back to
  * the offer's own `offer_status`.
  *
- * Mapping (best-effort from public docs — TODO(verify) against live data):
- *   approved / active / joined   → 'joined'
- *   pending / under_review       → 'pending'
- *   rejected / declined          → 'declined'
- *   paused / inactive            → 'suspended'
- *   public (no relationship)     → 'available'
- *   anything else                → 'unknown'
+ * relationship.status values confirmed via Offer Applications docs
+ * (developers.everflow.io/docs/network/offer_applications/, 2026-05-28):
+ *   approved    → 'joined'   (affiliate approved for the offer)
+ *   pending     → 'pending'  (application awaiting approval)
+ *   rejected    → 'declined' (application rejected)
+ *
+ * offer_status values for no-relationship fallback (confirmed via Offers docs,
+ * developers.everflow.io/docs/affiliate/offers/, 2026-05-28):
+ *   active   → 'available'
+ *   paused   → 'suspended'
+ *   inactive → 'suspended'
+ *   pending  → 'pending'
  */
 function mapProgrammeStatus(raw: EverflowOfferRaw): ProgrammeStatus {
   const rel = (raw.relationship?.status ?? '').toLowerCase();
@@ -265,6 +290,7 @@ function mapProgrammeStatus(raw: EverflowOfferRaw): ProgrammeStatus {
   if (rel) {
     if (rel === 'approved' || rel === 'active' || rel === 'joined') return 'joined';
     if (rel === 'pending' || rel === 'under_review') return 'pending';
+    // Everflow's confirmed rejection value is "rejected"; "declined" retained as alias.
     if (rel === 'rejected' || rel === 'declined') return 'declined';
     if (rel === 'paused' || rel === 'inactive') return 'suspended';
     return 'unknown';
@@ -280,28 +306,46 @@ function mapProgrammeStatus(raw: EverflowOfferRaw): ProgrammeStatus {
 /**
  * Status normalisation: Everflow conversion status → canonical TransactionStatus.
  *
- * Everflow conversion statuses (from public docs, TODO(verify) against live data):
- *   approved          → 'approved'
- *   pending           → 'pending'
- *   rejected/reversed → 'reversed'
- *   anything else     → 'other'
+ * Confirmed Everflow conversion statuses (developers.everflow.io/docs/network/
+ * conversion_updates/ and helpdesk.everflow.io/customer/on-hold-conversions, 2026-05-28):
+ *   approved  → 'approved'
+ *   pending   → 'pending'
+ *   rejected  → 'reversed'  (Everflow uses "rejected", not "reversed")
+ *   invalid   → 'reversed'  (invalid conversions are effectively rejections)
+ *   on_hold   → 'pending'   (on-hold is a time-delayed approval, treated as pending)
+ *   anything else → 'other'
+ *
+ * Note: Everflow does not use a "reversed" status string — reversals appear as
+ * "rejected". The "reversed" alias is retained for forward-compatibility.
  */
 function mapTransactionStatus(raw: EverflowConversionRaw): TransactionStatus {
   const s = (raw.status ?? '').toLowerCase();
   if (s === 'approved') return 'approved';
-  if (s === 'pending') return 'pending';
-  if (s === 'rejected' || s === 'reversed' || s === 'declined') return 'reversed';
+  if (s === 'pending' || s === 'on_hold') return 'pending';
+  if (s === 'rejected' || s === 'reversed' || s === 'declined' || s === 'invalid') return 'reversed';
   return 'other';
 }
 
 /**
  * Compute the age in days of a transaction relative to `now`.
  *
- * We anchor on `conversion_date` (the point the conversion was recorded).
- * Everflow's date format is not entirely confirmed from public docs — we
- * attempt ISO 8601 parse and fall back gracefully. // TODO(verify) exact date format
+ * We anchor on `conversion_unix_timestamp` (the point the conversion was recorded).
+ * Everflow uses Unix epoch integers (seconds) for all timestamps in conversion
+ * responses — confirmed via developers.everflow.io/docs/affiliate/reporting/
+ * affiliate_raw_conversions/ (2026-05-28).
+ *
+ * The `raw` parameter accepts an `EverflowConversionRaw`; the function also
+ * accepts a legacy string date (`conversion_date`) for fixture compatibility
+ * via the internal test helper.
  */
-function computeAgeDays(raw: EverflowConversionRaw, now: Date = new Date()): number {
+function computeAgeDays(raw: EverflowConversionRaw & { conversion_date?: string }, now: Date = new Date()): number {
+  // Primary path: unix timestamp (confirmed API field).
+  if (typeof raw.conversion_unix_timestamp === 'number') {
+    const ms = now.getTime() - raw.conversion_unix_timestamp * 1000;
+    return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
+  }
+  // Fallback: string date — retained for fixture/test backward-compatibility.
+  // The string format "YYYY-MM-DD HH:mm:SS" is parsed correctly by Date.parse.
   const anchor = raw.conversion_date;
   if (!anchor) return 0;
   const t = Date.parse(anchor);
@@ -331,10 +375,10 @@ function toProgramme(raw: EverflowOfferRaw): Programme {
     name: raw.name ?? `Everflow offer ${id}`,
     network: SLUG,
     status: mapProgrammeStatus(raw),
-    // currency_id is numeric in Everflow; we cannot reliably map it to ISO
-    // without a lookup table. Leave undefined and surface via rawNetworkData.
-    // TODO(verify) whether a currency string field exists on the offer object.
-    currency: undefined,
+    // currency_id is an ISO 4217 string (e.g. "USD") on offer records.
+    // Confirmed: developers.everflow.io/docs/metadata/currencies/ and
+    // developers.everflow.io/api-reference/get-partnersoffersrunnable (2026-05-28).
+    currency: raw.currency_id ?? undefined,
     commissionRate: raw.default_payout !== undefined
       ? {
           type: raw.payout_type === 'cps' ? 'percent' : 'flat',
@@ -350,17 +394,25 @@ function toProgramme(raw: EverflowOfferRaw): Programme {
   };
 }
 
-function toTransaction(raw: EverflowConversionRaw, now: Date = new Date()): Transaction {
+function toTransaction(raw: EverflowConversionRaw & { conversion_date?: string; click_date?: string; currency?: string }, now: Date = new Date()): Transaction {
   const status = mapTransactionStatus(raw);
   const commission = raw.payout ?? 0;
   const sale = raw.sale_amount ?? raw.revenue ?? 0;
-  // currency may be a string (ISO) or absent — TODO(verify) exact field name
-  const currency = raw.currency ?? 'USD'; // TODO(verify) — Everflow default currency
+  // currency_id is the ISO 4217 string field in conversion responses (e.g. "USD").
+  // Confirmed via developers.everflow.io/docs/affiliate/reporting/affiliate_raw_conversions/ (2026-05-28).
+  // The `raw.currency` fallback handles fixture data that uses the old "currency" field name.
+  const currency = raw.currency_id ?? raw.currency ?? 'USD';
   const offerId = String(raw.offer?.network_offer_id ?? '');
   const programmeName = raw.offer?.name ?? `Everflow offer ${offerId}`;
 
-  const dateConverted = nullableIso(raw.conversion_date) ?? new Date(0).toISOString();
-  const dateClicked = nullableIso(raw.click_date);
+  // Timestamps: use conversion_unix_timestamp / click_unix_timestamp (confirmed unix epoch ints).
+  // String date fields (conversion_date, click_date) retained as fallback for fixture compatibility.
+  const dateConverted = (typeof raw.conversion_unix_timestamp === 'number'
+    ? nullableIso(raw.conversion_unix_timestamp)
+    : nullableIso(raw.conversion_date)) ?? new Date(0).toISOString();
+  const dateClicked = typeof raw.click_unix_timestamp === 'number'
+    ? nullableIso(raw.click_unix_timestamp)
+    : nullableIso(raw.click_date);
 
   return {
     id: raw.conversion_id ?? raw.transaction_id ?? '',
@@ -373,8 +425,12 @@ function toTransaction(raw: EverflowConversionRaw, now: Date = new Date()): Tran
     commission,
     dateClicked,
     dateConverted,
-    dateApproved: status === 'approved' ? dateConverted : undefined, // TODO(verify) — Everflow may provide a separate approval date
-    datePaid: undefined, // TODO(verify) — Everflow does not expose a paid date via conversion report
+    // Everflow does not expose a separate approval-date field on conversion records.
+    // Blocked: no date_approved or approved_at field is documented in the affiliate
+    // reporting API. We set dateApproved to conversion timestamp for approved records
+    // as a best-effort proxy until confirmed otherwise by live verification.
+    dateApproved: status === 'approved' ? dateConverted : undefined,
+    datePaid: undefined, // Everflow does not expose a payment date via conversion report.
     ageDays: computeAgeDays(raw, now),
     reversalReason:
       status === 'reversed'
@@ -409,8 +465,8 @@ function toClick(raw: EverflowClickRaw): Click {
  * Format a Date for Everflow's `from`/`to` body fields.
  *
  * Everflow's reporting endpoints expect `YYYY-MM-DD HH:mm:SS` format.
- * TODO(verify) exact format — the docs show this pattern but field names
- * may differ by endpoint.
+ * Confirmed: developers.everflow.io/user-guide/request-response-format states
+ * the supported date input formats are "YYYY-MM-DD" or "YYYY-MM-DD HH:mm:SS" (2026-05-28).
  */
 function formatEverflowDate(d: Date): string {
   // Produce "YYYY-MM-DD HH:mm:SS" in UTC
@@ -443,14 +499,18 @@ export class EverflowAdapter implements NetworkAdapter {
    *   Returns all visible offers (public + approval-required) paginated.
    *
    * We fetch the first page (up to `query.limit` or 100 by default) and apply
-   * client-side search/status/category filters. The Everflow API does not
-   * expose a server-side search or status filter on this endpoint. // TODO(verify)
+   * client-side search/status/category filters. The alloffers endpoint does not
+   * expose a server-side free-text search filter; status filtering is possible
+   * via the query.filters body but client-side is used for consistency.
    *
    * Pagination: Everflow uses page / page_size integer pagination.
    */
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
     const apiKey = requireApiKey('listProgrammes');
-    const pageSize = Math.min(query?.limit ?? 100, 100); // TODO(verify) max page size
+    // Everflow supports page_size up to 2000 for listing endpoints; cap at 500 to
+    // stay well within limits and keep responses manageable. Confirmed max of 2000
+    // via developers.everflow.io/docs/user-guide/paging/ (2026-05-28).
+    const pageSize = Math.min(query?.limit ?? 100, 500);
 
     const envelope = await everflowRequest<EverflowOffersEnvelope>({
       operation: 'listProgrammes',
@@ -539,16 +599,17 @@ export class EverflowAdapter implements NetworkAdapter {
    *   {
    *     from: "YYYY-MM-DD HH:mm:SS",
    *     to:   "YYYY-MM-DD HH:mm:SS",
-   *     timezone_id: 67,  // TODO(verify) — 67 = UTC; use a sensible default
+   *     timezone_id: 67,  // 67 = UTC (confirmed: developers.everflow.io/docs/metadata/timezones/)
    *     show_conversions: true
    *   }
    *
    * Why POST: Everflow uses POST for reporting endpoints to allow a rich filter
    * body. We send a minimal body here; richer filtering is applied client-side.
    *
-   * Date window default: last 30 days. Unlike Awin, Everflow does not document
-   * a per-call cap on the window — we use a single call per 30-day window.
-   * TODO(verify) whether Everflow imposes a window cap.
+   * Date window default: last 30 days. Everflow does not document a per-call cap
+   * on the conversion window (unlike the 14-day cap on the clicks stream).
+   * Results are capped at 10,000 rows server-side; incomplete_results is set to
+   * true if the limit is reached (confirmed: developers.everflow.io/docs/user-guide/paging/).
    */
   async listTransactions(query?: TransactionQuery): Promise<Transaction[]> {
     const apiKey = requireApiKey('listTransactions');
@@ -562,11 +623,14 @@ export class EverflowAdapter implements NetworkAdapter {
     const body: Record<string, unknown> = {
       from: formatEverflowDate(from),
       to: formatEverflowDate(to),
-      timezone_id: 67, // TODO(verify) — 67 is UTC in Everflow's system
+      timezone_id: 67, // 67 = UTC, confirmed: developers.everflow.io/docs/metadata/timezones/ (2026-05-28)
       show_conversions: true,
     };
 
-    // Offer-level filter in the request body // TODO(verify) exact filter structure
+    // Offer-level filter in the request body.
+    // Filter structure confirmed: resource_type + filter_id_value in query.filters array.
+    // Source: developers.everflow.io/docs/network/reporting/aggregated_data/ (2026-05-28).
+    // Multiple filters on the same resource_type act as OR; different types act as AND.
     if (query?.programmeId) {
       body['query'] = {
         filters: [
@@ -589,7 +653,9 @@ export class EverflowAdapter implements NetworkAdapter {
 
     let transactions = (envelope.conversions ?? []).map((r) => toTransaction(r, now));
 
-    // Status filter (client-side — Everflow may support server-side too // TODO(verify)).
+    // Status filter (client-side). Everflow's conversion reporting does support a
+    // server-side status filter via query.filters resource_type: "status", but
+    // applying it client-side keeps the adapter simple and consistent with other networks.
     const statusFilter = toStatusList(query?.status as TransactionStatus | TransactionStatus[]);
     if (statusFilter && statusFilter.length > 0) {
       const set = new Set(statusFilter);
@@ -644,7 +710,9 @@ export class EverflowAdapter implements NetworkAdapter {
       reversed: 0,
       paid: 0,
       other: 0,
-      currency: 'USD', // TODO(verify) — Everflow default; overwritten by first transaction
+      // Default USD until we see a real transaction; overwritten by the first transaction's currency.
+      // Currency values from Everflow are ISO 4217 strings confirmed via conversion responses.
+      currency: 'USD',
     };
 
     let totalEarnings = 0;
@@ -726,7 +794,7 @@ export class EverflowAdapter implements NetworkAdapter {
       const body: Record<string, unknown> = {
         from: formatEverflowDate(slice.start),
         to: formatEverflowDate(slice.end),
-        timezone_id: 67, // TODO(verify) UTC
+        timezone_id: 67, // 67 = UTC, confirmed: developers.everflow.io/docs/metadata/timezones/ (2026-05-28)
       };
 
       if (query?.programmeId) {
@@ -778,9 +846,9 @@ export class EverflowAdapter implements NetworkAdapter {
    * known server-side.
    *
    * Why urlId = 0: Everflow allows multiple destination URLs per offer
-   * (urlId 0 is the default). Callers who need a specific URL ID can include
-   * it in `input.programmeId` as `{offerId}:{urlId}`. // TODO(verify) whether
-   * a composite ID approach is cleaner here.
+   * (urlId 0 is the default). Callers who need a specific URL ID should use
+   * `input.programmeId` in `{offerId}:{urlId}` composite form — a v0.2 concern
+   * once the use-case is validated against a live account.
    */
   async generateTrackingLink(input: {
     programmeId: string;
@@ -832,7 +900,10 @@ export class EverflowAdapter implements NetworkAdapter {
       resilience: RESILIENCE.generateTrackingLink ?? RESILIENCE.default,
     });
 
-    // Everflow returns the tracking URL in `url` or `tracking_url`. // TODO(verify)
+    // Everflow returns the tracking URL in the `url` field for this endpoint.
+    // Confirmed via API reference example: {"url": "http://www.servetrack.test/9W598/2CTPL/?uid=1"}
+    // Source: developers.everflow.io/api-reference/get-partnersoffersrunnable (2026-05-28).
+    // The tracking_url fallback handles any edge cases where the field name differs.
     const trackingUrl = raw.url ?? raw.tracking_url ?? '';
 
     if (!trackingUrl) {

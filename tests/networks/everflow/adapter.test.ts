@@ -85,7 +85,11 @@ describe('Everflow transformers (status normalisation, raw preservation)', () =>
   it('maps conversion statuses to canonical TransactionStatus', () => {
     expect(_internals.mapTransactionStatus({ status: 'approved' })).toBe('approved');
     expect(_internals.mapTransactionStatus({ status: 'pending' })).toBe('pending');
+    // on_hold is Everflow's time-delayed approval feature — treated as pending.
+    expect(_internals.mapTransactionStatus({ status: 'on_hold' })).toBe('pending');
     expect(_internals.mapTransactionStatus({ status: 'rejected' })).toBe('reversed');
+    // invalid conversions are confirmed Everflow status (e.g. duplicate click).
+    expect(_internals.mapTransactionStatus({ status: 'invalid' })).toBe('reversed');
     expect(_internals.mapTransactionStatus({ status: 'reversed' })).toBe('reversed');
     expect(_internals.mapTransactionStatus({ status: 'declined' })).toBe('reversed');
     expect(_internals.mapTransactionStatus({ status: 'unknown_future_status' })).toBe('other');
@@ -118,18 +122,49 @@ describe('Everflow transformers (status normalisation, raw preservation)', () =>
     );
   });
 
-  it('computes ageDays from conversion_date against a fixed now', () => {
+  it('computes ageDays from conversion_unix_timestamp against a fixed now', () => {
     const now = new Date('2026-05-28T12:00:00Z');
-    // Fixture: conversion_date = "2026-01-15 10:00:00" UTC.
+    // 2026-01-15T10:00:00Z = 1768471200 epoch seconds.
     // Jan 15 10:00Z → May 28 12:00Z = 133 days 2 hours → floors to 133.
+    const age = _internals.computeAgeDays({ conversion_unix_timestamp: 1768471200 } as never, now);
+    expect(age).toBe(133);
+  });
+
+  it('computes ageDays from legacy string conversion_date against a fixed now (fallback)', () => {
+    const now = new Date('2026-05-28T12:00:00Z');
+    // Fallback path: string "YYYY-MM-DD HH:mm:SS" format still parses correctly.
     const age = _internals.computeAgeDays({ conversion_date: '2026-01-15 10:00:00' } as never, now);
     expect(age).toBe(133);
   });
 
-  it('returns 0 ageDays when conversion_date is absent', () => {
+  it('returns 0 ageDays when neither timestamp field is present', () => {
     const now = new Date('2026-05-28T00:00:00Z');
     const age = _internals.computeAgeDays({} as never, now);
     expect(age).toBe(0);
+  });
+
+  it('maps currency_id string to programme currency (confirmed ISO string field)', () => {
+    const prog = _internals.toProgramme({ network_offer_id: 1001, currency_id: 'GBP' });
+    expect(prog.currency).toBe('GBP');
+  });
+
+  it('sets transaction currency from currency_id ISO string field', () => {
+    const tx = _internals.toTransaction({
+      conversion_id: 'test-123',
+      conversion_unix_timestamp: 1768471200,
+      currency_id: 'EUR',
+      status: 'approved',
+    } as never);
+    expect(tx.currency).toBe('EUR');
+  });
+
+  it('uses dateConverted from conversion_unix_timestamp', () => {
+    const tx = _internals.toTransaction({
+      conversion_id: 'ts-test',
+      conversion_unix_timestamp: 1768471200, // 2026-01-15T10:00:00.000Z
+      status: 'pending',
+    } as never);
+    expect(tx.dateConverted).toBe('2026-01-15T10:00:00.000Z');
   });
 
   it('chunkDateRange splits correctly at 14 days', () => {

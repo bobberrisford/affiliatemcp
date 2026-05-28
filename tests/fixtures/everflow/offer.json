@@ -3,7 +3,7 @@
   "network_id": 42,
   "name": "Atolls Bookshop",
   "offer_status": "active",
-  "currency_id": 1,
+  "currency_id": "USD",
   "preview_url": "https://www.atolls-bookshop.example.com",
   "thumbnail_url": "https://cdn.example.com/atolls-logo.png",
   "html_description": "Books for all readers — full detail view",
