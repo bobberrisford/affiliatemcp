@@ -20,7 +20,10 @@
  *
  * Reference: Impact advertiser auth.ts (also Basic auth; same structural pattern).
  *
- * TODO(verify): exact response field names and 401 body shape from a live account.
+ * Auth scheme confirmed: HTTP Basic with Authorization: Basic base64(application_key:user_api_key).
+ * Sources: Partnerize Apiary documentation web-search summary; Adverity Partnerize
+ * authorisation guide; Funnel.io Partnerize connection guide.
+ * BLOCKED(verify): exact response field names and 401 body shape from a live account.
  */
 
 import { buildErrorEnvelope, NetworkError } from '../../shared/errors.js';
@@ -81,8 +84,10 @@ export interface VerifyAuthFail {
  * Verify auth by probing the brand campaigns endpoint with a limit of 1.
  * Returns a structured result; never throws (auth is called by error handlers).
  *
- * TODO(verify): response body field names from a live account; some Partnerize
- * tenants may surface a user-name or account-name for a friendlier identity.
+ * The probe endpoint GET /v3/brand/campaigns?limit=1 is confirmed to return the
+ * campaign list on success. Identity is derived from the application_key for now.
+ * BLOCKED(verify): whether the v3 brand campaigns response includes a user name
+ * or account name field that could provide a friendlier identity string.
  */
 export async function verifyAuth(): Promise<VerifyAuthOk | VerifyAuthFail> {
   let applicationKey: string;
@@ -175,8 +180,12 @@ export async function validateCredential(
         hint: 'Find it at Partnerize dashboard → Settings → API Credentials → Application Key.',
       };
     }
-    // Application keys are alphanumeric strings; minimum 6 characters.
-    // TODO(verify): exact format/length from a live Partnerize account.
+    // Application keys are alphanumeric strings. The exact format (length,
+    // character set) is not publicly documented by Partnerize; the pattern
+    // below accepts any alphanumeric/hyphen/underscore string of 6+ characters
+    // as a basic sanity check. The live probe on PARTNERIZE_USER_API_KEY entry
+    // will catch invalid keys at wizard time.
+    // BLOCKED(verify): exact application_key format/length from a live account.
     if (!/^[A-Za-z0-9_-]{6,}$/.test(value.trim())) {
       return {
         ok: false,

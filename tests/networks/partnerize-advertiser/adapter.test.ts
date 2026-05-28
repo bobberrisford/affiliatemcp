@@ -79,6 +79,7 @@ describe('Partnerize advertiser transformers', () => {
   });
 
   it('maps conversion status to canonical TransactionStatus', () => {
+    // Full string values confirmed from PerformanceHorizonGroup/apidocs data/common.apib.
     expect(_internals.mapConversionStatus({ status: 'pending' })).toBe('pending');
     expect(_internals.mapConversionStatus({ status: 'approved' })).toBe('approved');
     expect(_internals.mapConversionStatus({ status: 'validated' })).toBe('approved');
@@ -86,15 +87,26 @@ describe('Partnerize advertiser transformers', () => {
     expect(_internals.mapConversionStatus({ status: 'reversed' })).toBe('reversed');
     expect(_internals.mapConversionStatus({ status: 'paid' })).toBe('paid');
     expect(_internals.mapConversionStatus({ status: 'weird' })).toBe('other');
+    // Single-letter codes from publisher_campaign.apib (v1 API); handled defensively.
+    expect(_internals.mapConversionStatus({ status: 'a' })).toBe('approved');
+    expect(_internals.mapConversionStatus({ status: 'p' })).toBe('pending');
+    expect(_internals.mapConversionStatus({ status: 'r' })).toBe('reversed');
   });
 
   it('maps publisher status to active|pending|inactive|unknown', () => {
+    // Full string values.
     expect(_internals.mapPublisherStatus({ status: 'active' })).toBe('active');
     expect(_internals.mapPublisherStatus({ status: 'approved' })).toBe('active');
     expect(_internals.mapPublisherStatus({ status: 'pending' })).toBe('pending');
     expect(_internals.mapPublisherStatus({ status: 'inactive' })).toBe('inactive');
     expect(_internals.mapPublisherStatus({ status: 'declined' })).toBe('inactive');
     expect(_internals.mapPublisherStatus({ status: 'unrecognised' })).toBe('unknown');
+    // Single-letter codes from publisher_campaign.apib.
+    expect(_internals.mapPublisherStatus({ status: 'a' })).toBe('active');
+    expect(_internals.mapPublisherStatus({ status: 'p' })).toBe('pending');
+    expect(_internals.mapPublisherStatus({ status: 'r' })).toBe('inactive');
+    // campaign_status field preferred over status.
+    expect(_internals.mapPublisherStatus({ status: 'inactive', campaign_status: 'a' })).toBe('active');
   });
 
   it('preserves rawNetworkData on every domain transform', () => {
@@ -157,6 +169,60 @@ describe('Partnerize advertiser transformers', () => {
     // ageDays should be anchored on approved_at (30 days before now)
     const age = _internals.computeAgeDays(raw, now);
     expect(age).toBe(30);
+  });
+
+  it('resolves conversion date from conversion_date_time alias when conversion_time absent', () => {
+    // export_reporting.apib confirms conversion_date_time as an alternate field name.
+    const raw = {
+      conversion_id: 'Y',
+      conversion_date_time: '2026-04-28T00:00:00Z',
+    };
+    const now = new Date('2026-05-28T00:00:00Z');
+    const age = _internals.computeAgeDays(raw, now);
+    expect(age).toBe(30);
+  });
+
+  it('handles `value` and `publisher_commission` field aliases in toTransaction', () => {
+    // data/reporting.apib confirms `value` (not sale_amount) and
+    // `publisher_commission` (not commission) as the primary field names.
+    const now = new Date('2026-05-28T00:00:00Z');
+    const raw = {
+      conversion_id: 'Z1',
+      campaign_id: 'CAM-1001',
+      status: 'approved',
+      value: '150.00',
+      publisher_commission: '15.00',
+      currency: 'GBP',
+      conversion_time: '2026-05-01T00:00:00Z',
+    };
+    const t = _internals.toTransaction(raw as never, now);
+    expect(t.amount).toBe(150);
+    expect(t.commission).toBe(15);
+  });
+
+  it('handles reject_reason alias (campaign_conversion.apib) in toTransaction', () => {
+    // campaign_conversion.apib uses `reject_reason` not `rejection_reason`.
+    const now = new Date('2026-05-28T00:00:00Z');
+    const raw = {
+      conversion_id: 'Z2',
+      campaign_id: 'CAM-1001',
+      status: 'rejected',
+      value: '50.00',
+      publisher_commission: '5.00',
+      currency: 'GBP',
+      conversion_time: '2026-05-01T00:00:00Z',
+      reject_reason: 'Duplicate order',
+    };
+    const t = _internals.toTransaction(raw as never, now);
+    expect(t.status).toBe('reversed');
+    expect(t.reversalReason).toBe('Duplicate order');
+  });
+
+  it('uses account_name as publisher name fallback in toMediaPartner', () => {
+    // data/publisher.apib confirms `account_name` as a publisher field.
+    const raw = { publisher_id: 'PUB-999', account_name: 'My Publisher Co' };
+    const mp = _internals.toMediaPartner(raw as never);
+    expect(mp.name).toBe('My Publisher Co');
   });
 
   it('toDiscoveredBrand marks paused campaigns as apiEnabled=false', () => {

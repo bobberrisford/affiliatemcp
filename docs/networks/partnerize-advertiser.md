@@ -82,9 +82,10 @@ campaign data.
 ## Known limitations
 
 - **Not verified against a live account.** This adapter was built from public
-  API documentation. Endpoint shapes and field names are marked `// TODO(verify)`
-  and should be confirmed with a real Partnerize brand account before relying on
-  the output in production.
+  API documentation and hardened with additional public source research (2026-05-28).
+  Remaining uncertainties are marked `// BLOCKED(verify)` in the source and are
+  listed in `docs/findings/partnerize-advertiser.md`. Confirm with a real
+  Partnerize brand account before relying on the output in production.
 - **Click-level data is not exposed by the Brand API.** The `listClicks`
   operation is unsupported. Use `getProgrammePerformance` for aggregated click
   counts per publisher.

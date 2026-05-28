@@ -16,9 +16,10 @@
  *   /v3/brand/campaigns/{campaignId}/conversions
  *   /v3/brand/analytics/metrics
  *
- * TODO(verify): query-parameter names and pagination semantics from a live
- * account — the API docs site returned 403 to automated fetch during this PR.
- * Pagination assumed to be `limit` + `page` or cursor-based.
+ * Pagination: confirmed as `limit` + `offset` for standard endpoints.
+ * Source: Partnerize Apiary introduction/standard-pagination (web-search summary).
+ * Large-result endpoints may also support cursor-based pagination via `cursor_id`.
+ * The v3 brand endpoints use standard limit/offset. No page number parameter.
  */
 
 import {

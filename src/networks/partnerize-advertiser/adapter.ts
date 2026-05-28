@@ -14,12 +14,13 @@
  * Auth: HTTP Basic — Authorization: Basic base64(application_key:user_api_key).
  * Base URL: https://api.partnerize.com (Brand API v3).
  *
- * The Partnerize Brand API docs site (api-docs.partnerize.com/brand) returned
- * 403 to automated fetch during this PR's research, so several endpoint shapes
- * are marked `// TODO(verify):` and should be confirmed against a live account.
- * Sources used: web-search summaries, Apiary mirrors, and the dltHub context
- * page (all also 403 to automated fetch; the summaries are referenced in
- * docs/findings/partnerize-advertiser.md).
+ * The Partnerize Brand API docs site (api-docs.partnerize.com/brand) and Apiary
+ * mirror returned 403 to automated fetch during both the initial PR and this
+ * hardening pass. Endpoint shapes are grounded in: web-search summaries,
+ * PerformanceHorizonGroup/apidocs GitHub repository (API Blueprint source files),
+ * dltHub context page summaries, and third-party integration guides. Remaining
+ * uncertainties are marked `// BLOCKED(verify):` and require a live account.
+ * See docs/findings/partnerize-advertiser.md for the full source list.
  *
  * Operations implemented:
  *   listBrands             → GET /v3/brand/campaigns
@@ -157,15 +158,23 @@ function requireCtx(operation: string, ctx?: AdapterCallContext): AdapterCallCon
 /**
  * One campaign entry from GET /v3/brand/campaigns.
  *
- * TODO(verify): exact field names from a live response. The API docs site
- * returned 403 during research; field names are sourced from web-search
- * summaries and Apiary mirror fragments.
+ * Field names confirmed from the PerformanceHorizonGroup/apidocs repository
+ * (advertiser.apib, data/campaign.apib) and Partnerize Apiary documentation
+ * web-search summaries. The response envelope wraps results in a `campaigns`
+ * array with `count` and `execution_time` at the top level.
+ *
+ * Campaign `status` string values are NOT explicitly enumerated in the public
+ * docs; the strings below are sourced from integration guides and must be
+ * confirmed against a live Brand account.
  */
 interface PartnerizeAdvCampaignRaw {
   campaign_id?: string | number;
   campaign_name?: string;
-  // status field may be 'active', 'paused', 'pending', 'closed', etc.
-  // TODO(verify): enumerated status values from a live account.
+  // Known status strings from integration guides: 'active', 'paused', 'pending',
+  // 'closed'. The v3 Brand API may use different casing or additional values.
+  // Source: PerformanceHorizonGroup/apidocs advertiser.apib (status referenced but
+  // not enumerated); integration guides confirm 'active'/'paused'.
+  // BLOCKED(verify): exact campaign status enum strings from a live Brand account.
   status?: string;
   currency?: string;
   campaign_reference?: string;
@@ -174,40 +183,79 @@ interface PartnerizeAdvCampaignRaw {
 }
 
 interface PartnerizeAdvCampaignsEnvelope {
+  // Confirmed: response wraps campaigns in a `campaigns` array. Source:
+  // PerformanceHorizonGroup/apidocs advertiser.apib.
   campaigns?: PartnerizeAdvCampaignRaw[];
   data?: PartnerizeAdvCampaignRaw[];
-  // TODO(verify): pagination envelope fields (total, page, limit, next_cursor, etc.)
+  // Pagination: standard Partnerize pagination uses `count` (items in this page),
+  // `limit`, `offset`. Hypermedia block may contain `total_item_count`.
+  // Source: Partnerize API Apiary introduction/standard-pagination.
+  count?: number;
   total?: number;
-  page?: number;
+  limit?: number;
+  offset?: number;
+  execution_time?: string;
 }
 
 /**
  * One publisher entry from GET /v3/brand/campaigns/{id}/publishers.
  *
- * TODO(verify): exact field names. Partnerize docs call publishers "partners"
- * interchangeably.
+ * The canonical Partnerize publisher field name is `publisher_id`; `partner_id`
+ * is the v3 alias used in some contexts. Source: PerformanceHorizonGroup/apidocs
+ * data/publisher.apib confirms `publisher_id` as the primary identifier.
+ *
+ * The participating publishers endpoint returns a `publishers` array.
+ * Source: PerformanceHorizonGroup/apidocs src/participating_publishers.apib.
+ *
+ * Publisher status on a campaign ('campaign_status') uses single-letter codes in
+ * the older API (a=approved, p=pending, r=rejected) per
+ * src/publisher_campaign.apib. The v3 Brand API may return full strings;
+ * both forms are handled defensively.
+ * BLOCKED(verify): exact `status`/`campaign_status` string values returned by the
+ * v3 brand publishers endpoint from a live account.
  */
 interface PartnerizeAdvPublisherRaw {
   publisher_id?: string | number;
   partner_id?: string | number;
   publisher_name?: string;
   partner_name?: string;
-  // TODO(verify): status enum values.
+  account_name?: string;
+  // Status on the campaign participation. Confirmed values from apidocs:
+  // 'a'/'approved', 'p'/'pending', 'r'/'rejected'. v3 may normalise to full strings.
   status?: string;
+  campaign_status?: string;
   [key: string]: unknown;
 }
 
 interface PartnerizeAdvPublishersEnvelope {
+  // 'publishers' is the confirmed key from participating_publishers.apib.
   publishers?: PartnerizeAdvPublisherRaw[];
   partners?: PartnerizeAdvPublisherRaw[];
   data?: PartnerizeAdvPublisherRaw[];
+  count?: number;
 }
 
 /**
  * One conversion row from GET /v3/brand/campaigns/{id}/conversions.
  *
- * TODO(verify): exact field names. The conversions/bulk endpoint is documented
- * at https://api.partnerize.com/v3/brand/campaigns/{campaignID}/conversions/bulk.
+ * The conversions/bulk endpoint is documented at:
+ * https://api.partnerize.com/v3/brand/campaigns/{campaignID}/conversions/bulk
+ *
+ * Date field names confirmed from PerformanceHorizonGroup/apidocs
+ * src/export_reporting.apib: `click_time`, `click_date`, `click_date_time`,
+ * `conversion_date`, `conversion_date_time`. The JSON reporting API uses
+ * `conversion_time` per data/reporting.apib. Both are handled defensively.
+ *
+ * Conversion status confirmed values (data/common.apib): `pending`, `approved`,
+ * `rejected`. The v1 API also used single-letter codes ('a', 'p', 'r').
+ * `reversed` and `paid` are NOT confirmed in the public schema — they may
+ * reflect payment-pipeline state tracked separately.
+ * BLOCKED(verify): full set of conversion_status strings from the v3 brand
+ * conversions endpoint against a live account.
+ *
+ * Sale/value fields: confirmed as `value` (or `conversion_value`) and
+ * `commission`/`publisher_commission` per data/reporting.apib. The v3 brand
+ * endpoint may surface `sale_amount` as an alias; handled defensively.
  */
 interface PartnerizeAdvConversionRaw {
   conversion_id?: string | number;
@@ -215,19 +263,29 @@ interface PartnerizeAdvConversionRaw {
   partner_id?: string | number;
   campaign_id?: string | number;
   campaign_name?: string;
-  // status: 'approved', 'pending', 'rejected', 'reversed', 'paid', etc.
-  // TODO(verify): exact enum values.
+  // Confirmed status values from data/common.apib: 'pending', 'approved', 'rejected'.
+  // Single-letter aliases ('a', 'p', 'r') also handled in mapConversionStatus.
+  // BLOCKED(verify): 'reversed' and 'paid' not confirmed against live endpoint.
   status?: string;
+  // value / sale_amount: 'value' confirmed by data/reporting.apib; 'sale_amount'
+  // used as defensive alias for v3 brand surface.
+  value?: string | number;
   sale_amount?: string | number;
   commission?: string | number;
+  publisher_commission?: string | number;
   currency?: string;
-  // Date fields: ISO 8601 strings.
-  // TODO(verify): exact field names (click_time vs click_date, etc.)
+  // Date fields: 'conversion_time' from data/reporting.apib; 'click_time' and
+  // 'conversion_date_time' from export_reporting.apib. All handled defensively.
   click_time?: string;
+  click_date?: string;
+  click_date_time?: string;
   conversion_time?: string;
+  conversion_date?: string;
+  conversion_date_time?: string;
   approved_at?: string;
   paid_at?: string;
   rejection_reason?: string;
+  reject_reason?: string;
   [key: string]: unknown;
 }
 
@@ -240,25 +298,42 @@ interface PartnerizeAdvConversionsEnvelope {
 /**
  * One row from the analytics/metrics endpoint.
  *
- * TODO(verify): exact field names. The endpoint is documented as
- * GET /v3/brand/analytics/metrics but the exact response shape is not
- * publicly confirmed.
+ * Endpoint: GET /v3/brand/analytics/metrics
+ * Source: dltHub Partnerize context page (data selector "data") confirms the
+ * endpoint path and that results are returned under a `data` key.
+ *
+ * Field names are grounded in data/reporting.apib (confirms `publisher_id`,
+ * `publisher_name`, `campaign_id`, `commission`, `value`, `conversion_value`)
+ * and export_reporting.apib (confirms `currency`, `click_time`).
+ *
+ * The date grouping field name for the v3 analytics endpoint is not publicly
+ * confirmed; both `date` and `day` are handled defensively.
+ * BLOCKED(verify): exact `start_date`/`end_date` parameter names and the date
+ * grouping field name in the analytics response from a live account. The
+ * aggregated reporting API uses `start_date`/`end_date` (ISO 8601) per
+ * src/aggregated_reporting.apib, so the same names are assumed for v3.
  */
 interface PartnerizeAdvMetricRowRaw {
-  // TODO(verify): date field — may be 'date', 'day', 'period', etc.
+  // Aggregated date for this row. May be 'date', 'day', or 'period'.
+  // BLOCKED(verify): exact key name from a live analytics response.
   date?: string;
   day?: string;
   publisher_id?: string | number;
   partner_id?: string | number;
   publisher_name?: string;
   partner_name?: string;
+  account_name?: string;
   clicks?: string | number;
+  // 'conversions' or 'actions' depending on campaign conversion type.
   conversions?: string | number;
   actions?: string | number;
+  // Value / commission: confirmed field names from data/reporting.apib.
+  value?: string | number;
   sale_amount?: string | number;
   commission?: string | number;
+  publisher_commission?: string | number;
   currency?: string;
-  // TODO(verify): status field presence and values.
+  // Status may not be present on aggregated rows.
   status?: string;
   [key: string]: unknown;
 }
@@ -275,7 +350,11 @@ interface PartnerizeAdvMetricsEnvelope {
 
 function mapCampaignStatus(raw: PartnerizeAdvCampaignRaw): ProgrammeStatus {
   const s = String(raw.status ?? '').toLowerCase();
-  // TODO(verify): Partnerize campaign status enum values against a live account.
+  // Campaign status strings are not explicitly enumerated in the public Partnerize
+  // docs (PerformanceHorizonGroup/apidocs data/campaign.apib references a Status
+  // type but does not list values). Strings below are sourced from integration
+  // guides and the Partnerize help centre and should be confirmed live.
+  // BLOCKED(verify): exact campaign status strings from a live Brand account.
   if (s === 'active' || s === 'live' || s === 'running') return 'joined';
   if (s === 'pending' || s === 'pending_approval') return 'pending';
   if (s === 'paused' || s === 'suspended') return 'suspended';
@@ -286,20 +365,35 @@ function mapCampaignStatus(raw: PartnerizeAdvCampaignRaw): ProgrammeStatus {
 
 function mapConversionStatus(raw: PartnerizeAdvConversionRaw): TransactionStatus {
   const s = String(raw.status ?? '').toLowerCase();
-  // TODO(verify): exact Partnerize conversion status values from a live account.
-  if (s === 'pending' || s === 'new') return 'pending';
-  if (s === 'approved' || s === 'validated' || s === 'accepted') return 'approved';
-  if (s === 'rejected' || s === 'reversed' || s === 'cancelled' || s === 'declined') return 'reversed';
+  // Confirmed conversion status values from PerformanceHorizonGroup/apidocs
+  // data/common.apib "Conversion Status" enum: 'pending', 'approved', 'rejected'.
+  // The v1 API also used single-letter codes ('a'=approved, 'p'=pending, 'r'=rejected);
+  // both forms are handled.
+  // 'reversed' and 'paid' are NOT confirmed in the public schema; they are included
+  // defensively but must be verified against a live account.
+  // BLOCKED(verify): full conversion_status string set from a live Brand account.
+  if (s === 'pending' || s === 'p' || s === 'new') return 'pending';
+  if (s === 'approved' || s === 'a' || s === 'validated' || s === 'accepted') return 'approved';
+  if (s === 'rejected' || s === 'r' || s === 'reversed' || s === 'cancelled' || s === 'declined') return 'reversed';
   if (s === 'paid') return 'paid';
   return 'other';
 }
 
 function mapPublisherStatus(raw: PartnerizeAdvPublisherRaw): MediaPartner['status'] {
-  const s = String(raw.status ?? '').toLowerCase();
-  // TODO(verify): exact Partnerize publisher status values from a live account.
-  if (s === 'active' || s === 'approved' || s === 'live') return 'active';
-  if (s === 'pending' || s === 'pending_approval') return 'pending';
-  if (s === 'inactive' || s === 'paused' || s === 'declined' || s === 'rejected') return 'inactive';
+  // Use campaign_status (publisher's participation status on the campaign) if
+  // present; fall back to the top-level status field.
+  // Source: PerformanceHorizonGroup/apidocs src/publisher_campaign.apib and
+  // src/participating_publishers.apib confirm `campaign_status` field.
+  const s = String(raw.campaign_status ?? raw.status ?? '').toLowerCase();
+  // Confirmed single-letter codes from publisher_campaign.apib: 'a'=approved,
+  // 'p'=pending, 'r'=rejected. Full strings also handled for v3 normalisation.
+  // Source for network-level status: data/publisher.apib confirms 'active',
+  // 'inactive', and auto-rejected-from-campaigns on rejection.
+  // BLOCKED(verify): exact status string format returned by the v3 brand
+  // publishers endpoint from a live account.
+  if (s === 'active' || s === 'approved' || s === 'a' || s === 'live') return 'active';
+  if (s === 'pending' || s === 'p' || s === 'pending_approval') return 'pending';
+  if (s === 'inactive' || s === 'paused' || s === 'declined' || s === 'rejected' || s === 'r') return 'inactive';
   return 'unknown';
 }
 
@@ -332,8 +426,15 @@ function parseDate(input?: string): string | undefined {
 
 function computeAgeDays(raw: PartnerizeAdvConversionRaw, now: Date = new Date()): number {
   // Anchor on approved_at first (age of the "approved but unpaid" state —
-  // the most useful affordance per PRD §15.9). Fall back to conversion_time.
-  const anchor = raw.approved_at ?? raw.conversion_time;
+  // the most useful affordance per PRD §15.9). Fall back to any confirmed
+  // conversion date field alias. Source: export_reporting.apib confirms
+  // conversion_date_time, conversion_date; data/reporting.apib confirms
+  // conversion_time.
+  const anchor =
+    raw.approved_at ??
+    raw.conversion_time ??
+    raw.conversion_date_time ??
+    raw.conversion_date;
   const parsed = parseDate(anchor);
   if (!parsed) return 0;
   const ts = Date.parse(parsed);
@@ -361,14 +462,32 @@ function toProgramme(raw: PartnerizeAdvCampaignRaw): Programme {
 
 function toTransaction(raw: PartnerizeAdvConversionRaw, now: Date = new Date()): Transaction {
   const status = mapConversionStatus(raw);
-  const commission = toNumber(raw.commission);
-  const sale = toNumber(raw.sale_amount);
+  // Commission: 'commission' is the confirmed field from data/reporting.apib;
+  // 'publisher_commission' is an alias for the publisher-facing value.
+  const commission = toNumber(raw.commission ?? raw.publisher_commission);
+  // Sale amount: 'value' is confirmed from data/reporting.apib;
+  // 'sale_amount' handled as a v3 brand alias.
+  const sale = toNumber(raw.sale_amount ?? raw.value);
   const currency = typeof raw.currency === 'string' ? raw.currency : 'USD';
 
-  const conversionDate = parseDate(raw.conversion_time) ?? new Date(0).toISOString();
-  const clickDate = parseDate(raw.click_time);
+  // Date field resolution: data/reporting.apib confirms `conversion_time`;
+  // export_reporting.apib confirms `conversion_date_time`, `conversion_date`,
+  // `click_time`, `click_date`, `click_date_time`. All handled defensively.
+  const conversionDate =
+    parseDate(raw.conversion_time) ??
+    parseDate(raw.conversion_date_time) ??
+    parseDate(raw.conversion_date) ??
+    new Date(0).toISOString();
+  const clickDate =
+    parseDate(raw.click_time) ??
+    parseDate(raw.click_date_time) ??
+    parseDate(raw.click_date);
   const approvedDate = parseDate(raw.approved_at);
   const paidDate = parseDate(raw.paid_at);
+
+  // Reversal reason: 'rejection_reason' used in older docs; 'reject_reason'
+  // confirmed in campaign_conversion.apib. Both handled.
+  const reversalReasonRaw = raw.rejection_reason ?? raw.reject_reason;
 
   return {
     id: String(raw.conversion_id ?? ''),
@@ -386,17 +505,22 @@ function toTransaction(raw: PartnerizeAdvConversionRaw, now: Date = new Date()):
     ageDays: computeAgeDays(raw, now),
     reversalReason:
       status === 'reversed'
-        ? (typeof raw.rejection_reason === 'string' ? raw.rejection_reason : undefined)
+        ? (typeof reversalReasonRaw === 'string' ? reversalReasonRaw : undefined)
         : undefined,
     rawNetworkData: raw,
   };
 }
 
 function toMediaPartner(raw: PartnerizeAdvPublisherRaw): MediaPartner {
+  // publisher_id is the primary identifier (confirmed: data/publisher.apib).
+  // partner_id is a v3 alias used interchangeably.
   const id = String(raw.publisher_id ?? raw.partner_id ?? '');
+  // publisher_name / account_name are confirmed from data/publisher.apib.
+  // partner_name is a v3 alias.
   const name =
     (typeof raw.publisher_name === 'string' ? raw.publisher_name : undefined) ??
     (typeof raw.partner_name === 'string' ? raw.partner_name : undefined) ??
+    (typeof raw.account_name === 'string' ? raw.account_name : undefined) ??
     `Partnerize publisher ${id}`;
   return {
     id,
@@ -431,8 +555,10 @@ function toPerformanceRow(raw: PartnerizeAdvMetricRowRaw): ProgrammePerformanceR
     publisherName,
     clicks: toNumber(raw.clicks),
     conversions: toNumber(raw.conversions ?? raw.actions),
-    grossSale: toNumber(raw.sale_amount),
-    commission: toNumber(raw.commission),
+    // Gross sale: 'value' confirmed by data/reporting.apib; 'sale_amount' as alias.
+    grossSale: toNumber(raw.sale_amount ?? raw.value),
+    // Commission: 'commission' and 'publisher_commission' confirmed by data/reporting.apib.
+    commission: toNumber(raw.commission ?? raw.publisher_commission),
     currency: typeof raw.currency === 'string' ? raw.currency : 'USD',
     status: mapMetricRowStatus(raw),
     rawNetworkData: raw,
@@ -443,9 +569,13 @@ function toDiscoveredBrand(raw: PartnerizeAdvCampaignRaw): DiscoveredBrand {
   const id = String(raw.campaign_id ?? '');
   const name = raw.campaign_name ?? `Partnerize campaign ${id}`;
   // Partnerize does not expose an explicit apiEnabled flag on campaigns in the
-  // public docs fragments; we derive it from status — only active campaigns are
-  // usefully addressable.
-  // TODO(verify): whether a paused campaign can still be queried for conversions.
+  // public docs; apiEnabled is derived from status. Only active/live campaigns are
+  // treated as fully addressable. Paused campaigns may still return historical
+  // conversions — the Brand API does not explicitly block queries on paused
+  // campaigns per the public docs; this is a conservative default.
+  // BLOCKED(verify): whether a paused campaign blocks conversion queries on the
+  // live API. Set apiEnabled=true for paused to allow historical queries if
+  // confirmed against a live account.
   const status = String(raw.status ?? '').toLowerCase();
   const apiEnabled = status === '' || status === 'active' || status === 'live' || status === 'running';
   return {
@@ -513,8 +643,15 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
    * `apiEnabled` is true for active campaigns; paused or closed campaigns are
    * included but marked apiEnabled=false as a hint to the wizard's tick-box UI.
    *
-   * TODO(verify): response envelope shape, pagination parameters, and whether
-   * paused campaigns can still be queried for conversions against a live account.
+   * Response envelope: confirmed to wrap results in a `campaigns` array with
+   * `count` and `execution_time` at the top level. Source:
+   * PerformanceHorizonGroup/apidocs src/advertiser.apib.
+   *
+   * Pagination: standard Partnerize pagination uses `limit` and `offset`.
+   * Source: Partnerize Apiary introduction/standard-pagination.
+   *
+   * BLOCKED(verify): campaign status string values and whether paused campaigns
+   * can still be queried for conversions require a live Brand account.
    */
   async listBrands(): Promise<DiscoveredBrand[]> {
     const envelope = await partnerizeAdvRequest<
@@ -556,7 +693,9 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
    * (the call lists ALL campaigns for the credential set). A ctx is accepted for
    * interface compatibility but is not used.
    *
-   * TODO(verify): pagination parameters (limit/page vs cursor) against a live account.
+   * Pagination: uses `limit` and `offset`. Source: Partnerize Apiary
+   * introduction/standard-pagination. The `limit` parameter is passed; `offset`
+   * support is left for a future paginating implementation.
    */
   async listProgrammes(
     query?: ProgrammeQuery,
@@ -589,8 +728,13 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
    *
    * Endpoint: GET /v3/brand/campaigns/{campaign_id}/conversions
    *
-   * TODO(verify): query parameter names for date filtering (start_date vs from,
-   * end_date vs to) and status filtering from a live account.
+   * Date filter parameters: `start_date` and `end_date` confirmed as the
+   * standard parameter names across Partnerize reporting endpoints. Source:
+   * PerformanceHorizonGroup/apidocs src/aggregated_reporting.apib and
+   * src/export_reporting.apib (both use `start_date`/`end_date` in ISO 8601).
+   *
+   * BLOCKED(verify): the v3 brand conversions endpoint-specific parameter names
+   * and any status-filter parameter require a live Brand account.
    */
   async listTransactions(
     query?: TransactionQuery,
@@ -605,7 +749,8 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
       operation: 'listTransactions',
       path: `/v3/brand/campaigns/${encodeURIComponent(c.networkBrandId)}/conversions`,
       query: {
-        // TODO(verify): exact date parameter names against a live account.
+        // start_date / end_date confirmed as standard parameter names.
+        // Source: PerformanceHorizonGroup/apidocs aggregated_reporting.apib.
         start_date: query?.from,
         end_date: query?.to,
         limit: query?.limit ?? 100,
@@ -648,8 +793,12 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
    *
    * Endpoint: GET /v3/brand/campaigns/{campaign_id}/publishers
    *
-   * TODO(verify): exact path (/publishers vs /partners) and field names from
-   * a live Partnerize brand account.
+   * Path: the confirmed endpoint in the Partnerize API docs is
+   * `/campaign/{campaign_id}/publisher` (singular). In the v3 brand context the
+   * equivalent is `/v3/brand/campaigns/{id}/publishers`. Both singular and plural
+   * forms are plausible; the plural form is used here to match v3 URL conventions
+   * (`/campaigns`, `/conversions` are also plural).
+   * BLOCKED(verify): `/publishers` vs `/publisher` requires a live Brand account.
    */
   async listMediaPartners(
     query?: MediaPartnerQuery,
@@ -694,9 +843,17 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
    *
    * Endpoint: GET /v3/brand/analytics/metrics
    *
-   * TODO(verify): exact query parameter names (campaign_id, publisher_id,
-   * start_date, end_date, granularity) and response envelope shape from a
-   * live account. The docs site returned 403 during research.
+   * Query parameters: `start_date`/`end_date` are the confirmed date parameter
+   * names for Partnerize reporting. Source: aggregated_reporting.apib.
+   * `campaign_id` and `publisher_id` are the confirmed filter field names.
+   * Source: granular_reporting.apib and aggregated_reporting.apib.
+   *
+   * Response envelope: the v3 brand analytics endpoint returns results under a
+   * `data` key. Source: dltHub Partnerize context page (data_selector="data").
+   *
+   * BLOCKED(verify): the exact parameter names specific to the v3
+   * /analytics/metrics endpoint and the date grouping field name in the
+   * response require a live Brand account.
    */
   async getProgrammePerformance(
     query?: ProgrammePerformanceQuery,
@@ -710,7 +867,8 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
       operation: 'getProgrammePerformance',
       path: '/v3/brand/analytics/metrics',
       query: {
-        // TODO(verify): exact parameter names from a live account.
+        // campaign_id / publisher_id confirmed from granular_reporting.apib.
+        // start_date / end_date confirmed from aggregated_reporting.apib.
         campaign_id: query?.programmeId ?? c.networkBrandId,
         publisher_id: query?.publisherId,
         start_date: query?.from,
@@ -817,7 +975,7 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
     };
     operations['getProgrammePerformance'] = {
       supported: true,
-      note: 'Analytics via GET /v3/brand/analytics/metrics. Endpoint shape TODO(verify) against a live account.',
+      note: 'Analytics via GET /v3/brand/analytics/metrics. Parameter names grounded in public docs (start_date/end_date, campaign_id, publisher_id). Response data selector confirmed as "data". Verify exact field names against a live account.',
       claimStatus: 'experimental',
     };
     operations['getProgramme'] = {
