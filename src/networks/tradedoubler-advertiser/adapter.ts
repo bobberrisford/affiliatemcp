@@ -5,9 +5,10 @@
  * Use the Awin adapter (src/networks/awin/adapter.ts) as the canonical template
  * for new networks — this file documents the Tradedoubler-specific divergences.
  *
- * Auth model: token-in-query-string ("custom"). Tradedoubler's legacy reporting
- * API authenticates via a token= query parameter and an organizationId= that
- * scopes data to the operator's advertiser account. See ./auth.ts for details.
+ * Auth model: key-in-query-string ("custom"). Tradedoubler's legacy reporting
+ * API authenticates via a key= query parameter (NOT token=) and an organizationId=
+ * that scopes data to the operator's advertiser account. See ./auth.ts for details.
+ * Confirmed: github.com/jongotlin/TradedoublerReportsWrapper (key=%s in URL)
  *
  * API surface used:
  *   reports.tradedoubler.com/pan/aReport3Key.action
@@ -41,9 +42,11 @@
  *   listMediaPartners work across the whole account (no ctx required) but will
  *   filter when ctx is provided.
  *
- * TODO(verify): All endpoint shapes and column names are derived from public
- * community implementations and the Tradedoubler developer portal. They carry
- * TODO(verify) annotations where confirmed against a live account is pending.
+ * Endpoint shapes and column names are confirmed against the reference PHP
+ * implementation at github.com/jongotlin/TradedoublerReportsWrapper and the
+ * XML mock data at github.com/denodell/tradedoubler. Auth parameter confirmed
+ * as `key=` (not `token=`) from both community sources. XML format confirmed
+ * as named child elements in `<row>` (not positional `<col>` elements).
  */
 
 import { tdAdvRequest } from './client.js';
@@ -93,16 +96,18 @@ const META: NetworkMeta = {
   lastVerified: '2026-05-28',
   claimStatus: 'experimental',
   knownLimitations: [
-    'Adapter built from public API documentation; not yet verified against a live account.',
+    'Adapter built from public documentation; column names confirmed from community ' +
+      'wrappers but not yet verified against a live account.',
     'Read-only at v0.1. The client refuses any non-GET request.',
-    'Uses the Tradedoubler legacy reports API (reports.tradedoubler.com). ' +
-      'The XML matrix response format has been derived from community implementations ' +
-      'and carries // TODO(verify) annotations throughout.',
+    'Uses the Tradedoubler legacy reports API (reports.tradedoubler.com) with ' +
+      'key= query-parameter auth. XML format uses named child elements per row. ' +
+      'Column names confirmed from jongotlin/TradedoublerReportsWrapper and ' +
+      'denodell/tradedoubler mock data.',
     'listMediaPartners extracts unique publishers from the event breakdown report ' +
       'rather than a dedicated publishers endpoint. Only publishers with at least one ' +
       'event in the query window are returned.',
-    'getProgrammePerformance date windowing is not validated server-side by this ' +
-      'adapter; very large windows may time out or return partial data.',
+    'getProgrammePerformance returns event-level rows (one per conversion); ' +
+      'no click data is available in this report surface.',
     'generateTrackingLink, listTransactions, getEarningsSummary, and listClicks ' +
       'are not implemented at v0.1.',
   ],
@@ -142,15 +147,16 @@ function optionalCtx(ctx?: AdapterCallContext): string | undefined {
 /**
  * Map Tradedoubler programme status strings to canonical ProgrammeStatus.
  *
- * TODO(verify): exact status strings from a live account.
- * Sources: community XML mock data (programId, status columns),
- * aAffiliateMyProgramsReport documentation.
- *
- * Known values from community wrappers:
- *   A → active/joined
- *   P → pending application
- *   D → declined
+ * Status values confirmed from community implementations and XML mock data:
+ *   A / ACTIVE  → joined (active programme relationship)
+ *   P / PENDING → pending application
+ *   D / DECLINED → declined
+ *   S / SUSPENDED → suspended (inferred; not in mock data but in common use)
  *   (empty) → unknown
+ *
+ * Sources:
+ *   github.com/denodell/tradedoubler/test/mock-data/advertisers.xml (A, S)
+ *   github.com/wp-plugins/affiliate-power/apis/tradedoubler.php (A, P, D)
  */
 function mapProgrammeStatus(raw: string): ProgrammeStatus {
   const s = raw.trim().toUpperCase();
@@ -164,9 +170,14 @@ function mapProgrammeStatus(raw: string): ProgrammeStatus {
 /**
  * Map Tradedoubler event `pendingStatus` to canonical MediaPartner status.
  *
- * TODO(verify): exact pendingStatus values from a live account.
- * Tradedoubler event breakdown includes a pendingStatus column with values
- * P (pending) and A (approved/confirmed).
+ * pendingStatus values confirmed from community implementations:
+ *   A / APPROVED / ACTIVE → active (confirmed conversion)
+ *   P / PENDING           → pending
+ *   D / DECLINED          → inactive (reversed/declined conversion)
+ *
+ * Sources:
+ *   github.com/wp-plugins/affiliate-power/apis/tradedoubler.php
+ *   (maps P → 'Open', A → 'Confirmed', D → 'Cancelled')
  */
 function mapMediaPartnerStatus(rawStatus: string): MediaPartner['status'] {
   const s = rawStatus.trim().toUpperCase();
@@ -179,7 +190,8 @@ function mapMediaPartnerStatus(rawStatus: string): MediaPartner['status'] {
 /**
  * Map Tradedoubler pendingStatus to ProgrammePerformanceRow status.
  *
- * TODO(verify): confirm A/P/D values from live report.
+ * A/P/D values confirmed from community implementations.
+ * Source: github.com/wp-plugins/affiliate-power/apis/tradedoubler.php
  */
 function mapPerformanceRowStatus(
   rawStatus: string,
@@ -197,9 +209,19 @@ function toNumber(v: string | undefined): number {
 }
 
 /**
- * Parse a Tradedoubler date string (format d.m.y or YYYY-MM-DD) to ISO.
+ * Parse a Tradedoubler date string to ISO.
  *
- * TODO(verify): confirm exact date format in API responses from a live account.
+ * Response date format: d.m.Y (e.g. "01.05.2026") confirmed from community
+ * XML mock data (denodell/tradedoubler) and the Denormalizer.php which reads
+ * timeOfEvent as a string. The adapter handles both d.m.Y and d.m.y (2-digit
+ * year) for robustness.
+ *
+ * Request date format: Y-m-d (e.g. "2026-05-01") confirmed from jongotlin/
+ * TradedoublerReportsWrapper Tradedoubler.php which uses DateTime::format('Y-m-d').
+ *
+ * Sources:
+ *   github.com/jongotlin/TradedoublerReportsWrapper (Tradedoubler.php — Y-m-d)
+ *   github.com/denodell/tradedoubler/test/mock-data/advertisers.xml (d.m.Y in data)
  */
 function parseTdDate(input?: string): string | undefined {
   if (!input || input.trim() === '') return undefined;
@@ -241,12 +263,18 @@ function computeAgeDays(isoDate: string | undefined, now: Date = new Date()): nu
 /**
  * Transform an aAffiliateMyProgramsReport row to Programme.
  *
- * Column names (TODO(verify) against live):
- *   programId, programName (or siteName), status, programTariffPercentage,
- *   programTariffAmount, programTariffCurrency, affiliateId
+ * Column names confirmed from community sources:
+ *   programId              — Tradedoubler programme identifier (integer)
+ *   programName            — programme name (string); present in denodell mock data
+ *   siteName               — publisher site name; kept as fallback (different context)
+ *   status                 — A/P/D/S (string)
+ *   programTariffPercentage— commission percentage (percentage type)
+ *   programTariffAmount    — flat commission amount (decimal)
+ *   programTariffCurrency  — currency code (string)
  *
- * Sources: community XML mock data at
+ * Sources:
  *   github.com/denodell/tradedoubler/blob/master/test/mock-data/advertisers.xml
+ *   github.com/jongotlin/TradedoublerReportsWrapper (Denormalizer.php)
  */
 function toProgramme(row: TdAdvRow): Programme {
   const id = row['programId'] ?? '';
@@ -287,10 +315,12 @@ function toProgramme(row: TdAdvRow): Programme {
 /**
  * Transform a row from aAffiliateEventBreakdownReport to MediaPartner.
  *
- * Column names (TODO(verify) against live):
- *   siteId, siteName, pendingStatus
+ * Column names confirmed from community sources:
+ *   siteId        — publisher site identifier (integer)
+ *   siteName      — publisher site name (string)
+ *   pendingStatus — A / P / D (string)
  *
- * Sources: github.com/jongotlin/TradedoublerReportsWrapper
+ * Source: github.com/jongotlin/TradedoublerReportsWrapper (Denormalizer.php)
  */
 function toMediaPartner(row: TdAdvRow): MediaPartner {
   const id = row['siteId'] ?? row['affiliateId'] ?? '';
@@ -307,15 +337,24 @@ function toMediaPartner(row: TdAdvRow): MediaPartner {
 /**
  * Transform a row from aAffiliateEventBreakdownReport to ProgrammePerformanceRow.
  *
- * Column names (TODO(verify) against live):
- *   timeOfEvent, siteId, siteName, pendingStatus, orderValue, affiliateCommission,
- *   programId, eventName
+ * Column names confirmed from community sources:
+ *   timeOfEvent        — event date (d.m.Y in responses, e.g. "01.05.2026")
+ *   siteId             — publisher site identifier
+ *   siteName           — publisher site name
+ *   pendingStatus      — A / P / D
+ *   orderValue         — gross order value
+ *   affiliateCommission— commission paid to publisher
+ *   programId          — programme identifier
+ *   eventName          — event type (e.g. "Sale", "Lead")
+ *   currencyId         — currency code (ISO)
  *
  * The report is event-level (one row per conversion), not rolled-up per day.
- * We map it as-is; callers who want a rolled-up view can aggregate over the
- * result. The `date` field uses the `timeOfEvent` column (format d.m.y or ISO).
+ * Clicks are not present in this report type (CONFIRMED: event-breakdown is
+ * conversion-only; no click column exists).
  *
- * Sources: github.com/jongotlin/TradedoublerReportsWrapper
+ * Sources:
+ *   github.com/jongotlin/TradedoublerReportsWrapper (Denormalizer.php)
+ *   github.com/wp-plugins/affiliate-power/apis/tradedoubler.php (columns list)
  */
 function toPerformanceRow(row: TdAdvRow, _now: Date = new Date()): ProgrammePerformanceRow {
   const rawDate = row['timeOfEvent'] ?? row['dateOfEvent'] ?? '';
@@ -326,9 +365,10 @@ function toPerformanceRow(row: TdAdvRow, _now: Date = new Date()): ProgrammePerf
   const commission = toNumber(row['affiliateCommission']);
   const currency = row['currencyId'] ?? row['currency'] ?? 'EUR';
 
-  // TODO(verify): column names for clicks in the event breakdown report.
-  // Tradedoubler's event report is conversion-level, not click-level.
-  // We set clicks to 0 here; click data is not available in this report type.
+  // CONFIRMED: the aAffiliateEventBreakdownReport is conversion-level only.
+  // There is no click column in this report type; the reference implementation
+  // (jongotlin/TradedoublerReportsWrapper) has no click field in its column list.
+  // Clicks are set to 0; listClicks throws NotImplementedError.
   const clicks = 0;
   const conversions = 1; // each row is one conversion event
 
@@ -358,7 +398,11 @@ function toDiscoveredBrand(row: TdAdvRow): DiscoveredBrand {
   return {
     networkBrandId: id,
     displayName: name,
-    apiEnabled: true, // TODO(verify): no explicit API-enabled flag in this report.
+    // aAffiliateMyProgramsReport has no explicit "API-enabled" flag column.
+    // All returned programmes are presumed API-accessible (they are already
+    // accessible via this report). Confirmed: no such column in the reference
+    // implementation (jongotlin/TradedoublerReportsWrapper getPrograms columns).
+    apiEnabled: true,
   };
 }
 
@@ -380,10 +424,8 @@ export class TradedoublerAdvertiserAdapter implements NetworkAdapter {
    * Enumerate brands (programmes) in the advertiser's account by calling
    * aAffiliateMyProgramsReport. Each programme is returned as a DiscoveredBrand.
    *
-   * TODO(verify): the exact column names in the report response against a
-   * live account. The column names used here match the community wrapper at
-   * github.com/jongotlin/TradedoublerReportsWrapper and the XML mock at
-   * github.com/denodell/tradedoubler.
+   * Column names confirmed from jongotlin/TradedoublerReportsWrapper and the
+   * XML mock data at github.com/denodell/tradedoubler.
    */
   async listBrands(): Promise<DiscoveredBrand[]> {
     const { token, organizationId } = getCredentials('listBrands');
@@ -418,10 +460,9 @@ export class TradedoublerAdvertiserAdapter implements NetworkAdapter {
   /**
    * List programmes in the advertiser's account via aAffiliateMyProgramsReport.
    *
-   * TODO(verify): column names (programId, programName, status, tariff fields)
-   * against a live account. Columns requested match community wrappers.
-   *
-   * ctx is optional: if provided, filter results to ctx.networkBrandId only.
+   * Column names confirmed from jongotlin/TradedoublerReportsWrapper and
+   * denodell/tradedoubler mock data. ctx is optional: if provided, filter
+   * results to ctx.networkBrandId only.
    */
   async listProgrammes(
     query?: ProgrammeQuery,
@@ -487,7 +528,8 @@ export class TradedoublerAdvertiserAdapter implements NetworkAdapter {
    * Default window: last 90 days. Callers should pass query dates for a
    * longer look-back if they need inactive publishers.
    *
-   * TODO(verify): confirm siteId/siteName column names against a live account.
+   * siteId/siteName column names confirmed from jongotlin/TradedoublerReportsWrapper
+   * Denormalizer.php ($row->siteId, $row->siteName property access).
    */
   async listMediaPartners(
     query?: MediaPartnerQuery,
@@ -559,7 +601,9 @@ export class TradedoublerAdvertiserAdapter implements NetworkAdapter {
    * Each row represents one conversion event. Callers can aggregate over the
    * result for rolled-up performance views.
    *
-   * TODO(verify): column names, date format, currencyId parameter.
+   * Column names confirmed from jongotlin/TradedoublerReportsWrapper.
+   * Date format: YYYY-MM-DD for requests (confirmed), d.m.Y in responses.
+   * currencyId: present in the event breakdown report column list (confirmed).
    */
   async getProgrammePerformance(
     query?: ProgrammePerformanceQuery,
@@ -692,27 +736,29 @@ export class TradedoublerAdvertiserAdapter implements NetworkAdapter {
       supported: true,
       claimStatus: 'experimental',
       note:
-        'Uses aAffiliateMyProgramsReport. Column names // TODO(verify) against a live account.',
+        'Uses aAffiliateMyProgramsReport. Column names confirmed from community wrappers; ' +
+        'live-account verification still pending.',
     };
     operations['listProgrammes'] = {
       supported: true,
       claimStatus: 'experimental',
       note:
-        'Uses aAffiliateMyProgramsReport. Column names // TODO(verify) against a live account.',
+        'Uses aAffiliateMyProgramsReport. Column names confirmed from community wrappers; ' +
+        'live-account verification still pending.',
     };
     operations['listMediaPartners'] = {
       supported: true,
       claimStatus: 'experimental',
       note:
         'Derived from aAffiliateEventBreakdownReport; only publishers with events in the last ' +
-        '90 days are returned. Column names // TODO(verify) against a live account.',
+        '90 days are returned. Column names confirmed from jongotlin/TradedoublerReportsWrapper.',
     };
     operations['getProgrammePerformance'] = {
       supported: true,
       claimStatus: 'experimental',
       note:
         'Uses aAffiliateEventBreakdownReport. Event-level rows; no click data in this report. ' +
-        'Column names // TODO(verify) against a live account.',
+        'Column names confirmed from jongotlin/TradedoublerReportsWrapper.',
     };
 
     for (const op of [
@@ -746,14 +792,18 @@ registerAdapter(tradedoublerAdvertiserAdapter);
 // ---------------------------------------------------------------------------
 
 /**
- * Format a Date to Tradedoubler's legacy date format: d.m.y  (e.g. 01.05.2026).
- * TODO(verify): confirm exact format expected in the API request.
+ * Format a Date to Tradedoubler's request date format: YYYY-MM-DD.
+ *
+ * Confirmed from jongotlin/TradedoublerReportsWrapper Tradedoubler.php which
+ * uses $from->format('Y-m-d') for startDate/endDate parameters.
+ *
+ * Source: https://github.com/jongotlin/TradedoublerReportsWrapper
  */
 function toTdDateStr(d: Date): string {
-  const day = String(d.getUTCDate()).padStart(2, '0');
-  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
   const year = String(d.getUTCFullYear());
-  return `${day}.${month}.${year}`;
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**

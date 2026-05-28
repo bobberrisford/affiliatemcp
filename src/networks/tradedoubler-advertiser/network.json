@@ -9,7 +9,7 @@
   "known_limitations": [
     "Adapter built from public API documentation; not yet verified against a live account.",
     "Read-only at v0.1. The client refuses any non-GET HTTP method.",
-    "Uses the Tradedoubler legacy reports API (reports.tradedoubler.com). The XML matrix response format has been derived from community implementations and carries // TODO(verify) annotations throughout.",
+    "Uses the Tradedoubler legacy reports API (reports.tradedoubler.com) with key= query-parameter auth. XML format uses named child elements per row, confirmed from jongotlin/TradedoublerReportsWrapper and denodell/tradedoubler mock data.",
     "listMediaPartners extracts unique publishers from the event breakdown report rather than a dedicated publishers endpoint. Only publishers with at least one event in the query window are returned.",
     "getProgrammePerformance returns event-level rows (one per conversion); no click data is available in this report surface.",
     "generateTrackingLink, listTransactions, getEarningsSummary, and listClicks are not implemented at v0.1."

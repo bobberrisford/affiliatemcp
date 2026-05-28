@@ -144,15 +144,15 @@ describe('Tradedoubler advertiser internal helpers', () => {
   });
 
   describe('toTdDateStr', () => {
-    it('formats a date to dd.mm.YYYY', () => {
+    it('formats a date to YYYY-MM-DD (request format, confirmed from jongotlin wrapper)', () => {
       const d = new Date('2026-05-01T00:00:00Z');
-      expect(_internals.toTdDateStr(d)).toBe('01.05.2026');
+      expect(_internals.toTdDateStr(d)).toBe('2026-05-01');
     });
   });
 
   describe('toTdDateStrFromIso', () => {
-    it('converts ISO YYYY-MM-DD to Tradedoubler format', () => {
-      expect(_internals.toTdDateStrFromIso('2026-05-15')).toBe('15.05.2026');
+    it('converts ISO YYYY-MM-DD to Tradedoubler request format YYYY-MM-DD', () => {
+      expect(_internals.toTdDateStrFromIso('2026-05-15')).toBe('2026-05-15');
     });
   });
 });
@@ -337,6 +337,17 @@ describe('Tradedoubler advertiser.verifyAuth', () => {
     }
   });
 
+  it('returns ok=false when the API responds with "Access Denied" body', async () => {
+    mockFetch([
+      fakeResponse(loadFixture('auth-access-denied.txt'), { contentType: 'text/plain' }),
+    ]);
+    const r = await tradedoublerAdvertiserAdapter.verifyAuth();
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.reason).toMatch(/HTML|login page|token/i);
+    }
+  });
+
   it('returns ok=false when TRADEDOUBLER_ADV_TOKEN is missing', async () => {
     delete process.env['TRADEDOUBLER_ADV_TOKEN'];
     const r = await tradedoublerAdvertiserAdapter.verifyAuth();
@@ -367,10 +378,11 @@ describe('Tradedoubler advertiser.listBrands', () => {
     expect(brands[0]?.apiEnabled).toBe(true);
   });
 
-  it('injects the token in the request URL', async () => {
+  it('injects the key in the request URL (legacy reports API uses key=, not token=)', async () => {
     const { urls } = mockFetch([fakeResponse(loadFixture('programmes.xml'))]);
     await tradedoublerAdvertiserAdapter.listBrands();
-    expect(urls[0]).toContain('token=');
+    expect(urls[0]).toContain('key=');
+    expect(urls[0]).not.toContain('token=');
     expect(urls[0]).toContain('aAffiliateMyProgramsReport');
   });
 

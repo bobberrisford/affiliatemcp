@@ -13,10 +13,13 @@
  *       or via the xml2js-free lightweight parse approach.
  *
  * Authentication:
- *   Token is injected as a query parameter `token=<value>` on every request.
+ *   The API key is injected as a query parameter `key=<value>` on every
+ *   request. Note: modern Tradedoubler REST APIs use `token=` but the legacy
+ *   reports endpoint uses `key=` (confirmed by jongotlin/TradedoublerReportsWrapper
+ *   and wp-plugins/affiliate-power).
  *   Tradedoubler returns HTTP 200 even for auth failures — an HTML login page
- *   is returned instead of XML. The client checks for this and throws an
- *   auth_error envelope when it detects it.
+ *   or "Access Denied" response body is returned instead of XML. The client
+ *   checks for this and throws an auth_error envelope when it detects it.
  *
  * Response format:
  *   XML with a matrix/row/col structure. We parse it to a flat
@@ -115,8 +118,9 @@ export async function tdAdvRequest(input: TdAdvRequestInput): Promise<TdAdvRow[]
               'Tradedoubler returned HTML (login page) instead of XML — ' +
               'the API token was rejected.',
             hint:
-              'Check TRADEDOUBLER_ADV_TOKEN is the REPORTS-system token ' +
-              '(Account → Manage tokens in the Tradedoubler UI).',
+              'Check TRADEDOUBLER_ADV_TOKEN is the REPORTS-system API key ' +
+              '(Account → Manage tokens in the Tradedoubler UI). ' +
+              'The legacy reports endpoint uses key=, not token=.',
           }),
         );
       }
@@ -156,38 +160,43 @@ export type TdAdvRow = Record<string, string>;
  * Parse Tradedoubler's XML matrix response format into an array of flat row
  * objects keyed by column name.
  *
- * The XML structure is:
- *   <report>
- *     <matrix>
- *       <columnDefs>
- *         <columnDef id="programId" label="Programme ID" dataType="INTEGER" />
+ * The confirmed XML structure (from denodell/tradedoubler mock data and
+ * jongotlin/TradedoublerReportsWrapper Denormalizer.php) is:
+ *
+ *   <report name="aAffiliateMyProgramsReport" ...>
+ *     <matrix rowcount="N">
+ *       <columns>
+ *         <siteName type="string">Publisher Site</siteName>
+ *         <programName type="string">Programme Name</programName>
  *         ...
- *       </columnDefs>
+ *       </columns>
  *       <rows>
  *         <row>
- *           <col>12345</col>
- *           <col>Acme</col>
+ *           <siteName>One Digital Club</siteName>
+ *           <programName>Amoma UK</programName>
  *           ...
  *         </row>
  *       </rows>
  *     </matrix>
  *   </report>
  *
- * Column ordering in <row><col> elements matches the order of <columnDef>
- * elements in <columnDefs>. We map by index.
+ * Key points confirmed from community sources:
+ *   - The column-definitions section is named `<columns>`, NOT `<columnDefs>`.
+ *   - Row cells are NAMED elements (e.g. `<programId>12345</programId>`),
+ *     NOT positional `<col>` elements.
+ *   - The Denormalizer accesses values via `$row->programId` etc. (SimpleXML
+ *     property access), confirming named-element structure.
+ *   - For programmes, the data matrix is `matrix[1]` (index 1, not 0).
+ *     The first matrix (`matrix[0]`) appears to be a summary/empty result.
  *
- * TODO(verify): confirm exact element nesting against a live account. The
- * structure was deduced from the community wrapper at
- * github.com/jongotlin/TradedoublerReportsWrapper.
+ * Sources:
+ *   https://github.com/denodell/tradedoubler/blob/master/test/mock-data/advertisers.xml
+ *   https://github.com/jongotlin/TradedoublerReportsWrapper (Denormalizer.php)
  */
 export function parseXmlMatrix(xml: string): TdAdvRow[] {
-  // Extract all column IDs (attribute `id` on <columnDef> elements).
-  const columnIds = extractColumnIds(xml);
-
-  if (columnIds.length === 0) {
-    // No column definitions — may be an empty result or a different envelope.
-    return [];
-  }
+  // Extract the column names declared in the <columns> section.
+  // Each direct child element of <columns> has the column name as its tag name.
+  const columnNames = extractColumnNames(xml);
 
   // Extract each <row> block.
   const rowMatches = xml.matchAll(/<row>([\s\S]*?)<\/row>/g);
@@ -195,42 +204,66 @@ export function parseXmlMatrix(xml: string): TdAdvRow[] {
 
   for (const rowMatch of rowMatches) {
     const rowContent = rowMatch[1] ?? '';
-    // Extract <col> values in order. Values may span multiple lines.
-    const colMatches = [...rowContent.matchAll(/<col>([\s\S]*?)<\/col>/g)];
     const row: TdAdvRow = {};
-    for (let i = 0; i < columnIds.length; i++) {
-      const id = columnIds[i];
-      if (id === undefined) continue;
-      row[id] = (colMatches[i]?.[1] ?? '').trim();
+
+    if (columnNames.length > 0) {
+      // Named-element format: extract each known column by its tag name.
+      for (const colName of columnNames) {
+        const re = new RegExp(`<${colName}[^>]*>([\\s\\S]*?)<\\/${colName}>`, 'i');
+        const m = re.exec(rowContent);
+        row[colName] = m ? (m[1] ?? '').trim() : '';
+      }
+    } else {
+      // Fallback: extract all named child elements generically.
+      // This handles responses where the <columns> section is absent or empty.
+      const tagRe = /<([a-zA-Z][a-zA-Z0-9_]*)(?:[^>]*)?>([^<]*)<\/\1>/g;
+      let m: RegExpExecArray | null;
+      while ((m = tagRe.exec(rowContent)) !== null) {
+        const tagName = m[1];
+        const value = m[2];
+        if (tagName && tagName !== 'row' && value !== undefined) {
+          row[tagName] = value.trim();
+        }
+      }
     }
-    rows.push(row);
+
+    if (Object.keys(row).length > 0) {
+      rows.push(row);
+    }
   }
 
   return rows;
 }
 
 /**
- * Extract column IDs from <columnDef id="..."> elements.
- * Also accepts <col id="..."> if the format differs.
+ * Extract column names from the `<columns>` section of a Tradedoubler
+ * report XML response.
  *
- * TODO(verify): confirm attribute name (`id` vs `name`) against a live response.
+ * In the confirmed Tradedoubler XML format each direct child element of
+ * `<columns>` has the column identifier as its tag name:
+ *
+ *   <columns>
+ *     <programId type="integer">Programme ID</programId>
+ *     <programName type="string">Programme Name</programName>
+ *   </columns>
+ *
+ * Sources:
+ *   https://github.com/denodell/tradedoubler/blob/master/test/mock-data/advertisers.xml
  */
-function extractColumnIds(xml: string): string[] {
-  const ids: string[] = [];
-  // Try <columnDef id="..."> first.
-  const defRe = /<columnDef[^>]+id="([^"]+)"/g;
-  let m: RegExpExecArray | null;
-  while ((m = defRe.exec(xml)) !== null) {
-    if (m[1]) ids.push(m[1]);
-  }
-  if (ids.length > 0) return ids;
+function extractColumnNames(xml: string): string[] {
+  // Find the <columns>...</columns> block.
+  const colsMatch = /<columns>([\s\S]*?)<\/columns>/i.exec(xml);
+  if (!colsMatch) return [];
 
-  // Fallback: try <col id="..."> (alternative format in some Tradedoubler API versions).
-  const colRe = /<col[^>]+id="([^"]+)"/g;
-  while ((m = colRe.exec(xml)) !== null) {
-    if (m[1]) ids.push(m[1]);
+  const colsContent = colsMatch[1] ?? '';
+  const names: string[] = [];
+  // Each child is <tagName ...>...</tagName>; extract the tag name.
+  const tagRe = /<([a-zA-Z][a-zA-Z0-9_]*)(?:\s[^>]*)?\s*>/g;
+  let m: RegExpExecArray | null;
+  while ((m = tagRe.exec(colsContent)) !== null) {
+    if (m[1]) names.push(m[1]);
   }
-  return ids;
+  return names;
 }
 
 export { HttpStatusError };

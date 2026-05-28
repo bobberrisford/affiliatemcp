@@ -1,61 +1,61 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<report>
-  <matrix>
-    <columnDefs>
-      <columnDef id="timeOfEvent" label="Event Date" dataType="DATE" />
-      <columnDef id="siteId" label="Publisher Site ID" dataType="INTEGER" />
-      <columnDef id="siteName" label="Publisher Site Name" dataType="STRING" />
-      <columnDef id="pendingStatus" label="Status" dataType="STRING" />
-      <columnDef id="orderValue" label="Order Value" dataType="DECIMAL" />
-      <columnDef id="affiliateCommission" label="Affiliate Commission" dataType="DECIMAL" />
-      <columnDef id="programId" label="Programme ID" dataType="INTEGER" />
-      <columnDef id="eventName" label="Event Name" dataType="STRING" />
-      <columnDef id="currencyId" label="Currency" dataType="STRING" />
-    </columnDefs>
+<report name="aAffiliateEventBreakdownReport" time="2026-05-28 12:00">
+  <matrix rowcount="4">
+    <columns>
+      <timeOfEvent type="date">Event Date</timeOfEvent>
+      <siteId type="integer">Publisher Site ID</siteId>
+      <siteName type="string">Publisher Site Name</siteName>
+      <pendingStatus type="string">Status</pendingStatus>
+      <orderValue type="decimal">Order Value</orderValue>
+      <affiliateCommission type="decimal">Affiliate Commission</affiliateCommission>
+      <programId type="integer">Programme ID</programId>
+      <eventName type="string">Event Name</eventName>
+      <currencyId type="string">Currency</currencyId>
+    </columns>
     <rows>
       <row>
-        <col>01.05.2026</col>
-        <col>5001</col>
-        <col>BestDeals.co.uk</col>
-        <col>A</col>
-        <col>150.00</col>
-        <col>7.50</col>
-        <col>11111</col>
-        <col>Sale</col>
-        <col>GBP</col>
+        <timeOfEvent>01.05.2026</timeOfEvent>
+        <siteId>5001</siteId>
+        <siteName>BestDeals.co.uk</siteName>
+        <pendingStatus>A</pendingStatus>
+        <orderValue>150.00</orderValue>
+        <affiliateCommission>7.50</affiliateCommission>
+        <programId>11111</programId>
+        <eventName>Sale</eventName>
+        <currencyId>GBP</currencyId>
       </row>
       <row>
-        <col>03.05.2026</col>
-        <col>5002</col>
-        <col>VoucherWorld</col>
-        <col>P</col>
-        <col>89.99</col>
-        <col>4.50</col>
-        <col>11111</col>
-        <col>Sale</col>
-        <col>GBP</col>
+        <timeOfEvent>03.05.2026</timeOfEvent>
+        <siteId>5002</siteId>
+        <siteName>VoucherWorld</siteName>
+        <pendingStatus>P</pendingStatus>
+        <orderValue>89.99</orderValue>
+        <affiliateCommission>4.50</affiliateCommission>
+        <programId>11111</programId>
+        <eventName>Sale</eventName>
+        <currencyId>GBP</currencyId>
       </row>
       <row>
-        <col>05.05.2026</col>
-        <col>5003</col>
-        <col>CashbackSite</col>
-        <col>D</col>
-        <col>200.00</col>
-        <col>10.00</col>
-        <col>22222</col>
-        <col>Sale</col>
-        <col>EUR</col>
+        <timeOfEvent>05.05.2026</timeOfEvent>
+        <siteId>5003</siteId>
+        <siteName>CashbackSite</siteName>
+        <pendingStatus>D</pendingStatus>
+        <orderValue>200.00</orderValue>
+        <affiliateCommission>10.00</affiliateCommission>
+        <programId>22222</programId>
+        <eventName>Sale</eventName>
+        <currencyId>EUR</currencyId>
       </row>
       <row>
-        <col>07.05.2026</col>
-        <col>5001</col>
-        <col>BestDeals.co.uk</col>
-        <col>A</col>
-        <col>75.00</col>
-        <col>3.75</col>
-        <col>11111</col>
-        <col>Lead</col>
-        <col>GBP</col>
+        <timeOfEvent>07.05.2026</timeOfEvent>
+        <siteId>5001</siteId>
+        <siteName>BestDeals.co.uk</siteName>
+        <pendingStatus>A</pendingStatus>
+        <orderValue>75.00</orderValue>
+        <affiliateCommission>3.75</affiliateCommission>
+        <programId>11111</programId>
+        <eventName>Lead</eventName>
+        <currencyId>GBP</currencyId>
       </row>
     </rows>
   </matrix>

@@ -7,8 +7,11 @@
  * surface, "PRODUCTS" for the products surface). The token is obtained at:
  *   Account → Manage tokens  (UI label: "Settings" → "Management" → "Manage tokens")
  *
- * The token is passed as `token=<value>` in every request URL. There is no
- * Bearer header scheme for the legacy reports/management API surface.
+ * The token is passed as `key=<value>` in every request URL. There is no
+ * Bearer header scheme for the legacy reports API surface.
+ * Note: modern Tradedoubler REST APIs (conversions, claims) use `token=`,
+ * but the legacy reports endpoint uses `key=`.
+ * Source: https://github.com/jongotlin/TradedoublerReportsWrapper
  *
  * Organisation ID:
  *   Tradedoubler's advertiser reporting API requires the operator's
@@ -22,7 +25,7 @@
  *
  * Verification probe:
  *   GET https://reports.tradedoubler.com/pan/aReport3Key.action
- *       ?reportName=aAffiliateMyProgramsReport&token={TOKEN}&format=XML&columns=programId
+ *       ?reportName=aAffiliateMyProgramsReport&key={TOKEN}&format=XML&columns=programId
  *   This is the lightest call that requires a valid token AND organisation
  *   context to return meaningful rows. A 200 with XML content = ok.
  *   A 200 with text/html = rejected token (Tradedoubler returns the login
@@ -116,7 +119,7 @@ export async function verifyAuth(): Promise<
         ok: false,
         reason:
           'Tradedoubler rejected the token (returned HTML login page instead of XML). ' +
-          'Check TRADEDOUBLER_ADV_TOKEN is the REPORTS-system token.',
+          'Check TRADEDOUBLER_ADV_TOKEN is the REPORTS-system API key.',
       };
     }
 
@@ -218,8 +221,16 @@ export async function validateCredential(
 // ---------------------------------------------------------------------------
 
 /**
- * Build a URL with the token injected as a query parameter, plus any extra
- * params. Tradedoubler's classic API uses token-in-query rather than headers.
+ * Build a URL with the API key injected as a query parameter, plus any extra
+ * params. Tradedoubler's legacy reports API uses `key=` in the query string
+ * (not a Bearer header and not `token=`).
+ *
+ * The `columns` param receives special handling: if its value is a
+ * comma-separated string, each column is appended as a separate `columns=`
+ * parameter — matching the format used by community wrappers and confirmed
+ * against the jongotlin/TradedoublerReportsWrapper reference implementation.
+ *
+ * Source: https://github.com/jongotlin/TradedoublerReportsWrapper
  *
  * The `buildErrorEnvelope` import is kept for future use in error paths inside
  * this module's helpers.
@@ -230,21 +241,41 @@ export function buildTokenUrl(
   params: Record<string, string | number | undefined> = {},
 ): string {
   const url = new URL(base);
-  url.searchParams.set('token', token);
+  // Legacy reports API auth parameter is `key`, not `token`.
+  url.searchParams.set('key', token);
   for (const [k, v] of Object.entries(params)) {
     if (v === undefined) continue;
-    url.searchParams.set(k, String(v));
+    if (k === 'columns' && typeof v === 'string' && v.includes(',')) {
+      // Expand comma-separated column list into repeated `columns=` params.
+      for (const col of v.split(',')) {
+        const trimmed = col.trim();
+        if (trimmed) url.searchParams.append('columns', trimmed);
+      }
+    } else {
+      url.searchParams.set(k, String(v));
+    }
   }
   return url.toString();
 }
 
 /**
- * True when the response body looks like an HTML page rather than XML.
- * Tradedoubler returns the login page (HTML) when the token is invalid.
+ * True when the response body looks like an HTML page rather than XML,
+ * or contains Tradedoubler's known auth-failure string.
+ *
+ * Tradedoubler's legacy reports API returns an HTML login page when the
+ * `key=` parameter is invalid or missing. Community implementations detect
+ * this either by checking for HTML tags or for the literal "Access Denied"
+ * string that appears in the access-denied response body.
+ *
+ * Sources:
+ *   https://github.com/wp-plugins/affiliate-power/blob/master/apis/tradedoubler.php
+ *   (checks strpos($str_report, 'Access Denied') !== false)
  */
 export function isHtmlResponse(body: string): boolean {
   const trimmed = body.trimStart().toLowerCase();
-  return trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html');
+  if (trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html')) return true;
+  if (body.includes('Access Denied')) return true;
+  return false;
 }
 
 // Silence lint — buildErrorEnvelope is used only in future error paths.
