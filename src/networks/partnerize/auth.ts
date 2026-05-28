@@ -38,7 +38,8 @@ const log = createLogger('partnerize.auth');
 /**
  * The minimal shape we read from `GET /user/publisher`.
  * Partnerize wraps the list in a `publishers` key.
- * TODO(verify): field names confirmed from public API blueprint; not live-tested.
+ * Endpoint path confirmed from publisher.apib; field names `publisher_id` and
+ * `account_name` confirmed from publisher.apib blueprint. Not live-tested.
  */
 interface PartnerizePublisher {
   publisher_id?: string;
@@ -150,7 +151,8 @@ export async function verifyAuth(): Promise<VerifyAuthOk | VerifyAuthFail> {
  *
  * The API blueprint shows `{ publishers: { publisher: [...] } }` but live
  * responses may differ; we read both known shapes defensively.
- * TODO(verify): response envelope shape not confirmed against a live account.
+ * Envelope shape sourced from publisher.apib; not confirmed against a live account.
+ * Blocked: requires live credentials to confirm exact envelope.
  */
 function extractPublisherList(response: PartnerizePublisherListResponse): PartnerizePublisher[] {
   // Shape 1: { publishers: { publisher: [...] } }

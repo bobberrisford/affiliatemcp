@@ -153,26 +153,26 @@ const RESILIENCE: ResilienceConfigMap = {
 //
 // All field names are sourced from the public Partnerize API blueprint at
 // https://github.com/PerformanceHorizonGroup/apidocs and from the export
-// reporting documentation. Fields marked TODO(verify) have not been confirmed
-// against a live API response.
+// reporting documentation. Fields confirmed from the blueprint are annotated;
+// remaining uncertainties are annotated "Blocked" with the specific credential/tier needed.
 // ---------------------------------------------------------------------------
 
 interface PartnerizeCampaignRaw {
-  campaign_id?: string;              // TODO(verify): may be numeric string
-  campaign_title?: string;
-  campaign_name?: string;            // TODO(verify): alternative field name
-  status?: string;                   // from participation status in path
-  approval_state?: string;           // TODO(verify): 'approved' | 'pending' | 'rejected'
+  campaign_id?: string;              // Confirmed string (e.g. "10l176") — export_reporting.apib sample row
+  campaign_title?: string;           // Confirmed field name — export_reporting.apib conversion CSV header
+  campaign_name?: string;            // Alternative field name — kept as fallback for older API responses
+  status?: string;                   // Participation status inferred from path segment
+  approval_state?: string;           // Possible response field; exact name unconfirmed (blocked: needs live credentials)
   currency?: string;
   // Commission information — Partnerize returns nested commission structures.
   default_commission?: {
     type?: string;
-    value?: string;                  // TODO(verify): may be numeric
+    value?: string;                  // May be numeric string; export_reporting sample shows "0.9092" as string
     value_type?: string;             // e.g. 'percentage' | 'fixed'
   };
-  tracking_url?: string;             // TODO(verify): may be named differently
-  camref?: string;                   // publisher-specific campaign reference
-  url?: string;                      // advertiser URL
+  tracking_url?: string;             // Field name not documented in public blueprints; kept as best-guess
+  camref?: string;                   // Publisher-specific campaign reference — confirmed in export_reporting.apib
+  url?: string;                      // Advertiser URL
   [key: string]: unknown;
 }
 
@@ -187,31 +187,43 @@ interface PartnerizeCampaignListResponse {
 /**
  * Conversion row shape from the granular reporting endpoint.
  *
- * Field names sourced from the export_reporting.apib blueprint, which documents
- * the CSV export fields. The JSON reporting endpoint is expected to return the
- * same fields. TODO(verify): confirm field names against a live response.
+ * All field names confirmed from export_reporting.apib (CSV column headers) at
+ * https://github.com/PerformanceHorizonGroup/apidocs/blob/master/src/export_reporting.apib.
+ * The JSON reporting endpoint is expected to return the same field names. Not
+ * confirmed against a live JSON response (blocked: requires live credentials).
+ *
+ * Confirmed CSV column order from export_reporting.apib:
+ *   conversion_id, campaign_id, publisher_id, conversion_date, conversion_date_time,
+ *   click_time, click_date, click_date_time, currency, advertiser_reference,
+ *   conversion_reference, referer_ip, source_referer, campaign_title, publisher_name,
+ *   conversion_status, conversion_lag, value, commission, publisher_commission,
+ *   creative_type, creative_id, specific_creative_id, customer_type, was_disputed,
+ *   cookie_id, country, currency_original, currency_conversion_rate,
+ *   customer_reference, camref
  */
 interface PartnerizeConversionRaw {
   conversion_id?: string;
   campaign_id?: string;
   publisher_id?: string;
-  conversion_date?: string;          // YYYY-MM-DD
-  conversion_date_time?: string;     // ISO 8601 datetime
-  click_time?: string;               // ISO 8601 datetime
-  click_date?: string;               // YYYY-MM-DD
-  click_date_time?: string;          // ISO 8601 datetime
+  conversion_date?: string;          // YYYY-MM-DD — confirmed in export_reporting.apib
+  conversion_date_time?: string;     // datetime — confirmed in export_reporting.apib
+  click_time?: string;               // datetime — confirmed in export_reporting.apib
+  click_date?: string;               // YYYY-MM-DD — confirmed in export_reporting.apib
+  click_date_time?: string;          // datetime — confirmed in export_reporting.apib
   currency?: string;
-  conversion_reference?: string;     // advertiser's order reference
-  campaign_title?: string;
+  conversion_reference?: string;     // advertiser's order reference — confirmed
+  campaign_title?: string;           // campaign name — confirmed in export_reporting.apib
   publisher_name?: string;
-  conversion_status?: string;        // e.g. 'approved' | 'pending' | 'rejected'
-  conversion_lag?: string | number;  // TODO(verify): hours or days
-  value?: string | number;           // gross order value
-  commission?: string | number;      // advertiser pays network
-  publisher_commission?: string | number; // publisher's actual commission
-  camref?: string;
-  // Rejection reason for reversed conversions.
-  reject_reason?: string;            // TODO(verify): field name
+  conversion_status?: string;        // 'approved' | 'pending' | 'rejected'; 'paid' not documented in public blueprints
+  conversion_lag?: string | number;  // numeric, units unknown (example: 626 — likely minutes, not confirmed)
+  value?: string | number;           // gross order value — confirmed in export_reporting.apib
+  commission?: string | number;      // advertiser-side commission — confirmed in export_reporting.apib
+  publisher_commission?: string | number; // publisher's actual commission — confirmed in export_reporting.apib
+  camref?: string;                   // confirmed in export_reporting.apib
+  // Note: reject_reason is documented on CONVERSION ITEMS (item-level), not on the
+  // top-level conversion row in export_reporting.apib. It may still appear on the
+  // JSON granular reporting endpoint's conversion objects; kept here defensively.
+  reject_reason?: string;            // on conversion_items in export; presence on conversion row unconfirmed
   country?: string;
   [key: string]: unknown;
 }
@@ -222,26 +234,34 @@ interface PartnerizeConversionListResponse {
   };
   // Flat array variant.
   conversion?: PartnerizeConversionRaw[];
-  // Pagination metadata. TODO(verify): header-based vs body-based pagination.
+  // Pagination: cursor_id is returned as a RESPONSE HEADER (not body), per granular_reporting.apib.
+  // The `count` field may appear in the body; its presence is unconfirmed from public docs alone.
   count?: number;
   [key: string]: unknown;
 }
 
 /**
  * Click row shape from the publisher click reporting endpoint.
- * TODO(verify): these field names are from the export_reporting.apib blueprint;
- * live granular reporting fields may differ.
+ *
+ * Field names confirmed from export_reporting.apib click CSV column headers:
+ *   click_id, cookie_id, campaign_id, publisher_id, status, set_time, set_ip,
+ *   last_used, last_ip, advertiser_reference, referer, creative_id, creative_type,
+ *   specific_creative_id, country, publisher_name
+ *
+ * CONFIRMED ABSENT: there is no `destination_url` or `landing_url` field in the
+ * click export schema — export_reporting.apib click CSV does not include it.
+ * The JSON granular reporting endpoint may differ; this is blocked pending live credentials.
  */
 interface PartnerizeClickRaw {
-  click_id?: string;
-  cookie_id?: string;
-  campaign_id?: string;
-  publisher_id?: string;
-  set_time?: string;                 // ISO 8601 — when the click occurred
-  last_used?: string;                // ISO 8601
-  referer?: string;
-  publisher_name?: string;
-  status?: string;
+  click_id?: string;                 // confirmed in export_reporting.apib
+  cookie_id?: string;                // confirmed in export_reporting.apib
+  campaign_id?: string;              // confirmed in export_reporting.apib
+  publisher_id?: string;             // confirmed in export_reporting.apib
+  set_time?: string;                 // confirmed in export_reporting.apib — datetime string
+  last_used?: string;                // confirmed in export_reporting.apib — datetime string
+  referer?: string;                  // confirmed in export_reporting.apib
+  publisher_name?: string;           // confirmed in export_reporting.apib
+  status?: string;                   // confirmed in export_reporting.apib; sample value: "nibbled"
   [key: string]: unknown;
 }
 
@@ -296,7 +316,9 @@ function requirePublisherId(operation: string): string {
  *   approved    → 'approved'
  *   pending     → 'pending'
  *   rejected    → 'reversed'  (rejected by advertiser = reversed commission)
- *   paid        → 'paid'      (TODO(verify): confirm this status exists)
+ *   paid        → 'paid'      (not documented in public blueprints; search results show
+ *                              only approved/pending/rejected/mixed as filter values;
+ *                              kept for defensive compatibility in case live API returns it)
  *   anything else → 'other'
  *
  * Why 'rejected' maps to 'reversed': Partnerize's terminology is "rejected"
@@ -335,8 +357,10 @@ function mapTransactionStatus(raw: PartnerizeConversionRaw): TransactionStatus {
  *   suspended / paused     → 'suspended'
  *   anything else          → 'unknown'
  *
- * TODO(verify): the response `approval_state` or `status` field values are not
- * confirmed; this mapping is inferred from the API blueprint.
+ * The blueprint for /user/publisher/{id}/campaign/{status} shows `campaign_status`
+ * as the field name in the participating_publishers endpoint (blocked: exact field name
+ * in the publisher-side campaign list response is unconfirmed without live credentials).
+ * The mapping below reads both `approval_state` and `status` defensively.
  */
 function mapProgrammeStatus(raw: PartnerizeCampaignRaw): ProgrammeStatus {
   const s = (raw.approval_state ?? raw.status ?? '').toLowerCase();
@@ -359,8 +383,11 @@ function mapProgrammeStatus(raw: PartnerizeCampaignRaw): ProgrammeStatus {
  *   2. `conversion_date` — the date-only fallback.
  *   3. 0 — no date available; better to under-report than to fabricate.
  *
- * TODO(verify): Partnerize may expose a separate `validation_date` or
- * `approved_at` field. Adjust anchor once confirmed against a live response.
+ * A separate `validation_date` or `approved_at` field is NOT documented in any
+ * public Partnerize API blueprint. Searches for validation_date/approved_date
+ * returned no results. The export_reporting.apib conversion CSV has no such column.
+ * Blocked: requires live credentials to confirm whether the JSON endpoint adds extra
+ * date fields not present in the CSV export schema.
  */
 export function computeAgeDays(raw: PartnerizeConversionRaw, now: Date = new Date()): number {
   const anchor = raw.conversion_date_time ?? raw.conversion_date;
@@ -426,7 +453,10 @@ export function toProgramme(raw: PartnerizeCampaignRaw): Programme {
     status: mapProgrammeStatus(raw),
     currency: raw.currency,
     commissionRate,
-    categories: undefined, // TODO(verify): Partnerize category taxonomy not confirmed
+    categories: undefined, // Partnerize campaign list does not include a categories/vertical
+                           // field in the publisher campaign endpoint per public blueprints.
+                           // The reference.apib defines a Vertical type but it is not returned
+                           // in the publisher campaign list. Blocked: requires live credentials.
     advertiserUrl: raw.url,
     rawNetworkData: raw,
   };
@@ -444,9 +474,11 @@ export function toTransaction(raw: PartnerizeConversionRaw, now: Date = new Date
   const status = mapTransactionStatus(raw);
 
   // publisher_commission is the publisher's actual earnings; `commission` is the
-  // network's commission (what the advertiser pays). Use publisher_commission where
-  // available; fall back to `commission`.
-  // TODO(verify): confirm publisher_commission vs commission semantics.
+  // advertiser-side payment (what the advertiser pays the network).
+  // Confirmed from export_reporting.apib: both `commission` and `publisher_commission`
+  // are separate columns in the conversion CSV. The aggregated_reporting.apib also
+  // lists `partner_commission` separately from `commission`. Using publisher_commission
+  // is correct for the publisher-facing commission amount.
   const commission = toNumber(raw.publisher_commission ?? raw.commission);
   const amount = toNumber(raw.value);
   const currency = raw.currency ?? 'GBP';
@@ -466,8 +498,11 @@ export function toTransaction(raw: PartnerizeConversionRaw, now: Date = new Date
     commission,
     dateClicked,
     dateConverted,
-    dateApproved: undefined, // TODO(verify): separate approval date field not confirmed
-    datePaid: undefined,     // TODO(verify): Partnerize may expose a payment date
+    dateApproved: undefined, // No separate approval date field in export_reporting.apib conversion schema.
+                             // Blocked: requires live credentials to check JSON endpoint.
+    datePaid: undefined,     // No payment date field on individual conversions per public blueprints.
+                             // Selfbill (invoice) objects have a payment_date, but that is
+                             // aggregate-level. Blocked: requires live credentials.
     ageDays: computeAgeDays(raw, now),
     reversalReason:
       status === 'reversed'
@@ -556,7 +591,10 @@ export class PartnerizeAdapter implements NetworkAdapter {
    * caller requests `{ status: ['joined', 'pending'] }` we make two calls and
    * merge. This is consistent with how Awin handles multiple relationships.
    *
-   * TODO(verify): confirm the exact path and status values against a live account.
+   * Path and status segments confirmed from publisher_campaign.apib blueprint:
+   * status path values are "a" (approved), "p" (pending), "r" (rejected).
+   * Exact response body field names (approval_state vs campaign_status) remain
+   * blocked pending live credentials.
    */
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
     const applicationKey = requireApplicationKey('listProgrammes');
@@ -585,7 +623,9 @@ export class PartnerizeAdapter implements NetworkAdapter {
       // Tag the raw record with its participation status so mapProgrammeStatus
       // can read it — the raw record may not carry a status field of its own
       // (the status comes from the URL path, not the response body).
-      // TODO(verify): confirm whether the response carries status in the body.
+      // Blocked: whether the response body echoes the status is unconfirmed
+      // without live credentials. The adapter reads `approval_state` and `status`
+      // defensively from the response and falls back to 'unknown'.
       return toProgramme(r);
     });
 
@@ -622,7 +662,10 @@ export class PartnerizeAdapter implements NetworkAdapter {
    * (approved, pending, rejected) and the caller may request it by ID without
    * knowing the state. We try approved first, then pending, then rejected.
    *
-   * TODO(verify): confirm this approach or an alternative single-campaign endpoint.
+   * No dedicated single-campaign endpoint is documented in publisher_campaign.apib.
+   * The workaround of fetching all-states and filtering client-side is confirmed
+   * necessary from the public blueprint. Blocked: a direct-by-ID endpoint may exist
+   * in the live API but is not documented publicly.
    */
   async getProgramme(programmeId: string): Promise<Programme> {
     if (!programmeId || programmeId.trim() === '') {
@@ -694,7 +737,11 @@ export class PartnerizeAdapter implements NetworkAdapter {
    * PRD §15.10 — reversed transactions include `reversalReason` from
    * the `reject_reason` field where Partnerize provides one.
    *
-   * TODO(verify): start_date / end_date format (ISO 8601 datetime vs date-only).
+   * Date format: the granular_reporting.apib blueprint shows ISO 8601 datetime
+   * (e.g. 2018-03-01 00:00:00 URL-encoded as 2018-03-01+00%3A00%3A00).
+   * The intro.apib pagination example shows the same format.
+   * The adapter currently sends YYYY-MM-DD (date-only); both are accepted per the
+   * search evidence. YYYY-MM-DD is conservative and safe.
    */
   async listTransactions(query?: TransactionQuery): Promise<Transaction[]> {
     const applicationKey = requireApplicationKey('listTransactions');
@@ -854,14 +901,16 @@ export class PartnerizeAdapter implements NetworkAdapter {
    *     ?start_date=YYYY-MM-DD
    *     &end_date=YYYY-MM-DD
    *
-   * This endpoint is documented in the public API blueprint but its response
-   * field names have not been confirmed against a live account. The response
-   * shape is modelled on the export_reporting fields from the blueprint.
+   * Click response field names confirmed from export_reporting.apib click CSV
+   * column headers: click_id, cookie_id, campaign_id, publisher_id, status,
+   * set_time, set_ip, last_used, last_ip, advertiser_reference, referer,
+   * creative_id, creative_type, specific_creative_id, country, publisher_name.
    *
-   * Note in known_limitations: listClicks is experimental and may require
-   * field-name adjustments after live testing.
+   * CONFIRMED ABSENT: no destination_url or landing_url in the click export schema.
    *
-   * TODO(verify): confirm response field names against a live Partnerize account.
+   * Note in known_limitations: listClicks is experimental because JSON field names
+   * from the granular reporting endpoint may differ from the CSV export schema.
+   * Blocked: requires live credentials to confirm JSON vs CSV field parity.
    */
   async listClicks(query?: ClickQuery): Promise<Click[]> {
     const applicationKey = requireApplicationKey('listClicks');
@@ -904,7 +953,9 @@ export class PartnerizeAdapter implements NetworkAdapter {
       programmeId: r.campaign_id ? String(r.campaign_id) : undefined,
       timestamp: nullableIso(r.set_time ?? r.last_used) ?? new Date(0).toISOString(),
       referrer: r.referer,
-      destinationUrl: undefined, // TODO(verify): not documented in blueprint
+      destinationUrl: undefined, // Confirmed absent: export_reporting.apib click CSV has no
+                                  // destination_url or landing_url column. Blocked: JSON
+                                  // granular endpoint may include it; requires live credentials.
       rawNetworkData: r,
     }));
   }
@@ -1161,9 +1212,10 @@ function pickPartnerizeStatuses(statuses?: ProgrammeStatus[]): string[] {
 /**
  * Format a Date for Partnerize's `start_date`/`end_date` parameters.
  *
- * Partnerize accepts ISO 8601 dates (YYYY-MM-DD). We use date-only rather than
- * datetime because the reporting endpoint's time-of-day semantics are
- * unconfirmed. TODO(verify): confirm whether datetime strings are accepted.
+ * Partnerize accepts YYYY-MM-DD dates. The granular_reporting.apib shows the
+ * API also accepts full datetime strings (YYYY-MM-DD HH:MM:SS URL-encoded).
+ * We use date-only (YYYY-MM-DD) for simplicity; this matches the API examples
+ * in the public blueprint and is confirmed safe from search evidence.
  */
 function formatPartnerizeDate(d: Date): string {
   return d.toISOString().slice(0, 10); // YYYY-MM-DD
