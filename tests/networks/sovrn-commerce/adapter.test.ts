@@ -7,6 +7,16 @@
  *   - PRD-relevant tests are tagged with §15.x in their `it` strings.
  *   - Fixtures live under tests/fixtures/sovrn-commerce/ and approximate
  *     the shape of real Sovrn Commerce API responses. No real tokens.
+ *
+ * Hardening pass 2026-05-28:
+ *   - Fixtures updated to reflect the real nested API response shapes.
+ *   - The /v1/reports/transactions response wraps results in a "transactions"
+ *     key: { "transactions": [...] }. Tests now use the txEnvelope() helper.
+ *   - Status mapping confirmed: Sovrn Commerce has no status field. All
+ *     transactions map to 'other'. Status-mapping string tests removed.
+ *   - Merchant fields updated: merchantGroupId / merchantGroupName (not
+ *     merchantId / merchant).
+ *   Source: developer.sovrn.com/reference/get_reports-transactions (2026-05-28)
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -43,6 +53,17 @@ function mockFetchQueue(responses: Response[]): ReturnType<typeof vi.fn> {
   return spy;
 }
 
+/**
+ * Wrap a transaction array in the real API envelope.
+ *
+ * The /v1/reports/transactions endpoint returns:
+ *   { "transactions": [ ...transaction objects... ] }
+ * Source: developer.sovrn.com/reference/get_reports-transactions (2026-05-28)
+ */
+function txEnvelope(data: unknown) {
+  return { transactions: data };
+}
+
 beforeEach(() => {
   _resetBreakers();
   process.env['SOVRN_SECRET_KEY'] = 'test-secret-key-please-ignore';
@@ -60,26 +81,18 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('Sovrn Commerce transformers (status normalisation, raw preservation)', () => {
-  it('maps raw status strings to canonical TransactionStatus values', () => {
-    expect(_internals.mapTransactionStatus({ status: 'pending' } as never)).toBe('pending');
-    expect(_internals.mapTransactionStatus({ status: 'new' } as never)).toBe('pending');
-    expect(_internals.mapTransactionStatus({ status: 'approved' } as never)).toBe('approved');
-    expect(_internals.mapTransactionStatus({ status: 'locked' } as never)).toBe('approved');
-    expect(_internals.mapTransactionStatus({ status: 'confirmed' } as never)).toBe('approved');
-    expect(_internals.mapTransactionStatus({ status: 'reversed' } as never)).toBe('reversed');
-    expect(_internals.mapTransactionStatus({ status: 'declined' } as never)).toBe('reversed');
-    expect(_internals.mapTransactionStatus({ status: 'void' } as never)).toBe('reversed');
-    expect(_internals.mapTransactionStatus({ status: 'paid' } as never)).toBe('paid');
-    expect(_internals.mapTransactionStatus({ status: 'cleared' } as never)).toBe('paid');
-    // No status field → 'other' (safest default per known_limitations)
+  it('always returns "other" for transaction status — Sovrn has no status field', () => {
+    // Sovrn Commerce /reports/transactions does not include a status field.
+    // All transactions map to 'other'. Confirmed from the documented response
+    // schema at developer.sovrn.com/reference/get_reports-transactions (2026-05-28).
     expect(_internals.mapTransactionStatus({} as never)).toBe('other');
-    expect(_internals.mapTransactionStatus({ status: 'unknown-future-value' } as never)).toBe('other');
+    expect(_internals.mapTransactionStatus({ commission: { programType: 'cpa' } } as never)).toBe('other');
   });
 
   it('maps all Sovrn merchants to "joined" programme status', () => {
     // Sovrn Commerce has no catalogue; every merchant returned is actively worked with.
     expect(_internals.mapProgrammeStatus({} as never)).toBe('joined');
-    expect(_internals.mapProgrammeStatus({ merchant: 'Example Books' } as never)).toBe('joined');
+    expect(_internals.mapProgrammeStatus({ merchantGroupName: 'Example Books' } as never)).toBe('joined');
   });
 
   it('preserves the raw Sovrn payload under rawNetworkData', () => {
@@ -96,18 +109,18 @@ describe('Sovrn Commerce transformers (status normalisation, raw preservation)',
     expect(out.rawNetworkData).toBe(raw);
   });
 
-  it('computes ageDays from commissionDate (preferred) then clickDate', () => {
+  it('computes ageDays from commission.commissionDate (preferred) then click.clickDate', () => {
     const now = new Date('2026-05-28T00:00:00Z');
-    // commissionDate → preferred anchor
+    // commission.commissionDate → preferred anchor
     const age1 = _internals.computeAgeDays(
-      { commissionDate: '2026-04-15', clickDate: '2026-04-10' } as never,
+      { commission: { commissionDate: '2026-04-15' }, click: { clickDate: '2026-04-10' } } as never,
       now,
     );
     // 2026-05-28 - 2026-04-15 = 43 days
     expect(age1).toBe(43);
 
-    // clickDate → fallback when commissionDate absent
-    const age2 = _internals.computeAgeDays({ clickDate: '2026-05-01' } as never, now);
+    // click.clickDate → fallback when commission.commissionDate absent
+    const age2 = _internals.computeAgeDays({ click: { clickDate: '2026-05-01' } } as never, now);
     // 2026-05-28 - 2026-05-01 = 27 days
     expect(age2).toBe(27);
 
@@ -121,16 +134,19 @@ describe('Sovrn Commerce transformers (status normalisation, raw preservation)',
     const now = new Date('2026-05-28T00:00:00Z');
 
     const tx0 = _internals.toTransaction(records[0] as never, now);
+    // commission.revenueId is the primary ID
     expect(tx0.id).toBe('rv-2001');
+    // merchant.merchantGroupId is the programme ID
     expect(tx0.programmeId).toBe('11001');
+    // merchant.merchantGroupName is the programme name
     expect(tx0.programmeName).toBe('Example Books');
+    // commission.publisherNetRevenue is the earnings field
     expect(tx0.commission).toBe(2.50);
+    // No currency field in response — defaults to 'USD'
     expect(tx0.currency).toBe('USD');
     expect(tx0.network).toBe('sovrn-commerce');
-
-    // Reversed transaction in fixture
-    const tx2 = _internals.toTransaction(records[2] as never, now);
-    expect(tx2.status).toBe('reversed');
+    // No status field in response — all map to 'other'
+    expect(tx0.status).toBe('other');
   });
 
   it('generates date range correctly for [from, to]', () => {
@@ -147,16 +163,21 @@ describe('Sovrn Commerce transformers (status normalisation, raw preservation)',
 });
 
 // ---------------------------------------------------------------------------
-// listTransactions — unpaid-age + reversed visibility (§15.9, §15.10)
+// listTransactions — unpaid-age (§15.9, §15.10)
+//
+// Note: §15.10 (reversed visibility) cannot be exercised here because Sovrn
+// Commerce has no status field. All transactions are 'other'. A status-filter
+// test is retained to confirm the filter works correctly with the 'other' value.
 // ---------------------------------------------------------------------------
 
 describe('SovrnCommerce.listTransactions', () => {
   it('returns only aged transactions when minAgeDays is set (§15.9)', async () => {
     // Two fetch calls for a 2-day window; each returns the full fixture to
     // exercise the age filter. With minAgeDays=365 only the 2024 records qualify.
+    const fixture = loadFixture('transactions.json');
     mockFetchQueue([
-      fakeResponse(loadFixture('transactions.json')),
-      fakeResponse(loadFixture('transactions.json')),
+      fakeResponse(txEnvelope(fixture)),
+      fakeResponse(txEnvelope(fixture)),
     ]);
 
     const aged = await sovrnCommerceAdapter.listTransactions({
@@ -171,24 +192,33 @@ describe('SovrnCommerce.listTransactions', () => {
     expect(aged.length).toBeGreaterThan(0);
   });
 
-  it('includes reversed transactions when no status filter (§15.10)', async () => {
-    mockFetchQueue([fakeResponse(loadFixture('transactions.json'))]);
+  it('returns all transactions as "other" status (Sovrn has no status field) (§15.10)', async () => {
+    mockFetchQueue([fakeResponse(txEnvelope(loadFixture('transactions.json')))]);
     const all = await sovrnCommerceAdapter.listTransactions({
       from: '2026-04-15T00:00:00Z',
       to: '2026-04-15T00:00:00Z',
     });
-    const reversed = all.filter((t) => t.status === 'reversed');
-    expect(reversed.length).toBeGreaterThanOrEqual(1);
+    expect(all.every((t) => t.status === 'other')).toBe(true);
+    expect(all.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('filters to reversed-only when status filter is applied', async () => {
-    mockFetchQueue([fakeResponse(loadFixture('transactions.json'))]);
+  it('filters to "other"-only when status filter is applied', async () => {
+    mockFetchQueue([fakeResponse(txEnvelope(loadFixture('transactions.json')))]);
     const only = await sovrnCommerceAdapter.listTransactions({
       from: '2026-04-15T00:00:00Z',
       to: '2026-04-15T00:00:00Z',
-      status: ['reversed'],
+      status: ['other'],
     });
-    expect(only.every((t) => t.status === 'reversed')).toBe(true);
+    expect(only.every((t) => t.status === 'other')).toBe(true);
+  });
+
+  it('handles empty transactions envelope gracefully', async () => {
+    mockFetchQueue([fakeResponse(txEnvelope([]))]);
+    const result = await sovrnCommerceAdapter.listTransactions({
+      from: '2026-04-15T00:00:00Z',
+      to: '2026-04-15T00:00:00Z',
+    });
+    expect(result).toEqual([]);
   });
 
   it('emits a config_error envelope when SOVRN_SECRET_KEY is missing (§15.4)', async () => {
@@ -199,9 +229,9 @@ describe('SovrnCommerce.listTransactions', () => {
   it('makes one fetch call per day in the requested window', async () => {
     // 3-day window → 3 calls
     const spy = mockFetchQueue([
-      fakeResponse([]),
-      fakeResponse([]),
-      fakeResponse([]),
+      fakeResponse(txEnvelope([])),
+      fakeResponse(txEnvelope([])),
+      fakeResponse(txEnvelope([])),
     ]);
     await sovrnCommerceAdapter.listTransactions({
       from: '2026-04-10T00:00:00Z',
@@ -356,10 +386,10 @@ describe('SovrnCommerce.capabilitiesCheck', () => {
   it('records listClicks.supported = false with the known-limitation note', async () => {
     // Stubs for: listProgrammes, listTransactions (1 day), getEarningsSummary (1 day), verifyAuth.
     mockFetchQueue([
-      fakeResponse(loadFixture('merchants.json')),   // listProgrammes
-      fakeResponse(loadFixture('transactions.json')), // listTransactions probe (1 day)
-      fakeResponse(loadFixture('transactions.json')), // getEarningsSummary → listTransactions (1 day)
-      fakeResponse(loadFixture('merchants.json')),   // verifyAuth
+      fakeResponse(loadFixture('merchants.json')),          // listProgrammes
+      fakeResponse(txEnvelope(loadFixture('transactions.json'))), // listTransactions probe (1 day)
+      fakeResponse(txEnvelope(loadFixture('transactions.json'))), // getEarningsSummary → listTransactions (1 day)
+      fakeResponse(loadFixture('merchants.json')),          // verifyAuth
     ]);
     const caps = await sovrnCommerceAdapter.capabilitiesCheck();
     expect(caps.network).toBe('sovrn-commerce');
@@ -415,7 +445,7 @@ describe('§15.4 error transparency', () => {
 describe('SovrnCommerce.getEarningsSummary', () => {
   it('aggregates commission by programme and by status', async () => {
     // 1-day window → 1 fetch call
-    mockFetchQueue([fakeResponse(loadFixture('transactions.json'))]);
+    mockFetchQueue([fakeResponse(txEnvelope(loadFixture('transactions.json')))]);
 
     const summary = await sovrnCommerceAdapter.getEarningsSummary({
       from: '2026-04-15T00:00:00Z',
@@ -429,13 +459,13 @@ describe('SovrnCommerce.getEarningsSummary', () => {
     expect(summary.periodFrom).toBe('2026-04-15T00:00:00Z');
   });
 
-  it('computes oldestUnpaidAgeDays for pending/approved/other transactions (§15.9)', async () => {
-    mockFetchQueue([fakeResponse(loadFixture('transactions.json'))]);
+  it('computes oldestUnpaidAgeDays for "other" transactions (§15.9)', async () => {
+    mockFetchQueue([fakeResponse(txEnvelope(loadFixture('transactions.json')))]);
     const summary = await sovrnCommerceAdapter.getEarningsSummary({
       from: '2026-04-15T00:00:00Z',
       to: '2026-04-15T00:00:00Z',
     });
-    // The fixture contains 'other'-status transactions which are treated as unpaid.
+    // All Sovrn transactions are 'other' (no status field) — treated as unpaid.
     if (summary.oldestUnpaidAgeDays !== undefined) {
       expect(summary.oldestUnpaidAgeDays).toBeGreaterThanOrEqual(0);
     }

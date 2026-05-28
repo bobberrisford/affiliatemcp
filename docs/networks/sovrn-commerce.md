@@ -2,7 +2,7 @@
 
 Sovrn Commerce (formerly VigLink) is a link-monetisation platform that automatically converts outbound links on a publisher's site into affiliate links. The platform handles merchant programme relationships centrally — publishers do not need to apply to individual merchant programmes.
 
-**Status:** `experimental` — built from public API documentation; not yet verified against a live account. See `docs/findings/sovrn-commerce.md` for details.
+**Status:** `experimental` — response field names confirmed from public documentation (developer.sovrn.com) but not yet verified against a live account. See `docs/findings/sovrn-commerce.md` for details.
 
 ---
 
@@ -89,18 +89,20 @@ The `SOVRN_API_KEY` may be from the wrong site, or may have leading/trailing whi
 The reporting API returns only merchants you have sent traffic to in the queried date window (default: last 7 days). If you have not sent traffic recently, the list will be empty. No error is raised — this is expected behaviour from Sovrn Commerce's API design.
 
 ### Wide date windows are slow
-The transactions endpoint accepts one day per API call. A 30-day window makes 30 sequential requests. Expect approximately 30–60 seconds for wide windows. Use `from` and `to` parameters to scope queries to the narrowest window that meets your needs.
+The transactions endpoint accepts one day per API call and has a rate limit of 1 request per 60 seconds. A 30-day window makes 30 sequential requests and may take up to 30 minutes. Use `from` and `to` parameters to scope queries to the narrowest window that meets your needs.
 
 ---
 
 ## Known limitations
 
-- Adapter built from public API documentation; not yet verified against a live account.
-- The transactions endpoint returns one day of data per call; wide date windows require sequential calls (one per day).
+- Adapter built from public API documentation; response field names confirmed from developer.sovrn.com but not yet verified against a live account.
+- The `/v1/reports/transactions` endpoint accepts one `clickDate` per call (rate limit: **1 request per 60 seconds**); wide date windows require many sequential calls.
+- The `/v1/reports/merchants` endpoint also accepts one `clickDate` per call (rate limit: 1 request per 10 seconds).
 - Click-level data is not exposed as a distinct click-stream API; `listClicks` is unsupported.
-- Merchant (programme) listing is aggregated reporting data, not a dedicated catalogue endpoint. All returned merchants have status `joined`.
-- `getProgramme` is derived from the merchants report filtered by merchant name; no single-merchant lookup endpoint exists in the public API.
-- Commission status normalisation is best-effort; Sovrn Commerce does not expose a canonical status field on transactions.
+- Merchant (programme) listing uses `/v1/reports/merchants`, which returns aggregated data for merchants with activity on the given date — not a full catalogue. All returned merchants have status `joined`.
+- `getProgramme` is derived from `/v1/reports/merchants` filtered client-side; no single-merchant lookup endpoint exists in the public API.
+- Sovrn Commerce `/v1/reports/transactions` does not include a status field; all transactions are mapped to canonical status `'other'`.
+- No currency field is present in the transactions or merchants response; currency defaults to `'USD'`.
 
 ---
 

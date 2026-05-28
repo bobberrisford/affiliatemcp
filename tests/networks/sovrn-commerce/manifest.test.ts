@@ -43,7 +43,7 @@ describe('Sovrn Commerce network.json', () => {
     expect(raw.env_vars).toContain('SOVRN_SECRET_KEY');
     expect(raw.env_vars).toContain('SOVRN_API_KEY');
     expect(raw.known_limitations).toContain(
-      'Adapter built from public API documentation; not yet verified against a live account.',
+      'Adapter built from public API documentation; response field names confirmed from developer.sovrn.com but not yet verified against a live account.',
     );
     expect(raw.last_verified).toBe('2026-05-28');
   });

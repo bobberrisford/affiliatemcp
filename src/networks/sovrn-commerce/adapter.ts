@@ -116,12 +116,13 @@ const META: NetworkMeta = {
   // experimental: built from public docs, not yet verified against a live account.
   claimStatus: 'experimental',
   knownLimitations: [
-    'Adapter built from public API documentation; not yet verified against a live account.',
-    'The transactions endpoint returns one day of data per call; wide date windows require sequential calls.',
+    'Adapter built from public API documentation; response field names confirmed from developer.sovrn.com but not yet verified against a live account.',
+    'The /v1/reports/transactions endpoint accepts one clickDate per call (rate limit: 1 req/60 s); wide date windows require many sequential calls.',
     'Click-level data is not exposed as a distinct click-stream API; listClicks is unsupported.',
-    'Merchant (programme) listing is aggregated reporting data, not a dedicated catalogue endpoint.',
-    'getProgramme is derived from the merchants report filtered by merchant name; no single-merchant lookup endpoint exists in the public API.',
-    'Commission status normalisation is best-effort; Sovrn Commerce does not expose a canonical status field on transactions.',
+    'Merchant (programme) listing uses /v1/reports/merchants, which returns aggregated data for merchants with activity on the given date — not a full catalogue.',
+    'getProgramme is derived from /v1/reports/merchants filtered client-side; no single-merchant lookup endpoint exists in the public API.',
+    'Sovrn Commerce /v1/reports/transactions does not include a status field; all transactions are mapped to canonical status "other".',
+    'No currency field is present in the /v1/reports/transactions or /v1/reports/merchants response; currency defaults to USD.',
   ],
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 10,
@@ -147,18 +148,96 @@ const RESILIENCE: ResilienceConfigMap = {
 // Sovrn Commerce response shapes
 // ---------------------------------------------------------------------------
 //
-// The public Sovrn Commerce API returns arrays of objects. Field names are
-// inferred from the developer.sovrn.com documentation. We treat every field
-// as potentially absent (the API surface is partially documented).
+// The /v1/reports/transactions endpoint returns a top-level wrapper object:
+//   { "transactions": [ ...transaction objects... ] }
+// Each transaction object has nested sub-objects: account, commission, click,
+// merchant, and product. Field names confirmed from the Sovrn Developer Centre
+// at developer.sovrn.com/reference/get_reports-transactions and from
+// multi-source search verification against the VigLink developer centre at
+// viglink-developer-center.readme.io.
 //
-// // TODO(verify): confirm exact JSON field names against a live API response.
-// The names below are derived from public documentation and may differ in
-// capitalisation or naming convention from the actual API.
+// The /v1/reports/merchants endpoint is documented at
+// developer.sovrn.com/reference/get_reports-merchants and returns aggregated
+// metrics (Revenue, Clicks, Sales, Actions, Conversion Rate, EPC) keyed by
+// merchantGroupId/merchantGroupName. A single clickDate parameter (YYYY-MM-DD)
+// is required; the endpoint does NOT support an open-ended date range
+// (confirmed: same single-date-per-call model as transactions).
 
+/** Top-level wrapper returned by GET /v1/reports/transactions */
+interface SovrnTransactionsEnvelope {
+  transactions?: SovrnTransactionRaw[];
+}
+
+/**
+ * A single transaction object inside the "transactions" array.
+ *
+ * The response is organised into nested sub-objects.
+ * Source: developer.sovrn.com/reference/get_reports-transactions
+ *         (confirmed via viglink-developer-center.readme.io and multi-source
+ *          search verification — 2026-05-28 hardening pass).
+ *
+ * Key confirmed facts:
+ *  - No top-level "status" field exists; transactions do not carry an explicit
+ *    status enum. Confirmed: not in the documented response schema.
+ *  - No "currency" field exists at the transaction level. Sovrn Commerce
+ *    publishes earnings in USD; the adapter defaults to 'USD'. Confirmed absent
+ *    from the documented response schema.
+ *  - commission.publisherNetRevenue is the publisher's earnings field.
+ *  - merchant.merchantGroupId / merchant.merchantGroupName identify the merchant
+ *    (Sovrn uses "merchantGroup" terminology, not "merchant" / "merchantId").
+ */
+interface SovrnTransactionRaw {
+  account?: {
+    accountId?: number;
+    campaignId?: number;       // publisher's campaign/site ID
+    campaignName?: string;
+  };
+  commission?: {
+    revenueId?: string | number;      // unique identifier for the commission event
+    commissionId?: string | number;   // alternative identifier
+    commissionDate?: string;          // YYYY-MM-DD — when the commission was recorded
+    updateDate?: string;              // YYYY-MM-DD — when the record was last updated
+    orderValue?: number;              // gross sale value
+    publisherNetRevenue?: number;     // publisher's net earnings (the primary earnings field)
+    programType?: string;             // "cpa" or "cpc"
+  };
+  click?: {
+    clickId?: string | number;
+    clickDate?: string;               // YYYY-MM-DD — the date of the originating click
+    cuid?: string;                    // custom user ID (publisher-assigned)
+    linkUrl?: string;
+    pageUrl?: string;
+    country?: string;
+    device?: string;
+    sovrnProduct?: string;
+    linkUtmInfo?: Record<string, unknown>;
+    pageUtmInfo?: Record<string, unknown>;
+  };
+  merchant?: {
+    merchantGroupId?: number | string;   // Sovrn's merchant group identifier
+    merchantGroupName?: string;          // Sovrn's merchant group name
+    network?: string;                    // e.g. "Sovrn"
+  };
+  product?: unknown[];
+}
+
+/**
+ * A single row from GET /v1/reports/merchants.
+ *
+ * This endpoint returns aggregated performance metrics per merchant group.
+ * Metrics: Revenue, Clicks, Sales, Actions, Conversion Rate, EPC.
+ * Source: developer.sovrn.com/reference/get_reports-merchants
+ *
+ * The endpoint requires a clickDate parameter (YYYY-MM-DD) and does NOT
+ * support an open date range — same single-date model as /reports/transactions.
+ * Confirmed: no merchantId (legacy) field; Sovrn uses merchantGroupId/Name.
+ * Confirmed: no currency field in the merchants response.
+ * Rate limit: 1 request per 10 seconds (Commerce Merchants section).
+ * Source: support.viglink.com/hc/en-us/articles/360008095914
+ */
 interface SovrnMerchantRaw {
-  // // TODO(verify): exact field names from /v1/reports/merchants response
-  merchant?: string;         // merchant name
-  merchantId?: string | number; // merchant identifier (if exposed)
+  merchantGroupId?: number | string;
+  merchantGroupName?: string;
   clicks?: number;
   revenue?: number;
   commission?: number;
@@ -166,27 +245,7 @@ interface SovrnMerchantRaw {
   sales?: number;
   actions?: number;
   conversionRate?: number;
-  currency?: string;         // // TODO(verify): currency field presence and name
-}
-
-interface SovrnTransactionRaw {
-  // // TODO(verify): exact field names from /v1/reports/transactions response
-  revenueId?: string | number;      // unique identifier for the commission event
-  commissionId?: string | number;   // alternative identifier
-  clickId?: string | number;        // click that generated the transaction
-  clickDate?: string;               // ISO date YYYY-MM-DD
-  commissionDate?: string;          // date the commission was recorded
-  updateDate?: string;              // date the record was last updated
-  orderValue?: number;              // gross sale value
-  publisherNetRevenue?: number;     // publisher's share of the revenue
-  revenue?: number;                 // alternative revenue field name
-  commission?: number;              // alternative commission field name
-  merchant?: string;                // merchant name
-  merchantId?: string | number;
-  programType?: string;             // e.g. "cpa", "cpc"
-  currency?: string;                // // TODO(verify): currency field name
-  campaignId?: string | number;     // site/campaign identifier
-  status?: string;                  // // TODO(verify): status field presence
+  // No currency field confirmed present in the merchants response.
 }
 
 // ---------------------------------------------------------------------------
@@ -196,30 +255,21 @@ interface SovrnTransactionRaw {
 /**
  * Normalise transaction status.
  *
- * Sovrn Commerce's /reports/transactions endpoint does not expose a canonical
- * transaction status in its public documentation. The `commissionDate` field
- * indicates when a commission was recorded, and `updateDate` when it changed,
- * but there is no enum field equivalent to Awin's commissionStatus or CJ's
- * actionStatus.
+ * Sovrn Commerce's /reports/transactions endpoint does NOT expose a status
+ * field. This is confirmed by the published API schema at
+ * developer.sovrn.com/reference/get_reports-transactions: the commission
+ * sub-object contains revenueId, commissionId, commissionDate, updateDate,
+ * orderValue, publisherNetRevenue, and programType — no status enum.
  *
- * We map 'other' as the safe default. If a `status` field appears in the raw
- * payload we attempt a best-effort mapping; otherwise we leave it as 'other'
- * and let the user inspect rawNetworkData.
+ * We permanently return 'other'. This is recorded in known_limitations.
+ * The updateDate field can tell you a commission was revised, but not what
+ * state it is in.
  *
- * // TODO(verify): confirm whether a status field exists in the API response
- * and what values it takes.
+ * Source: developer.sovrn.com/reference/get_reports-transactions (2026-05-28).
  */
-function mapTransactionStatus(raw: SovrnTransactionRaw): TransactionStatus {
-  if (raw.status) {
-    const s = raw.status.toLowerCase();
-    if (s === 'pending' || s === 'new') return 'pending';
-    if (s === 'approved' || s === 'locked' || s === 'confirmed') return 'approved';
-    if (s === 'reversed' || s === 'declined' || s === 'void' || s === 'cancelled') return 'reversed';
-    if (s === 'paid' || s === 'cleared') return 'paid';
-  }
-  // The presence of commissionDate with no updateDate suggests a stable
-  // commission — 'approved' is the most honest approximation. Without a status
-  // field this is speculative; 'other' is safer per the cardinal rules.
+function mapTransactionStatus(_raw: SovrnTransactionRaw): TransactionStatus {
+  // No status field in the Sovrn Commerce transactions response. 'other' is
+  // the canonical safe default per PRD cardinal rule 4.
   return 'other';
 }
 
@@ -249,7 +299,10 @@ function mapProgrammeStatus(_raw: SovrnMerchantRaw): ProgrammeStatus {
  * "updated" today to still-pending is older than it looks.
  */
 function computeAgeDays(raw: SovrnTransactionRaw, now: Date = new Date()): number {
-  const anchor = raw.commissionDate ?? raw.clickDate;
+  // Prefer commission.commissionDate (when the commission was recorded) over
+  // click.clickDate (when the click occurred). commissionDate is the correct
+  // anchor for "how long has this commission been sitting unresolved".
+  const anchor = raw.commission?.commissionDate ?? raw.click?.clickDate;
   if (!anchor) return 0;
   const t = Date.parse(anchor);
   if (Number.isNaN(t)) return 0;
@@ -268,27 +321,29 @@ function nullableIso(d?: string): string | undefined {
 // ---------------------------------------------------------------------------
 
 function toProgramme(raw: SovrnMerchantRaw): Programme {
-  // Sovrn merchant IDs are not reliably exposed in the public API. We fall
-  // back to a slugified merchant name when no ID is present.
-  // // TODO(verify): confirm merchantId field name and whether it's always present.
-  const id = raw.merchantId !== undefined
-    ? String(raw.merchantId)
-    : (raw.merchant ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  // Sovrn uses "merchantGroupId" and "merchantGroupName" — confirmed from the
+  // developer.sovrn.com/reference/get_reports-merchants documentation
+  // (hardening pass 2026-05-28). There is no "merchantId" or "merchant" field.
+  const id = raw.merchantGroupId !== undefined
+    ? String(raw.merchantGroupId)
+    : (raw.merchantGroupName ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
   const commissionRate = raw.commission !== undefined
     ? {
         type: 'unknown' as const,
         value: raw.commission,
-        description: `Commission: ${raw.commission}${raw.currency ? ` ${raw.currency}` : ''}`,
+        // No currency field in the merchants response; omit from description.
+        description: `Commission: ${raw.commission}`,
       }
     : undefined;
 
   return {
     id,
-    name: raw.merchant ?? `Sovrn merchant ${id}`,
+    name: raw.merchantGroupName ?? `Sovrn merchant group ${id}`,
     network: SLUG,
     status: mapProgrammeStatus(raw),
-    currency: raw.currency,
+    // No currency field in the /reports/merchants response.
+    currency: undefined,
     commissionRate,
     categories: undefined, // Sovrn Commerce does not expose merchant categories in the reporting API
     advertiserUrl: undefined, // Not available in the reporting API response
@@ -298,39 +353,51 @@ function toProgramme(raw: SovrnMerchantRaw): Programme {
 
 function toTransaction(raw: SovrnTransactionRaw, now: Date = new Date()): Transaction {
   const status = mapTransactionStatus(raw);
-  // publisherNetRevenue is the publisher's earnings. orderValue is the sale amount.
-  // // TODO(verify): confirm field priority — publisherNetRevenue vs commission vs revenue.
-  const commission = raw.publisherNetRevenue ?? raw.commission ?? raw.revenue ?? 0;
-  const sale = raw.orderValue ?? commission;
-  // Currency is not reliably present in all response shapes.
-  // // TODO(verify): confirm currency field name.
-  const currency = raw.currency ?? 'USD';
 
+  // commission.publisherNetRevenue is the publisher's earnings field — confirmed
+  // as the primary earnings value at developer.sovrn.com/reference/get_reports-transactions.
+  // commission.orderValue is the gross sale amount.
+  // Source: developer.sovrn.com/reference/get_reports-transactions (2026-05-28).
+  const commission = raw.commission?.publisherNetRevenue ?? 0;
+  const sale = raw.commission?.orderValue ?? commission;
+
+  // No currency field exists in the /reports/transactions response.
+  // Sovrn Commerce operates primarily in USD. Default to 'USD'.
+  // Source: confirmed absent from documented response schema (2026-05-28).
+  const currency = 'USD';
+
+  // Prefer commission.revenueId as the primary transaction identifier.
+  // Fall back to commissionId, then click.clickId.
   const id =
-    raw.revenueId !== undefined
-      ? String(raw.revenueId)
-      : raw.commissionId !== undefined
-        ? String(raw.commissionId)
-        : raw.clickId !== undefined
-          ? String(raw.clickId)
+    raw.commission?.revenueId !== undefined
+      ? String(raw.commission.revenueId)
+      : raw.commission?.commissionId !== undefined
+        ? String(raw.commission.commissionId)
+        : raw.click?.clickId !== undefined
+          ? String(raw.click.clickId)
           : '';
 
-  const merchantId = raw.merchantId !== undefined
-    ? String(raw.merchantId)
-    : (raw.merchant ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  // merchant.merchantGroupId / merchant.merchantGroupName identify the merchant.
+  // Source: developer.sovrn.com/reference/get_reports-transactions (2026-05-28).
+  const merchantId = raw.merchant?.merchantGroupId !== undefined
+    ? String(raw.merchant.merchantGroupId)
+    : (raw.merchant?.merchantGroupName ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
   return {
     id,
     network: SLUG,
     programmeId: merchantId,
-    programmeName: raw.merchant ?? `Sovrn merchant ${merchantId}`,
+    programmeName: raw.merchant?.merchantGroupName ?? `Sovrn merchant group ${merchantId}`,
     status,
     amount: sale,
     currency,
     commission,
-    dateClicked: nullableIso(raw.clickDate),
-    dateConverted: nullableIso(raw.commissionDate) ?? nullableIso(raw.clickDate) ?? new Date(0).toISOString(),
-    dateApproved: nullableIso(raw.commissionDate),
+    dateClicked: nullableIso(raw.click?.clickDate),
+    dateConverted:
+      nullableIso(raw.commission?.commissionDate) ??
+      nullableIso(raw.click?.clickDate) ??
+      new Date(0).toISOString(),
+    dateApproved: nullableIso(raw.commission?.commissionDate),
     // Sovrn Commerce does not expose a paid-date on individual transactions.
     datePaid: undefined,
     ageDays: computeAgeDays(raw, now),
@@ -353,11 +420,11 @@ function toTransaction(raw: SovrnTransactionRaw, now: Date = new Date()): Transa
  *   curl .../v1/reports/transactions?clickDate=2023-01-01
  *
  * The resulting list is used to make sequential calls and merge the results.
- * This is deliberately not parallelised to avoid rate limiting (Sovrn's
- * Commerce Merchants APIs have a documented rate limit of 1 request per 10s).
- *
- * // TODO(verify): confirm the per-10s rate limit applies to /reports/transactions
- * as well as /reports/merchants.
+ * This is deliberately not parallelised to respect Sovrn's documented rate
+ * limits:
+ *   - /reports/transactions: 1 request per 60 seconds (Commerce Real-Time Reports)
+ *   - /reports/merchants: 1 request per 10 seconds (Commerce Merchants)
+ * Source: support.viglink.com/hc/en-us/articles/360008095914 (2026-05-28).
  */
 function generateDateRange(from: Date, to: Date): string[] {
   const dates: string[] = [];
@@ -436,11 +503,14 @@ export class SovrnCommerceAdapter implements NetworkAdapter {
    *
    * Status: all returned merchants are treated as 'joined' (see mapProgrammeStatus).
    *
-   * Date window: we use `from`/`to` from the query (defaulting to last 7 days).
-   * Unlike listTransactions, /reports/merchants may support a date range
-   * directly — we pass clickDate for the start of the window.
-   * // TODO(verify): confirm whether /reports/merchants accepts a date range or
-   * only a single date. If a range is supported, simplify this call.
+   * Date window: /reports/merchants accepts exactly ONE clickDate parameter
+   * (YYYY-MM-DD) per call — the same single-date-per-call model as
+   * /reports/transactions. No date-range variant exists.
+   * Source: developer.sovrn.com/reference/get_reports-merchants (2026-05-28).
+   *
+   * We pass `from` (defaulting to 7 days ago) to get a recent merchant list.
+   * For a comprehensive merchant list, callers should pass a date with known
+   * traffic. The API returns only merchants with activity on that date.
    */
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
     const secretKey = requireSecretKey('listProgrammes');
@@ -493,8 +563,11 @@ export class SovrnCommerceAdapter implements NetworkAdapter {
    * may be either the merchantId (numeric) or a slugified merchant name —
    * we match on both.
    *
-   * // TODO(verify): confirm whether a /reports/merchants?merchantId=... filter
-   * exists server-side. If so, use it to avoid fetching all merchants.
+   * No server-side merchantGroupId filter exists on /reports/merchants.
+   * The merchantGroupIds query parameter on /reports/transactions accepts a
+   * comma-separated list of IDs to restrict results, but /reports/merchants
+   * has no equivalent filter. Client-side filtering is the correct approach.
+   * Source: developer.sovrn.com/reference/get_reports-merchants (2026-05-28).
    */
   async getProgramme(programmeId: string): Promise<Programme> {
     if (!programmeId) {
@@ -549,8 +622,12 @@ export class SovrnCommerceAdapter implements NetworkAdapter {
    * the commission) as the primary date filter. This matches the documented
    * curl example and is the most predictable date to query on.
    *
-   * // TODO(verify): confirm whether commissionDate can be used as the date
-   * parameter for more accurate "when was I owed money" queries.
+   * All three date parameters (clickDate, commissionDate, updateDate) are
+   * supported as alternative date filters. Using commissionDate filters by
+   * when the commission was recorded — useful for "when was I owed money".
+   * Using updateDate filters by when a record was last changed — useful for
+   * catching reversals. We default to clickDate for predictability.
+   * Source: developer.sovrn.com/reference/get_reports-transactions (2026-05-28).
    */
   async listTransactions(query?: TransactionQuery): Promise<Transaction[]> {
     const secretKey = requireSecretKey('listTransactions');
@@ -565,13 +642,17 @@ export class SovrnCommerceAdapter implements NetworkAdapter {
 
     const allRaw: SovrnTransactionRaw[] = [];
     for (const date of dates) {
-      const chunk = await sovrnRequest<SovrnTransactionRaw[]>({
+      // The /v1/reports/transactions endpoint returns a wrapper object:
+      //   { "transactions": [ ...transaction objects... ] }
+      // Source: developer.sovrn.com/reference/get_reports-transactions (2026-05-28).
+      const envelope = await sovrnRequest<SovrnTransactionsEnvelope>({
         operation: 'listTransactions',
         path: '/v1/reports/transactions',
         secretKey,
         query: { clickDate: date },
         resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
       });
+      const chunk = envelope?.transactions;
       if (Array.isArray(chunk)) {
         allRaw.push(...chunk);
       }
@@ -743,11 +824,14 @@ export class SovrnCommerceAdapter implements NetworkAdapter {
    * destination URL automatically. We accept it as an optional annotation
    * on the returned TrackingLink but do not use it in the URL.
    *
+   * Confirmed format: https://redirect.viglink.com?key={API_KEY}&u={encodedUrl}
+   *   - "key" and "u" are the only required parameters.
+   *   - "cuid" is an optional publisher-assigned custom user ID for tracking.
+   *   - "opt" and "prodOvrd" appear in some observed URLs but are NOT required
+   *     for basic tracking — they are platform-specific overrides.
    * Sources:
-   *   https://github.com/Sh1d0w/clean-links/issues/20
-   *   https://knowledge.sovrn.com/kb/javascript-for-commerce
-   *   // TODO(verify): confirm ?key=&u= is the correct redirect.viglink.com format
-   *   // and whether any additional params (opt, prodOvrd) are required.
+   *   support.viglink.com/hc/en-us/articles/360004112874 (2026-05-28)
+   *   knowledge.sovrn.com/kb/cuids-in-commerce (2026-05-28)
    */
   async generateTrackingLink(input: {
     programmeId: string;

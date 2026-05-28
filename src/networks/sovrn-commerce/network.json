@@ -7,12 +7,13 @@
   "setup_time_estimate_minutes": 10,
   "setup_requires_approval": false,
   "known_limitations": [
-    "Adapter built from public API documentation; not yet verified against a live account.",
-    "The transactions endpoint returns one day of data per call; wide date windows require sequential calls.",
+    "Adapter built from public API documentation; response field names confirmed from developer.sovrn.com but not yet verified against a live account.",
+    "The /v1/reports/transactions endpoint accepts one clickDate per call (rate limit: 1 req/60 s); wide date windows require many sequential calls.",
     "Click-level data is not exposed as a distinct click-stream API; listClicks is unsupported.",
-    "Merchant (programme) listing is aggregated reporting data, not a dedicated catalogue endpoint.",
-    "getProgramme is derived from the merchants report filtered by merchant name; no single-merchant lookup endpoint exists in the public API.",
-    "Commission status normalisation is best-effort; Sovrn Commerce does not expose a canonical status field on transactions."
+    "Merchant (programme) listing uses /v1/reports/merchants, which returns aggregated data for merchants with activity on the given date — not a full catalogue.",
+    "getProgramme is derived from /v1/reports/merchants filtered client-side; no single-merchant lookup endpoint exists in the public API.",
+    "Sovrn Commerce /v1/reports/transactions does not include a status field; all transactions are mapped to canonical status \"other\".",
+    "No currency field is present in the /v1/reports/transactions or /v1/reports/merchants response; currency defaults to USD."
   ],
   "claim_status": "experimental",
   "adapter_version": "0.1.0",

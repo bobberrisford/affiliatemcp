@@ -1,38 +1,35 @@
 [
   {
-    "merchant": "Example Books",
-    "merchantId": "11001",
+    "merchantGroupId": 11001,
+    "merchantGroupName": "Example Books",
     "clicks": 450,
     "revenue": 12.50,
     "commission": 12.50,
     "epc": 0.028,
     "sales": 5,
     "actions": 5,
-    "conversionRate": 1.11,
-    "currency": "USD"
+    "conversionRate": 1.11
   },
   {
-    "merchant": "Tech Gadgets Online",
-    "merchantId": "11002",
+    "merchantGroupId": 11002,
+    "merchantGroupName": "Tech Gadgets Online",
     "clicks": 820,
     "revenue": 34.20,
     "commission": 34.20,
     "epc": 0.042,
     "sales": 12,
     "actions": 12,
-    "conversionRate": 1.46,
-    "currency": "USD"
+    "conversionRate": 1.46
   },
   {
-    "merchant": "Fashion Forward",
-    "merchantId": "11003",
+    "merchantGroupId": 11003,
+    "merchantGroupName": "Fashion Forward",
     "clicks": 130,
     "revenue": 6.80,
     "commission": 6.80,
     "epc": 0.052,
     "sales": 2,
     "actions": 2,
-    "conversionRate": 1.54,
-    "currency": "USD"
+    "conversionRate": 1.54
   }
 ]

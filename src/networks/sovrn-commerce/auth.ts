@@ -17,13 +17,15 @@
  * powerful credential for reporting (Secret key, kept server-side). The site
  * API key is per-site; the Secret key covers all sites in the account.
  *
- * verifyAuth strategy: call GET /v1/reports/transactions with today's date.
- * If it returns 200 (even empty), auth is valid. A 401 means the Secret key
- * is wrong; 403 means it may be absent/ungenerated. There is no dedicated
- * "whoami" endpoint in the public Sovrn Commerce API.
+ * verifyAuth strategy: call GET /v1/reports/merchants with today's clickDate.
+ * If it returns 200 (even an empty body), auth is valid. A 401 means the
+ * Secret key is wrong; 403 means it may be absent or ungenerated. There is
+ * no dedicated "whoami" or "ping" endpoint in the public Sovrn Commerce API.
  *
- * // TODO(verify): confirm the correct auth-check endpoint against a live
- * account. /v1/reports/merchants with a date param is another candidate.
+ * /reports/merchants is preferred over /reports/transactions for auth probes
+ * because it has a 10-second rate limit (vs 60 seconds for transactions),
+ * making repeated auth checks faster.
+ * Source: support.viglink.com/hc/en-us/articles/360008095914 (2026-05-28).
  *
  * Sources:
  *   https://knowledge.sovrn.com/how-to-implement-sovrn-commerce-apis
@@ -61,8 +63,9 @@ export interface VerifyAuthFail {
  * authenticated call that provides a clear 200/401 signal. Even if the
  * publisher has no data for today, a valid key returns 200 (empty payload).
  *
- * // TODO(verify): if merchants endpoint requires additional params (e.g.
- * siteUuid), switch to /v1/reports/transactions with today's clickDate.
+ * The /reports/merchants endpoint requires only a clickDate query parameter.
+ * No additional mandatory parameters (e.g. siteUuid) are required.
+ * Source: developer.sovrn.com/reference/get_reports-merchants (2026-05-28).
  */
 export async function verifyAuth(): Promise<VerifyAuthOk | VerifyAuthFail> {
   let secretKey: string;
