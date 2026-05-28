@@ -63,5 +63,20 @@ export function setupSteps(): SetupStep[] {
       example: '123456',
       validateOnEntry: (v) => validateCredential('SKIMLINKS_PUBLISHER_ID', v),
     },
+    {
+      field: 'SKIMLINKS_DOMAIN_ID',
+      label: 'Skimlinks Domain ID',
+      type: 'text',
+      description:
+        'Your numeric Skimlinks Domain ID — the number AFTER the X in your Site ID.\n' +
+        'To find it:\n' +
+        '  1. Log in at https://hub.skimlinks.com/.\n' +
+        '  2. Go to Settings → Sites.\n' +
+        '  3. Your Site ID shows in the format "{PublisherID}X{DomainID}"\n' +
+        '     e.g. "123456X789012" — the Domain ID is "789012".\n' +
+        'This ID is used in tracking deeplinks (go.skimresources.com/?id={PublisherID}X{DomainID}).',
+      example: '789012',
+      validateOnEntry: (v) => validateCredential('SKIMLINKS_DOMAIN_ID', v),
+    },
   ];
 }

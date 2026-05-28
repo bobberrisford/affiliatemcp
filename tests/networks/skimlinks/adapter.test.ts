@@ -62,6 +62,7 @@ beforeEach(() => {
   process.env['SKIMLINKS_CLIENT_ID'] = 'test-client-id-please-ignore';
   process.env['SKIMLINKS_CLIENT_SECRET'] = 'test-client-secret-please-ignore';
   process.env['SKIMLINKS_PUBLISHER_ID'] = '123456';
+  process.env['SKIMLINKS_DOMAIN_ID'] = '789012';
 });
 
 afterEach(() => {
@@ -69,6 +70,7 @@ afterEach(() => {
   delete process.env['SKIMLINKS_CLIENT_ID'];
   delete process.env['SKIMLINKS_CLIENT_SECRET'];
   delete process.env['SKIMLINKS_PUBLISHER_ID'];
+  delete process.env['SKIMLINKS_DOMAIN_ID'];
   _resetTokenCache();
 });
 
@@ -253,7 +255,8 @@ describe('SkimlinksAdapter.generateTrackingLink', () => {
     });
 
     expect(link.trackingUrl).toMatch(/^https:\/\/go\.skimresources\.com\//);
-    expect(link.trackingUrl).toContain('id=123456X123456');
+    // id={publisherId}X{domainId} — publisher ID is 123456, domain ID is 789012 (see beforeEach)
+    expect(link.trackingUrl).toContain('id=123456X789012');
     expect(link.trackingUrl).toContain('xs=1');
     expect(link.trackingUrl).toContain(
       'url=https%3A%2F%2Fwww.examplebooks.test%2Fproduct%3Fq%3Dtest%20value%26page%3D1',
@@ -291,6 +294,16 @@ describe('SkimlinksAdapter.generateTrackingLink', () => {
 
   it('throws NetworkError when SKIMLINKS_PUBLISHER_ID is missing', async () => {
     delete process.env['SKIMLINKS_PUBLISHER_ID'];
+    await expect(
+      skimlinksAdapter.generateTrackingLink({
+        programmeId: '2001',
+        destinationUrl: 'https://example.test/',
+      }),
+    ).rejects.toBeInstanceOf(NetworkError);
+  });
+
+  it('throws NetworkError when SKIMLINKS_DOMAIN_ID is missing', async () => {
+    delete process.env['SKIMLINKS_DOMAIN_ID'];
     await expect(
       skimlinksAdapter.generateTrackingLink({
         programmeId: '2001',
@@ -384,6 +397,19 @@ describe('SkimlinksAdapter.validateCredential', () => {
     expect(r1.ok).toBe(false);
     const r2 = await skimlinksAdapter.validateCredential('SKIMLINKS_PUBLISHER_ID', '0');
     expect(r2.ok).toBe(false);
+  });
+
+  it('accepts a positive integer SKIMLINKS_DOMAIN_ID', async () => {
+    const r = await skimlinksAdapter.validateCredential('SKIMLINKS_DOMAIN_ID', '789012');
+    expect(r.ok).toBe(true);
+  });
+
+  it('rejects a non-numeric SKIMLINKS_DOMAIN_ID', async () => {
+    const r1 = await skimlinksAdapter.validateCredential('SKIMLINKS_DOMAIN_ID', 'abc');
+    expect(r1.ok).toBe(false);
+    const r2 = await skimlinksAdapter.validateCredential('SKIMLINKS_DOMAIN_ID', '0');
+    expect(r2.ok).toBe(false);
+    expect(r2.hint).toBeTruthy();
   });
 
   it('returns ok:false for unknown credential fields', async () => {

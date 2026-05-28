@@ -21,7 +21,8 @@
  *   - Reporting API base: https://api-reports.skimlinks.com
  *       GET /publishers/{publisherId}/commissions?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
  *       Response: { count, commissions: [...] }
- *   - Merchant API: https://merchants.skimapis.com — requires Product Key (managed accounts only)
+ *   - Merchant API: https://api-merchants.skimlinks.com — requires Product Key (managed accounts only)
+ *       Source: https://blog.rapidapi.com/directory/skimlinks-merchant/
  */
 
 import {
@@ -50,9 +51,14 @@ export const SKIMLINKS_REPORTING_BASE_URL = 'https://api-reports.skimlinks.com';
 
 /**
  * The Skimlinks Merchant API base URL (managed accounts only, requires Product Key).
- * Source: https://developers.skimlinks.com/
+ * Confirmed base URL from multiple sources including RapidAPI directory and the
+ * Skimlinks Merchant API Apiary documentation which references api-merchants.skimlinks.com.
+ * The earlier placeholder `merchants.skimapis.com` was unverified; this is the
+ * documented domain.
+ * Source: https://blog.rapidapi.com/directory/skimlinks-merchant/
+ *         https://skimlinksmerchantapi.docs.apiary.io/
  */
-export const SKIMLINKS_MERCHANT_BASE_URL = 'https://merchants.skimapis.com'; // TODO(verify)
+export const SKIMLINKS_MERCHANT_BASE_URL = 'https://api-merchants.skimlinks.com';
 
 export interface SkimlinksRequestInput {
   /** The canonical operation name. Used as the breaker key and in error envelopes. */

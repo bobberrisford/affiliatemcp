@@ -240,9 +240,23 @@ export async function validateCredential(
     return { ok: true };
   }
 
+  if (field === 'SKIMLINKS_DOMAIN_ID') {
+    if (!/^\d+$/.test(value) || Number(value) <= 0) {
+      return {
+        ok: false,
+        message: 'Skimlinks Domain ID must be a positive integer.',
+        hint:
+          'The Domain ID is the number AFTER the X in your Site ID. ' +
+          'Log in at https://hub.skimlinks.com → Settings → Sites. ' +
+          'Your Site ID shows as e.g. "123456X789012" — the Domain ID is "789012".',
+      };
+    }
+    return { ok: true };
+  }
+
   return {
     ok: false,
     message: `Unknown credential field "${field}" for Skimlinks.`,
-    hint: 'Skimlinks expects SKIMLINKS_CLIENT_ID, SKIMLINKS_CLIENT_SECRET, and SKIMLINKS_PUBLISHER_ID.',
+    hint: 'Skimlinks expects SKIMLINKS_CLIENT_ID, SKIMLINKS_CLIENT_SECRET, SKIMLINKS_PUBLISHER_ID, and SKIMLINKS_DOMAIN_ID.',
   };
 }

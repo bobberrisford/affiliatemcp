@@ -32,16 +32,19 @@
  *   Source: https://developers.skimlinks.com/reporting.html
  *         + https://api-reports.skimlinks.com/doc/doc_report_v0.3.html
  *
- * Merchant API (https://merchants.skimapis.com):
+ * Merchant API (https://api-merchants.skimlinks.com):
  *   Tier-gated behind a Product Key for Managed accounts. Not available to
  *   standard publishers. listProgrammes and getProgramme throw NotImplementedError.
+ *   Source: https://blog.rapidapi.com/directory/skimlinks-merchant/
  *
  * Tracking link format (deterministic, no API call required):
- *   https://go.skimresources.com/?id={publisherId}X{siteId}&xs=1&url={encodedDestination}
- *   The `id` parameter follows the format `{publisherId}X{publisherId}` when site
- *   and publisher ID are the same (single-site publishers). Multi-site publishers
- *   have distinct site IDs.
- *   Source: Skimlinks deeplink documentation + live inspection of generated URLs.
+ *   https://go.skimresources.com/?id={publisherId}X{domainId}&xs=1&url={encodedDestination}
+ *   The `id` parameter is ALWAYS `{publisherId}X{domainId}` — domainId is a
+ *   SEPARATE numeric ID from publisherId (each registered domain/site has its own
+ *   domain ID assigned by Skimlinks). Find the full site ID in Hub → Settings →
+ *   Sites. Requires SKIMLINKS_DOMAIN_ID as a separate credential.
+ *   Source: https://support.skimlinks.com/hc/en-us/articles/223835748
+ *           Live URL observation: id=110320X1568188 (publisherId ≠ domainId)
  *
  * --- Cardinal rules (non-negotiable) ------------------------------------------
  *
@@ -105,10 +108,11 @@ const META: NetworkMeta = {
   claimStatus: 'experimental',
   knownLimitations: [
     'Adapter built from public API documentation; not yet verified against a live account.',
-    'listProgrammes / getProgramme require the Skimlinks Merchant API which is gated behind a Managed account and a Product Key; both operations throw NotImplementedError for standard publisher accounts.',
-    'listClicks is not exposed via the public Skimlinks publisher Reporting API.',
-    'generateTrackingLink uses the go.skimresources.com deeplink format and constructs the URL deterministically from SKIMLINKS_PUBLISHER_ID.',
+    'listProgrammes / getProgramme require the Skimlinks Merchant API (api-merchants.skimlinks.com), which is gated behind a Managed account and a Product Key; both operations throw NotImplementedError for standard publisher accounts.',
+    'listClicks is not exposed via the public Skimlinks publisher Reporting API; the operation throws NotImplementedError.',
+    'generateTrackingLink requires both SKIMLINKS_PUBLISHER_ID and SKIMLINKS_DOMAIN_ID; the Domain ID is the number after the X in your Site ID (find it in Hub → Settings → Sites). The id parameter format is {publisherId}X{domainId}.',
     'OAuth2 access tokens have a limited lifetime (typically 1 hour); the adapter caches the token in memory and re-fetches on expiry.',
+    'Maximum date window per commissions API call is not publicly documented; a live account test is required to confirm no server-side cap exists.',
   ],
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 10,
@@ -142,8 +146,13 @@ const RESILIENCE: ResilienceConfigMap = {
 // `rawNetworkData` keeps the adapter robust to upstream drift.
 
 interface SkimlinksCommissionRaw {
-  // TODO(verify): field names confirmed from public API docs and community reports.
-  // Verify against live response when a managed account is available.
+  // Field names confirmed from the Skimlinks Commission Reporting API v0.3 docs
+  // (https://api-reports.skimlinks.com/doc/doc_report_v0.3.html) and corroborated
+  // by search-engine snippets of the API response structure. The September 2022
+  // API changes (https://support.skimlinks.com/hc/en-us/articles/6993058288541)
+  // standardised naming conventions. The adapter reads both old and new names
+  // defensively so it is robust to version drift. Live verification against a
+  // real account is required before bumping claim_status to 'partial'.
   commissionId?: string | number;
   amount?: number | string;
   currency?: string;
@@ -157,7 +166,7 @@ interface SkimlinksCommissionRaw {
   approvedDate?: string; // ISO 8601
   paidDate?: string; // ISO 8601
   orderValue?: number | string; // gross sale amount
-  commissionValue?: number | string; // synonym for amount (older API)
+  commissionValue?: number | string; // synonym for amount (older API v0.3 name)
   declineReason?: string; // set when status = declined
 }
 
@@ -321,7 +330,7 @@ export class SkimlinksAdapter implements NetworkAdapter {
    * is tier-gated" is principle 4.1.
    *
    * If a future version of the adapter adds Product Key support:
-   *   GET https://merchants.skimapis.com/merchants?publisher_id={publisherId}&...
+   *   GET https://api-merchants.skimlinks.com/merchants?publisher_id={publisherId}&...
    *   Headers: X-Skim-Product-Key: {productKey} + Authorization: Bearer {token}
    * Add SKIMLINKS_PRODUCT_KEY to env_vars and network.json, remove this throw.
    */
@@ -361,9 +370,12 @@ export class SkimlinksAdapter implements NetworkAdapter {
    *     [&merchant_id={merchantId}]
    *     [&limit=N&page=N]
    *
-   * The API does not document a maximum window per call (unlike Awin's 31-day cap).
-   * We default to 30 days when no window is specified. TODO(verify): confirm max
-   * window and whether pagination is cursor- or page-based.
+   * The API does not publicly document a maximum window per call (unlike Awin's
+   * 31-day cap). No cap was found in any accessible documentation. We default to
+   * 30 days when no window is specified. BLOCKED(verify): confirm exact max window
+   * with a live account — requires credentials to test. Pagination is page-based
+   * (confirmed from API docs snippets: response includes pagination.total,
+   * pagination.from, pagination.itemCount fields; query params are limit and page).
    *
    * --- PRD §15.9: unpaid-age filter ------------------------------------------
    *
@@ -385,8 +397,9 @@ export class SkimlinksAdapter implements NetworkAdapter {
       ? new Date(query.from)
       : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    // TODO(verify): confirm whether Skimlinks has a maximum window per call.
-    // For now we pass the full window in a single call.
+    // No documented maximum window found in public API docs; passes full window in
+    // a single call. A live account test is required to confirm no server-side cap.
+    // Pagination params are limit/page (page-based, not cursor-based).
     const params: Record<string, string | number | undefined> = {
       date_from: from.toISOString().slice(0, 10),
       date_to: to.toISOString().slice(0, 10),
@@ -576,8 +589,16 @@ export class SkimlinksAdapter implements NetworkAdapter {
    * The `xs=1` parameter enables Skimlinks' extended tracking mode. This is the
    * standard flag for deeplinks as documented in Skimlinks' link wrapper docs.
    *
-   * TODO(verify): Confirm whether a separate SKIMLINKS_SITE_ID credential is needed
-   * for multi-site publishers and whether the `id` format differs in that case.
+   * DOMAIN ID NOTE (confirmed from public documentation):
+   * The `id` parameter takes the format `{publisherId}X{domainId}` where domainId
+   * is a SEPARATE numeric ID from the publisher ID. Each registered site/domain in
+   * a Skimlinks account has its own domain ID. For single-site publishers the
+   * site ID visible in Hub → Settings → Sites (e.g. "123456X789012") already
+   * encodes both parts. Publishers must supply SKIMLINKS_DOMAIN_ID explicitly.
+   *
+   * Sources: https://support.skimlinks.com/hc/en-us/articles/223835748
+   *          Real-world deeplink observation: id=110320X1568188 (publisherId ≠ domainId)
+   *          https://intercom.geni.us/en/articles/2823246-how-to-add-your-skimlinks-affiliate-id-s
    */
   async generateTrackingLink(input: {
     programmeId: string;
@@ -596,13 +617,26 @@ export class SkimlinksAdapter implements NetworkAdapter {
     }
 
     const publisherId = requirePublisherId('generateTrackingLink');
+    // Domain ID is a separate number from publisher ID — each registered
+    // site/domain in a Skimlinks account has its own domain ID, assigned by
+    // Skimlinks. Find it in Hub → Settings → Sites: the full Site ID reads
+    // "{publisherId}X{domainId}" — the number after the X is your domain ID.
+    const domainId = requireCredential('SKIMLINKS_DOMAIN_ID', {
+      network: SLUG,
+      operation: 'generateTrackingLink',
+      hint:
+        'Your Domain ID is the number AFTER the X in your Skimlinks Site ID. ' +
+        'Find the full Site ID at https://hub.skimlinks.com → Settings → Sites. ' +
+        'For example if your Site ID is "123456X789012" then your Domain ID is "789012".',
+    });
     // Require credentials to be configured even though the URL is deterministic.
     // This way, a half-configured environment is caught at link-generation time.
     await getAccessToken();
 
-    // Skimlinks deeplink format: id={publisherId}X{siteId}
-    // Single-site publishers: siteId = publisherId.
-    const id = `${publisherId}X${publisherId}`;
+    // Skimlinks deeplink format: id={publisherId}X{domainId}
+    // The two numeric components are always distinct (confirmed from live URL inspection
+    // and publisher documentation: id=110320X1568188 for example).
+    const id = `${publisherId}X${domainId}`;
     const encodedDestination = encodeURIComponent(input.destinationUrl);
     const trackingUrl = `https://go.skimresources.com/?id=${id}&xs=1&url=${encodedDestination}`;
 
@@ -617,7 +651,7 @@ export class SkimlinksAdapter implements NetworkAdapter {
         id,
         xs: 1,
         url: input.destinationUrl,
-        note: 'id={publisherId}X{siteId}; for single-site publishers siteId equals publisherId.',
+        note: 'id={publisherId}X{domainId}; domainId is always distinct from publisherId (see Hub → Settings → Sites).',
       },
     };
   }

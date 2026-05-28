@@ -65,30 +65,37 @@ fields. The adapter reads both old and new names defensively.
 
 ## Merchant API
 
-The Merchant API (for listing merchants/programmes) is at `https://merchants.skimapis.com`
+The Merchant API (for listing merchants/programmes) is at `https://api-merchants.skimlinks.com`
 and requires a Product Key in addition to the OAuth2 bearer token. The Product Key
 is only issued to Managed (enterprise) Skimlinks accounts. This is confirmed by:
 - https://developers.skimlinks.com/product-key.html
 - https://support.skimlinks.com/hc/en-us/articles/360024600634-What-is-the-Merchant-API
+- https://blog.rapidapi.com/directory/skimlinks-merchant/ (lists endpoint as api-merchants.skimlinks.com)
 
 The `listProgrammes` and `getProgramme` operations therefore throw `NotImplementedError`
 for standard publisher accounts.
 
 ## Tracking link format
 
-Confirmed from Skimlinks documentation and live link inspection by the community:
+Confirmed from Skimlinks publisher support documentation and live URL observation:
 
 ```
-https://go.skimresources.com/?id={publisherId}X{siteId}&xs=1&url={encodedDestination}
+https://go.skimresources.com/?id={publisherId}X{domainId}&xs=1&url={encodedDestination}
 ```
 
 Where:
-- `id` = `{publisherId}X{siteId}` — for single-site publishers, siteId = publisherId.
+- `id` = `{publisherId}X{domainId}` — the Domain ID is **always a separate number**
+  from the Publisher ID (not the same value). Each registered site/domain in a
+  Skimlinks account is assigned its own domain ID. Source:
+  https://support.skimlinks.com/hc/en-us/articles/223835748
+  Live URL example: `id=110320X1568188` (publisher ID 110320, domain ID 1568188).
 - `xs=1` — enables Skimlinks extended tracking mode (standard for deeplinks).
 - `url` — URL-encoded destination URL.
 
-The `X` separator and `xs=1` flag are confirmed from community observations of
-live Skimlinks links (format is consistent across multiple publisher reports).
+**Breaking correction from original adapter:** the original code generated
+`{publisherId}X{publisherId}` assuming the two values are the same — this is
+incorrect. The Domain ID is always distinct and must be supplied separately as
+`SKIMLINKS_DOMAIN_ID`. Find it in Hub → Settings → Sites.
 
 ## Click data
 
@@ -97,23 +104,50 @@ Not available via the public publisher Reporting API. Confirmed from:
 - The legacy API docs listing: Report Commissions History, Report Commissions,
   Report Days, Report Merchants, Report Days by Merchant — no clicks endpoint.
 
-## TODO(verify) annotations
+---
 
-The adapter marks the following with `// TODO(verify)` — these should be confirmed
-against a live account before bumping `claim_status` to `partial`:
+## Hardening pass 2026-05-28
 
-1. The exact Merchant API base URL (`https://merchants.skimapis.com`).
-2. The exact response field names for commissions (the 2022 rename may have left
-   old names as aliases, or may have removed them entirely).
-3. Whether the commissions endpoint supports cursor-based pagination or only
-   page-number pagination.
-4. The maximum date window per commissions API call (adapter assumes no cap).
-5. Whether `go.skimresources.com/?id={publisherId}X{publisherId}` works for
-   single-site publishers or if the siteId is always distinct from the publisherId.
+### Outcomes per TODO/stub
+
+| Item | Outcome | Source | Notes |
+|------|---------|--------|-------|
+| `SKIMLINKS_MERCHANT_BASE_URL = 'https://merchants.skimapis.com'` (client.ts TODO(verify)) | **CORRECT** | https://blog.rapidapi.com/directory/skimlinks-merchant/ | Correct URL is `https://api-merchants.skimlinks.com`. Old placeholder was unverified. |
+| Commission field names (adapter.ts:145 TODO(verify)) | **CONFIRM** (defensive read) | https://api-reports.skimlinks.com/doc/doc_report_v0.3.html (via search snippets) | Field names `commissionId`, `amount`, `commissionValue`, `merchantId`, etc. confirmed from API v0.3 docs. Adapter already reads both old/new names defensively. |
+| Max date window (adapter.ts:365 TODO(verify)) | **BLOCKED** | No public source found | No documented cap found in any accessible page. Live account test required. |
+| Pagination type (adapter.ts:365 TODO(verify)) | **CONFIRM** (page-based) | Search snippet from api-reports.skimlinks.com/doc/doc_report_v0.3.html | Pagination is page-based: response includes `pagination.total`, `pagination.from`, `pagination.itemCount`; query params are `limit` and `page`. |
+| Deeplink `id` format — `{publisherId}X{publisherId}` (adapter.ts:579 TODO(verify)) | **CORRECT** (critical bug fix) | https://support.skimlinks.com/hc/en-us/articles/223835748 + live URL observation | The second component is the **Domain ID** (not publisher ID repeated). The format is `{publisherId}X{domainId}`. A new credential `SKIMLINKS_DOMAIN_ID` is now required. |
+| `listProgrammes` / `getProgramme` stubs | **BLOCKED** | https://developers.skimlinks.com/product-key.html, https://blog.rapidapi.com/directory/skimlinks-merchant/ | Requires Managed account + Product Key. No public endpoint available without a Product Key. Exact requirement: Managed Skimlinks account tier + Product Key (available on request via Skimlinks partnerships team). |
+| `listClicks` stub | **BLOCKED** | https://api-reports.skimlinks.com/doc/doc_report_v0.3.html (search snippets listing available methods) | No click-level endpoint in the public publisher Reporting API. Would require a separate click analytics product not available via standard publisher API. |
+
+### Live verification checklist
+
+The following items remain BLOCKED pending live account access:
+
+1. **Maximum date window per commissions API call**
+   - Needed: any valid publisher API credentials + a Skimlinks account with 30+ days of data
+   - Test: send a request with `date_from` = 90+ days ago; observe if the API enforces a cap or returns all data
+
+2. **Commission API field names — exact names post-2022**
+   - Needed: any valid publisher API credentials
+   - Test: inspect one real commission response object for all returned field names; compare against the `SkimlinksCommissionRaw` interface
+
+3. **listProgrammes / getProgramme**
+   - Needed: Managed Skimlinks account with a Product Key (not available to standard publishers)
+   - Credential required: `SKIMLINKS_PRODUCT_KEY` (obtain from Skimlinks partnerships team; then add to `env_vars` in network.json and implement in adapter)
+
+4. **OAuth token endpoint — confirm `authentication.skimapis.com/access_token`**
+   - Needed: any valid publisher Skimlinks credentials
+   - Test: POST to the endpoint with client_credentials grant; confirm 200 response with `access_token`
+
+5. **Deeplink Domain ID — confirm `{publisherId}X{domainId}` tracking works end-to-end**
+   - Needed: valid publisher account + a test destination URL
+   - Test: generate a deeplink with the new `SKIMLINKS_DOMAIN_ID` credential and verify it routes correctly
 
 ## Claim status rationale
 
 `experimental` — the adapter implements 4 of 7 canonical operations (verifyAuth,
 listTransactions, getEarningsSummary, generateTrackingLink) and throws
 `NotImplementedError` for the remaining 3 (listProgrammes, getProgramme, listClicks)
-for documented reasons. No live account validation has been performed.
+for documented reasons. A critical bug was corrected in the deeplink `id` parameter
+format (publisherId vs domainId). No live account validation has been performed.
