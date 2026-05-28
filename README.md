@@ -275,7 +275,7 @@ the brand-side has a more complex auth model and we skipped it.
 | Rakuten Advertising | 12 min | yes (~5 days) | 6 / 7 | clicks gated |
 | Skimlinks | 10 min | no | 6 / 7 | no clicks |
 | Sovrn Commerce | 10 min | no | 6 / 7 | no clicks |
-| Tradedoubler | 10 min | no | 6 / 7 | no clicks |
+| Tradedoubler | 15 min | no | 6 / 7 | clicks gated |
 | Tradedoubler (Advertiser) | 10 min | no | 7 / 7 | no clicks |
 <!-- AFFILIATE_MCP_NETWORK_TABLE_END -->
 
@@ -415,7 +415,7 @@ click for credentials, and common stumbling blocks:
 - [mrge](./docs/networks/mrge.md) — API key + secret + site ID; experimental, built from public docs.
 - [Partnerize](./docs/networks/partnerize.md) — application key + user API key; experimental, built from public docs.
 - [Rakuten Advertising](./docs/networks/rakuten.md) — OAuth client + SID; approval required.
-- [Skimlinks](./docs/networks/skimlinks.md) — OAuth client ID + secret + publisher ID; experimental, built from public docs.
+- [Skimlinks](./docs/networks/skimlinks.md) — OAuth client ID + secret + publisher ID + domain ID; experimental, built from public docs.
 - [Sovrn Commerce](./docs/networks/sovrn-commerce.md) — API key + secret key; experimental, built from public docs.
 - [Tradedoubler](./docs/networks/tradedoubler.md) — bearer token + organisation ID; experimental, built from public docs.
 
