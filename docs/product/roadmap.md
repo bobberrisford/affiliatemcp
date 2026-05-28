@@ -374,46 +374,169 @@ so two contributors don't duplicate the work.
 - [ ] **Scheduled weekly client reports.**
   The portfolio rollup already runs on-demand; the agency wants
   it scheduled per client and delivered without anyone touching
-  a dashboard.
+  a dashboard. Pairs with the agency-profile branding items
+  below — the same skill produces an Acme-branded report for
+  Acme and a Globex-branded one for Globex.
 
   > Update `src/skills/programme-performance-report/SKILL.md`
   > with a stable "weekly report" output shape (fixed sections,
   > fixed headings, fixed order) so the agency can drop it
-  > straight into their client portal each Monday. Add a worked
-  > example showing how to wire it to Claude's own scheduling
-  > (no scheduler in this repo — we just produce the
-  > deterministic output). Add an
-  > `examples/agency-weekly-schedule.md` walkthrough showing the
-  > Claude side of the wiring.
+  > straight into their client portal each Monday. The skill
+  > reads `~/.affiliate-mcp/agency-profile.json` (next item) and
+  > injects branding chrome — header logo, primary colour,
+  > prepared-by line, signoff block — into the report. Add a
+  > worked example at `examples/agency-weekly-schedule.md`
+  > showing how to wire it to Claude's own scheduling (no
+  > scheduler in this repo — we just produce the deterministic
+  > output and let Claude trigger it). The wiring should produce
+  > one report per brand in `brands.json` per Monday at 09:00
+  > local.
+
+- [ ] **`agency-profile.json` — the agency branding config.**
+  The source of truth for "what does an Acme-the-client report
+  look like vs a Globex-the-client report". Every downstream
+  agency skill (weekly report, monthly deck, ad-hoc rollup)
+  reads from this file.
+
+  > Add support for an optional
+  > `~/.affiliate-mcp/agency-profile.json`. Schema (zod-validated
+  > in `src/shared/agency-profile.ts`):
+  >
+  > ```json
+  > {
+  >   "version": 1,
+  >   "agency": {
+  >     "name": "Lighthouse Partners",
+  >     "logoUrl": "https://...png",
+  >     "primaryColour": "#1F3A5F",
+  >     "accentColour": "#E8A33D",
+  >     "contactEmail": "hello@lighthouse.example",
+  >     "footer": "Lighthouse Partners Ltd · Reg 09876543",
+  >     "defaultAccountManager": {
+  >       "name": "Priya Shah",
+  >       "email": "priya@lighthouse.example"
+  >     }
+  >   },
+  >   "brands": {
+  >     "acme": {
+  >       "displayName": "Acme Corp",
+  >       "logoUrl": "https://acme.example/logo.png",
+  >       "branding": "agency",
+  >       "accountManager": { "name": "Tom Webb", "email": "tom@..." },
+  >       "intro": "Weekly update for the Acme team.",
+  >       "sections": ["headline", "publishers", "anomalies", "next-steps"]
+  >     },
+  >     "globex": {
+  >       "displayName": "Globex",
+  >       "branding": "client",
+  >       "logoUrl": "https://globex.example/logo.png"
+  >     }
+  >   }
+  > }
+  > ```
+  >
+  > `branding` accepts `agency` (agency logo + colours, "prepared
+  > by Lighthouse Partners" framing), `client` (client logo,
+  > client colours, no agency branding — the agency disappears),
+  > or `co` (both logos, "prepared by Lighthouse Partners for
+  > Acme Corp"). Per-brand `accountManager`, `intro`, and
+  > `sections` override the agency defaults. Profile is local
+  > only — never sent anywhere, file mode `0600` on creation.
+  > Loader in `src/shared/agency-profile.ts` returns a typed
+  > `AgencyProfile | null` (null on missing file); tests cover
+  > the no-profile path returning today's unbranded output
+  > unchanged. Add an `affiliate-networks-mcp profile` CLI
+  > subcommand that scaffolds the file interactively for first-
+  > time agency users.
+
+- [ ] **Per-client branding overrides applied to all agency skills.**
+  The plumbing that connects `agency-profile.json` to the
+  reports. Independent of the schema work above so it can be
+  reviewed separately.
+
+  > Update each of `agency-portfolio-rollup`,
+  > `programme-performance-report`, and (when it lands)
+  > `client-deck` to:
+  > (1) load the profile via `loadAgencyProfile()`;
+  > (2) resolve the per-brand override for the brand under
+  > report (or fall back to agency defaults);
+  > (3) emit a header block (logo URL, brand display name,
+  > "prepared by" line keyed off `branding` mode), an intro
+  > paragraph (per-brand `intro` if present), and a footer
+  > block (signoff + agency footer);
+  > (4) honour the brand's `sections` list — omit any section
+  > the brand has not opted into, in the order the brand listed
+  > them.
+  > Reports without a profile fall through to today's output
+  > byte-for-byte; tests assert that invariant. Reports with a
+  > profile show the chrome in a deterministic shape so the
+  > agency can build a Google Apps Script (or equivalent) on
+  > top to render the branded view in their portal.
+
+- [ ] **Account-manager commentary as a first-class section.**
+  The data is half the report; the other half is the AM's
+  "here's what we're going to do about it" paragraph. Today
+  there's nowhere for that to live in the output. Agencies will
+  not send a report without commentary.
+
+  > Extend the agency profile per-brand block with a
+  > `commentary` field that takes one of three shapes:
+  > `{ source: "inline", text: "..." }` (the AM types it into
+  > the profile and it appears verbatim),
+  > `{ source: "file", path: "~/lighthouse/acme/week-commentary.md" }`
+  > (read at report time from a path the AM updates each
+  > Monday), or
+  > `{ source: "draft", prompt: "Draft a commentary paragraph
+  > given this week's headline numbers and the top three
+  > anomalies. Tone: cautious-optimistic. Sign as Tom." }`
+  > (the skill drafts a commentary block from the report's own
+  > data using the supplied prompt — the AM reviews before
+  > sending).
+  > Place the commentary section between the headline and the
+  > publisher table by default; let the brand's `sections`
+  > list reorder it. Tests cover all three sources.
+
+- [ ] **PDF / Slides / email-body output formats.**
+  Markdown is fine for chat. For client delivery the agency
+  needs a PDF for the email, slides for the weekly meeting,
+  and an email-safe HTML body for portal posts.
+
+  > Add a `format` parameter to the weekly report skill
+  > accepting `markdown` (default, today's behaviour), `pdf`,
+  > `slides`, `email-html`. Implement at
+  > `src/shared/render/`:
+  > (a) `pdf.ts` — render the Markdown via a headless Chromium
+  > pass using Playwright (already an optional dev dependency
+  > for `generate:report-image`), styled from the agency
+  > profile's colour scheme. Output a single A4 PDF;
+  > (b) `slides.ts` — emit a Google-Slides-compatible
+  > Markdown variant (H1 per slide, speaker-notes in
+  > blockquotes), plus a worked example showing the Apps
+  > Script the agency installs once to push the Markdown into
+  > a templated deck;
+  > (c) `email-html.ts` — emit a single-file inline-styled
+  > HTML body the agency pastes into their email client; logo
+  > and colour scheme inlined from the profile, no external
+  > assets fetched at render time.
+  > Each renderer is pure: Markdown in, bytes out. Tests use
+  > golden-file snapshots per format.
 
 - [ ] **`client-deck` skill.**
   Monthly / quarterly performance deck. Emits slide-shaped
-  Markdown the user converts to Google Slides via a separate
-  Claude artifact step.
+  output the user converts to Google Slides via the renderer
+  above.
 
   > New skill at `src/skills/client-deck/SKILL.md`. Accepts a
   > brand slug and a period (`month`, `quarter`, explicit dates).
   > Output is a Markdown document with H1-per-slide structure:
-  > title slide, headline numbers, top-publisher table, trend
-  > description (we describe the trend in prose; Claude renders
-  > the chart in the conversation), callouts. The same data the
-  > `programme-performance-report` already pulls; different
-  > shape.
-
-- [ ] **White-label output via `agency-profile.json`.**
-  Today reports use our default voice. Honour a per-agency
-  profile so the same skill emits Acme-branded output for Acme
-  and Globex-branded output for Globex.
-
-  > Add support for an optional
-  > `~/.affiliate-mcp/agency-profile.json` with fields
-  > `agencyName`, `agencyLogoUrl`, `primaryColour`, `signoffBlock`,
-  > and per-brand overrides under `brands.<slug>`. Update
-  > `agency-portfolio-rollup`, `programme-performance-report`,
-  > and `client-deck` skills to read the profile and inject the
-  > brand-appropriate header/footer. Profile stays local —
-  > never read, never sent anywhere. Tests cover the no-profile
-  > path producing today's default output unchanged.
+  > title slide (brand-appropriate logo from
+  > `agency-profile.json`), headline numbers, top-publisher
+  > table, trend description (we describe the trend in prose;
+  > Claude renders the chart in the conversation), callouts,
+  > account-manager commentary slide, next-steps slide. Same
+  > data the `programme-performance-report` already pulls;
+  > different shape. Honours `format: 'slides'` from the
+  > renderer item above.
 
 - [ ] **`cross-client-benchmark` skill.**
   *"How does Acme's CR compare to my other DTC clients?"* Careful
