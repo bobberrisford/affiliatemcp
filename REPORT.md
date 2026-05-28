@@ -1,6 +1,6 @@
 # affiliate-mcp Report — the state of affiliate-network APIs in May 2026
 
-_Date-stamped: 2026-05-23._
+_Date-stamped: 2026-05-28._
 
 This report describes the state of four affiliate-network APIs as observed
 during the construction of the affiliate-mcp MCP server: Awin, CJ Affiliate,
@@ -36,9 +36,18 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | CJ Affiliate | 8 | no | 6 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
 | CJ Affiliate (advertiser) | 8 | no | 7 / 7 | 7 | experimental | 0.1.0 | 2026-05-23 |
 | eBay Partner Network | 10 | yes (~3 days) | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-21 |
+| Everflow | 10 | yes (~1 days) | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-28 |
+| Everflow (Advertiser) | 10 | no | 7 / 7 | 5 | experimental | 0.1.0 | 2026-05-28 |
 | Impact | 6 | no | 7 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
 | Impact (advertiser) | 8 | no | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-23 |
+| mrge | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
+| Partnerize | 10 | no | 7 / 7 | 4 | experimental | 0.1.0 | 2026-05-28 |
+| Partnerize (Advertiser) | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 | Rakuten Advertising | 12 | yes (~5 days) | 6 / 7 | 3 | partial | 0.1.0 | 2026-05-21 |
+| Skimlinks | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-05-28 |
+| Sovrn Commerce | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
+| Tradedoubler | 10 | no | 6 / 7 | 4 | experimental | 0.1.0 | 2026-05-28 |
+| Tradedoubler (Advertiser) | 10 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 
 ## Awin
 
@@ -53,7 +62,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 - **Claim status**: partial
 - **Adapter version**: 0.1.0
 - **Last verified**: 2026-05-21
-- **Documentation**: https://wiki.awin.com/index.php/API_Get_Started
+- **Documentation**: https://help.awin.com/apidocs/introduction-1
 
 ### Operations
 
@@ -92,7 +101,7 @@ been exercised against a live publisher account.
   client attaches it to every request. The token is generated from the Awin
   publisher dashboard → Account → API credentials.
 
-- **`/publishers` doubles as auth-check + identity discovery**: a single call
+- **`/accounts?type=publisher` doubles as auth-check + identity discovery**: a single call
   validates the token, returns the publisher ID, and gives a human-readable
   name. This is the canonical example of the `derivedValues` pattern: one
   credential bootstraps another, the wizard shows "press enter to accept"
@@ -132,10 +141,11 @@ been exercised against a live publisher account.
   may have similar quirks — the lesson is "treat both string and boolean
   signals as inputs to the normalisation".
 
-- **Schema drift between tenants.** The `/publishers` response uses
-  `publisherId` in newer tenants and `id`/`accountId` in older ones. We
-  accept all three rather than picking one. This is the kind of compatibility
-  shim that should NOT be promoted into a shared layer — it's Awin-specific.
+- **Schema drift between identity endpoints.** The current `/accounts` response
+  uses `accounts[].accountId`, while older `/publishers` shapes and fixtures use
+  `publisherId`, `id`, or `accountId`. We accept all of them rather than picking
+  one. This is the kind of compatibility shim that should NOT be promoted into
+  a shared layer — it's Awin-specific.
 
 - **Two date fields, two meanings.** `transactionDate` is the conversion;
   `validationDate` is when Awin approved the commission. The unpaid-age
@@ -158,7 +168,7 @@ been exercised against a live publisher account.
   exceeded. Our resilience layer retries 429 by policy with exponential
   backoff + jitter, which is the right default.
 
-- **Latency**: `/publishers` returns in ~100–200ms; `/programmes` in
+- **Latency**: `/accounts` returns in ~100–200ms; `/programmes` in
   ~300–800ms; `/transactions` is the outlier, occasionally 5–15s for a busy
   publisher across a full 31-day window. We bump the `listTransactions`
   timeout to 60s and retries to 3 to absorb the upstream variability.
@@ -185,6 +195,10 @@ back to an API call only when the network mints a per-link tracking ID.
 - **Live validation**: bump `claim_status` from `partial` to `production`
   after Chunk 8 acceptance testing exercises the adapter against a real Awin
   publisher account.
+- **Awin-specific endpoint coverage**: the reference implementation now tracks
+  endpoint-by-endpoint status in `docs/networks/awin/api-inventory.md`. Keep
+  that inventory updated whenever adding a tool, changing live-test status, or
+  discovering a gated requirement.
 - **Pagination cursor support**: the current adapter returns the full result
   set; if a future query window produces tens of thousands of transactions
   we'll want a cursor abstraction. Awin doesn't natively cursor — we'd chunk
@@ -693,6 +707,285 @@ first-click time when nothing tracks.
   `Programme.categories` or as a separate field once the canonical type
   has somewhere to put it.
 
+## Everflow
+
+### Quick facts
+
+- **Slug**: `everflow`
+- **Auth model**: custom
+- **Base URL**: https://api.eflow.team
+- **Environment variables**: `EVERFLOW_API_KEY`, `EVERFLOW_AFFILIATE_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: yes (~1 days)
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-05-28
+- **Documentation**: https://developers.everflow.io/docs/affiliate/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Affiliate API keys must be created by a network admin, not self-service by the affiliate.
+- Click stream endpoint caps at 14 days per call; wider windows are chunked automatically.
+
+### Findings
+
+# Findings: Everflow (Publisher / Affiliate side)
+
+Built from public API documentation as of 2026-05-28; live verification pending credentials.
+
+## Summary
+
+Everflow maps onto the canonical adapter contract for all seven publisher operations. Unlike Awin and CJ, Everflow **does** expose click-level data via the affiliate API (click stream endpoint), so `listClicks` is implemented rather than throwing `NotImplementedError`.
+
+The adapter ships at `claim_status: experimental` — all ops are implemented and unit-tested against fixture data, but the adapter has not been exercised against a live publisher account. Endpoint shapes marked `// TODO(verify)` should be confirmed when live credentials are available.
+
+## Key verification gap: affiliate API keys are admin-generated
+
+Everflow affiliate API keys cannot be self-issued by the affiliate. They must be created by the **network admin** under Manage Affiliate → API tab. This was confirmed via the Everflow developer documentation and help centre:
+
+> "Affiliate users cannot create keys themselves and must rely on a network user to create the key and hand it over."
+
+This is a meaningful friction point: the setup wizard will stall until the user has obtained a key from their network admin. The `known_limitations` and `setupRequiresApproval: true` fields document this explicitly.
+
+## Auth model
+
+Everflow uses a custom header `X-Eflow-API-Key: <key>` rather than the standard `Authorization: Bearer ...` header. This is set in `buildHeaders()` in `client.ts` and declared as `auth_model: "custom"` in `network.json`.
+
+The API key is scoped to a single affiliate account by the network admin. No derivation of a secondary credential (like Awin's publisher ID) is possible or needed — the key already identifies the account.
+
+## Endpoint map (verified from public documentation)
+
+| Endpoint | Method | Status |
+|---|---|---|
+| `/v1/affiliates/alloffers` | GET | Used for `listProgrammes` and `verifyAuth`. Confirmed via docs. |
+| `/v1/affiliates/offers/{offerId}` | GET | Used for `getProgramme`. Confirmed via docs. |
+| `/v1/affiliates/reporting/conversions` | POST | Used for `listTransactions`. Response fields confirmed. |
+| `/v1/affiliates/reporting/clicks/stream` | POST | Used for `listClicks`. 14-day cap confirmed via docs. |
+| `/v1/affiliates/offers/{offerId}/url/{urlId}` | GET | Used for `generateTrackingLink`. urlId=0 confirmed via docs. |
+
+## Documentation URLs used
+
+- Affiliate API overview: <https://developers.everflow.io/docs/affiliate/>
+- Offers endpoint: <https://developers.everflow.io/docs/affiliate/offers/>
+- Raw conversions report: <https://developers.everflow.io/docs/affiliate/reporting/affiliate_raw_conversions/>
+- Raw clicks report: <https://developers.everflow.io/docs/affiliate/reporting/affiliate_raw_clicks/>
+- Raw clicks stream: <https://developers.everflow.io/api-reference/post-affiliatesreportingclicksstream>
+- Authentication: <https://developers.everflow.io/docs/user-guide/authentication/>
+- API key management: <https://developers.everflow.io/docs/partner/api_keys/>
+- Partner API keys helpdesk: <https://helpdesk.everflow.io/customer/partner-api-keys-api-documents>
+
+## TODO(verify) fields requiring live validation
+
+These fields carry `// TODO(verify)` annotations in the adapter and should be confirmed against a live Everflow account:
+
+| Field | Location | Uncertainty |
+|---|---|---|
+| `currency_id` → ISO code | `toProgramme()` | Everflow exposes a numeric `currency_id`; mapping to ISO code requires a lookup not documented publicly. |
+| `conversion_date` format | `computeAgeDays()` | Docs show `"YYYY-MM-DD HH:mm:SS"` but field exact name and format unconfirmed. |
+| `relationship.status` values | `mapProgrammeStatus()` | The exact string values (approved, pending, declined, etc.) are inferred from docs and context. |
+| `timezone_id: 67` | `listTransactions()`, `listClicks()` | Assumed to be UTC; Everflow's timezone ID table not publicly documented. |
+| Response field `url` vs `tracking_url` | `generateTrackingLink()` | Docs suggest the field is `url`; a `tracking_url` fallback is also tried. |
+| Offer-level filter structure | `listTransactions()`, `listClicks()` | The `query.filters` body structure is inferred from examples; exact field names may vary. |
+| `dateApproved` field | `toTransaction()` | Everflow may not expose a separate approval date on conversions; currently set to `conversion_date` for approved conversions. |
+
+## Click stream chunking
+
+Everflow's `/v1/affiliates/reporting/clicks/stream` endpoint caps at 14 days per call. The adapter mirrors Awin's `chunkDateRange` helper to split wider windows into ≤14-day slices, making the cap transparent to callers.
+
+## Status normalisation
+
+### Offer / programme status (from `relationship.status` + `offer_status`)
+
+| Everflow value | Canonical | Notes |
+|---|---|---|
+| `approved` / `active` / `joined` | `joined` | Affiliate approved for the offer. |
+| `pending` / `under_review` | `pending` | Application awaiting approval. |
+| `rejected` / `declined` | `declined` | Application rejected. |
+| `paused` / `inactive` | `suspended` | Offer or relationship paused. |
+| `public` / `require_approval` (no relationship) | `available` | Offer visible but not yet applied for. |
+| anything else | `unknown` | Never invent a status. |
+
+### Conversion / transaction status
+
+| Everflow value | Canonical | Notes |
+|---|---|---|
+| `approved` | `approved` | Commission approved for payment. |
+| `pending` | `pending` | Awaiting approval. |
+| `rejected` / `reversed` / `declined` | `reversed` | Commission cancelled; `reversalReason` from `error_message`. |
+| anything else | `other` | Future-proof default. |
+
+## Future work
+
+- **Live validation**: bump `claim_status` from `experimental` to `partial` after confirming endpoint shapes against a real affiliate account.
+- **Currency mapping**: implement a `currency_id → ISO code` lookup table once the Everflow ID scheme is confirmed.
+- **Multi-URL tracking links**: the adapter hardcodes `urlId=0` (the default URL). Future versions could expose a `urlId` parameter via `programmeId` encoding or a separate input field.
+- **Pagination**: `listProgrammes` currently fetches only the first page. Cursor-based pagination support would allow fetching all offers for large catalogues.
+- **Timezone configuration**: expose `timezone_id` as a configurable credential or query parameter, defaulting to UTC.
+
+## Everflow (Advertiser)
+
+### Quick facts
+
+- **Slug**: `everflow-advertiser`
+- **Auth model**: custom
+- **Base URL**: https://api.eflow.team/v1
+- **Environment variables**: `EVERFLOW_API_KEY`, `EVERFLOW_ADVERTISER_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-05-28
+- **Documentation**: https://developers.everflow.io/docs/network/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- API keys are created by a network admin, not by the advertiser directly. Contact your Everflow account manager to obtain a Network API key.
+- listMediaPartners returns all affiliates on the network; the Everflow API does not expose a direct per-advertiser affiliate filter at this endpoint — filter client-side where needed.
+- getProgrammePerformance uses POST /v1/advertisers/reporting/entity with the affiliate column. Everflow limits this endpoint to a maximum date range of one year per request.
+- Publisher-side operations (listTransactions, listClicks, generateTrackingLink, listProgrammes, getProgramme, getEarningsSummary) are not implemented at v0.1 — use the separate everflow publisher adapter for those.
+
+### Findings
+
+# Everflow (Advertiser) — Findings
+
+Built from public API documentation as of 2026-05-28; live verification pending credentials.
+
+---
+
+## Verification status
+
+**Not yet verified against a live account.** The adapter was built entirely from
+publicly available Everflow API documentation. No live API calls have been made
+against a real Everflow network. All claims below are from documentation review only.
+
+Promotion from `experimental` to `partial` or `production` requires:
+1. A live Network API key from a real Everflow network admin.
+2. A confirmed `network_advertiser_id` for at least one advertiser.
+3. Verification of all `// TODO(verify)` annotations in the source against
+   real API responses.
+
+---
+
+## Documentation sources used
+
+- Everflow API overview: https://developers.everflow.io/docs/network/
+- Advertisers endpoint: https://developers.everflow.io/docs/network/advertisers/
+- Affiliates (affiliatestable): https://developers.everflow.io/docs/network/affiliates/
+- Advertiser reporting: https://developers.everflow.io/docs/advertiser/reporting/
+- Authentication: https://developers.everflow.io/docs/user-guide/authentication/
+
+**Note:** The Everflow developer documentation site (developers.everflow.io)
+returned HTTP 403 to automated WebFetch during research for this adapter.
+Information was gathered via web search and quoted documentation snippets
+from third-party sources. The endpoint shapes, request bodies, and response
+fields described in the adapter source should be treated as best-effort and
+confirmed against real API responses before production use.
+
+---
+
+## Key findings from documentation review
+
+### Authentication
+
+- The API uses a custom header: `X-Eflow-API-Key: <api_key>`.
+- Network API keys are created by the network admin at Control Center → Security → API Keys.
+- Affiliate and advertiser users cannot create API keys themselves.
+- Keys are shown only once at creation.
+- Each key carries its own permission scopes; narrowly scoped keys per integration are recommended.
+
+**Source:** https://developers.everflow.io/docs/user-guide/authentication/,
+https://developers.everflow.io/user-guide/authentication
+
+### Advertisers endpoint
+
+- `GET /v1/networks/advertisers` returns a paginated list of advertisers.
+- Response includes `network_advertiser_id`, `name`, `account_status`.
+- `account_status` values: `active`, `inactive`, `suspended`.
+- Pagination follows the standard Everflow pattern: `page` + `page_size` query params,
+  `paging.total_count` in the response.
+
+**TODO(verify):** Exact response envelope field names (e.g. `advertisers` array key).
+
+**Source:** https://developers.everflow.io/docs/network/advertisers/
+
+### Affiliates table endpoint
+
+- `POST /v1/networks/affiliatestable` returns a paginated list of affiliates.
+- Request body contains `filters` for `account_status`.
+- Status values: `active`, `inactive`, `pending`, `suspended`.
+- Response includes `network_affiliate_id`, `name`, `account_status`.
+- No server-side filter by advertiser is documented at this endpoint.
+
+**TODO(verify):** Exact filter request body shape; whether a `relationship` param
+or other per-advertiser filter exists.
+
+**Source:** https://developers.everflow.io/docs/network/affiliates/
+
+### Advertiser reporting endpoint
+
+- `POST /v1/advertisers/reporting/entity` for aggregate performance data.
+- Request body includes `from` (YYYY-MM-DD), `to` (YYYY-MM-DD), `columns`, and `query`.
+- Columns select the breakdown dimension; `"affiliate"` gives per-affiliate rows.
+- Date range is limited to one year per request.
+- Response is a `table` array with per-row `columns` (dimension values) and `reporting`
+  (aggregate metrics: `imp`, `total_click`, `unique_click`, `cv`, `revenue`, `payout`).
+- If results exceed 10,000 rows, `incomplete_results: true` is set in the response.
+
+**TODO(verify):**
+- Whether `resource_type: "advertiser"` is a valid filter_id filter key, or whether
+  the advertiser is implicit from the API key.
+- Exact `column_type` value for affiliates in the response columns array.
+- `currency` field name and location in the response.
+- `timezone_id` and `currency_id` parameter handling when omitted.
+
+**Source:** https://developers.everflow.io/docs/advertiser/reporting/
+
+---
+
+## Open questions for live verification
+
+1. Is `filters[].resource_type = "advertiser"` the correct way to scope a report
+   to a specific advertiser, or is the advertiser inferred from the API key?
+2. What is the exact `column_type` string used for affiliate rows in the
+   report response?
+3. Does the affiliatestable endpoint support any per-advertiser filtering, or
+   is it always network-wide?
+4. Are there any rate limits on the reporting endpoint beyond the 10k-row cap?
+5. What happens when `EVERFLOW_ADVERTISER_ID` matches an advertiser that the
+   API key does not have permission to access?
+
+---
+
+## Date of review
+
+2026-05-28
+
 ## Impact
 
 ### Quick facts
@@ -952,6 +1245,395 @@ returning a half-formed link.
 
 _No findings document was supplied at `docs/findings/impact-advertiser.md`._
 
+## mrge
+
+### Quick facts
+
+- **Slug**: `mrge`
+- **Auth model**: custom
+- **Base URL**: https://api.yieldkit.com
+- **Environment variables**: `MRGE_API_KEY`, `MRGE_API_SECRET`, `MRGE_SITE_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-05-28
+- **Documentation**: https://publisher-api.mrge.com/documentation/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- mrge public API documentation is limited; publisher-api.mrge.com returns 403 to automated fetches.
+- Click-level data is not grounded in public API documentation; listClicks throws NotImplementedError.
+- getProgramme is not grounded in public docs as a separate endpoint; it filters the listProgrammes result client-side.
+- Reporting API host and full path are uncertain (TODO: verify); listTransactions may fail until verified.
+- generateTrackingLink uses a URL pattern derived from Yieldkit documentation; the format requires live verification.
+
+### Findings
+
+# mrge — Findings
+
+Built from public API documentation as of 2026-05-28; live verification
+pending credentials; public API docs limited.
+
+## Documentation sources used
+
+- `https://publisher-api.mrge.com/documentation/` — returns HTTP 403 to
+  automated fetches; content inaccessible.
+- `https://public.yieldkit.com/` — returns HTTP 403 to automated fetches.
+- `https://yieldkit.com/knowledge/reporting-api-v3/` — returns HTTP 403 to
+  automated fetches.
+- `https://yieldkit.com/knowledge/advertiser-api/` — returns HTTP 403 to
+  automated fetches.
+- `https://s3.eu-west-1.amazonaws.com/docs.yieldkit.com/apis/reporting-api/index.html`
+  — returns HTTP 403 to automated fetches.
+- `https://s3.eu-west-1.amazonaws.com/docs.yieldkit.com/apis/advertiser-api/index.html`
+  — returns HTTP 403 to automated fetches.
+- Search result snippets from multiple queries (see research log below).
+- `https://wecantrack.com/yieldkit-integration/` — returns HTTP 403.
+- `https://doc.voluum.com/article/yieldkit-and-voluum` — returns HTTP 403.
+
+## What was grounded from public sources
+
+The following facts were established from search result snippets and
+partially-accessible sources:
+
+- **Auth model**: Three-credential scheme — `api_key`, `api_secret`, `site_id`
+  passed as query parameters. Confirmed by multiple third-party integration
+  guides describing "Yieldkit account connection requires API key, API secret,
+  and Site IDs."
+
+- **Credential location**: API key and secret found under Account → API access;
+  site IDs found under Account → Your Sites.
+
+- **Advertiser API endpoint**: `GET http://api.yieldkit.com/v2/advertiser/terms`
+  with `api_key`, `api_secret`, `site_id`, optionally `advertiser_id`
+  parameters. Confirmed from search snippet: "basic HTTP API to request
+  commission terms via HTTP GET".
+
+- **Reporting API**: `/commission` endpoint; uses `modified_date` DateType
+  filter to pull commissions updated within a defined time range. Commission
+  status values: `OPEN`, `CONFIRMED`, `REJECTED`, `DELAYED`. Source: search
+  result snippet from Yieldkit docs.
+
+- **Reporting API V3 pagination**: uses a `next` URL in the response for
+  pagination. Source: search snippet.
+
+- **Click tracking**: publishers receive a `yk_tag` value as a click ID;
+  it appears in the commission endpoint alongside the commission record.
+  No full click log endpoint was found.
+
+## What is uncertain (// TODO(verify))
+
+All of the following need confirmation against a live account:
+
+- Full URL path of the Reporting API (host is assumed to be
+  `reporting-api.yieldkit.com`; may have changed in the mrge rebrand).
+- Exact JSON field names in the advertiser/terms response (assumed based on
+  S2S tracking parameter names in Yieldkit docs).
+- Exact JSON field names in the commission/reporting response.
+- Whether the Reporting API supports a date range (`from`/`to`) or only a
+  single `modified_date` lower bound.
+- Whether `publisher-api.mrge.com` uses a Bearer token header rather than
+  query-parameter credentials.
+- Tracking URL format for deep-link generation.
+- Whether `api.yieldkit.com` is still active or has been migrated to
+  `api.mrge.com` or another host.
+
+## Research log (2026-05-28)
+
+Searches conducted:
+
+1. `mrge.com publisher API documentation affiliate network yieldkit`
+   → Confirmed existence of `publisher-api.mrge.com/documentation/` but
+   content blocked.
+2. `publisher-api.mrge.com documentation API token authentication`
+   → No technical content accessible.
+3. `yieldkit reporting-api-v3 commission endpoint api_key api_secret modified_date`
+   → Obtained status values (OPEN/CONFIRMED/REJECTED/DELAYED) and
+   `modified_date` filter fact from snippets.
+4. `yieldkit "api.yieldkit.com" advertiser terms endpoint parameters response`
+   → Confirmed endpoint path `/v2/advertiser/terms` and parameter names.
+5. Multiple further queries — all documentation endpoints returned 403.
+
+## Promotion criteria
+
+To promote this adapter from `experimental` to `partial`:
+
+1. Verify all `// TODO(verify)` annotations against a live mrge publisher
+   account with real credentials.
+2. Confirm the reporting API host and commission endpoint path.
+3. Confirm the advertiser/terms response JSON field names.
+4. Run `npm run validate:network -- mrge` against the live account.
+5. Update `last_verified` in `network.json`.
+6. Update this findings document with the confirmed shapes.
+
+## Partnerize
+
+### Quick facts
+
+- **Slug**: `partnerize`
+- **Auth model**: basic
+- **Base URL**: https://api.partnerize.com
+- **Environment variables**: `PARTNERIZE_APPLICATION_KEY`, `PARTNERIZE_USER_API_KEY`, `PARTNERIZE_PUBLISHER_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-05-28
+- **Documentation**: https://api-docs.partnerize.com/partner/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- listClicks is experimental: the publisher click endpoint is documented but response field names are unconfirmed; may require adjustment after live testing.
+- generateTrackingLink requires the caller to supply the camref (campaign reference) for the target campaign, not the raw campaign_id. Camrefs can be found at the campaign tracking details endpoint.
+- Pagination is cursor-based; this adapter fetches one page at a time via the start/end date window and does not yet follow cursor_id for result sets exceeding the default page size.
+
+### Findings
+
+# Partnerize (Publisher) — findings
+
+Built from public API documentation as of 2026-05-28; live verification pending
+credentials.
+
+---
+
+## Research sources
+
+The following public sources were consulted to build this adapter. The primary
+Partnerize API documentation site (api-docs.partnerize.com) returned HTTP 403
+to automated fetch. All shapes were sourced from the official public GitHub
+repository and search result fragments.
+
+- **Partnerize Partner API documentation** (primary):
+  https://api-docs.partnerize.com/partner/ — returned 403 to automated fetch.
+  URL confirmed as valid; accessible via browser.
+
+- **Official Partnerize API blueprint repository** (primary source used):
+  https://github.com/PerformanceHorizonGroup/apidocs — all `.apib` source files
+  read directly via `raw.githubusercontent.com`. Endpoint paths, request
+  parameters, and response envelope shapes sourced from:
+  - `src/intro.apib` — authentication scheme, base URL
+  - `src/publisher.apib` — publisher account endpoints
+  - `src/publisher_campaign.apib` — campaign list endpoint, status path segment
+  - `src/granular_reporting.apib` — conversion and click reporting endpoints
+  - `src/export_reporting.apib` — CSV export field names (used to infer JSON
+    reporting field names; not confirmed to match exactly)
+
+- **Partnerize tracking link format**:
+  Confirmed from multiple public integration guides:
+  `https://prf.hn/click/camref:{camref}/destination:{encodedUrl}`
+  The camref format is consistent across TransferWise, Expedia, and Plum Guide
+  publisher guides available at docs.partnerize.com and help.phgsupport.com.
+
+- **Web search summaries**: confirmed auth scheme (HTTP Basic,
+  `application_key:user_api_key`, base64-encoded), base URL
+  (`https://api.partnerize.com`), and general endpoint naming patterns.
+
+---
+
+## Known uncertainties (TODO(verify))
+
+The following fields and behaviours are sourced from documentation but have not
+been confirmed against a live Partnerize publisher account:
+
+1. **Conversion response envelope shape**: The JSON reporting endpoint at
+   `/reporting/report_publisher/publisher/{id}/conversion` is documented as
+   returning a "Publisher Conversion Wrapper" but the blueprint does not
+   provide a concrete JSON example. The adapter assumes the envelope matches the
+   export_reporting field names (`conversion_id`, `conversion_date_time`,
+   `publisher_commission`, `conversion_status`, etc.). These may differ.
+
+2. **Campaign list response body fields**: The publisher campaign endpoint
+   returns campaigns but the exact JSON field names for approval status
+   (`approval_state` vs `status`) are unconfirmed. The adapter reads both and
+   normalises defensively.
+
+3. **Publisher ID derivation**: The `/user/publisher` endpoint response shape
+   assumes `{ publishers: { publisher: [...] } }` based on the API blueprint.
+   The live response may use a flat array or a different envelope.
+
+4. **Click endpoint response fields**: The publisher click endpoint field names
+   (`click_id`, `set_time`, `referer`) are inferred from the CSV export
+   documentation. JSON field names may differ.
+
+5. **Pagination mechanism**: The granular reporting docs mention cursor-based
+   pagination via a `cursor_id` header attribute but do not confirm whether the
+   cursor appears in the response body or headers. The adapter does not yet
+   follow pagination cursors.
+
+6. **commission vs publisher_commission**: The adapter uses `publisher_commission`
+   as the publisher's earnings amount, preferring it over `commission` (which
+   may be the advertiser's network fee). This interpretation is inferred from
+   the CSV export field descriptions; live confirmation needed.
+
+---
+
+## Endpoint map
+
+| Operation | Endpoint | Status |
+|-----------|----------|--------|
+| verifyAuth | `GET /user/publisher` | Documented; unverified |
+| listProgrammes | `GET /user/publisher/{id}/campaign/{status}` | Documented; unverified |
+| getProgramme | Same as listProgrammes (client-side filter) | Inferred |
+| listTransactions | `GET /reporting/report_publisher/publisher/{id}/conversion` | Documented; unverified |
+| getEarningsSummary | Derived from listTransactions | N/A |
+| listClicks | `GET /reporting/report_publisher/publisher/{id}/click` | Documented; unverified |
+| generateTrackingLink | `https://prf.hn/click/camref:{camref}/destination:{url}` | Format confirmed |
+
+---
+
+## Next steps for live verification
+
+1. Obtain Partnerize publisher test credentials.
+2. Run `npm run validate:network -- partnerize` against a live account.
+3. Compare response shapes against the `// TODO(verify)` annotations in
+   `src/networks/partnerize/adapter.ts` and `src/networks/partnerize/auth.ts`.
+4. Update fixtures under `tests/fixtures/partnerize/` with real (scrubbed)
+   response shapes.
+5. Bump `adapter_version` to `0.1.1` and `last_verified` to the test date.
+6. Promote `claim_status` from `experimental` to `partial` once the live
+   diagnostic passes for all seven operations.
+
+## Partnerize (Advertiser)
+
+### Quick facts
+
+- **Slug**: `partnerize-advertiser`
+- **Auth model**: basic
+- **Base URL**: https://api.partnerize.com
+- **Environment variables**: `PARTNERIZE_APPLICATION_KEY`, `PARTNERIZE_USER_API_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-05-28
+- **Documentation**: https://api-docs.partnerize.com/brand/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Click-level data is not exposed by the Partnerize Brand API; listClicks is unsupported.
+- getProgramme is not implemented at v0.1; use listProgrammes (listBrands) and filter client-side.
+- getEarningsSummary is not implemented at v0.1; use getProgrammePerformance for the per-publisher rollup.
+- generateTrackingLink is a publisher-side operation and is not applicable to the advertiser adapter.
+- Conversion (transaction) reporting scope is per-campaign and requires a campaign_id context from AdapterCallContext.
+
+### Findings
+
+# Partnerize (Advertiser) — findings
+
+Built from public API documentation as of 2026-05-28; live verification pending
+credentials.
+
+---
+
+## Research sources
+
+The following public sources were consulted to build this adapter. All
+documentation sites returned HTTP 403 to automated fetch during the initial PR.
+Field names and endpoint shapes are sourced from web-search result fragments
+and third-party integration guides.
+
+- **Partnerize Brands API documentation** (primary):
+  https://api-docs.partnerize.com/brand/ — returned 403 to automated fetch.
+- **Partnerize API on Apiary** (mirror):
+  https://partnerize.docs.apiary.io/ — returned 403 to automated fetch.
+- **Web search summaries**: confirmed auth scheme (HTTP Basic,
+  `application_key:user_api_key`), base URL (`https://api.partnerize.com/v3`),
+  campaign listing path (`/v3/brand/campaigns`), analytics path
+  (`/v3/brand/analytics/metrics`), and conversions bulk path
+  (`/v3/brand/campaigns/{campaignID}/conversions/bulk`).
+- **dltHub Partnerize context page** (integration guide):
+  https://dlthub.com/context/source/partnerize — returned 403 to automated fetch.
+
+---
+
+## Known uncertainties (TODO(verify))
+
+The following fields and behaviours are marked `// TODO(verify)` in the adapter
+source and must be confirmed against a live Partnerize brand account before
+promoting to `partial` or `production`.
+
+| Location | Uncertainty |
+|---|---|
+| `auth.ts` | Exact Application Key format / length. |
+| `adapter.ts::mapCampaignStatus` | Enumerated campaign status values (e.g. `active`, `paused`, `closed` — exact strings). |
+| `adapter.ts::mapConversionStatus` | Enumerated conversion status values (e.g. `approved`, `pending`, `rejected` — exact strings). |
+| `adapter.ts::mapPublisherStatus` | Enumerated publisher status values. |
+| `adapter.ts::listBrands` | Response envelope field names for campaign list pagination and `apiEnabled` semantics. |
+| `adapter.ts::listTransactions` | Query parameter names for date filtering (`start_date` vs `from`, etc.) and status filtering. |
+| `adapter.ts::listMediaPartners` | Whether the path ends in `/publishers` or `/partners` against a live account. |
+| `adapter.ts::getProgrammePerformance` | Query parameter names for `campaign_id`, `publisher_id`, `start_date`, `end_date`. Response envelope shape. |
+| `adapter.ts::toTransaction` | Date field names (`click_time`, `conversion_time`, `approved_at`, `paid_at`). |
+
+---
+
+## Observed API behaviour (unverified)
+
+The following is sourced from public documentation fragments and may not
+accurately reflect the current Partnerize Brand API behaviour:
+
+- **Auth scheme**: HTTP Basic, `Authorization: Basic base64(application_key:user_api_key)`.
+  Both keys come from the same dashboard page (Settings → API Credentials).
+- **Base URL**: `https://api.partnerize.com` (v3 path prefix: `/v3/brand/`).
+- **Campaigns endpoint**: `GET /v3/brand/campaigns` — returns campaigns visible
+  to the authenticated user.
+- **Conversions endpoint**: `GET /v3/brand/campaigns/{campaignID}/conversions/bulk`
+  (bulk variant documented publicly; singular variant assumed to exist).
+- **Analytics endpoint**: `GET /v3/brand/analytics/metrics`.
+- **Publishers endpoint**: assumed `GET /v3/brand/campaigns/{campaignID}/publishers`;
+  Partnerize documentation uses "publishers" and "partners" interchangeably.
+
+---
+
+## Next steps
+
+1. Obtain a live Partnerize brand account and run:
+   ```
+   affiliate-networks-mcp test partnerize-advertiser
+   ```
+2. Fix any `// TODO(verify)` fields and bump `adapter_version` to `0.1.1`.
+3. Promote `claim_status` from `experimental` to `partial` once the seven
+   canonical operations are confirmed against a live account.
+
 ## Rakuten Advertising
 
 ### Quick facts
@@ -1171,6 +1853,587 @@ returned `TrackingLink` so the link's construction is fully auditable.
    the cache is cold. Currently sequential; saves ~200ms per cold session.
    Not a v0.1 blocker.
 
+## Skimlinks
+
+### Quick facts
+
+- **Slug**: `skimlinks`
+- **Auth model**: oauth2
+- **Base URL**: https://api-reports.skimlinks.com
+- **Environment variables**: `SKIMLINKS_CLIENT_ID`, `SKIMLINKS_CLIENT_SECRET`, `SKIMLINKS_PUBLISHER_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-05-28
+- **Documentation**: https://developers.skimlinks.com/reporting.html
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- listProgrammes / getProgramme require the Merchant API which is gated behind a Skimlinks Managed account and a Product Key; both operations throw NotImplementedError for non-managed accounts.
+- listClicks is not exposed via the public Skimlinks publisher Reporting API; the operation throws NotImplementedError.
+- generateTrackingLink uses the go.skimresources.com deeplink format; a site ID (SKIMLINKS_PUBLISHER_ID with an appended site suffix) is required. The exact publisherId-X-siteId format is constructed from SKIMLINKS_PUBLISHER_ID.
+- OAuth2 access tokens have a limited lifetime; the adapter caches the token in memory and re-fetches on expiry.
+
+### Findings
+
+# Skimlinks adapter — research findings
+
+Built from public API documentation as of 2026-05-28; live verification pending credentials.
+
+## Documentation sources used
+
+- Skimlinks Reporting API overview: https://developers.skimlinks.com/reporting.html
+- Skimlinks Merchant API overview: https://developers.skimlinks.com/
+- Skimlinks Commission Reporting API legacy docs: https://api-reports.skimlinks.com/doc/doc_report_v0.3.html
+- Skimlinks Apiary reporting docs: https://jsapi.apiary.io/apis/skimlinksreporting/
+- Skimlinks Publisher support: https://support.skimlinks.com/hc/en-us/articles/223835348-What-is-the-Reporting-API
+- Skimlinks Merchant API support: https://support.skimlinks.com/hc/en-us/articles/360024600634-What-is-the-Merchant-API
+- September 2022 API changes: https://support.skimlinks.com/hc/en-us/articles/6993058288541-September-12-2022-Changes-to-Merchant-and-Commissions-APIs
+- Skimlinks deeplink documentation: https://developers.skimlinks.com/link.html
+- Skimlinks SDK (Python): https://github.com/skimhub/skimlinks-sdk
+- Community integration notes (Strackr): https://strackr.com/docs/skimlinks
+
+## Authentication model
+
+Skimlinks uses OAuth2 client-credentials grant. Confirmed from:
+- Skimlinks API documentation referencing Client ID + Client Secret.
+- Integration guides stating credentials are exchanged for a bearer token.
+- The Skimlinks SDK requiring `--client-id` and `--client-secret` parameters.
+
+Token endpoint: `https://authentication.skimapis.com/access_token`
+- Grant type: `client_credentials`
+- Body: `application/x-www-form-urlencoded`
+- Response: `{ access_token, token_type, expires_in }`
+
+The exact token endpoint URL was confirmed from the task brief (which references
+the public Skimlinks developer docs) and is consistent with the `skimapis.com`
+domain used for other Skimlinks services.
+
+## Reporting API
+
+Base URL: `https://api-reports.skimlinks.com`
+
+Commissions endpoint (confirmed from legacy docs + community reports):
+```
+GET /publishers/{publisherId}/commissions
+  ?date_from=YYYY-MM-DD
+  &date_to=YYYY-MM-DD
+  [&status=pending|approved|declined|paid]
+  [&merchant_id=N]
+```
+
+Response field names (confirmed from legacy docs at `api-reports.skimlinks.com/doc/doc_report_v0.3.html`
+and community integration reports):
+- `commissionId` / `commissionID`
+- `amount` / `commissionValue` (field name changed in 2022 API update)
+- `orderValue`
+- `currency`
+- `status` — values: `pending`, `approved`, `declined`, `paid`
+- `merchantId` / `merchantID`
+- `merchantName`
+- `transactionDate`
+- `approvedDate`
+- `paidDate`
+- `clickTime`
+- `declineReason`
+- `customId` (SubID tracking)
+
+The September 2022 API changes standardised naming conventions, renaming some
+fields. The adapter reads both old and new names defensively.
+
+## Merchant API
+
+The Merchant API (for listing merchants/programmes) is at `https://merchants.skimapis.com`
+and requires a Product Key in addition to the OAuth2 bearer token. The Product Key
+is only issued to Managed (enterprise) Skimlinks accounts. This is confirmed by:
+- https://developers.skimlinks.com/product-key.html
+- https://support.skimlinks.com/hc/en-us/articles/360024600634-What-is-the-Merchant-API
+
+The `listProgrammes` and `getProgramme` operations therefore throw `NotImplementedError`
+for standard publisher accounts.
+
+## Tracking link format
+
+Confirmed from Skimlinks documentation and live link inspection by the community:
+
+```
+https://go.skimresources.com/?id={publisherId}X{siteId}&xs=1&url={encodedDestination}
+```
+
+Where:
+- `id` = `{publisherId}X{siteId}` — for single-site publishers, siteId = publisherId.
+- `xs=1` — enables Skimlinks extended tracking mode (standard for deeplinks).
+- `url` — URL-encoded destination URL.
+
+The `X` separator and `xs=1` flag are confirmed from community observations of
+live Skimlinks links (format is consistent across multiple publisher reports).
+
+## Click data
+
+Not available via the public publisher Reporting API. Confirmed from:
+- Skimlinks documentation listing available report methods (no click-level report).
+- The legacy API docs listing: Report Commissions History, Report Commissions,
+  Report Days, Report Merchants, Report Days by Merchant — no clicks endpoint.
+
+## TODO(verify) annotations
+
+The adapter marks the following with `// TODO(verify)` — these should be confirmed
+against a live account before bumping `claim_status` to `partial`:
+
+1. The exact Merchant API base URL (`https://merchants.skimapis.com`).
+2. The exact response field names for commissions (the 2022 rename may have left
+   old names as aliases, or may have removed them entirely).
+3. Whether the commissions endpoint supports cursor-based pagination or only
+   page-number pagination.
+4. The maximum date window per commissions API call (adapter assumes no cap).
+5. Whether `go.skimresources.com/?id={publisherId}X{publisherId}` works for
+   single-site publishers or if the siteId is always distinct from the publisherId.
+
+## Claim status rationale
+
+`experimental` — the adapter implements 4 of 7 canonical operations (verifyAuth,
+listTransactions, getEarningsSummary, generateTrackingLink) and throws
+`NotImplementedError` for the remaining 3 (listProgrammes, getProgramme, listClicks)
+for documented reasons. No live account validation has been performed.
+
+## Sovrn Commerce
+
+### Quick facts
+
+- **Slug**: `sovrn-commerce`
+- **Auth model**: custom
+- **Base URL**: https://viglink.io
+- **Environment variables**: `SOVRN_SECRET_KEY`, `SOVRN_API_KEY`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-05-28
+- **Documentation**: https://developer.sovrn.com/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- The transactions endpoint returns one day of data per call; wide date windows require sequential calls.
+- Click-level data is not exposed as a distinct click-stream API; listClicks is unsupported.
+- Merchant (programme) listing is aggregated reporting data, not a dedicated catalogue endpoint.
+- getProgramme is derived from the merchants report filtered by merchant name; no single-merchant lookup endpoint exists in the public API.
+- Commission status normalisation is best-effort; Sovrn Commerce does not expose a canonical status field on transactions.
+
+### Findings
+
+# Sovrn Commerce — Findings
+
+**Built from public docs as of 2026-05-28; live verification pending credentials.**
+
+---
+
+## Summary
+
+This adapter was built using the publicly accessible Sovrn Commerce developer documentation and knowledge base. No live credentials were available at time of authoring. All field names, endpoint paths, and response shapes are marked `// TODO(verify)` in the adapter source and should be confirmed against a live account before promoting the `claim_status` from `experimental`.
+
+---
+
+## Documentation sources used
+
+| Source | URL | Notes |
+|--------|-----|-------|
+| Sovrn Developer Centre | https://developer.sovrn.com/ | Reference for endpoint paths; 403 on direct fetch |
+| Sovrn Knowledge Base (API implementation) | https://knowledge.sovrn.com/how-to-implement-sovrn-commerce-apis | Authentication format confirmed |
+| VigLink support (secret key location) | https://support.viglink.com/hc/en-us/articles/360007678554 | Key location in dashboard |
+| VigLink Developer Guide | https://support.viglink.com/hc/en-us/articles/216688298-VigLink-Developer-Guide | Header format |
+| Strackr Sovrn Commerce API docs | https://strackr.com/docs/sovrn-commerce | Cross-reference (403 on fetch) |
+| Sovrn Blog (transactions API launch) | http://www.viglink.com/blog/2018/05/02/understand-the-click-to-purchase-funnel-with-viglinks-transaction-reporting-api/ | Date param pattern |
+| clean-links GitHub issue | https://github.com/Sh1d0w/clean-links/issues/20 | redirect.viglink.com URL format |
+
+---
+
+## Confirmed facts (from public documentation)
+
+1. **Authentication header format**: `Authorization: secret {SECRET_KEY}` — the word "secret" is a literal prefix, not a scheme name. Confirmed across multiple independent sources.
+
+2. **Base URL**: `https://viglink.io/v1/` — used in official curl examples (e.g. `curl ... viglink.io/v1/reports/transactions?clickDate=2023-01-01`).
+
+3. **Transactions endpoint**: `GET /v1/reports/transactions` accepts `clickDate` (YYYY-MM-DD) and returns one day of data per call.
+
+4. **Merchants endpoint**: `GET /v1/reports/merchants` — aggregated merchant performance data. Rate limit of 1 request per 10 seconds (documented for Commerce Merchant APIs).
+
+5. **Tracking link URL pattern**: `https://redirect.viglink.com/?key={SOVRN_API_KEY}&u={encodedUrl}` — observed in the wild and referenced in delink tools.
+
+6. **Two credential types**: SOVRN_SECRET_KEY (server-side, for reporting) and SOVRN_API_KEY (per-site, for links). Both found in Settings → Key icon in the dashboard.
+
+---
+
+## Uncertainties (TODO(verify))
+
+| Field / behaviour | Uncertainty | Where noted |
+|-------------------|-------------|-------------|
+| Exact JSON field names in `/reports/transactions` | Field names inferred: `revenueId`, `commissionId`, `clickId`, `clickDate`, `commissionDate`, `orderValue`, `publisherNetRevenue`. Confirmed from partial doc snippets but not from a live response. | adapter.ts `SovrnTransactionRaw` |
+| Exact JSON field names in `/reports/merchants` | Field names inferred: `merchant`, `merchantId`, `clicks`, `revenue`, `commission`, `epc`. Not confirmed from a live response. | adapter.ts `SovrnMerchantRaw` |
+| `merchantId` presence | It is not clear whether the merchants endpoint always returns a numeric `merchantId`. The adapter falls back to a slugified name if absent. | adapter.ts `toProgramme` |
+| Currency field name | The `currency` field name in responses is inferred; Sovrn may use a different casing or field name. | adapter.ts `SovrnTransactionRaw` |
+| Status field existence | There is no documented status field in Sovrn Commerce transactions. The adapter maps any present `status` string but defaults to `'other'`. | adapter.ts `mapTransactionStatus` |
+| `/reports/merchants` date range support | It is not confirmed whether `clickDate` accepts a range or only a single date for this endpoint. | adapter.ts `listProgrammes` |
+| `/reports/transactions` rate limit | The 1-request-per-10s rate limit is documented for Commerce Merchant APIs; unclear if it also applies to transactions. | adapter.ts `generateDateRange` comment |
+| Auth-check endpoint | Using `/reports/merchants?clickDate=today` as the auth-check. A dedicated whoami endpoint would be more reliable but is not documented. | auth.ts `verifyAuth` |
+| `redirect.viglink.com` required params | `opt=true` and `prodOvrd=WRA` appear in some observed URLs but are not required for basic tracking. Adapter omits them. | adapter.ts `generateTrackingLink` |
+
+---
+
+## Recommended verification steps (for first live-account test)
+
+1. Call `verifyAuth()` with a valid Secret key; confirm the response is 200 and inspect the body structure.
+2. Call `GET /v1/reports/merchants?clickDate=YYYY-MM-DD` and compare the JSON field names to `SovrnMerchantRaw` in adapter.ts.
+3. Call `GET /v1/reports/transactions?clickDate=YYYY-MM-DD` (a date known to have traffic) and compare the JSON field names to `SovrnTransactionRaw`.
+4. Confirm whether a `status` field appears on transactions, and what values it takes.
+5. Confirm whether `currency` appears in the response.
+6. Generate a tracking link and click it manually; confirm it resolves to the correct destination with Sovrn tracking applied.
+7. Update all `// TODO(verify)` comments in the adapter and bump `last_verified` in `network.json`.
+8. Promote `claim_status` from `experimental` to `partial` once the above steps pass.
+
+## Tradedoubler
+
+### Quick facts
+
+- **Slug**: `tradedoubler`
+- **Auth model**: bearer
+- **Base URL**: https://connect.tradedoubler.com
+- **Environment variables**: `TRADEDOUBLER_API_TOKEN`, `TRADEDOUBLER_ORGANIZATION_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-05-28
+- **Documentation**: https://tradedoubler.docs.apiary.io/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Click-level data is not exposed via the public Tradedoubler publisher API; listClicks is unsupported.
+- Tradedoubler uses separate per-product tokens (PRODUCTS, CONVERSIONS, VOUCHERS); this adapter uses the main Organisation API token (bearer) from connect.tradedoubler.com.
+- The TRADEDOUBLER_ORGANIZATION_ID is required for all publisher API calls; it is not auto-derived at v0.1.
+
+### Findings
+
+# Tradedoubler API Research Findings
+
+**Date:** 2026-05-28  
+**Status:** Built from public API documentation; live verification pending credentials.
+
+## Summary
+
+The Tradedoubler adapter was built from public documentation sources without access to a live
+account. All endpoint URLs, field names, and authentication details are derived from the sources
+listed below and should be treated as provisional until verified against real credentials.
+
+## Authentication Model
+
+Tradedoubler operates **two distinct API surfaces** with different authentication schemes:
+
+1. **connect.tradedoubler.com** (modern, used by this adapter)
+   - Auth: OAuth2 bearer token in `Authorization: Bearer {token}` header
+   - Documented at: https://tradedoubler.docs.apiary.io/
+   - Endpoints: `/publisher/programs`, `/publisher/report/transactions`, `/usermanagement/users/me`, etc.
+
+2. **api.tradedoubler.com** (legacy/per-product, NOT used by this adapter)
+   - Auth: Token as `?token={sha1_hash}` query parameter
+   - Separate per-product tokens: PRODUCTS, CONVERSIONS, VOUCHERS
+   - Documented at: https://dev.tradedoubler.com/
+
+This adapter targets surface (1). Surface (2) would require a separate token management strategy
+and is out of scope for the publisher-side v0.1 adapter.
+
+## Documentation Sources Used
+
+| Source | URL | Reliability |
+|--------|-----|-------------|
+| Tradedoubler Publisher Management API (Apiary) | https://tradedoubler.docs.apiary.io/ | High (official) |
+| Tradedoubler API Blueprint source | https://github.com/tradedoubler/publicapi-docs | High (official) |
+| Tradedoubler Developer Portal | https://dev.tradedoubler.com/ | High (official) |
+| Tradedoubler Link Converter docs | https://dev.tradedoubler.com/link-converter/publisher/ | High (official) |
+| whitelabeled/tradedoubler-api-client README | https://github.com/whitelabeled/tradedoubler-api-client | Medium (third-party) |
+| padosoft/laravel-affiliate-network | https://github.com/padosoft/laravel-affiliate-network | Medium (third-party) |
+
+## Key Findings
+
+### Programmes API
+- Endpoint: `GET /publisher/programs` with pagination (`offset`, `limit`, max 100).
+- Status values from Apiary: JOINED, NOT_JOINED, APPLIED, DECLINED, TERMINATED.
+- Response includes `id`, `name`, `status`, `currency`, `advertiserUrl`, `category`/`categories`.
+- Single programme: `GET /publisher/programs/detail?programId={id}` returns tariffs and default tracking link.
+
+### Transactions API
+- Endpoint: `GET /publisher/report/transactions` with `fromDate`/`toDate` (YYYYMMDD format).
+- Status codes: `A` (Accepted), `P` (Pending), `D` (Denied) — confirmed from Apiary docs.
+- Response fields confirmed from Apiary + whitelabeled client:
+  `transactionId`, `programId`, `status`, `statusReason`, `commission`, `orderValue`,
+  `timeOfTransaction`, `timeOfLastModified`, `orderNr`, `clickDate`, `epi1`, `epi2`.
+- `reasonId`/`reasonName` added 2022-06-01 (per Apiary changelog).
+- `paid` field: presence and type (`boolean`) NOT confirmed from docs — marked `// TODO(verify)`.
+
+### Tracking Links
+- Format confirmed from Tradedoubler tracking documentation:
+  `https://clk.tradedoubler.com/click?p={programId}&a={siteId}&url={encodedUrl}`
+- Both `clk.tradedoubler.com` and `clkuk.tradedoubler.com` are valid domains.
+- `p` (program ID) and `a` (site/affiliate ID) are mandatory; `url` must be last.
+
+### Auth Check
+- Endpoint: `GET /usermanagement/users/me` — confirmed from Apiary docs.
+- Returns user ID, email, first/last name, organisationId.
+- `organisationId` field name not confirmed against live account — marked `// TODO(verify)`.
+
+## Fields Marked TODO(verify)
+
+The following fields require live account testing to confirm:
+
+| Field | Location | Issue |
+|-------|----------|-------|
+| `paid` field (boolean) | TdTransactionRaw | Existence and type not confirmed in docs |
+| `organisationId` vs `organizationId` | TdUserMe | Spelling variant not confirmed |
+| `currency` vs `currencyCode` vs `currency3Code` | TdProgrammeRaw, TdTransactionRaw | Multiple potential field names |
+| `programName` vs `name` | TdProgrammeRaw | Alternate field names in programmes response |
+| `commissionMin`/`commissionMax` | TdProgrammeRaw | Commission field names not fully confirmed |
+| `categories` shape | TdProgrammeRaw | Whether array of strings or objects |
+| `siteId` vs `orgId` for tracking `a=` param | generateTrackingLink | Multi-site publisher disambiguation |
+| Date format in responses | TdTransactionRaw | ISO 8601 vs Unix timestamp for timeOfTransaction |
+
+## Limitations Discovered During Research
+
+1. The `dev.tradedoubler.com` developer portal returns HTTP 403 for unauthenticated requests,
+   preventing direct documentation access. Documentation was obtained via the public GitHub
+   repository and the Apiary API Blueprint files.
+
+2. Click-level data is confirmed NOT available via the publisher API; only aggregated statistics
+   are exposed via `GET /publisher/report/statistics`.
+
+3. The `api.tradedoubler.com` legacy surface requires per-product SHA-1 tokens and is architecturally
+   separate from the connect.tradedoubler.com bearer-token surface. The two surfaces cannot share
+   credentials.
+
+4. Tradedoubler's currency handling for multi-currency publisher accounts is not documented clearly;
+   the `reportCurrencyCode` query parameter exists but its interaction with commission values is
+   unconfirmed.
+
+## Tradedoubler (Advertiser)
+
+### Quick facts
+
+- **Slug**: `tradedoubler-advertiser`
+- **Auth model**: custom
+- **Base URL**: https://reports.tradedoubler.com
+- **Environment variables**: `TRADEDOUBLER_ADV_TOKEN`, `TRADEDOUBLER_ADV_ORGANIZATION_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-05-28
+- **Documentation**: https://dev.tradedoubler.com/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Read-only at v0.1. The client refuses any non-GET HTTP method.
+- Uses the Tradedoubler legacy reports API (reports.tradedoubler.com). The XML matrix response format has been derived from community implementations and carries // TODO(verify) annotations throughout.
+- listMediaPartners extracts unique publishers from the event breakdown report rather than a dedicated publishers endpoint. Only publishers with at least one event in the query window are returned.
+- getProgrammePerformance returns event-level rows (one per conversion); no click data is available in this report surface.
+- generateTrackingLink, listTransactions, getEarningsSummary, and listClicks are not implemented at v0.1.
+
+### Findings
+
+# Tradedoubler advertiser adapter — findings
+
+Built from public docs as of 2026-05-28; live verification pending credentials.
+
+## Research method
+
+This adapter was built by examining:
+
+1. The official Tradedoubler developer portal at
+   [https://dev.tradedoubler.com/](https://dev.tradedoubler.com/).
+2. The Tradedoubler public API documentation repository at
+   [https://github.com/tradedoubler/publicapi-docs](https://github.com/tradedoubler/publicapi-docs)
+   (API Blueprint format, links to Apiary — apiary.io returned 403 to
+   automated fetch during this research).
+3. Community PHP wrapper at
+   [https://github.com/jongotlin/TradedoublerReportsWrapper](https://github.com/jongotlin/TradedoublerReportsWrapper)
+   — this is the primary source for the XML column names used in this
+   adapter.
+4. Community PHP API integration at
+   [https://github.com/wp-plugins/affiliate-power/blob/master/apis/tradedoubler.php](https://github.com/wp-plugins/affiliate-power/blob/master/apis/tradedoubler.php)
+   — corroborated the `key` (token) query-parameter auth scheme and the
+   `pendingStatus` values (A = Approved, P = Pending, D = Declined).
+5. XML mock data at
+   [https://github.com/denodell/tradedoubler/blob/master/test/mock-data/advertisers.xml](https://github.com/denodell/tradedoubler/blob/master/test/mock-data/advertisers.xml)
+   — used to infer programme response column names.
+
+## Auth model
+
+Tradedoubler's legacy reporting API authenticates via a `token=<value>`
+query parameter (not a `Bearer` header). The token is a 40-character
+hexadecimal SHA-1 string obtained from Account → Manage tokens, selecting
+the **REPORTS** system.
+
+A failed auth does **not** return a 4xx HTTP status. Instead, Tradedoubler
+returns HTTP 200 with an HTML login page. The adapter detects this by
+checking whether the response body begins with `<!doctype html` or `<html`.
+
+## Report API endpoint
+
+The reports endpoint is:
+
+```
+GET https://reports.tradedoubler.com/pan/aReport3Key.action
+  ?token={TOKEN}
+  &reportName={REPORT_NAME}
+  &format=XML
+  &columns={COMMA_SEPARATED_COLUMN_IDS}
+  &organizationId={ORG_ID}
+  [&startDate=DD.MM.YYYY&endDate=DD.MM.YYYY]
+  [&programId={PROGRAM_ID}]
+```
+
+## Report names used
+
+- `aAffiliateMyProgramsReport` — programme (brand) list for the account.
+  Source: `TradedoublerReportsWrapper/Tradedoubler.php::getPrograms()`.
+- `aAffiliateEventBreakdownReport` — conversion event breakdown by
+  publisher. Source: same wrapper, `getTransactions()` method.
+
+## Column names (TODO(verify))
+
+**aAffiliateMyProgramsReport:**
+- `programId` — Tradedoubler programme identifier
+- `programName` — programme name (may also appear as `siteName`)
+- `status` — A (active), P (pending), D (declined), S (suspended)
+- `programTariffPercentage` — commission percentage
+- `programTariffAmount` — flat commission amount
+- `programTariffCurrency` — currency code
+
+Source: XML mock at `denodell/tradedoubler/test/mock-data/advertisers.xml`
+and `TradedoublerReportsWrapper`.
+
+**aAffiliateEventBreakdownReport:**
+- `timeOfEvent` — event date (format `d.m.Y` e.g. `01.05.2026`)
+- `siteId` — publisher site ID
+- `siteName` — publisher site name
+- `pendingStatus` — A (approved), P (pending), D (declined)
+- `orderValue` — gross order value
+- `affiliateCommission` — commission paid to publisher
+- `programId` — programme ID
+- `eventName` — event type name (e.g. Sale, Lead)
+- `currencyId` — currency code
+
+Source: `TradedoublerReportsWrapper/Tradedoubler.php::getTransactions()`.
+
+## Date format
+
+Tradedoubler uses `d.m.Y` format for dates in API request parameters
+(e.g. `01.05.2026`). Responses also use this format in the `timeOfEvent`
+column. The adapter converts ISO dates from callers to this format and
+parses API dates back to ISO.
+
+Source: `TradedoublerReportsWrapper/Tradedoubler.php` — uses `Y-m-d` in
+`strtotime` but the URL shows `format=XML` and the date params appear in
+community wrappers as `d.m.y`.
+
+## XML response format
+
+Tradedoubler wraps report data in an XML matrix structure:
+
+```xml
+<report>
+  <matrix>
+    <columnDefs>
+      <columnDef id="programId" label="Programme ID" dataType="INTEGER" />
+      ...
+    </columnDefs>
+    <rows>
+      <row>
+        <col>12345</col>
+        ...
+      </row>
+    </rows>
+  </matrix>
+</report>
+```
+
+Column values in `<col>` elements match the order of `<columnDef>`
+elements in `<columnDefs>`. The adapter parses this via regex (not a full
+XML parser, to avoid adding a dependency).
+
+Source: inferred from `TradedoublerReportsWrapper` response parsing and
+the `advertiserxml` fixture in community tools.
+
+## Known gaps requiring live verification
+
+1. **Exact column names** for `aAffiliateMyProgramsReport` — may use
+   `siteName` instead of `programName` in some contexts.
+2. **Exact status values** — confirmed A/P/D from community code but S
+   (suspended) is inferred.
+3. **Date format** — `d.m.Y` inferred; could be `d.m.y` (two-digit year)
+   in some contexts. The adapter handles both.
+4. **XML root element** — may be `<report>` or a different wrapper in some
+   account configurations.
+5. **Organization ID scope** — whether `organizationId` is required or
+   optional for the programme report.
+6. **Authentication failure code** — confirmed HTML-on-200 from community
+   wrapper error detection, but the exact HTML content may vary.
+7. **Newer management API** — the `connect.tradedoubler.com` REST
+   management API (documented at `advertiserwip.docs.apiary.io`) is not
+   used by this adapter because Apiary returned 403 during research.
+   A future PR should switch to that surface if it provides richer JSON
+   responses and a dedicated publishers endpoint.
+
 ## How to reproduce
 
 From a fresh checkout:
@@ -1186,4 +2449,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-05-23 09:49 UTC._
+_Last regenerated 2026-05-28 20:09 UTC._
