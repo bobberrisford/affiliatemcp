@@ -1,0 +1,30 @@
+{
+  "campaigns": [
+    {
+      "campaign_id": "CAM-1001",
+      "campaign_name": "Acme Widgets UK",
+      "status": "active",
+      "currency": "GBP",
+      "campaign_reference": "acme-widgets-uk",
+      "advertiser_url": "https://acme.example.com"
+    },
+    {
+      "campaign_id": "CAM-1002",
+      "campaign_name": "Gadget Store EU",
+      "status": "active",
+      "currency": "EUR",
+      "campaign_reference": "gadget-store-eu",
+      "advertiser_url": "https://gadgets.example.com"
+    },
+    {
+      "campaign_id": "CAM-1003",
+      "campaign_name": "Old Brand (Paused)",
+      "status": "paused",
+      "currency": "GBP",
+      "campaign_reference": "old-brand",
+      "advertiser_url": "https://oldbrand.example.com"
+    }
+  ],
+  "total": 3,
+  "page": 1
+}

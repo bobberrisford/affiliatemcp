@@ -1,0 +1,19 @@
+{
+  "publishers": [
+    {
+      "publisher_id": "PUB-201",
+      "publisher_name": "BestDealsDaily",
+      "status": "active"
+    },
+    {
+      "publisher_id": "PUB-202",
+      "publisher_name": "CouponHub",
+      "status": "pending"
+    },
+    {
+      "publisher_id": "PUB-203",
+      "publisher_name": "OldReview.co.uk",
+      "status": "inactive"
+    }
+  ]
+}
