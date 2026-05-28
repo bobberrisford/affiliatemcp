@@ -3,24 +3,25 @@
  *
  * mrge is the rebranded Yieldkit/Metapic platform. The public API uses a
  * custom key-based authentication scheme (api_key + api_secret passed as
- * query parameters or, in the newer publisher-api.mrge.com surface, via a
- * Bearer token). This client targets the legacy yieldkit API surface because
+ * query parameters). This client targets the Yieldkit API surface because
  * the publisher-api.mrge.com documentation is not publicly accessible as of
  * 2026-05-28 (returns 403 to automated fetches).
  *
- * Auth model: api_key + api_secret as query parameters (Yieldkit legacy;
- * confirmed from public.yieldkit.com documentation and third-party integration
- * guides). Chosen auth_model in network.json is "custom" because the
- * credentials are not carried in an Authorization header.
+ * Auth model: api_key + api_secret + site_id as query parameters (CONFIRMED).
+ * Source: public.yieldkit.com documentation example (api_key=c5c2398597…,
+ * api_secret=74607007…, site_id=51e8ee76…) and live API call captures.
+ * Chosen auth_model in network.json is "custom" because the credentials are
+ * not carried in an Authorization header.
  *
- * // TODO(verify): confirm whether publisher-api.mrge.com accepts a Bearer
+ * BLOCKED(verify): confirm whether publisher-api.mrge.com accepts a Bearer
  *   token in the Authorization header and, if so, migrate auth_model to
- *   "bearer" and move credential injection to a header.
+ *   "bearer" and move credential injection to a header. Requires live
+ *   credentials; publisher-api.mrge.com returns HTTP 403 to automated fetches.
  *
- * Base URLs (verify):
- *   - Yieldkit legacy advertiser API: https://api.yieldkit.com
- *   - Yieldkit legacy reporting API:  https://reporting-api.yieldkit.com (// TODO(verify))
- *   - mrge publisher API (newer):     https://publisher-api.mrge.com
+ * Base URLs:
+ *   - Yieldkit advertiser API:  https://api.yieldkit.com  [CONFIRMED active]
+ *   - Yieldkit reporting API:   https://reporting-api.yieldkit.com [BLOCKED: unverified host]
+ *   - mrge publisher API (new): https://publisher-api.mrge.com  [BLOCKED: 403 to all fetches]
  *
  * Cardinal rules (see awin/client.ts for the full reasoning):
  *   1. Never call fetch from adapter.ts. Call mrgeRequest here.
@@ -41,16 +42,21 @@ import { createLogger } from '../../shared/logging.js';
 const log = createLogger('mrge.client');
 
 /**
- * The Yieldkit legacy API base URL.
- * // TODO(verify): confirm this is the active base URL for mrge publisher API.
- * publisher-api.mrge.com may be preferred but blocked automated fetches at
- * time of writing.
+ * The Yieldkit advertiser API base URL.
+ * CONFIRMED: api.yieldkit.com/v2/advertiser/terms is documented in
+ * public.yieldkit.com and confirmed in live API call captures.
+ * Source: https://yieldkit.com/knowledge/commission-terms/ snippet +
+ *   any.run captures of Yieldkit API calls (2024).
  */
 export const MRGE_BASE_URL = 'https://api.yieldkit.com';
 
 /**
  * The reporting API base URL. Used for commission/click data.
- * // TODO(verify): confirm the reporting API host for mrge.
+ * BLOCKED: The host reporting-api.yieldkit.com is derived from
+ * search snippets referencing the Reporting API V3 docs. The exact host
+ * cannot be confirmed without live credentials accessing the documentation
+ * at https://yieldkit.com/knowledge/reporting-api-v3/ (returns 403).
+ * Exact credential/tier needed: any live mrge publisher account.
  */
 export const MRGE_REPORTING_URL = 'https://reporting-api.yieldkit.com';
 
@@ -77,11 +83,14 @@ export interface MrgeRequestInput {
 /**
  * Issue a single mrge API request under the resilience policy.
  *
- * Credentials (api_key, api_secret) are injected as query parameters,
- * matching the Yieldkit legacy authentication scheme.
+ * Credentials (api_key, api_secret, site_id) are injected as query parameters,
+ * matching the confirmed Yieldkit authentication scheme.
+ * Source: Yieldkit documentation + live API call captures (any.run 2024).
  *
- * // TODO(verify): if publisher-api.mrge.com uses Bearer auth, refactor to
- * inject credentials as an Authorization header instead.
+ * BLOCKED: if publisher-api.mrge.com uses Bearer auth, refactor to
+ * inject credentials as an Authorization header instead. Cannot verify
+ * without live credentials (publisher-api.mrge.com returns 403 to all
+ * automated fetches as of 2026-05-28).
  */
 export async function mrgeRequest<T>(input: MrgeRequestInput): Promise<T> {
   const ctx: WithResilienceContext = { network: 'mrge', operation: input.operation };

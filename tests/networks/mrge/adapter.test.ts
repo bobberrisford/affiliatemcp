@@ -10,8 +10,8 @@
  *   - PRD-relevant tests are tagged with §15.x in their `it` strings.
  *
  * NOTE: The mrge API shapes are built from public documentation and are
- * marked with // TODO(verify) where uncertain. Tests cover the normalisation
- * logic that is independent of the live API response shape.
+ * marked with BLOCKED(verify) where uncertain (hardened 2026-05-28).
+ * Tests cover the normalisation logic independent of live API response shape.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -283,8 +283,10 @@ describe('mrge.listClicks', () => {
 // ---------------------------------------------------------------------------
 
 describe('mrge.generateTrackingLink', () => {
-  it('constructs a tracking URL using the advertiser tracking_url from fixture', async () => {
+  it('constructs a tracking URL using the tracking_url field from the advertiser fixture', async () => {
     // getProgramme → listProgrammes (filtered client-side)
+    // The fixture for programme 1001 has tracking_url = "https://click.yieldkit.com/1001?site_id=12345"
+    // which is used as the base URL for the deep-link.
     mockFetchQueue([fakeResponse(loadFixture('advertisers.json'))]);
     const link = await mrgeAdapter.generateTrackingLink({
       programmeId: '1001',
@@ -295,6 +297,28 @@ describe('mrge.generateTrackingLink', () => {
     expect(link.trackingUrl).toContain('click.yieldkit.com/1001');
     expect(link.trackingUrl).toContain(encodeURIComponent('https://www.atollsbookshop.example.com/books?q=test'));
     expect(link.destinationUrl).toBe('https://www.atollsbookshop.example.com/books?q=test');
+  });
+
+  it('falls back to r.srvtrck.com redirect when no tracking_url in advertiser data', async () => {
+    // Programme without a tracking_url field — triggers the confirmed Yieldkit
+    // redirect URL fallback pattern (r.srvtrck.com/v1/redirect).
+    const fixtureNoTrackingUrl = [
+      {
+        id: 9999,
+        advertiser_id: 9999,
+        name: 'No Tracking URL Shop',
+        status: 'active',
+        currency: 'EUR',
+      },
+    ];
+    mockFetchQueue([fakeResponse(fixtureNoTrackingUrl)]);
+    const link = await mrgeAdapter.generateTrackingLink({
+      programmeId: '9999',
+      destinationUrl: 'https://www.example.com/product',
+    });
+    expect(link.trackingUrl).toContain('r.srvtrck.com/v1/redirect');
+    expect(link.trackingUrl).toContain('type=url');
+    expect(link.trackingUrl).toContain(encodeURIComponent('https://www.example.com/product'));
   });
 
   it('throws a config_error envelope when programmeId is missing', async () => {
@@ -354,18 +378,30 @@ describe('mrge.verifyAuth', () => {
 // ---------------------------------------------------------------------------
 
 describe('mrge.validateCredential', () => {
-  it('rejects malformed MRGE_SITE_ID (non-numeric, zero, negative)', async () => {
+  // Yieldkit site IDs are 24- or 32-character hex strings, NOT plain integers.
+  // Source: public.yieldkit.com docs + live API call captures (any.run 2024).
+  it('rejects malformed MRGE_SITE_ID (too short, non-hex characters, plain integer)', async () => {
     expect((await mrgeAdapter.validateCredential('MRGE_SITE_ID', 'abc')).ok).toBe(false);
     expect((await mrgeAdapter.validateCredential('MRGE_SITE_ID', '0')).ok).toBe(false);
     expect((await mrgeAdapter.validateCredential('MRGE_SITE_ID', '-5')).ok).toBe(false);
+    // Plain integers no longer valid — Yieldkit site IDs are hex strings
+    expect((await mrgeAdapter.validateCredential('MRGE_SITE_ID', '12345')).ok).toBe(false);
+    // Non-hex characters not allowed
+    expect((await mrgeAdapter.validateCredential('MRGE_SITE_ID', 'zzzzzzzzzzzzzzzzzzzzzzzz')).ok).toBe(false);
   });
 
-  it('accepts a valid MRGE_SITE_ID', async () => {
-    expect((await mrgeAdapter.validateCredential('MRGE_SITE_ID', '12345')).ok).toBe(true);
+  it('accepts a valid MRGE_SITE_ID (24-char hex, MongoDB ObjectId format)', async () => {
+    // Example from Yieldkit documentation: site_id=51e8ee76e4b0dc18d49a4337
+    expect((await mrgeAdapter.validateCredential('MRGE_SITE_ID', '51e8ee76e4b0dc18d49a4337')).ok).toBe(true);
+  });
+
+  it('accepts a valid MRGE_SITE_ID (32-char hex, MD5 format)', async () => {
+    // Example from live API call capture (any.run 2024): site_id=0fb9199cb9ce464f9c82523578c269b4
+    expect((await mrgeAdapter.validateCredential('MRGE_SITE_ID', '0fb9199cb9ce464f9c82523578c269b4')).ok).toBe(true);
   });
 
   it('accepts a non-trivially-short MRGE_API_KEY with a deferred-validation message', async () => {
-    const r = await mrgeAdapter.validateCredential('MRGE_API_KEY', 'yk_longkey123');
+    const r = await mrgeAdapter.validateCredential('MRGE_API_KEY', 'c5c2398597a6adcd9b149ad745f207f4');
     expect(r.ok).toBe(true);
   });
 

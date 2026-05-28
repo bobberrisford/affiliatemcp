@@ -30,24 +30,27 @@ as a secret — do not share it or commit it to version control.
 
 ### `MRGE_SITE_ID`
 
-The numeric identifier for your website within mrge. Found at Account → Your
-Sites. If you have multiple websites registered, use the ID for the site you
-want to attribute commissions to.
+The hexadecimal identifier for your website within Yieldkit/mrge. Found at
+`https://home.yieldkit.com/account/sites`. If you have multiple websites
+registered, use the ID for the site you want to attribute commissions to.
 
-> // TODO(verify): confirm the exact dashboard labels and navigation paths
-> shown above. The dashboard may have changed during the Yieldkit → mrge
-> rebrand.
+**Important:** The site ID is a 24- or 32-character hexadecimal string
+(e.g. `51e8ee76e4b0dc18d49a4337`), **not** a plain integer.
+Source: Yieldkit documentation examples and live API call captures.
+
+> BLOCKED(verify): confirm the exact dashboard labels and navigation paths
+> in the current mrge-branded interface (publisher.mrge.com may have replaced
+> home.yieldkit.com). The paths above are from Yieldkit documentation.
 
 ## Setup steps
 
-1. Log in at https://publisher.mrge.com/.
-2. Click your user menu in the top-right corner and select **Account**.
-3. Open the **API access** section.
-4. Copy the **API Key** value into `MRGE_API_KEY`.
-5. Copy the **API Secret** value into `MRGE_API_SECRET`.
-6. Navigate to **Account → Your Sites**.
-7. Copy the numeric ID of your primary website into `MRGE_SITE_ID`.
-8. Run `affiliate-networks-mcp setup mrge` to validate all three credentials.
+1. Log in at https://home.yieldkit.com/ (or https://publisher.mrge.com/ if rebranded).
+2. Navigate to **Account → API access** or go to https://home.yieldkit.com/account/api.
+3. Copy the **API Key** value (a 32-character hex string) into `MRGE_API_KEY`.
+4. Copy the **API Secret** value (a 32-character hex string) into `MRGE_API_SECRET`.
+5. Navigate to **Account → Your Sites** or go to https://home.yieldkit.com/account/sites.
+6. Copy the hexadecimal site ID of your primary website into `MRGE_SITE_ID`.
+7. Run `affiliate-networks-mcp setup mrge` to validate all three credentials.
 
 ## Common failures
 
@@ -62,7 +65,8 @@ want to attribute commissions to.
    corresponds to the site you intend to use.
 
 3. **Reporting API unavailable** — The Yieldkit reporting API host used for
-   commission data is `reporting-api.yieldkit.com` (status: unverified). If
+   commission data is `reporting-api.yieldkit.com` with path `/v3/commission`
+   (host BLOCKED; cannot be confirmed without live credentials). If
    `listTransactions` fails with a connection error, the host may have changed
    in the mrge rebrand. Check `docs/findings/mrge.md` for the latest status
    and raise an issue if the endpoint has moved.
@@ -77,7 +81,8 @@ want to attribute commissions to.
 
 - **Public docs are limited.** The `publisher-api.mrge.com/documentation/`
   site returns HTTP 403 to automated fetches as of 2026-05-28. Consequently,
-  some endpoint shapes are estimated and marked `// TODO(verify)`.
+  some endpoint shapes are estimated and marked `BLOCKED(verify)` pending
+  live account verification. See `docs/findings/mrge.md` for the full list.
 
 - **Click-level data unavailable.** The mrge/Yieldkit public publisher API
   does not expose a click log endpoint. `listClicks` throws

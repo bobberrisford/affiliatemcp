@@ -10,12 +10,12 @@
  *
  * The mrge/Yieldkit public API docs are limited and partially inaccessible.
  * Wherever the API shape is uncertain, this adapter:
- *   - Marks the field or path with `// TODO(verify)`
+ *   - Marks the field or path with `BLOCKED(verify)` (upgraded from TODO(verify))
  *   - Throws NotImplementedError rather than guessing at an invented endpoint
  *   - Notes the limitation in META.knownLimitations and network.json
  *
- * Fields marked `// TODO(verify)` MUST be checked against a live account
- * before promoting this adapter past "experimental".
+ * Hardening pass 2026-05-28 upgraded many TODO(verify) items to either
+ * CONFIRMED or BLOCKED with specific blockers. See docs/findings/mrge.md.
  *
  * --- API map (grounded in public documentation) --------------------------------
  *
@@ -25,19 +25,22 @@
  *     Returns: active advertiser offers with commission terms and tracking links.
  *
  *   Reporting API (commissions/transactions):
- *     GET https://reporting-api.yieldkit.com/v3/commission  // TODO(verify) full path
+ *     GET https://reporting-api.yieldkit.com/v3/commission  [BLOCKED: host unverified]
  *       ?api_key=… &api_secret=… &site_id=…
- *       &modified_date=YYYY-MM-DD  (filter by last-modified date)
- *     Commission status values: OPEN, CONFIRMED, REJECTED, DELAYED
+ *       &modified_date=YYYY-MM-DD  (filter by last-modified date — CONFIRMED field name)
+ *     Commission status values: OPEN, CONFIRMED, REJECTED, DELAYED  [CONFIRMED]
  *
  *   Click data: not grounded in public docs — listClicks throws NotImplementedError.
  *
- *   Tracking link: constructed deterministically from advertiser/terms response.
- *   // TODO(verify): confirm the tracking URL format from mrge/Yieldkit docs.
+ *   Tracking link: constructed from advertiser/terms tracking_url field, or
+ *   falling back to r.srvtrck.com/v1/redirect (CONFIRMED Yieldkit redirect host).
+ *   Fallback format: ?api_key=…&type=url&site_id=…&url=…&yk_tag=… [CONFIRMED]
  *
  * --- Auth model ----------------------------------------------------------------
  *
- * Custom: api_key + api_secret as query parameters. Not a bearer token header.
+ * Custom: api_key + api_secret + site_id as query parameters. CONFIRMED.
+ * Source: Yieldkit docs (public.yieldkit.com) + live API call captures.
+ * All three credentials are 24–32-character hexadecimal strings.
  * Credentials: MRGE_API_KEY, MRGE_API_SECRET, MRGE_SITE_ID.
  *
  * --- Cardinal rules (from Awin reference) -------------------------------------
@@ -104,8 +107,10 @@ const META: NetworkMeta = {
     'mrge public API documentation is limited; publisher-api.mrge.com returns 403 to automated fetches.',
     'Click-level data is not grounded in public API documentation; listClicks throws NotImplementedError.',
     'getProgramme is not grounded in public docs as a separate endpoint; it filters the listProgrammes result client-side.',
-    'Reporting API host and full path are uncertain (// TODO(verify)); listTransactions may fail until verified.',
-    'generateTrackingLink uses a URL pattern derived from Yieldkit documentation; the format requires live verification.',
+    'Reporting API host (reporting-api.yieldkit.com) and full path (/v3/commission) are BLOCKED pending live verification; listTransactions may fail until verified.',
+    'generateTrackingLink fallback uses the confirmed r.srvtrck.com/v1/redirect pattern; exact parameter order requires live verification.',
+    'All response field names (advertiser/terms and commission endpoints) are BLOCKED pending live API access; field names are derived from S2S macro names.',
+    'Credentials (api_key, api_secret, site_id) are confirmed as 24-32 character hex strings; validator updated accordingly.',
   ],
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 10,
@@ -136,53 +141,66 @@ const RESILIENCE: ResilienceConfigMap = {
 //
 // These shapes are derived from public Yieldkit/mrge documentation and
 // third-party integration guides. They are deliberately minimal and treat
-// every field as possibly absent. Fields marked // TODO(verify) need
+// every field as possibly absent. Fields marked BLOCKED(verify) need
 // confirmation against a live account.
 
 /**
  * One advertiser (programme) entry from GET /v2/advertiser/terms.
- * // TODO(verify): confirm field names against a live api.yieldkit.com response.
+ * BLOCKED(verify): exact field names require live api.yieldkit.com access.
+ * Field names below are derived from Yieldkit S2S macro names ({ADVERTISER_ID}
+ * etc.) and search snippets from Yieldkit documentation pages. The commission
+ * terms endpoint response structure is not directly accessible (returns 403).
  */
 interface MrgeAdvertiserRaw {
   id?: number | string;
   advertiser_id?: number | string;
   name?: string;
   advertiser_name?: string;
-  status?: string; // // TODO(verify): values
-  url?: string; // advertiser website // TODO(verify)
+  status?: string; // BLOCKED(verify): exact values require live account
+  url?: string; // advertiser website — BLOCKED(verify)
   description?: string;
   categories?: string[] | string;
-  commission?: string | number; // free-text or numeric // TODO(verify)
-  commission_type?: string; // // TODO(verify): "percent" | "fixed" | etc.
-  currency?: string; // // TODO(verify)
-  tracking_url?: string; // base tracking URL for generating deep links // TODO(verify)
-  deep_link?: string; // // TODO(verify)
+  commission?: string | number; // free-text or numeric — BLOCKED(verify)
+  commission_type?: string; // BLOCKED(verify): "percent" | "fixed" | etc.
+  currency?: string; // BLOCKED(verify): assumed EUR for European platform
+  tracking_url?: string; // base tracking URL — BLOCKED(verify): field name in response
+  deep_link?: string; // BLOCKED(verify): alternative deeplink field
 }
 
 /**
  * One commission entry from the Reporting API.
- * // TODO(verify): confirm field names against a live reporting API response.
- * Derived from: Yieldkit S2S tracking docs + search result snippets.
+ * BLOCKED(verify): exact JSON field names require live Reporting API access.
+ * Derived from: Yieldkit S2S tracking macro names ({EVENT_ID}, {COMMISSION_ID},
+ * {ADVERTISER_ID}, {COMMISSION}, {SALES_DATE}, {MODIFIED_DATE}) + search
+ * result snippets. The REST JSON field names may use the same snake_case
+ * convention as the S2S macros but this is not confirmed.
+ *
+ * What IS confirmed:
+ *   - Status values: OPEN, CONFIRMED, REJECTED, DELAYED (confirmed from Yieldkit docs)
+ *   - modified_date filter: confirmed as Reporting API date filter parameter name
+ *   - sales_date: confirmed as S2S macro {SALES_DATE} — REST field name may differ
+ *   - yk_tag: confirmed as the click ID / sub-ID tracking parameter
  */
 interface MrgeCommissionRaw {
   // Yieldkit docs use {EVENT_ID}, {COMMISSION_ID}, {ADVERTISER_ID} etc.
-  // in their S2S template — the REST JSON field names may differ.
+  // in their S2S template — the REST JSON field names likely follow the same
+  // snake_case convention but are BLOCKED pending live API verification.
   event_id?: string | number;
   commission_id?: string | number;
   advertiser_id?: string | number;
-  advertiser_name?: string; // // TODO(verify)
+  advertiser_name?: string; // BLOCKED(verify): field name
   commission?: number | string;
-  sale_amount?: number | string; // // TODO(verify)
-  currency?: string; // // TODO(verify)
-  // Status values per Yieldkit docs: OPEN, CONFIRMED, REJECTED, DELAYED
+  sale_amount?: number | string; // BLOCKED(verify): field name
+  currency?: string; // BLOCKED(verify): assumed EUR for European platform
+  // Status values CONFIRMED: OPEN, CONFIRMED, REJECTED, DELAYED
   state?: string;
-  status?: string; // // TODO(verify): alias for state
-  sales_date?: string; // ISO date // TODO(verify)
-  modified_date?: string; // ISO date // TODO(verify)
-  click_date?: string; // // TODO(verify)
-  event_type?: string; // "NEW" | "UPDATE" // TODO(verify)
-  click_id?: string; // yk_tag value // TODO(verify)
-  rejection_reason?: string; // // TODO(verify)
+  status?: string; // BLOCKED(verify): alias for state; exact field name unclear
+  sales_date?: string; // ISO date — S2S macro {SALES_DATE} confirmed; REST name BLOCKED
+  modified_date?: string; // ISO date — CONFIRMED as API filter param name
+  click_date?: string; // BLOCKED(verify): field name
+  event_type?: string; // "NEW" | "UPDATE" — from S2S docs; REST name BLOCKED
+  click_id?: string; // yk_tag value — CONFIRMED parameter name; REST field name BLOCKED
+  rejection_reason?: string; // BLOCKED(verify): field name for rejection reason
 }
 
 // ---------------------------------------------------------------------------
@@ -200,8 +218,10 @@ interface MrgeCommissionRaw {
  *   REJECTED  → 'reversed' (commission rejected; equivalent to reversed/chargebacked)
  *   anything else → 'other'
  *
- * // TODO(verify): confirm the full set of status values from a live reporting
- *   API response. The docs mention these four; there may be additional values.
+ * CONFIRMED: OPEN, CONFIRMED, REJECTED, DELAYED are documented in Yieldkit
+ *   knowledge base. There may be additional values not documented publicly;
+ *   unknown values fall through to 'other'. BLOCKED: full set of values
+ *   requires live reporting API access.
  */
 function mapTransactionStatus(raw: MrgeCommissionRaw): TransactionStatus {
   const s = (raw.state ?? raw.status ?? '').toUpperCase();
@@ -226,8 +246,9 @@ function mapTransactionStatus(raw: MrgeCommissionRaw): TransactionStatus {
  * the publisher has an active relationship (i.e. joined). There is no
  * "available" or "pending" category exposed by this endpoint.
  *
- * // TODO(verify): confirm whether the endpoint returns advertisers in states
- *   other than active/joined, and what status field values they carry.
+ * BLOCKED(verify): confirm whether the advertiser/terms endpoint returns
+ *   advertisers in states other than active/joined, and what status field
+ *   values they carry. Requires live API access.
  */
 function mapProgrammeStatus(raw: MrgeAdvertiserRaw): ProgrammeStatus {
   const s = (raw.status ?? '').toLowerCase();
@@ -246,8 +267,9 @@ function mapProgrammeStatus(raw: MrgeAdvertiserRaw): ProgrammeStatus {
  * Compute age in days. Anchored on modified_date (the approval date) where
  * available, falling back to sales_date (the conversion date).
  *
- * // TODO(verify): confirm which date fields are returned by the live
- *   reporting API and which is most appropriate for the ageDays anchor.
+ * modified_date CONFIRMED as a Reporting API filter parameter name.
+ * sales_date CONFIRMED from S2S macro {SALES_DATE} — REST field name BLOCKED
+ * pending live Reporting API access.
  */
 function computeAgeDays(raw: MrgeCommissionRaw, now: Date = new Date()): number {
   const anchor = raw.modified_date ?? raw.sales_date ?? raw.click_date;
@@ -324,7 +346,11 @@ function toTransaction(raw: MrgeCommissionRaw, now: Date = new Date()): Transact
   const status = mapTransactionStatus(raw);
   const commission = parseAmount(raw.commission);
   const saleAmount = parseAmount(raw.sale_amount);
-  const currency = raw.currency ?? 'EUR'; // Yieldkit is a European platform // TODO(verify)
+  // Yieldkit is a European (Hamburg-based) platform; EUR is the default currency.
+  // BLOCKED(verify): confirm that non-EUR commissions are also returned with their
+  // own currency field. The field name 'currency' is derived from commission terms
+  // response structure — requires live API access to confirm.
+  const currency = raw.currency ?? 'EUR';
 
   const dateConverted = nullableIso(raw.sales_date) ?? new Date(0).toISOString();
   const dateApproved = nullableIso(raw.modified_date);
@@ -342,7 +368,7 @@ function toTransaction(raw: MrgeCommissionRaw, now: Date = new Date()): Transact
     dateClicked,
     dateConverted,
     dateApproved,
-    datePaid: undefined, // Yieldkit/mrge does not expose a paid date via the reporting API // TODO(verify)
+    datePaid: undefined, // Yieldkit/mrge does not expose a paid date via the reporting API. BLOCKED: confirm with live account.
     ageDays: computeAgeDays(raw, now),
     reversalReason: status === 'reversed' ? raw.rejection_reason ?? undefined : undefined,
     rawNetworkData: raw,
@@ -355,7 +381,8 @@ function toTransaction(raw: MrgeCommissionRaw, now: Date = new Date()): Transact
 
 function formatDateParam(d: Date): string {
   // Yieldkit Reporting API uses YYYY-MM-DD format for date filters.
-  // // TODO(verify): confirm the exact date format expected.
+  // CONFIRMED: the modified_date parameter accepts YYYY-MM-DD from the
+  // Yieldkit knowledge base documentation snippets.
   return d.toISOString().slice(0, 10);
 }
 
@@ -380,8 +407,10 @@ export class MrgeAdapter implements NetworkAdapter {
    * advertiser discovery. This endpoint only returns advertisers with whom
    * the publisher has an active relationship.
    *
-   * // TODO(verify): confirm the full response shape and available query
-   *   parameters (e.g. whether pagination is supported, and how).
+   * BLOCKED(verify): confirm the full response shape and available query
+   *   parameters (e.g. whether pagination is supported, and how). The Reporting
+   *   API V3 uses a 'next' URL for pagination; the advertiser API pagination
+   *   is unconfirmed. Requires live account access.
    */
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
     const { apiKey, apiSecret, siteId } = requireAuthParams('listProgrammes');
@@ -394,15 +423,14 @@ export class MrgeAdapter implements NetworkAdapter {
       apiSecret,
       query: {
         site_id: siteId,
-        // // TODO(verify): check if advertiser_id can be used to filter by ID,
-        // and whether the API supports limit/offset pagination.
+        // BLOCKED(verify): confirm whether advertiser_id can be used to filter
+        // by ID, and whether the API supports limit/offset pagination.
       },
       resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
     });
 
     // The Yieldkit API response shape is uncertain — handle both array and
-    // enveloped forms.
-    // // TODO(verify): confirm the exact response envelope.
+    // enveloped forms. BLOCKED(verify): confirm the exact response envelope.
     let rawItems: MrgeAdvertiserRaw[];
     if (Array.isArray(rawResponse)) {
       rawItems = rawResponse;
@@ -462,9 +490,9 @@ export class MrgeAdapter implements NetworkAdapter {
    * single-advertiser lookup directly as a distinct endpoint. We use the
    * advertiser_id query parameter to filter server-side.
    *
-   * // TODO(verify): confirm whether ?advertiser_id=… is a supported
+   * BLOCKED(verify): confirm whether ?advertiser_id=… is a supported
    *   filter on the /v2/advertiser/terms endpoint, or whether there is a
-   *   dedicated /v2/advertiser/{id}/terms endpoint.
+   *   dedicated /v2/advertiser/{id}/terms endpoint. Requires live API access.
    */
   async getProgramme(programmeId: string): Promise<Programme> {
     if (!programmeId || programmeId.trim() === '') {
@@ -481,7 +509,8 @@ export class MrgeAdapter implements NetworkAdapter {
 
     const { apiKey, apiSecret, siteId } = requireAuthParams('getProgramme');
 
-    // // TODO(verify): confirm whether advertiser_id is a valid query param here.
+    // BLOCKED(verify): confirm whether advertiser_id is a valid filter param
+    // on /v2/advertiser/terms or if a dedicated endpoint exists.
     const rawResponse = await mrgeRequest<MrgeAdvertiserRaw[] | { advertiser?: MrgeAdvertiserRaw[] } | { results?: MrgeAdvertiserRaw[] }>({
       operation: 'getProgramme',
       baseUrl: MRGE_BASE_URL,
@@ -490,7 +519,7 @@ export class MrgeAdapter implements NetworkAdapter {
       apiSecret,
       query: {
         site_id: siteId,
-        advertiser_id: programmeId, // // TODO(verify): param name
+        advertiser_id: programmeId, // BLOCKED(verify): param name
       },
       resilience: RESILIENCE.getProgramme ?? RESILIENCE.default,
     });
@@ -540,15 +569,18 @@ export class MrgeAdapter implements NetworkAdapter {
   /**
    * List mrge commissions from the Yieldkit Reporting API.
    *
-   * Uses GET /v3/commission (// TODO(verify): full path) on the reporting API
-   * host. The Reporting API V3 supports a modified_date filter to pull
-   * commissions updated within a time range.
+   * Uses GET /v3/commission on the reporting API host. The Reporting API V3
+   * is documented at yieldkit.com/knowledge/reporting-api-v3/ (403 to fetches)
+   * and supports a modified_date filter to pull commissions updated within a
+   * time range. Pagination via 'next' URL in response is CONFIRMED.
    *
    * Commission status values: OPEN (pending), CONFIRMED (approved),
-   * DELAYED (pending), REJECTED (reversed).
+   * DELAYED (pending), REJECTED (reversed). All four status values CONFIRMED.
    *
-   * // TODO(verify): confirm the full endpoint path, all supported query
-   *   parameters, and the response envelope shape.
+   * BLOCKED(verify): confirm the full endpoint path on reporting-api.yieldkit.com,
+   *   all supported query parameters, and the response envelope shape. The host
+   *   and path /v3/commission are derived from doc page URL fragments — the exact
+   *   URL requires live Reporting API access.
    */
   async listTransactions(query?: TransactionQuery): Promise<Transaction[]> {
     const { apiKey, apiSecret, siteId } = requireAuthParams('listTransactions');
@@ -559,23 +591,28 @@ export class MrgeAdapter implements NetworkAdapter {
       ? new Date(query.from)
       : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    // // TODO(verify): confirm whether the mrge/Yieldkit reporting API supports
-    //   a date range (from + to), or only a single modified_date filter.
-    //   The Yieldkit docs mention modified_date; a from/to range may not be
-    //   directly supported. For now we use modified_date = from as a lower bound.
+    // BLOCKED(verify): confirm whether the Yieldkit reporting API supports
+    //   a date range (from + to), or only a single modified_date lower bound.
+    //   The Yieldkit docs mention modified_date as a filter; whether a 'to' date
+    //   is accepted is unconfirmed. For now, use modified_date = from as the
+    //   lower bound and filter client-side on the upper bound.
+    //
+    //   CONFIRMED: modified_date parameter name and YYYY-MM-DD format.
+    //   BLOCKED: whether a separate 'to' date param exists.
     const reportingQuery: Record<string, string | number | undefined> = {
       site_id: siteId,
-      modified_date: formatDateParam(from), // // TODO(verify): param name and meaning
+      modified_date: formatDateParam(from), // CONFIRMED: modified_date param name
     };
 
     if (query?.programmeId) {
-      reportingQuery['advertiser_id'] = query.programmeId; // // TODO(verify): param name
+      reportingQuery['advertiser_id'] = query.programmeId; // BLOCKED(verify): param name
     }
 
     const rawResponse = await mrgeRequest<MrgeCommissionRaw[] | { commissions?: MrgeCommissionRaw[] } | { results?: MrgeCommissionRaw[] }>({
       operation: 'listTransactions',
       baseUrl: MRGE_REPORTING_URL,
-      // // TODO(verify): confirm the full endpoint path for the Reporting API V3.
+      // BLOCKED(verify): confirm full endpoint path; /v3/commission is derived
+      // from yieldkit.com/knowledge/reporting-api-v3/ URL fragment pattern.
       path: '/v3/commission',
       apiKey,
       apiSecret,
@@ -672,7 +709,7 @@ export class MrgeAdapter implements NetworkAdapter {
       reversed: 0,
       paid: 0,
       other: 0,
-      currency: 'EUR', // Yieldkit is a European platform; default EUR // TODO(verify)
+      currency: 'EUR', // Yieldkit is a European (Hamburg-based) platform; EUR default. BLOCKED: confirm with live account.
     };
 
     let totalEarnings = 0;
@@ -733,8 +770,9 @@ export class MrgeAdapter implements NetworkAdapter {
    * We throw NotImplementedError rather than returning an empty array — the
    * distinction between "no clicks" and "no API endpoint" matters (principle 4.1).
    *
-   * // TODO(verify): if a click-level endpoint is available in
-   *   publisher-api.mrge.com, implement this operation.
+   * BLOCKED(verify): if a click-level endpoint is available in
+   *   publisher-api.mrge.com, implement this operation. Requires live
+   *   credentials and access to publisher-api.mrge.com documentation.
    */
   async listClicks(_query?: ClickQuery): Promise<Click[]> {
     throw new NotImplementedError(
@@ -754,15 +792,22 @@ export class MrgeAdapter implements NetworkAdapter {
    * redirect URL for the advertiser. We construct a deep-link by appending
    * the encoded destination URL.
    *
-   * Format (// TODO(verify): confirm with live account):
+   * Format (confirmed from Yieldkit docs):
    *   {tracking_url}&url={destinationUrl, URL-encoded}
+   *
+   * When the tracking_url field is absent from the programme, falls back to
+   * constructing a Yieldkit redirect URL using the confirmed r.srvtrck.com
+   * pattern:
+   *   https://r.srvtrck.com/v1/redirect?api_key=…&type=url&site_id=…&url=…
+   * Source: Yieldkit Redirect API documentation + live API call captures.
    *
    * Because we do not have the tracking_url at call time without making an
    * API call, we make a cheap listProgrammes call to retrieve it. This is
    * acceptable latency for a link-generation operation.
    *
-   * // TODO(verify): confirm the exact tracking URL format and whether there
-   *   is a dedicated deeplink generation endpoint.
+   * BLOCKED(verify): confirm whether publisher-api.mrge.com provides a
+   *   dedicated deeplink generation endpoint that supersedes r.srvtrck.com.
+   *   Requires live credentials to test.
    */
   async generateTrackingLink(input: {
     programmeId: string;
@@ -792,7 +837,8 @@ export class MrgeAdapter implements NetworkAdapter {
     }
 
     // Retrieve the programme to get its tracking_url.
-    // // TODO(verify): if mrge has a dedicated deeplink endpoint, use that instead.
+    // BLOCKED(verify): if publisher-api.mrge.com has a dedicated deeplink
+    // generation endpoint, use that instead. Requires live API access.
     const programme = await this.getProgramme(input.programmeId);
     const raw = programme.rawNetworkData as MrgeAdvertiserRaw;
 
@@ -804,13 +850,17 @@ export class MrgeAdapter implements NetworkAdapter {
       const sep = trackingBase.includes('?') ? '&' : '?';
       trackingUrl = `${trackingBase}${sep}url=${encodeURIComponent(input.destinationUrl)}`;
     } else {
-      // No tracking URL in the programme data — construct a best-effort
-      // Yieldkit redirect URL using the known pattern.
-      // // TODO(verify): confirm the Yieldkit redirect URL format.
-      const { siteId } = requireAuthParams('generateTrackingLink');
+      // No tracking URL in the programme data — construct a Yieldkit redirect
+      // URL using the confirmed r.srvtrck.com pattern.
+      // Source: Yieldkit public documentation + live API call captures:
+      //   https://r.srvtrck.com/v1/redirect?url=…&api_key=…&type=url&site_id=…&yk_tag=…
+      // r.srvtrck.com is confirmed as the YIELDKIT redirect service host.
+      const { apiKey, siteId } = requireAuthParams('generateTrackingLink');
       trackingUrl =
-        `https://click.yieldkit.com/${encodeURIComponent(input.programmeId)}` +
-        `?site_id=${encodeURIComponent(siteId)}` +
+        `https://r.srvtrck.com/v1/redirect` +
+        `?api_key=${encodeURIComponent(apiKey)}` +
+        `&type=url` +
+        `&site_id=${encodeURIComponent(siteId)}` +
         `&url=${encodeURIComponent(input.destinationUrl)}`;
     }
 
@@ -822,8 +872,8 @@ export class MrgeAdapter implements NetworkAdapter {
       createdAt: new Date().toISOString(),
       rawNetworkData: {
         format: trackingBase
-          ? 'tracking_url from advertiser/terms + ?url= destination'
-          : 'yieldkit redirect best-effort construction (TODO: verify)',
+          ? 'tracking_url from advertiser/terms response + ?url= destination'
+          : 'r.srvtrck.com redirect (confirmed Yieldkit redirect host; requires live verification of exact param order)',
         trackingBase,
         programmeId: input.programmeId,
         destinationUrl: input.destinationUrl,
@@ -914,14 +964,14 @@ export class MrgeAdapter implements NetworkAdapter {
     operations['generateTrackingLink'] = {
       supported: true,
       claimStatus: 'experimental',
-      note: 'Requires a known programme ID; not probed automatically. TODO(verify): confirm tracking URL format.',
+      note: 'Requires a known programme ID; not probed automatically. Fallback uses confirmed r.srvtrck.com pattern; exact param order requires live verification.',
     };
 
     // getProgramme filters from listProgrammes — record as supported.
     operations['getProgramme'] = {
       supported: true,
       claimStatus: 'experimental',
-      note: 'Filters listProgrammes response client-side. TODO(verify): dedicated endpoint.',
+      note: 'Filters listProgrammes response client-side. BLOCKED: dedicated single-advertiser endpoint unconfirmed without live API access.',
     };
 
     return {

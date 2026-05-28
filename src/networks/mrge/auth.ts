@@ -10,8 +10,10 @@
  * an Authorization header. This is the Yieldkit legacy pattern confirmed
  * by public API documentation and third-party integration guides.
  *
- * // TODO(verify): If publisher-api.mrge.com accepts a Bearer token in the
+ * BLOCKED(verify): If publisher-api.mrge.com accepts a Bearer token in the
  *   Authorization header, migrate auth_model to "bearer" and adjust buildAuthParams.
+ *   Cannot verify without live credentials; publisher-api.mrge.com returns
+ *   HTTP 403 to all automated fetches as of 2026-05-28.
  *
  * verifyAuth: uses GET /v2/advertiser/terms?api_key=…&api_secret=…&site_id=…
  * with limit=1. This is the cheapest grounded endpoint that confirms all three
@@ -19,8 +21,9 @@
  * a 200 with an empty results set means the credentials are valid but the site
  * has no active programmes — which is still auth success.
  *
- * // TODO(verify): confirm the exact endpoint URL and response shape for the
+ * BLOCKED(verify): confirm the exact endpoint URL and response shape for the
  *   mrge publisher-api.mrge.com surface vs the legacy api.yieldkit.com surface.
+ *   Requires live credentials; both surfaces return 403 to automated fetches.
  */
 
 import { mrgeRequest, MRGE_BASE_URL } from './client.js';
@@ -36,7 +39,8 @@ const log = createLogger('mrge.auth');
  * Minimal shape of a Yieldkit advertiser/terms response item.
  * Used only to confirm the API returns a parseable response — we don't use
  * the data itself in verifyAuth.
- * // TODO(verify): confirm the exact response shape from api.yieldkit.com/v2/advertiser/terms.
+ * BLOCKED(verify): confirm the exact response shape from api.yieldkit.com/v2/advertiser/terms.
+ *   The envelope (array vs. wrapped object) requires live API access.
  */
 interface MrgeAdvertiserTermsResponse {
   advertiser?: Array<{
@@ -44,7 +48,7 @@ interface MrgeAdvertiserTermsResponse {
     name?: string;
   }>;
   // The Yieldkit API may return results in a top-level array directly.
-  // // TODO(verify): confirm the envelope shape.
+  // BLOCKED(verify): confirm the envelope shape with live credentials.
   results?: unknown[];
   count?: number;
 }
@@ -175,20 +179,24 @@ export function getSiteId(): string | undefined {
  * are valid together (they must be used as a pair). We only do a live check
  * when both are present.
  *
- * MRGE_SITE_ID: format-validate as a positive integer string. The Yieldkit
- * site_id is a numeric identifier.
- * // TODO(verify): confirm that mrge site IDs are always numeric integers.
+ * MRGE_SITE_ID: format-validate as a hexadecimal string. The Yieldkit
+ * site_id is a 24- or 32-character hex string (confirmed from live API
+ * call captures on any.run showing site_id=0fb9199cb9ce464f9c82523578c269b4
+ * and docs example site_id=51e8ee76e4b0dc18d49a4337). Not a plain integer.
  */
 export async function validateCredential(
   field: string,
   value: string,
 ): Promise<CredentialValidationResult> {
   if (field === 'MRGE_API_KEY') {
-    if (!value || value.trim().length < 4) {
+    // Yieldkit API keys are 32-character lowercase hex strings (MD5-like).
+    // Example from live docs: c5c2398597a6adcd9b149ad745f207f4
+    // Source: public.yieldkit.com documentation example.
+    if (!value || value.trim().length < 8) {
       return {
         ok: false,
-        message: 'API key appears too short to be valid.',
-        hint: 'Find your API key in the mrge publisher dashboard under Account → API access.',
+        message: 'API key appears too short to be valid (expected a 32-character hex string).',
+        hint: 'Find your API key at https://home.yieldkit.com/account/api. It is a 32-character hex string.',
       };
     }
     // We cannot validate the key without also having the secret and site_id.
@@ -197,22 +205,31 @@ export async function validateCredential(
   }
 
   if (field === 'MRGE_API_SECRET') {
-    if (!value || value.trim().length < 4) {
+    // Yieldkit API secrets are 32-character lowercase hex strings (MD5-like).
+    // Example from live docs: 74607007cdb6b0db4b3219c8adee3e09
+    // Source: public.yieldkit.com documentation example.
+    if (!value || value.trim().length < 8) {
       return {
         ok: false,
-        message: 'API secret appears too short to be valid.',
-        hint: 'Find your API secret in the mrge publisher dashboard under Account → API access.',
+        message: 'API secret appears too short to be valid (expected a 32-character hex string).',
+        hint: 'Find your API secret at https://home.yieldkit.com/account/api. It is a 32-character hex string.',
       };
     }
     return { ok: true, message: 'API secret format accepted; live validation will occur at the end of setup.' };
   }
 
   if (field === 'MRGE_SITE_ID') {
-    if (!/^\d+$/.test(value) || Number(value) <= 0) {
+    // Yieldkit site IDs are hexadecimal strings (24 or 32 hex characters),
+    // not plain integers. Examples from live API calls:
+    //   24-char: 51e8ee76e4b0dc18d49a4337 (MongoDB ObjectId format)
+    //   32-char: 0fb9199cb9ce464f9c82523578c269b4 (MD5 hash format)
+    // Source: public.yieldkit.com docs example + malware sandbox captures of
+    // real Yieldkit API calls (any.run reports, 2024).
+    if (!/^[0-9a-f]{20,40}$/i.test(value)) {
       return {
         ok: false,
-        message: 'mrge site ID must be a positive integer.',
-        hint: 'Find your Site ID in the mrge publisher dashboard under Account → Your Sites.',
+        message: 'mrge site ID must be a hexadecimal string (24 or 32 characters, e.g. 51e8ee76e4b0dc18d49a4337).',
+        hint: 'Find your Site ID in the mrge publisher dashboard at https://home.yieldkit.com/account/sites. It looks like a 24- or 32-character hex string, not a plain number.',
       };
     }
     return { ok: true };
