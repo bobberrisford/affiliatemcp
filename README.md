@@ -121,11 +121,9 @@ npx affiliate-networks-mcp test
 You should see one line per network: `ok` for everything that's healthy,
 `error — <reason>` for anything that isn't.
 
-**3. Connect it to Claude.** Pick the one that matches how you use Claude.
-
+**3. Connect it to Claude.** Pick the path that matches how you use Claude.
 The setup wizard offers this at the end automatically — say yes and you can
-skip the rest of this step. If you want to run it later, or want to do it
-by hand, the options are below.
+skip the rest of this step.
 
 **Claude Desktop (Mac/Windows app) — most users:**
 
@@ -133,47 +131,47 @@ by hand, the options are below.
 npx affiliate-networks-mcp install
 ```
 
-This finds your Claude Desktop config, adds the `affiliate` entry alongside
-anything else you already have, and tells you which file it touched. It
-takes a timestamped backup first, so your existing MCP servers are safe.
-Restart Claude Desktop after it finishes.
+Finds your Claude Desktop config, adds the `affiliate` entry alongside
+anything else you already have, takes a timestamped backup first. Restart
+Claude Desktop after it finishes. Flags: `--desktop` / `--code` to pick one,
+`--all` to skip prompting, `--dry-run` to preview, `--force-overwrite` if
+your existing config is malformed JSON.
 
 **Claude Code (terminal):**
 
 ```
-claude mcp add affiliate -- npx affiliate-networks-mcp
+claude plugin marketplace add bobberrisford/affiliatemcp
+claude plugin install affiliate-networks-mcp@affiliatemcp
 ```
 
-Or run the same `install` command above — it detects Claude Code too and
-will offer to wire it up.
+Registers the MCP server and bundled skills in one step. (Or use the
+`install` command above — it detects Claude Code too.)
 
-**Flags:** `--desktop` / `--code` to pick one, `--all` to skip prompting,
-`--dry-run` to preview changes, `--force-overwrite` if your existing config
-is malformed JSON.
+**Claude Cowork desktop (org accounts):**
 
-**Claude Cowork / plugin marketplace:**
+Cowork orgs sync plugins from GitHub via the **Organization settings →
+Plugins → Add plugin** flow. Cowork blocks **public** repos from being
+synced into an org marketplace, so you'll need a private mirror first:
 
 ```
-/plugin marketplace add bobberrisford/affiliatemcp
-/plugin install affiliate-networks-mcp@affiliatemcp
+scripts/fork-for-cowork.sh
 ```
 
-Registers the MCP server and bundled skills in one step. Credentials still
-come from your shell environment — the included
-[`affiliate-network-setup-help`](./skills/affiliate-network-setup-help/SKILL.md)
-skill (or `npx affiliate-networks-mcp setup`) walks you through them.
+(Requires `gh` authed. Creates `<you>/affiliatemcp-internal` as a private
+repo and mirror-pushes the upstream into it. Re-run with `--sync` to
+refresh against new releases.) Then in Cowork: Organization settings →
+Plugins → Add plugin → GitHub → enter `<you>/affiliatemcp-internal` →
+install `affiliate-networks-mcp` from the synced marketplace.
 
 <details>
-<summary>Prefer to edit the config yourself?</summary>
+<summary>Prefer to edit Claude Desktop config by hand?</summary>
 
 Open the Claude Desktop config file at:
 
 - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
 
-Add the `affiliate` entry inside `mcpServers`. If `mcpServers` already
-exists, add the entry alongside the others — don't replace the whole
-block.
+Add the `affiliate` entry inside `mcpServers` — keep any siblings:
 
 ```json
 {
@@ -194,9 +192,28 @@ Restart Claude Desktop after saving.
 networks do you have access to?"** — you should see every network you
 configured. If you registered any brands, also try **"list my brands"**.
 
-That's it. Ask it questions.
+To disconnect later: `npx affiliate-networks-mcp uninstall`, or
+`claude plugin uninstall affiliate-networks-mcp` for the plugin path.
 
-To disconnect later, run `npx affiliate-networks-mcp uninstall`.
+### Troubleshooting install
+
+**"Unknown skill: plugin" in a Claude session.** The `/plugin` syntax is a
+shell command, not a chat slash command. Run `claude plugin marketplace
+add ...` from your terminal, not inside the conversation.
+
+**Cowork rejects the marketplace repo.** Confirm the repo is **private**.
+Public repos are blocked for org-marketplace sync. Use the mirror script
+above if needed.
+
+**`What affiliate networks…` returns nothing.** The MCP server is loaded
+but credentials are missing. Trigger the bundled
+[`affiliate-network-setup-help`](./skills/affiliate-network-setup-help/SKILL.md)
+skill (ask "help me set up my affiliate network credentials") or run
+`npx affiliate-networks-mcp setup` in a terminal.
+
+**Stale npm cache.** `npx --yes affiliate-networks-mcp@latest` forces a
+fresh fetch. Verify the published version with
+`npm view affiliate-networks-mcp version`.
 
 ## What you can ask
 
