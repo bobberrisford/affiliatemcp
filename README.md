@@ -240,6 +240,7 @@ stubs for gated Product Feed and Proof of Purchase APIs.
 
 Start here if you want to understand the product direction:
 
+- [Roadmap](./docs/product/roadmap.md) — what's next, by persona and theme
 - [AI-native affiliate data rationale](./docs/product/ai-native-affiliate-data.md)
 - [Awin public API inventory](./docs/networks/awin/api-inventory.md)
 - [Awin setup and live validation notes](./docs/networks/awin.md)
@@ -436,6 +437,11 @@ accounts — read-only stance and rate handling are in, but a few
 endpoint shapes remain `// TODO(verify)` until live confirmation. If
 you hit something odd on either side, open an issue — we treat every
 bug report as evidence about the underlying API.
+
+What's coming next — onboarding-friction work, the long tail of
+daily affiliate-manager questions, the finance / CFO pack, and the
+order we'll promote adapters from `experimental` to `production` —
+is laid out in the [roadmap](./docs/product/roadmap.md).
 
 ## Licence
 
