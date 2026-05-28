@@ -5,9 +5,10 @@ The adapter integrates with the Everflow Network API on the brand/advertiser sid
 giving you access to affiliate performance data for your programme.
 
 > **Note:** This adapter has been built from public API documentation and has
-> not yet been verified against a live account. Fields marked `// TODO(verify)`
-> in the source code should be confirmed before relying on them in production.
-> See [docs/findings/everflow-advertiser.md](../findings/everflow-advertiser.md)
+> not yet been verified against a live account. Endpoint shapes and field names
+> have been confirmed from Everflow's public developer documentation via
+> web research (2026-05-28). See
+> [docs/findings/everflow-advertiser.md](../findings/everflow-advertiser.md)
 > for the current verification status.
 
 ---
@@ -96,11 +97,11 @@ EVERFLOW_ADVERTISER_ID=42
 | `listBrands` | Experimental | Returns all advertisers visible under the API key |
 | `listMediaPartners` | Experimental | All affiliates on the network via POST /v1/networks/affiliatestable |
 | `getProgrammePerformance` | Experimental | POST /v1/advertisers/reporting/entity, grouped by affiliate |
+| `listClicks` | Experimental | POST /v1/networks/reporting/clicks/stream; max 5,000 clicks / 14-day window |
 | `listProgrammes` | Not implemented | Use the `everflow` (publisher) adapter |
 | `getProgramme` | Not implemented | — |
 | `listTransactions` | Not implemented | Use `getProgrammePerformance` for aggregate data |
 | `getEarningsSummary` | Not implemented | — |
-| `listClicks` | Not implemented | Click-level data exists in the raw clicks report; not yet wired |
 | `generateTrackingLink` | Not implemented | Publisher-side operation |
 
 ---
@@ -135,20 +136,29 @@ which brands are registered, or re-run the setup wizard.
 - The advertiser ID may not match any offer/affiliate data in the requested window.
 - Confirm the `EVERFLOW_ADVERTISER_ID` matches the correct account.
 
+### `listClicks` returns a 400 error
+
+- The date window may exceed 14 days. Narrow the `from`/`to` range.
+- The click data may be older than 3 months (retention limit for raw clicks without conversions).
+
 ---
 
 ## Known limitations
 
 - **Adapter built from public API documentation; not yet verified against a live account.**
-  Fields marked `// TODO(verify)` in the source should be confirmed before
-  production use.
+  Endpoint shapes and field names have been confirmed from Everflow's public
+  developer documentation (hardening pass 2026-05-28), but a live account
+  integration test has not been performed.
 - API keys are created by a network admin, not by the advertiser directly.
   Contact your Everflow account manager to obtain a key.
 - `listMediaPartners` returns all affiliates on the network; there is no
   server-side filter by advertiser in the Everflow affiliates table endpoint.
   Filter client-side where needed.
 - `getProgrammePerformance` is limited to a one-year date window per Everflow's
-  API constraint.
+  API constraint. `timezone_id` and `currency_id` use account defaults when omitted.
+- `listClicks` via POST /v1/networks/reporting/clicks/stream enforces a 14-day
+  maximum window and returns at most 5,000 clicks per request. Raw click data
+  (without conversions) is only retained for 3 months.
 - Publisher-side operations are not implemented. Use the `everflow` (publisher)
   adapter for listing programmes, transactions, and generating tracking links.
 

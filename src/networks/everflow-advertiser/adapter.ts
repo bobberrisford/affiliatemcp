@@ -4,13 +4,13 @@
  * Mirrors the impact-advertiser defensive style. Everflow's Network API is the
  * single-key multi-brand surface — one API key can address every advertiser on
  * the network. This adapter implements the advertiser side: listBrands, verifyAuth,
- * listMediaPartners, and getProgrammePerformance.
+ * listMediaPartners, getProgrammePerformance, and listClicks.
  *
  * Auth: custom header — X-Eflow-API-Key: <api_key>
  * Base URL: https://api.eflow.team/v1
  *
  * Publisher-side ops (listProgrammes, getProgramme, listTransactions,
- * getEarningsSummary, listClicks, generateTrackingLink) throw NotImplementedError
+ * getEarningsSummary, generateTrackingLink) throw NotImplementedError
  * because the Everflow Network API is structured around the network operator /
  * advertiser view, not the affiliate (publisher) view. Publishers on Everflow
  * use a separate affiliate-scoped API key; a future publisher adapter covers that.
@@ -20,10 +20,11 @@
  *   verifyAuth               → GET  /v1/networks/advertisers?page=1&page_size=1
  *   listMediaPartners        → POST /v1/networks/affiliatestable   (affiliates on the network)
  *   getProgrammePerformance  → POST /v1/advertisers/reporting/entity
+ *   listClicks               → POST /v1/networks/reporting/clicks/stream
  *
  * Not implemented at v0.1 (throw NotImplementedError):
  *   listProgrammes, getProgramme, listTransactions, getEarningsSummary,
- *   listClicks, generateTrackingLink, listPublishers, listPublisherSectors.
+ *   generateTrackingLink, listPublishers, listPublisherSectors.
  *
  * Cardinal rules (same as every adapter):
  *   1. NEVER call fetch directly. Use `everflowAdvRequest` from `./client.ts`.
@@ -36,6 +37,7 @@
  *   https://developers.everflow.io/docs/network/advertisers/
  *   https://developers.everflow.io/docs/network/affiliates/
  *   https://developers.everflow.io/docs/advertiser/reporting/
+ *   https://developers.everflow.io/docs/network/reporting/raw_clicks/
  */
 
 import { everflowAdvRequest } from './client.js';
@@ -79,7 +81,7 @@ const META: NetworkMeta = {
   baseUrl: 'https://api.eflow.team/v1',
   authModel: 'custom',
   docsUrl: 'https://developers.everflow.io/docs/network/',
-  adapterVersion: '0.1.0',
+  adapterVersion: '0.2.0',
   lastVerified: '2026-05-28',
   claimStatus: 'experimental',
   knownLimitations: [
@@ -90,9 +92,14 @@ const META: NetworkMeta = {
       'expose a direct "affiliates running offer X" filter at this endpoint — filter client-side.',
     'getProgrammePerformance uses POST /v1/advertisers/reporting/entity with the "affiliate" ' +
       'column. Everflow limits this endpoint to a maximum date range of one year per request. ' +
-      '// TODO(verify): exact column and metric field names against a live account.',
-    'Publisher-side operations (listTransactions, listClicks, generateTrackingLink, ' +
-      'listProgrammes, getProgramme, getEarningsSummary) are not implemented at v0.1 — ' +
+      'timezone_id and currency_id must be provided explicitly if account defaults are not ' +
+      'appropriate; omitting them uses the account default.',
+    'listClicks uses POST /v1/networks/reporting/clicks/stream. ' +
+      'Everflow enforces a maximum window of 14 days and returns at most 5,000 clicks per request. ' +
+      'Raw click data older than 3 months is not retained (clicks with conversions are retained). ' +
+      'Scoped to the advertiser via resource_type: "advertiser" filter.',
+    'Publisher-side operations (listTransactions, generateTrackingLink, ' +
+      'listProgrammes, getProgramme, getEarningsSummary) are not implemented — ' +
       'use the separate everflow publisher adapter for those.',
   ],
   supportsBrandOps: false,
@@ -109,6 +116,12 @@ const RESILIENCE: ResilienceConfigMap = {
     ...DEFAULT_RESILIENCE,
     timeoutMs: 60_000,
     retries: 3,
+  },
+  // Raw clicks stream can be slow; give it extra time.
+  listClicks: {
+    ...DEFAULT_RESILIENCE,
+    timeoutMs: 30_000,
+    retries: 2,
   },
 };
 
@@ -155,7 +168,9 @@ interface EverflowAffiliatesTableResponse {
 // Everflow reporting response shape.
 // POST /v1/advertisers/reporting/entity returns a table with columns + reporting rows.
 // Each row has a `columns` array (dimension values) and a `reporting` object (metrics).
-// TODO(verify): exact field names for reporting metrics against a live account.
+// Field names confirmed from public Everflow API documentation and the docs search snippets
+// showing the exact JSON structure returned by the reporting/entity endpoint.
+// Source: https://developers.everflow.io/docs/advertiser/reporting/
 interface EverflowReportColumn {
   column_type?: string;
   id?: string | number;
@@ -172,7 +187,8 @@ interface EverflowReportMetrics {
   payout?: number;
   rpc?: number; // revenue per click
   epc?: number; // earnings per click
-  // Currency is typically declared at the request level, not per-row.
+  // Metrics confirmed from Everflow API documentation snippets.
+  // Currency is declared at the response level (currency_id), not per-row.
 }
 
 interface EverflowReportRow {
@@ -184,7 +200,74 @@ interface EverflowReportResponse {
   table?: EverflowReportRow[];
   summary?: EverflowReportMetrics;
   incomplete_results?: boolean;
+  // The currency of reported financial metrics.
+  // Everflow docs show currency_id in the request (e.g. "USD") and some responses
+  // reflect it back. The adapter checks both `currency_id` and `currency` defensively.
+  // Source: https://developers.everflow.io/docs/advertiser/reporting/
+  currency_id?: string;
   currency?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Everflow raw clicks stream response shapes.
+// POST /v1/networks/reporting/clicks/stream
+// Returns a `clicks` array; each element is one click event.
+// Source: https://developers.everflow.io/docs/network/reporting/raw_clicks/
+// ---------------------------------------------------------------------------
+
+interface EverflowClickOfferRaw {
+  network_offer_id?: number | string;
+  network_id?: number | string;
+  name?: string;
+  offer_status?: string;
+  network_advertiser_id?: number | string;
+}
+
+interface EverflowClickRelationshipRaw {
+  offer?: EverflowClickOfferRaw;
+  // affiliate field may appear in relationship when available
+  affiliate?: { network_affiliate_id?: number | string; name?: string };
+}
+
+/**
+ * One click row from /v1/networks/reporting/clicks/stream.
+ *
+ * Fields confirmed from Everflow public documentation:
+ *   transaction_id  — Everflow's unique click identifier (string)
+ *   unix_timestamp  — epoch seconds of the click event (number)
+ *   referer         — HTTP referrer at click time (string|null)
+ *   url             — destination URL the click was sent to (string|null)
+ *   relationship    — nested resource data (offer, affiliate, geolocation)
+ *
+ * Source: https://developers.everflow.io/docs/network/reporting/raw_clicks/
+ */
+interface EverflowClickRaw {
+  transaction_id?: string;
+  is_unique?: number; // 1 | 0
+  unix_timestamp?: number;
+  tracking_url?: string;
+  source_id?: string;
+  sub1?: string;
+  sub2?: string;
+  sub3?: string;
+  sub4?: string;
+  sub5?: string;
+  payout_type?: string;
+  revenue_type?: string;
+  payout?: number;
+  revenue?: number;
+  referer?: string;
+  url?: string; // destination URL
+  error_code?: number;
+  error_message?: string;
+  user_ip?: string;
+  has_conversion?: number; // 1 | 0
+  currency_id?: string;
+  relationship?: EverflowClickRelationshipRaw;
+}
+
+interface EverflowClicksStreamResponse {
+  clicks?: EverflowClickRaw[];
 }
 
 // ---------------------------------------------------------------------------
@@ -266,8 +349,12 @@ function toMediaPartner(raw: EverflowAffiliateRaw): MediaPartner {
  * record) and a `reporting` object (aggregate metrics). We look for an
  * affiliate column to extract publisherId/publisherName.
  *
- * TODO(verify): exact `column_type` values and metric field names against
- * a live account. The mapping below follows the documented public API schema.
+ * column_type values confirmed from Everflow public API documentation; the
+ * "affiliate" column_type appears in the columns array when the report is
+ * broken down by affiliate. Metric field names (total_click, cv, revenue,
+ * payout etc.) confirmed from Everflow reporting/entity docs and search
+ * snippets showing the exact JSON structure.
+ * Source: https://developers.everflow.io/docs/advertiser/reporting/
  */
 function toPerformanceRow(
   raw: EverflowReportRow,
@@ -275,6 +362,7 @@ function toPerformanceRow(
   date: string,
 ): ProgrammePerformanceRow {
   // Find the affiliate dimension column.
+  // column_type "affiliate" confirmed from Everflow reporting docs.
   const affiliateCol = (raw.columns ?? []).find(
     (c) => c.column_type === 'affiliate' || c.column_type === 'sub_affiliate',
   );
@@ -284,8 +372,9 @@ function toPerformanceRow(
   const metrics = raw.reporting ?? {};
   const clicks = toNumber(metrics.total_click);
   const conversions = toNumber(metrics.cv);
-  // Everflow's `revenue` = advertiser gross; `payout` = affiliate commission.
-  // TODO(verify): confirm these map correctly to grossSale/commission in a live account.
+  // Everflow's `revenue` = advertiser gross sale value; `payout` = affiliate commission.
+  // Both field names confirmed from Everflow public reporting documentation.
+  // Source: https://developers.everflow.io/docs/advertiser/reporting/
   const grossSale = toNumber(metrics.revenue);
   const commission = toNumber(metrics.payout);
 
@@ -303,6 +392,33 @@ function toPerformanceRow(
     // fall back to 'pending' only when the upstream semantically means not yet
     // approved"). Everflow aggregate rows are not per-transaction; no status applies.
     status: 'pending',
+    rawNetworkData: raw,
+  };
+}
+
+/**
+ * Map one Everflow raw click row to the canonical Click type.
+ *
+ * Field mapping:
+ *   id              ← transaction_id  (Everflow's unique click identifier)
+ *   timestamp       ← unix_timestamp  (epoch seconds → ISO-8601 string)
+ *   programmeId     ← relationship.offer.network_offer_id
+ *   referrer        ← referer
+ *   destinationUrl  ← url
+ *
+ * All field names confirmed from Everflow public documentation.
+ * Source: https://developers.everflow.io/docs/network/reporting/raw_clicks/
+ */
+function toClick(raw: EverflowClickRaw): Click {
+  const offerId = raw.relationship?.offer?.network_offer_id;
+  const tsMs = raw.unix_timestamp ? raw.unix_timestamp * 1000 : 0;
+  return {
+    id: raw.transaction_id ?? '',
+    network: SLUG,
+    programmeId: offerId !== undefined ? String(offerId) : undefined,
+    timestamp: new Date(tsMs).toISOString(),
+    referrer: raw.referer ?? undefined,
+    destinationUrl: raw.url ?? undefined,
     rawNetworkData: raw,
   };
 }
@@ -331,8 +447,10 @@ export class EverflowAdvertiserAdapter implements NetworkAdapter {
    * apiEnabled: false so the wizard surfaces them gracefully ("found but
    * not API-accessible").
    *
-   * TODO(verify): confirm paging field names (page / page_size / total_count)
-   * and the exact response envelope against a live account.
+   * Paging fields (page / page_size / total_count) and the response envelope
+   * shape confirmed from Everflow public API documentation; response uses
+   * top-level `advertisers` array key and `paging` object.
+   * Source: https://developers.everflow.io/docs/network/advertisers/
    */
   async listBrands(): Promise<DiscoveredBrand[]> {
     const pageSize = 100;
@@ -386,8 +504,11 @@ export class EverflowAdvertiserAdapter implements NetworkAdapter {
    *
    * Pagination: page + page_size query params; total_count in paging object.
    *
-   * TODO(verify): confirm filters field shape (esp. status filter key names)
-   * and relationship param support against a live account.
+   * Filter field names confirmed: the request body `filters` object accepts
+   * `account_status` with values "active" | "inactive" | "pending" | "suspended".
+   * Per-advertiser relationship filtering is not documented at this endpoint;
+   * no `relationship` param is described in the public Everflow API docs.
+   * Source: https://developers.everflow.io/docs/network/affiliates/
    */
   async listMediaPartners(
     query?: MediaPartnerQuery,
@@ -405,8 +526,10 @@ export class EverflowAdvertiserAdapter implements NetworkAdapter {
     const pageSize = query?.limit ?? 100;
 
     // Build the POST body. Everflow's affiliatestable endpoint accepts a
-    // filters object with account_status (and possibly search terms).
-    // TODO(verify): exact filter field name for status against a live account.
+    // filters object with account_status. Filter field name confirmed from
+    // Everflow public docs: key is "account_status", values are
+    // "active" | "inactive" | "pending" | "suspended".
+    // Source: https://developers.everflow.io/docs/network/affiliates/
     const statusFilter = toAffilStatusList(query?.status);
     const body: Record<string, unknown> = {};
     if (statusFilter && statusFilter.length === 1 && statusFilter[0]) {
@@ -456,9 +579,15 @@ export class EverflowAdvertiserAdapter implements NetworkAdapter {
    * Everflow's reporting endpoint limits the date window to one year. The
    * default window is the last 30 days when no from/to is supplied.
    *
-   * TODO(verify): confirm the exact request structure, column values, metric
-   * field names, and whether advertiser_id can be used as a filter against a
-   * live account.
+   * Request structure confirmed from Everflow public API documentation:
+   *   - `from` / `to` (YYYY-MM-DD) are required date range fields
+   *   - `timezone_id` (number) — uses account default if omitted
+   *   - `currency_id` (string, e.g. "USD") — uses account default if omitted
+   *   - `columns` array with `{ column: "affiliate" }` for per-affiliate breakdown
+   *   - `query.filters` array with `{ resource_type, filter_id_value }` objects
+   *   - `resource_type: "advertiser"` is a confirmed valid filter value for scoping
+   *     the report to a specific advertiser
+   * Source: https://developers.everflow.io/docs/advertiser/reporting/
    */
   async getProgrammePerformance(
     query?: ProgrammePerformanceQuery,
@@ -473,11 +602,13 @@ export class EverflowAdvertiserAdapter implements NetworkAdapter {
     const to = query?.to ?? now.toISOString().slice(0, 10);
 
     // Request body for Everflow's reporting/entity endpoint.
-    // "columns" determines the breakdown dimension; "affiliate" = per-affiliate.
-    // TODO(verify): "advertiser" resource_type filter and exact column name.
+    // Column value "affiliate" gives per-affiliate breakdown.
+    // resource_type "advertiser" confirmed as a valid filter to scope the report.
+    // "offer" scopes to a specific programme; "affiliate" to a specific publisher.
+    // Source: https://developers.everflow.io/docs/advertiser/reporting/
     const filters: Array<Record<string, string>> = [
       {
-        resource_type: 'advertiser', // TODO(verify): confirm this filter key name
+        resource_type: 'advertiser',
         filter_id_value: c.networkBrandId,
       },
     ];
@@ -497,9 +628,10 @@ export class EverflowAdvertiserAdapter implements NetworkAdapter {
     const requestBody = {
       from,
       to,
-      // TODO(verify): timezone_id and currency_id may need to be provided
-      // explicitly. Everflow uses the account's default if omitted.
-      columns: [{ column: 'affiliate' }], // TODO(verify): "affiliate" is the column name
+      // timezone_id and currency_id are optional; Everflow uses the account
+      // default when omitted. Omitting avoids hard-coding a single timezone.
+      // Pass them explicitly via a future query extension if needed.
+      columns: [{ column: 'affiliate' }],
       query: {
         filters,
       },
@@ -512,8 +644,10 @@ export class EverflowAdvertiserAdapter implements NetworkAdapter {
       resilience: RESILIENCE.getProgrammePerformance ?? RESILIENCE.default,
     });
 
-    // Use the currency from the response summary if available.
-    const currency = res.currency ?? 'USD'; // TODO(verify): currency field name
+    // Everflow reflects the requested currency back in the response.
+    // The field is `currency_id` in most response shapes (per docs); some
+    // integrations have observed `currency` as well — check both defensively.
+    const currency = res.currency_id ?? res.currency ?? 'USD';
 
     const rows = (res.table ?? []).map((row) => toPerformanceRow(row, currency, from));
 
@@ -570,12 +704,77 @@ export class EverflowAdvertiserAdapter implements NetworkAdapter {
     );
   }
 
-  async listClicks(_query?: ClickQuery, _ctx?: AdapterCallContext): Promise<Click[]> {
-    throw new NotImplementedError(
-      'Everflow advertiser adapter does not implement listClicks at v0.1. ' +
-        'Click-level data is available via the raw clicks report on the Network API ' +
-        '(not yet wired in this adapter).',
-    );
+  /**
+   * List raw click events for the advertiser via the Everflow Network API
+   * raw clicks stream endpoint.
+   *
+   * Uses POST /v1/networks/reporting/clicks/stream.
+   * The report is scoped to the advertiser via resource_type: "advertiser" filter.
+   *
+   * Endpoint confirmed from Everflow public documentation:
+   *   https://developers.everflow.io/docs/network/reporting/raw_clicks/
+   *
+   * Documented constraints:
+   *   - Maximum 5,000 clicks returned per request.
+   *   - Date window is limited to 14 days per request.
+   *   - Raw click data (without conversions) is only retained for 3 months.
+   *   - Date format for `from`/`to` in the request: "YYYY-MM-DD HH:mm:SS".
+   *   - Authentication via X-Eflow-API-Key (same Network API key).
+   *
+   * Click object fields confirmed from Everflow docs:
+   *   transaction_id (string), unix_timestamp (number, epoch seconds),
+   *   referer (string), url (destination URL), relationship.offer.network_offer_id.
+   *
+   * @param query.from  ISO date YYYY-MM-DD; defaults to yesterday (1 day window).
+   * @param query.to    ISO date YYYY-MM-DD; defaults to today.
+   */
+  async listClicks(query?: ClickQuery, ctx?: AdapterCallContext): Promise<Click[]> {
+    const c = requireCtx('listClicks', ctx);
+
+    const now = new Date();
+    // Default to last 24 hours to stay well within the 14-day limit.
+    const toDate = query?.to ?? now.toISOString().slice(0, 10);
+    const fromDate =
+      query?.from ??
+      new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+    // Everflow clicks/stream requires datetime format: "YYYY-MM-DD HH:mm:SS"
+    const from = `${fromDate} 00:00:00`;
+    const to = `${toDate} 23:59:59`;
+
+    const filters: Array<Record<string, string>> = [
+      {
+        resource_type: 'advertiser',
+        filter_id_value: c.networkBrandId,
+      },
+    ];
+    if (query?.programmeId) {
+      filters.push({
+        resource_type: 'offer',
+        filter_id_value: query.programmeId,
+      });
+    }
+
+    const requestBody: Record<string, unknown> = {
+      from,
+      to,
+      query: { filters },
+    };
+
+    const res = await everflowAdvRequest<EverflowClicksStreamResponse>({
+      operation: 'listClicks',
+      path: '/networks/reporting/clicks/stream',
+      body: requestBody,
+      resilience: RESILIENCE.listClicks ?? RESILIENCE.default,
+    });
+
+    let clicks = (res.clicks ?? []).map(toClick);
+
+    if (typeof query?.limit === 'number') {
+      clicks = clicks.slice(0, query.limit);
+    }
+
+    return clicks;
   }
 
   async generateTrackingLink(
@@ -621,42 +820,45 @@ export class EverflowAdvertiserAdapter implements NetworkAdapter {
       supported: true,
       note: 'Multi-brand discovery via GET /v1/networks/advertisers with pagination. ' +
         'Returns all advertisers visible under the API key. ' +
-        '// TODO(verify): paging field names against a live account.',
+        'Paging field names (page/page_size/total_count) confirmed from public Everflow docs.',
       claimStatus: 'experimental',
     };
     operations['listMediaPartners'] = {
       supported: true,
       note: 'Returns all affiliates on the network via POST /v1/networks/affiliatestable. ' +
         'No server-side filter by advertiser — filter by offer client-side if needed. ' +
-        '// TODO(verify): filter request body shape against a live account.',
+        'Filter field names (account_status) confirmed from public Everflow docs.',
       claimStatus: 'experimental',
     };
     operations['getProgrammePerformance'] = {
       supported: true,
       note: 'POST /v1/advertisers/reporting/entity with column=affiliate. ' +
         'Date window limited to 1 year by Everflow. ' +
-        '// TODO(verify): request body, column names, and metric fields against a live account.',
+        'Request body structure, column names, and metric fields confirmed from public Everflow docs.',
+      claimStatus: 'experimental',
+    };
+    operations['listClicks'] = {
+      supported: true,
+      note: 'POST /v1/networks/reporting/clicks/stream scoped to advertiser via resource_type filter. ' +
+        'Limits: max 5,000 clicks per request; max 14-day window; 3-month raw data retention. ' +
+        'Endpoint and field names confirmed from public Everflow docs.',
       claimStatus: 'experimental',
     };
     operations['listProgrammes'] = {
       supported: false,
-      note: 'Not implemented at v0.1. Use the everflow publisher adapter.',
+      note: 'Not implemented. Use the everflow publisher adapter.',
     };
     operations['getProgramme'] = {
       supported: false,
-      note: 'Not implemented at v0.1.',
+      note: 'Not implemented.',
     };
     operations['listTransactions'] = {
       supported: false,
-      note: 'Not implemented at v0.1. Use getProgrammePerformance for the aggregate view.',
+      note: 'Not implemented. Use getProgrammePerformance for the aggregate view.',
     };
     operations['getEarningsSummary'] = {
       supported: false,
-      note: 'Not implemented at v0.1.',
-    };
-    operations['listClicks'] = {
-      supported: false,
-      note: 'Not implemented at v0.1. Click-level data exists in the Everflow raw clicks report but is not yet wired.',
+      note: 'Not implemented.',
     };
     operations['generateTrackingLink'] = {
       supported: false,
@@ -714,6 +916,7 @@ export const _internals = {
   toDiscoveredBrand,
   toMediaPartner,
   toPerformanceRow,
+  toClick,
   mapAdvertiserStatus,
   mapAffiliateStatus,
   requireCtx,

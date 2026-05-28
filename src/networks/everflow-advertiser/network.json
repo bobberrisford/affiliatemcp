@@ -10,11 +10,12 @@
     "Adapter built from public API documentation; not yet verified against a live account.",
     "API keys are created by a network admin, not by the advertiser directly. Contact your Everflow account manager to obtain a Network API key.",
     "listMediaPartners returns all affiliates on the network; the Everflow API does not expose a direct per-advertiser affiliate filter at this endpoint — filter client-side where needed.",
-    "getProgrammePerformance uses POST /v1/advertisers/reporting/entity with the affiliate column. Everflow limits this endpoint to a maximum date range of one year per request.",
-    "Publisher-side operations (listTransactions, listClicks, generateTrackingLink, listProgrammes, getProgramme, getEarningsSummary) are not implemented at v0.1 — use the separate everflow publisher adapter for those."
+    "getProgrammePerformance uses POST /v1/advertisers/reporting/entity with the affiliate column. Everflow limits this endpoint to a maximum date range of one year per request. timezone_id and currency_id use account defaults when omitted.",
+    "listClicks uses POST /v1/networks/reporting/clicks/stream. Everflow enforces a maximum window of 14 days and returns at most 5,000 clicks per request. Raw click data older than 3 months is not retained (clicks with conversions are retained).",
+    "Publisher-side operations (listTransactions, generateTrackingLink, listProgrammes, getProgramme, getEarningsSummary) are not implemented — use the separate everflow publisher adapter for those."
   ],
   "claim_status": "experimental",
-  "adapter_version": "0.1.0",
+  "adapter_version": "0.2.0",
   "last_verified": "2026-05-28",
   "supports_brand_ops": false,
   "side": "advertiser",

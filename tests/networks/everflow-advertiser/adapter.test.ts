@@ -389,6 +389,160 @@ describe('Everflow advertiser auth failures surface as envelopes', () => {
 });
 
 // ---------------------------------------------------------------------------
+// toClick transformer
+// ---------------------------------------------------------------------------
+
+describe('Everflow advertiser toClick transformer', () => {
+  it('maps click fields correctly from a fixture row', () => {
+    const clicksFixture = loadFixture('clicks.json') as {
+      clicks: Array<Record<string, unknown>>;
+    };
+    const raw = clicksFixture.clicks[0];
+    const click = _internals.toClick(raw as never);
+    expect(click.id).toBe('TXN001abc');
+    expect(click.network).toBe('everflow-advertiser');
+    expect(click.programmeId).toBe('201');
+    // unix_timestamp 1746748800 → 2025-05-09T00:00:00.000Z
+    expect(click.timestamp).toBe('2025-05-09T00:00:00.000Z');
+    expect(click.referrer).toBe('https://bestdeals.com/page');
+    expect(click.destinationUrl).toBe('https://www.acmewidgets.com/landing');
+    expect(click.rawNetworkData).toBe(raw);
+  });
+
+  it('handles missing fields gracefully', () => {
+    const click = _internals.toClick({});
+    expect(click.id).toBe('');
+    expect(click.programmeId).toBeUndefined();
+    expect(click.referrer).toBeUndefined();
+    expect(click.destinationUrl).toBeUndefined();
+    // unix_timestamp undefined → epoch 0
+    expect(click.timestamp).toBe('1970-01-01T00:00:00.000Z');
+  });
+
+  it('sets programmeId from relationship.offer.network_offer_id', () => {
+    const click = _internals.toClick({
+      transaction_id: 'TX123',
+      unix_timestamp: 1000000,
+      relationship: { offer: { network_offer_id: 42 } },
+    });
+    expect(click.programmeId).toBe('42');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// listClicks
+// ---------------------------------------------------------------------------
+
+describe('Everflow advertiser.listClicks', () => {
+  it('returns mapped click records', async () => {
+    const { urls } = mockFetchQueue([fakeResponse(loadFixture('clicks.json'))]);
+
+    const r = await everflowAdvertiserAdapter.listClicks(
+      { from: '2025-05-09', to: '2025-05-09' },
+      { networkBrandId: '101' },
+    );
+    expect(r).toHaveLength(2);
+    expect(r[0]?.id).toBe('TXN001abc');
+    expect(r[0]?.network).toBe('everflow-advertiser');
+    expect(r[0]?.programmeId).toBe('201');
+    expect(r[0]?.referrer).toBe('https://bestdeals.com/page');
+    expect(r[0]?.destinationUrl).toBe('https://www.acmewidgets.com/landing');
+    expect(urls[0]).toContain('/networks/reporting/clicks/stream');
+  });
+
+  it('requires a brand context (config_error when missing)', async () => {
+    await expect(
+      everflowAdvertiserAdapter.listClicks({ from: '2025-05-01', to: '2025-05-01' }),
+    ).rejects.toBeInstanceOf(NetworkError);
+    try {
+      await everflowAdvertiserAdapter.listClicks({ from: '2025-05-01', to: '2025-05-01' });
+    } catch (err) {
+      expect((err as NetworkError).envelope.type).toBe('config_error');
+    }
+  });
+
+  it('sends the advertiser filter in the POST body', async () => {
+    const spy = vi.fn(async () => fakeResponse(loadFixture('clicks.json')));
+    globalThis.fetch = spy as unknown as typeof fetch;
+
+    await everflowAdvertiserAdapter.listClicks(
+      { from: '2025-05-09', to: '2025-05-09' },
+      { networkBrandId: '101' },
+    );
+
+    const [, init] = spy.mock.calls[0] as unknown as [string, RequestInit];
+    const body = JSON.parse(init.body as string) as {
+      query?: { filters?: Array<{ resource_type: string; filter_id_value: string }> };
+    };
+    const advFilter = body.query?.filters?.find((f) => f.resource_type === 'advertiser');
+    expect(advFilter?.filter_id_value).toBe('101');
+  });
+
+  it('sends the offer filter when programmeId is provided', async () => {
+    const spy = vi.fn(async () => fakeResponse(loadFixture('clicks.json')));
+    globalThis.fetch = spy as unknown as typeof fetch;
+
+    await everflowAdvertiserAdapter.listClicks(
+      { from: '2025-05-09', to: '2025-05-09', programmeId: '201' },
+      { networkBrandId: '101' },
+    );
+
+    const [, init] = spy.mock.calls[0] as unknown as [string, RequestInit];
+    const body = JSON.parse(init.body as string) as {
+      query?: { filters?: Array<{ resource_type: string; filter_id_value: string }> };
+    };
+    const offerFilter = body.query?.filters?.find((f) => f.resource_type === 'offer');
+    expect(offerFilter?.filter_id_value).toBe('201');
+  });
+
+  it('formats from/to as datetime strings in the POST body', async () => {
+    const spy = vi.fn(async () => fakeResponse(loadFixture('clicks.json')));
+    globalThis.fetch = spy as unknown as typeof fetch;
+
+    await everflowAdvertiserAdapter.listClicks(
+      { from: '2025-05-09', to: '2025-05-09' },
+      { networkBrandId: '101' },
+    );
+
+    const [, init] = spy.mock.calls[0] as unknown as [string, RequestInit];
+    const body = JSON.parse(init.body as string) as { from: string; to: string };
+    expect(body.from).toBe('2025-05-09 00:00:00');
+    expect(body.to).toBe('2025-05-09 23:59:59');
+  });
+
+  it('respects the limit option', async () => {
+    mockFetchQueue([fakeResponse(loadFixture('clicks.json'))]);
+    const r = await everflowAdvertiserAdapter.listClicks(
+      { from: '2025-05-09', to: '2025-05-09', limit: 1 },
+      { networkBrandId: '101' },
+    );
+    expect(r).toHaveLength(1);
+  });
+
+  it('preserves rawNetworkData on each click', async () => {
+    mockFetchQueue([fakeResponse(loadFixture('clicks.json'))]);
+    const r = await everflowAdvertiserAdapter.listClicks(
+      { from: '2025-05-09', to: '2025-05-09' },
+      { networkBrandId: '101' },
+    );
+    expect(r[0]?.rawNetworkData).toBeDefined();
+  });
+
+  it('uses POST method for the clicks/stream endpoint', async () => {
+    const spy = vi.fn(async () => fakeResponse(loadFixture('clicks.json')));
+    globalThis.fetch = spy as unknown as typeof fetch;
+
+    await everflowAdvertiserAdapter.listClicks(
+      { from: '2025-05-09', to: '2025-05-09' },
+      { networkBrandId: '101' },
+    );
+
+    const [, init] = spy.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.method).toBe('POST');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Unimplemented ops throw NotImplementedError
 // ---------------------------------------------------------------------------
 
@@ -408,10 +562,6 @@ describe('Everflow advertiser unimplemented ops', () => {
 
     await expect(
       everflowAdvertiserAdapter.getEarningsSummary(undefined, { networkBrandId: '101' }),
-    ).rejects.toBeInstanceOf(NotImplementedError);
-
-    await expect(
-      everflowAdvertiserAdapter.listClicks(undefined, { networkBrandId: '101' }),
     ).rejects.toBeInstanceOf(NotImplementedError);
 
     await expect(
@@ -451,8 +601,13 @@ describe('Everflow advertiser.capabilitiesCheck', () => {
     expect(caps.operations['getProgramme']?.supported).toBe(false);
     expect(caps.operations['listTransactions']?.supported).toBe(false);
     expect(caps.operations['getEarningsSummary']?.supported).toBe(false);
-    expect(caps.operations['listClicks']?.supported).toBe(false);
     expect(caps.operations['generateTrackingLink']?.supported).toBe(false);
+  });
+
+  it('marks listClicks as supported', async () => {
+    const caps = await everflowAdvertiserAdapter.capabilitiesCheck();
+    expect(caps.operations['listClicks']?.supported).toBe(true);
+    expect(caps.operations['listClicks']?.claimStatus).toBe('experimental');
   });
 
   it('marks experimental ops with claimStatus=experimental', async () => {
