@@ -106,7 +106,13 @@ async function main(argv: string[]): Promise<number> {
       }
       const { startServer } = await import('./server.js');
       await startServer();
-      return 0;
+      // startServer() resolves as soon as the stdio transport's data listeners
+      // are attached. main() returns trigger `process.exit(code)` (see bottom
+      // of this file), which is a hard exit and would kill the server before
+      // any MCP message is processed. Block forever so the transport stays
+      // live until the parent client disconnects stdin or sends SIGTERM.
+      await new Promise<never>(() => {});
+      return 0; // unreachable
     }
     case 'setup': {
       const { runSetup } = await import('./cli/setup.js');

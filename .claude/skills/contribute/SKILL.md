@@ -295,15 +295,15 @@ A network's API is misbehaving, or the adapter has a bug.
 
 ## 3. Task 3 — add a Claude Code skill
 
-Skills under `src/skills/` are user-facing — they tell Claude Code how to
+Skills under `skills/` are user-facing — they tell Claude Code how to
 answer a particular question using the project's tools.
 
-1. **Check existing skills.** Look under `src/skills/` to confirm the skill
+1. **Check existing skills.** Look under `skills/` to confirm the skill
    doesn't already exist or duplicate one in a different name.
-2. **Create the directory** `src/skills/<skill-name>/`.
+2. **Create the directory** `skills/<skill-name>/`.
 3. **Write `SKILL.md`** with YAML frontmatter (`name`, `description`). Use the
    existing skills as the format reference.
-4. **Add an example file** under `src/skills/<skill-name>/examples/`. Walk a
+4. **Add an example file** under `skills/<skill-name>/examples/`. Walk a
    concrete user query end-to-end.
 5. **Add supporting scripts** only if needed. Most skills are pure prose.
 6. **Test manually.** Open a fresh Claude Code session in the repo, invoke the

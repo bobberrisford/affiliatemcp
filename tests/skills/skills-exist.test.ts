@@ -19,7 +19,7 @@ import '../../src/networks/index.js';
 import { generateAllTools } from '../../src/tools/generate.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const skillsRoot = join(here, '..', '..', 'src', 'skills');
+const skillsRoot = join(here, '..', '..', 'skills');
 
 const SKILLS = [
   'audit-affiliate-links',

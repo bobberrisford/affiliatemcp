@@ -151,6 +151,18 @@ will offer to wire it up.
 `--dry-run` to preview changes, `--force-overwrite` if your existing config
 is malformed JSON.
 
+**Claude Cowork / plugin marketplace:**
+
+```
+/plugin marketplace add bobberrisford/affiliatemcp
+/plugin install affiliate-networks-mcp@affiliatemcp
+```
+
+Registers the MCP server and bundled skills in one step. Credentials still
+come from your shell environment — the included
+[`affiliate-network-setup-help`](./skills/affiliate-network-setup-help/SKILL.md)
+skill (or `npx affiliate-networks-mcp setup`) walks you through them.
+
 <details>
 <summary>Prefer to edit the config yourself?</summary>
 
@@ -335,13 +347,13 @@ new ones interactively — the wizard skips brands already in the file.
 
 Three skills are tuned for the brand side:
 
-- [`programme-performance-report`](./src/skills/programme-performance-report/SKILL.md)
+- [`programme-performance-report`](./skills/programme-performance-report/SKILL.md)
   — one brand across its bound networks. Per-publisher rollup, status
   split, period-over-period delta.
-- [`agency-portfolio-rollup`](./src/skills/agency-portfolio-rollup/SKILL.md)
+- [`agency-portfolio-rollup`](./skills/agency-portfolio-rollup/SKILL.md)
   — every brand × every network in the book. Brand-aggregated headline
   with week-over-week deltas.
-- [`programme-anomaly-watch`](./src/skills/programme-anomaly-watch/SKILL.md)
+- [`programme-anomaly-watch`](./skills/programme-anomaly-watch/SKILL.md)
   — week-over-week anomaly scan, designed to run on a schedule.
 
 ## When something goes wrong
@@ -393,21 +405,21 @@ brand side. Three meta-tools are always present:
 `affiliate_list_networks`, `affiliate_run_diagnostic`, and
 `affiliate_resolve_brand`.
 
-The packaged skills under [`src/skills/`](./src/skills) are the
+The packaged skills under [`skills/`](./skills) are the
 conversation patterns Claude follows for common requests:
 
 **Publisher side:**
 
-- [`affiliate-earnings-report`](./src/skills/affiliate-earnings-report/SKILL.md)
-- [`affiliate-network-status`](./src/skills/affiliate-network-status/SKILL.md)
-- [`affiliate-network-setup-help`](./src/skills/affiliate-network-setup-help/SKILL.md)
-- [`audit-affiliate-links`](./src/skills/audit-affiliate-links/SKILL.md)
+- [`affiliate-earnings-report`](./skills/affiliate-earnings-report/SKILL.md)
+- [`affiliate-network-status`](./skills/affiliate-network-status/SKILL.md)
+- [`affiliate-network-setup-help`](./skills/affiliate-network-setup-help/SKILL.md)
+- [`audit-affiliate-links`](./skills/audit-affiliate-links/SKILL.md)
 
 **Brand side:**
 
-- [`programme-performance-report`](./src/skills/programme-performance-report/SKILL.md)
-- [`agency-portfolio-rollup`](./src/skills/agency-portfolio-rollup/SKILL.md)
-- [`programme-anomaly-watch`](./src/skills/programme-anomaly-watch/SKILL.md)
+- [`programme-performance-report`](./skills/programme-performance-report/SKILL.md)
+- [`agency-portfolio-rollup`](./skills/agency-portfolio-rollup/SKILL.md)
+- [`programme-anomaly-watch`](./skills/programme-anomaly-watch/SKILL.md)
 
 For per-network capability detail, known upstream quirks, and the
 editorial baseline used when accepting new network claims, see
@@ -422,7 +434,7 @@ If you're poking around the source, the top-level folders are:
   per network under [`src/networks/`](./src/networks) (publisher
   adapters at `<slug>/`, advertiser adapters at `<slug>-advertiser/`);
   shared primitives under [`src/shared/`](./src/shared); bundled
-  Claude skills under [`src/skills/`](./src/skills).
+  Claude skills under [`skills/`](./skills).
 - [`docs/networks/`](./docs/networks) — per-network setup walkthroughs
   (dashboard navigation, credentials, common failures), publisher and
   advertiser side.
