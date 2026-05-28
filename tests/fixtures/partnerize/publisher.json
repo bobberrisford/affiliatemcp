@@ -1,0 +1,11 @@
+{
+  "publishers": {
+    "publisher": [
+      {
+        "publisher_id": "1007802",
+        "account_name": "Test Publisher Account",
+        "status": "approved"
+      }
+    ]
+  }
+}

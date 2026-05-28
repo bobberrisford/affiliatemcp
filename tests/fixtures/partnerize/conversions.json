@@ -1,0 +1,64 @@
+{
+  "conversions": {
+    "conversion": [
+      {
+        "conversion_id": "conv_001",
+        "campaign_id": "10l176",
+        "publisher_id": "1007802",
+        "conversion_date": "2026-01-15",
+        "conversion_date_time": "2026-01-15T10:30:00Z",
+        "click_date": "2026-01-15",
+        "click_date_time": "2026-01-15T10:15:00Z",
+        "currency": "GBP",
+        "conversion_reference": "ORDER-12345",
+        "campaign_title": "Acme Online Shop",
+        "publisher_name": "Test Publisher",
+        "conversion_status": "approved",
+        "value": "120.00",
+        "commission": "10.50",
+        "publisher_commission": "9.00",
+        "camref": "1101l3ofu",
+        "country": "GB"
+      },
+      {
+        "conversion_id": "conv_002",
+        "campaign_id": "10l177",
+        "publisher_id": "1007802",
+        "conversion_date": "2026-03-20",
+        "conversion_date_time": "2026-03-20T14:00:00Z",
+        "click_date": "2026-03-20",
+        "click_date_time": "2026-03-20T13:45:00Z",
+        "currency": "EUR",
+        "conversion_reference": "ORDER-99999",
+        "campaign_title": "Beta Gadgets Ltd",
+        "publisher_name": "Test Publisher",
+        "conversion_status": "pending",
+        "value": "89.99",
+        "commission": "5.00",
+        "publisher_commission": "5.00",
+        "camref": "1101l4abc",
+        "country": "DE"
+      },
+      {
+        "conversion_id": "conv_003",
+        "campaign_id": "10l176",
+        "publisher_id": "1007802",
+        "conversion_date": "2024-09-01",
+        "conversion_date_time": "2024-09-01T08:00:00Z",
+        "click_date": "2024-09-01",
+        "click_date_time": "2024-09-01T07:55:00Z",
+        "currency": "GBP",
+        "conversion_reference": "ORDER-55555",
+        "campaign_title": "Acme Online Shop",
+        "publisher_name": "Test Publisher",
+        "conversion_status": "rejected",
+        "value": "45.00",
+        "commission": "3.15",
+        "publisher_commission": "2.70",
+        "camref": "1101l3ofu",
+        "reject_reason": "Customer returned the item within 14 days",
+        "country": "GB"
+      }
+    ]
+  }
+}
