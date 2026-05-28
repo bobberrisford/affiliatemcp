@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report>
+  <matrix>
+    <columnDefs>
+      <columnDef id="programId" label="Programme ID" dataType="INTEGER" />
+      <columnDef id="programName" label="Programme Name" dataType="STRING" />
+      <columnDef id="status" label="Status" dataType="STRING" />
+      <columnDef id="programTariffPercentage" label="Commission %" dataType="DECIMAL" />
+      <columnDef id="programTariffAmount" label="Commission Amount" dataType="DECIMAL" />
+      <columnDef id="programTariffCurrency" label="Currency" dataType="STRING" />
+    </columnDefs>
+    <rows>
+      <row>
+        <col>11111</col>
+        <col>Acme Widgets UK</col>
+        <col>A</col>
+        <col>5.00</col>
+        <col>0</col>
+        <col>GBP</col>
+      </row>
+      <row>
+        <col>22222</col>
+        <col>Globex Electronics</col>
+        <col>A</col>
+        <col>0</col>
+        <col>2.50</col>
+        <col>EUR</col>
+      </row>
+      <row>
+        <col>33333</col>
+        <col>Initech Software</col>
+        <col>S</col>
+        <col>8.00</col>
+        <col>0</col>
+        <col>GBP</col>
+      </row>
+    </rows>
+  </matrix>
+</report>

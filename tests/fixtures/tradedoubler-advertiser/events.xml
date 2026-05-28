@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report>
+  <matrix>
+    <columnDefs>
+      <columnDef id="timeOfEvent" label="Event Date" dataType="DATE" />
+      <columnDef id="siteId" label="Publisher Site ID" dataType="INTEGER" />
+      <columnDef id="siteName" label="Publisher Site Name" dataType="STRING" />
+      <columnDef id="pendingStatus" label="Status" dataType="STRING" />
+      <columnDef id="orderValue" label="Order Value" dataType="DECIMAL" />
+      <columnDef id="affiliateCommission" label="Affiliate Commission" dataType="DECIMAL" />
+      <columnDef id="programId" label="Programme ID" dataType="INTEGER" />
+      <columnDef id="eventName" label="Event Name" dataType="STRING" />
+      <columnDef id="currencyId" label="Currency" dataType="STRING" />
+    </columnDefs>
+    <rows>
+      <row>
+        <col>01.05.2026</col>
+        <col>5001</col>
+        <col>BestDeals.co.uk</col>
+        <col>A</col>
+        <col>150.00</col>
+        <col>7.50</col>
+        <col>11111</col>
+        <col>Sale</col>
+        <col>GBP</col>
+      </row>
+      <row>
+        <col>03.05.2026</col>
+        <col>5002</col>
+        <col>VoucherWorld</col>
+        <col>P</col>
+        <col>89.99</col>
+        <col>4.50</col>
+        <col>11111</col>
+        <col>Sale</col>
+        <col>GBP</col>
+      </row>
+      <row>
+        <col>05.05.2026</col>
+        <col>5003</col>
+        <col>CashbackSite</col>
+        <col>D</col>
+        <col>200.00</col>
+        <col>10.00</col>
+        <col>22222</col>
+        <col>Sale</col>
+        <col>EUR</col>
+      </row>
+      <row>
+        <col>07.05.2026</col>
+        <col>5001</col>
+        <col>BestDeals.co.uk</col>
+        <col>A</col>
+        <col>75.00</col>
+        <col>3.75</col>
+        <col>11111</col>
+        <col>Lead</col>
+        <col>GBP</col>
+      </row>
+    </rows>
+  </matrix>
+</report>
