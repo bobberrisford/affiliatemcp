@@ -32,16 +32,23 @@ const log = createLogger('tradedoubler.auth');
 
 /**
  * Minimal shape of the /usermanagement/users/me response.
- * Tradedoubler does not fully document the field set; we read defensively.
- * // TODO(verify): field names against a live account.
+ *
+ * Tradedoubler does not fully document this endpoint's field set. The fixture
+ * file (tests/fixtures/tradedoubler/me.json) uses `organisationId` (British
+ * English spelling) — this matches the pattern used throughout the connect API
+ * (e.g. the Apiary blueprint consistently uses British English).
+ *
+ * BLOCKED: Exact spelling of the organisation ID field (`organisationId` vs
+ * `organizationId`) cannot be confirmed without a live account response.
+ * Both spellings are accepted defensively.
  */
 interface TdUserMe {
   id?: number | string;
   email?: string;
   firstName?: string;
   lastName?: string;
-  organisationId?: number | string; // TODO(verify): exact field name
-  organizationId?: number | string; // alternate spelling
+  organisationId?: number | string; // expected (British English, matching Apiary style)
+  organizationId?: number | string; // BLOCKED: alternate — kept as defensive fallback
 }
 
 export interface VerifyAuthOk {
@@ -88,8 +95,8 @@ export async function verifyAuth(): Promise<VerifyAuthOk | VerifyAuthFail> {
 
     const id =
       user.id ??
-      user.organisationId ?? // TODO(verify): field name against live account
-      user.organizationId;
+      user.organisationId ?? // expected spelling (British English, see TdUserMe)
+      user.organizationId; // fallback for American English variant
     const name =
       [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email || '';
     const identity = name ? `tradedoubler/${id} (${name})` : `tradedoubler/${id ?? 'unknown'}`;

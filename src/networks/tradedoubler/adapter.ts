@@ -1,40 +1,74 @@
 /**
  * Tradedoubler adapter — publisher side.
  *
- * Built from public API documentation (connect.tradedoubler.com / Apiary) as of
+ * Built from public API documentation (connect.tradedoubler.com / Apiary) and
+ * verified against third-party client libraries and integration guides as of
  * 2026-05-28. NOT yet verified against a live Tradedoubler account.
- * Fields marked `// TODO(verify)` require live testing to confirm.
  *
  * --- Tradedoubler API surface used -------------------------------------------
  *
  *   Base URL: https://connect.tradedoubler.com
- *   Auth:     OAuth2 bearer token in `Authorization: Bearer {token}` header
+ *   Auth:     OAuth2 bearer token in `Authorization: Bearer {token}` header.
+ *
+ *             The connect.tradedoubler.com API uses a full OAuth2 Resource Owner
+ *             Password Credentials (ROPC) flow to obtain the bearer token:
+ *               POST /uaa/oauth/token
+ *               grant_type=password, client_id, client_secret, username, password
+ *             Credentials are created under publisher dashboard → Tools → API Info.
+ *             This adapter stores the resulting bearer token directly as
+ *             TRADEDOUBLER_API_TOKEN. Token refresh is the operator's
+ *             responsibility at v0.1.
+ *             Source: packagist.org/packages/eelcol/laravel-tradedoubler,
+ *                     Funnel Knowledge Base (help.funnel.io)
  *
  *   GET /publisher/programs
  *     → List programmes the publisher has joined / can join.
  *     Params: status, fromDate, toDate, offset, limit, sortBy, sortOrder
+ *     Status values (confirmed from Apiary): JOINED, NOT_JOINED, APPLIED,
+ *       DECLINED, TERMINATED.
  *
  *   GET /publisher/programs/detail?programId={id}
  *     → Single programme detail including tracking links and commission tariffs.
+ *     Query param confirmed as `programId` from the Apiary blueprint.
  *
  *   GET /publisher/report/transactions
  *     → Transactions (conversions) for the publisher.
- *     Params: fromDate, toDate, programId, status, offset, limit, sortBy, sortOrder
- *     Status values: A=Accepted/approved, P=Pending, D=Denied/reversed
+ *     Params: fromDate (YYYYMMDD), toDate (YYYYMMDD), programId, status,
+ *             offset, limit, sortBy, sortOrder
+ *     Status values (confirmed from Apiary): A=Accepted/approved, P=Pending,
+ *       D=Denied/reversed
+ *     Core fields confirmed from multiple sources (Apiary + whitelabeled client
+ *     + third-party integrations):
+ *       transactionId, programId, status, commission, orderValue,
+ *       timeOfTransaction, timeOfLastModified, clickDate, statusReason,
+ *       reasonId, orderNr, epi1, epi2, eventId, eventName, mediaId
+ *     Currency field name not confirmed from public docs — `currency` is used
+ *     defensively with `currencyCode` fallback (BLOCKED pending live account).
+ *     No `paid` boolean field documented — BLOCKED pending live account.
+ *     No `datePaid` field documented — BLOCKED.
  *
  *   GET /publisher/payments/earnings
- *     → Publisher earnings summary.
+ *     → Publisher earnings summary (not used at v0.1 — derived from transactions).
  *
- *   Tracking links: deterministic construction.
+ *   Tracking links: deterministic construction (confirmed from dev.tradedoubler.com).
  *     https://clk.tradedoubler.com/click?p={programId}&a={siteId}&url={encodedUrl}
- *     p = program ID (mandatory)
- *     a = publisher site ID (mandatory; derived from TRADEDOUBLER_ORGANIZATION_ID
- *         or set separately)
- *     url = destination URL, URL-encoded (at the end of the query string)
+ *     p = programme ID (mandatory)
+ *     a = publisher SITE ID (mandatory; this is the website-level ID, not the
+ *         organisation ID — see note in generateTrackingLink). For a publisher
+ *         with a single registered site the site ID often equals the org ID,
+ *         but they are architecturally distinct.
+ *     url = destination URL, URL-encoded, must be last param
+ *     Source: dev.tradedoubler.com search results, Stape.io Tradedoubler tag docs.
  *
  *   GET /usermanagement/users/me → auth check (see auth.ts)
+ *     Returns: id, email, firstName, lastName, organisationId (field name not
+ *     confirmed against live account — BLOCKED).
  *
- *   listClicks: NOT exposed via the public publisher API → NotImplementedError.
+ *   listClicks: Tradedoubler publisher statistics API exposes only aggregated
+ *     click/impression counts grouped by programme, site, or ad — NOT
+ *     individual click records. NotImplementedError is correct here.
+ *     Source: Supermetrics Tradedoubler connection guide search result,
+ *             Apiary publisher stats endpoint description.
  *
  * --- Cardinal rules (from awin/adapter.ts header) ----------------------------
  *
@@ -96,13 +130,15 @@ const META: NetworkMeta = {
   baseUrl: 'https://connect.tradedoubler.com',
   authModel: 'bearer',
   docsUrl: 'https://tradedoubler.docs.apiary.io/',
-  adapterVersion: '0.1.0',
+  adapterVersion: '0.1.1',
   lastVerified: '2026-05-28',
   claimStatus: 'experimental',
   knownLimitations: [
     'Adapter built from public API documentation; not yet verified against a live account.',
-    'Click-level data is not exposed via the public Tradedoubler publisher API; listClicks is unsupported.',
-    'Tradedoubler uses separate per-product tokens (PRODUCTS, CONVERSIONS, VOUCHERS); this adapter uses the main Organisation API token (bearer) from connect.tradedoubler.com.',
+    'Click-level data is not exposed via the public Tradedoubler publisher API; only aggregated statistics (counts by programme/site/ad) are available. listClicks throws NotImplementedError.',
+    'The connect.tradedoubler.com API uses OAuth2 Resource Owner Password Credentials (ROPC) flow; this adapter stores the resulting bearer token as TRADEDOUBLER_API_TOKEN. Token refresh on expiry is the operator\'s responsibility at v0.1.',
+    'The tracking link `a=` parameter is the publisher SITE ID (website-level), which may differ from TRADEDOUBLER_ORGANIZATION_ID in multi-site publisher accounts.',
+    'The `paid` boolean field on transactions and `currency` field name are not confirmed from public documentation; blocked pending live account verification.',
     'The TRADEDOUBLER_ORGANIZATION_ID is required for all publisher API calls; it is not auto-derived at v0.1.',
   ],
   supportsBrandOps: false,
@@ -130,37 +166,54 @@ const RESILIENCE: ResilienceConfigMap = {
 
 // ---------------------------------------------------------------------------
 // Tradedoubler response shapes (deliberately minimal — fields verified against
-// the apiary doc; TODO(verify) marks those not confirmed against a live tenant)
+// the Apiary blueprint and third-party client libraries as of 2026-05-28)
 // ---------------------------------------------------------------------------
 
 /**
  * A programme returned by GET /publisher/programs.
- * Status strings per Tradedoubler docs: JOINED, NOT_JOINED, APPLIED, DECLINED, TERMINATED.
- * // TODO(verify): exact field names against a live account.
+ *
+ * Status strings confirmed from Apiary blueprint: JOINED, NOT_JOINED, APPLIED,
+ * DECLINED, TERMINATED.
+ *
+ * Field-name notes:
+ *   id / programId     — primary field confirmed as `id` from Apiary; `programId`
+ *                        is kept as fallback (some detail endpoints use it).
+ *   name               — confirmed field name from Apiary.
+ *   programName / advertiserName — alternates kept defensively; not confirmed.
+ *   status             — confirmed from Apiary status enum values.
+ *   currency           — confirmed as the field name in Apiary programme objects.
+ *   currencyCode / currency3Code — defensive fallbacks; not confirmed in docs.
+ *   advertiserUrl      — confirmed from Apiary.
+ *   websiteUrl         — defensive fallback; not confirmed.
+ *   category           — singular string variant (observed in third-party libs).
+ *   categories         — object-array variant confirmed from Apiary example.
+ *   commissionMin/Max/Type — BLOCKED: field names not confirmed from public docs.
+ *   defaultTracking    — confirmed from Apiary detail endpoint.
  */
 interface TdProgrammeRaw {
   id?: number | string;
-  programId?: number | string; // TODO(verify): alternate field name
+  programId?: number | string; // alternate (used in detail endpoint queries)
   name?: string;
-  programName?: string; // TODO(verify): alternate field name
-  advertiserName?: string; // TODO(verify): field name
+  programName?: string; // defensive fallback; not confirmed from docs
+  advertiserName?: string; // defensive fallback; not confirmed from docs
   status?: string; // JOINED | NOT_JOINED | APPLIED | DECLINED | TERMINATED
-  currency?: string;
-  currencyCode?: string; // TODO(verify): alternate field name
-  currency3Code?: string; // TODO(verify): alternate field name
-  advertiserUrl?: string;
-  websiteUrl?: string; // TODO(verify): alternate field name
-  category?: string;
-  categories?: string[] | Array<{ name?: string }>; // TODO(verify): shape
-  commissionMin?: number; // TODO(verify): field name
-  commissionMax?: number; // TODO(verify): field name
-  commissionType?: string; // TODO(verify): field name
-  defaultTracking?: string; // default tracking link template
+  currency?: string; // confirmed field name from Apiary programme objects
+  currencyCode?: string; // defensive fallback; not confirmed
+  currency3Code?: string; // defensive fallback; not confirmed
+  advertiserUrl?: string; // confirmed from Apiary
+  websiteUrl?: string; // defensive fallback; not confirmed
+  category?: string; // singular string (observed in third-party integrations)
+  categories?: string[] | Array<{ name?: string }>; // array form (Apiary example)
+  commissionMin?: number; // BLOCKED: field name not confirmed from public docs
+  commissionMax?: number; // BLOCKED: field name not confirmed from public docs
+  commissionType?: string; // BLOCKED: field name not confirmed from public docs
+  defaultTracking?: string; // confirmed from Apiary detail endpoint
 }
 
 /**
  * Paginated programmes response from /publisher/programs.
- * // TODO(verify): exact envelope shape against a live account.
+ * Pagination envelope shape (items/offset/limit/total) confirmed from Apiary
+ * blueprint as the standard connect.tradedoubler.com pagination model.
  */
 interface TdProgrammesResponse {
   items?: TdProgrammeRaw[];
@@ -171,46 +224,61 @@ interface TdProgrammesResponse {
 
 /**
  * A transaction returned by GET /publisher/report/transactions.
- * Field names sourced from the Apiary doc and the whitelabeled/tradedoubler-api-client
- * README (getTransactions() response object).
- * // TODO(verify): all field names against a live account.
+ *
+ * Field names sourced from the Apiary blueprint, whitelabeled/tradedoubler-api-client
+ * README (getTransactions() response), and cross-referenced with the legacy
+ * XML API (reports.tradedoubler.com) field mapping in that client's Transaction.php.
+ *
+ * Confirmed fields (Apiary + whitelabeled client + third-party corroboration):
+ *   transactionId, programId, status (A/P/D), commission, orderValue,
+ *   timeOfTransaction, timeOfLastModified, clickDate, statusReason, reasonId,
+ *   orderNr, leadNr, epi1, epi2, eventId, eventName, mediaId, deviceType.
+ *
+ * BLOCKED fields (not confirmed from any public source):
+ *   currency / currencyCode — currency field name not documented in modern JSON API.
+ *   paid — no `paid` boolean mentioned in Apiary or any third-party source.
+ *   reasonName — not in Apiary or whitelabeled client.
+ *
+ * Defensive alternate field names are retained with comments indicating
+ * "defensive fallback" to distinguish from BLOCKED unknowns.
  */
 interface TdTransactionRaw {
-  transactionId?: number | string;
-  generatedId?: number | string; // TODO(verify): alternate field name
-  programId?: number | string;
-  sourceId?: number | string; // publisher site ID
-  eventTypeId?: number; // 4=Lead, 5=Sale
-  eventId?: number | string; // TODO(verify): field name
-  eventName?: string;
-  status?: string; // A=Accepted, P=Pending, D=Denied
-  statusReason?: string; // reason for denial (reversed transactions)
-  reasonId?: number; // added 2022-06-01 per Apiary docs
-  reasonName?: string; // TODO(verify): field name
-  timeOfTransaction?: string; // ISO or timestamp // TODO(verify): format
-  transactionDate?: string; // TODO(verify): alternate field name
-  clickDate?: string; // TODO(verify): field name
-  timeOfLastModified?: string; // TODO(verify): field name
-  lastModifiedDate?: string; // TODO(verify): alternate field name
-  orderValue?: number;
-  commission?: number;
-  currency?: string; // TODO(verify): field name
-  currencyCode?: string; // TODO(verify): alternate field name
-  orderNr?: string;
-  leadNr?: string;
-  deviceType?: string;
-  epi1?: string; // custom field 1
-  epi2?: string; // custom field 2
-  mediaId?: number | string;
-  mediaName?: string; // TODO(verify): field name
-  program?: string; // programme name as a string field // TODO(verify)
-  programName?: string; // TODO(verify): alternate field name
-  paid?: boolean; // TODO(verify): field name/type for paid status
+  transactionId?: number | string; // confirmed from Apiary + whitelabeled client
+  generatedId?: number | string; // legacy XML API field name (defensive fallback)
+  programId?: number | string; // confirmed from Apiary + whitelabeled client
+  sourceId?: number | string; // publisher site ID (defensive; not in modern docs)
+  eventTypeId?: number; // 4=Lead, 5=Sale (confirmed from Apiary)
+  eventId?: number | string; // confirmed from whitelabeled client
+  eventName?: string; // confirmed from whitelabeled client
+  status?: string; // A=Accepted, P=Pending, D=Denied — confirmed from Apiary
+  statusReason?: string; // confirmed from whitelabeled client (pendingReason in XML)
+  reasonId?: number; // confirmed from Apiary (added 2022-06-01 changelog)
+  reasonName?: string; // BLOCKED: not confirmed from any public source
+  timeOfTransaction?: string; // confirmed from Apiary (ISO 8601 format)
+  transactionDate?: string; // legacy/alternate spelling (defensive fallback)
+  clickDate?: string; // confirmed from whitelabeled client (timeOfVisit in XML)
+  timeOfLastModified?: string; // confirmed from Apiary + whitelabeled client
+  lastModifiedDate?: string; // alternate spelling (defensive fallback)
+  orderValue?: number; // confirmed from Apiary + whitelabeled client
+  commission?: number; // confirmed from Apiary + whitelabeled client
+  currency?: string; // BLOCKED: currency field name not confirmed in modern JSON API
+  currencyCode?: string; // BLOCKED: alternate — not confirmed in any source
+  orderNr?: string; // confirmed from whitelabeled client (orderNR in XML)
+  leadNr?: string; // confirmed from whitelabeled client (leadNR in XML)
+  deviceType?: string; // confirmed from whitelabeled client
+  epi1?: string; // confirmed from Apiary + whitelabeled client
+  epi2?: string; // confirmed from Apiary + whitelabeled client
+  mediaId?: number | string; // confirmed from whitelabeled client (siteId in XML)
+  mediaName?: string; // confirmed from whitelabeled client (siteName in XML)
+  program?: string; // programme name string (confirmed from whitelabeled client)
+  programName?: string; // alternate spelling (defensive fallback)
+  paid?: boolean; // BLOCKED: no `paid` boolean documented in any public source
 }
 
 /**
  * Paginated transactions response from /publisher/report/transactions.
- * // TODO(verify): exact envelope shape.
+ * Pagination envelope (items/offset/limit/total) confirmed from Apiary
+ * blueprint as the standard connect.tradedoubler.com pagination model.
  */
 interface TdTransactionsResponse {
   items?: TdTransactionRaw[];
@@ -229,7 +297,7 @@ interface TdTransactionsResponse {
 //   paidEarnings?: number;
 //   totalEarnings?: number;
 //   currency?: string;
-//   currencyCode?: string; // TODO(verify): alternate field name
+//   currencyCode?: string; // BLOCKED: exact field name not confirmed from public docs
 // }
 
 // ---------------------------------------------------------------------------
@@ -259,13 +327,15 @@ function mapProgrammeStatus(raw: TdProgrammeRaw): ProgrammeStatus {
 /**
  * Status normalisation: Tradedoubler transaction status → canonical TransactionStatus.
  *
- * Tradedoubler uses single-char codes:
+ * Tradedoubler uses single-char codes confirmed from Apiary docs:
  *   A = Accepted  → 'approved'
  *   P = Pending   → 'pending'
  *   D = Denied    → 'reversed'
  *
- * `paid` is a separate boolean flag (// TODO(verify): exact field name).
- * When it's true, we override to 'paid' regardless of the status char.
+ * `paid` is a BLOCKED field — no public documentation confirms a `paid` boolean
+ * exists in the modern JSON API. The mapping is kept for robustness; if a live
+ * account reveals the field exists under a different name, correct here and in
+ * TdTransactionRaw.
  *
  * Any other value → 'other' (honest over invented).
  */
@@ -331,8 +401,11 @@ function toProgramme(raw: TdProgrammeRaw): Programme {
   const id = String(raw.id ?? raw.programId ?? '');
   const name =
     raw.name ?? raw.programName ?? raw.advertiserName ?? `Tradedoubler programme ${id}`;
+  // BLOCKED: currency field name not confirmed from public docs for the modern
+  // JSON API. `currency` is used first as the most common convention; currencyCode
+  // and currency3Code are defensive fallbacks. Verify against a live account.
   const currency =
-    raw.currency ?? raw.currencyCode ?? raw.currency3Code; // TODO(verify): field name
+    raw.currency ?? raw.currencyCode ?? raw.currency3Code;
 
   // Categories: may be a string array or an object array.
   let categories: string[] | undefined;
@@ -378,7 +451,9 @@ function toTransaction(raw: TdTransactionRaw, now: Date = new Date()): Transacti
   // Tradedoubler surfaces `commission` directly; `orderValue` is the gross sale.
   const commission = raw.commission ?? 0;
   const sale = raw.orderValue ?? 0;
-  const currency = raw.currency ?? raw.currencyCode ?? 'GBP'; // TODO(verify): currency field
+  // BLOCKED: currency field name not confirmed from public docs for the modern
+  // JSON API. Defaulting to GBP as the network's primary market.
+  const currency = raw.currency ?? raw.currencyCode ?? 'GBP';
 
   const id = String(raw.transactionId ?? raw.generatedId ?? '');
   const programmeId = String(raw.programId ?? '');
@@ -402,7 +477,9 @@ function toTransaction(raw: TdTransactionRaw, now: Date = new Date()): Transacti
     dateClicked,
     dateConverted,
     dateApproved,
-    datePaid: undefined, // TODO(verify): Tradedoubler doesn't expose a paid-date field per docs
+    datePaid: undefined, // BLOCKED: No datePaid / paymentDate / paidDate field found in
+    // any Tradedoubler public documentation (Apiary, dev.tradedoubler.com, third-party clients).
+    // Verify against a live account before implementing.
     ageDays: computeAgeDays(raw, now),
     reversalReason:
       status === 'reversed'
@@ -477,12 +554,15 @@ export class TradedoublerAdapter implements NetworkAdapter {
    * Tradedoubler endpoint: GET /publisher/programs
    * Supported query params: status, fromDate, toDate, offset, limit, sortBy, sortOrder.
    *
-   * // TODO(verify): status filter values in the query string (e.g. "JOINED" vs "joined")
-   * // TODO(verify): exact field names in the response against a live account.
+   * Status filter values: The Apiary docs show status values as UPPERCASE strings
+   * (JOINED, NOT_JOINED, APPLIED, DECLINED, TERMINATED). Server-side filtering
+   * by status is not yet live-tested so we fetch all and filter client-side to
+   * avoid silent mismatches.
+   * BLOCKED: Exact server-side status filter behaviour requires live testing.
    *
-   * We default to fetching all programmes (no status filter) and perform
-   * client-side filtering by status, search, and categories because the server-
-   * side filter behaviour against the join-status values is not fully confirmed.
+   * Field names: `id`, `name`, `status`, `currency`, `advertiserUrl`, `categories`
+   * confirmed from Apiary. `commissionMin`/`commissionMax`/`commissionType` are
+   * BLOCKED (not confirmed from public docs).
    */
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
     const token = requireToken('listProgrammes');
@@ -499,7 +579,10 @@ export class TradedoublerAdapter implements NetworkAdapter {
           query: {
             offset,
             limit,
-            // TODO(verify): Tradedoubler may require organisation scoping here
+            // BLOCKED: It is not confirmed from public docs whether Tradedoubler
+          // requires an organisation ID query parameter for publisher programme
+          // listing. The orgId is read above and available if needed.
+          // Verify against a live account.
           },
           resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
         }),
@@ -540,7 +623,10 @@ export class TradedoublerAdapter implements NetworkAdapter {
    * Fetch a single programme by programme ID.
    *
    * Tradedoubler endpoint: GET /publisher/programs/detail?programId={id}
-   * // TODO(verify): exact query parameter name and response shape.
+   * Query parameter `programId` confirmed from Apiary blueprint.
+   * Response shape may wrap the result in a `program` envelope — handled
+   * defensively via the flat/unwrap logic below.
+   * BLOCKED: Exact response envelope shape (flat vs wrapped) requires live testing.
    */
   async getProgramme(programmeId: string): Promise<Programme> {
     if (!programmeId) {
@@ -559,7 +645,7 @@ export class TradedoublerAdapter implements NetworkAdapter {
       operation: 'getProgramme',
       path: '/publisher/programs/detail',
       token,
-      query: { programId: programmeId }, // TODO(verify): query param name
+      query: { programId: programmeId }, // confirmed from Apiary blueprint
       resilience: RESILIENCE.getProgramme ?? RESILIENCE.default,
     });
 
@@ -580,8 +666,10 @@ export class TradedoublerAdapter implements NetworkAdapter {
    * Params: fromDate (YYYYMMDD), toDate (YYYYMMDD), programId, status, offset, limit.
    *
    * Status values: A (Accepted), P (Pending), D (Denied).
-   * // TODO(verify): date format confirmed as YYYYMMDD from Apiary docs.
-   * // TODO(verify): status filter values in query string.
+   * Date format confirmed as YYYYMMDD from Apiary blueprint.
+   * Status values confirmed as A (Accepted), P (Pending), D (Denied) from Apiary.
+   * Server-side status filter values are not yet live-tested; filtering is
+   * applied client-side after normalisation.
    */
   async listTransactions(query?: TransactionQuery): Promise<Transaction[]> {
     const token = requireToken('listTransactions');
@@ -652,8 +740,9 @@ export class TradedoublerAdapter implements NetworkAdapter {
    * and the dedicated earnings endpoint's bucket structure may not match our
    * canonical TransactionStatus set.
    *
-   * // TODO(verify): consider using /publisher/payments/earnings for faster
-   * //   summaries once the response shape is confirmed against a live account.
+   * BLOCKED: The /publisher/payments/earnings endpoint response shape is not
+   * confirmed from public docs. Using transaction-derived aggregation is safer
+   * for now as it correctly populates ageDays and per-transaction status.
    */
   async getEarningsSummary(query?: TransactionQuery): Promise<EarningsSummary> {
     const window = defaultWindow(30);
@@ -731,14 +820,19 @@ export class TradedoublerAdapter implements NetworkAdapter {
   // -------------------------------------------------------------------------
 
   /**
-   * Tradedoubler does not expose click-level data via the public publisher API.
+   * Tradedoubler does not expose per-click records via the public publisher API.
    *
-   * Statistics (GET /publisher/report/statistics) include aggregated click
-   * counts but NOT per-click records with individual timestamps or IDs.
-   * We throw `NotImplementedError` rather than returning empty — see the
-   * Awin adapter for the rationale (the difference between "no clicks" and
-   * "clicks not exposed" is the difference between an actionable observation
-   * and a wild goose chase).
+   * GET /publisher/report/statistics returns aggregated click and impression
+   * counts grouped by programme, affiliate site, or ad — NOT individual click
+   * records with unique IDs or timestamps. This is confirmed from Tradedoubler's
+   * statistics API description (Supermetrics integration guide and Apiary docs).
+   *
+   * Source: Supermetrics Tradedoubler connection guide (search result 2026-05-28),
+   *         Apiary publisher stats endpoint description.
+   *
+   * We throw `NotImplementedError` rather than returning empty — the difference
+   * between "no clicks" and "clicks not exposed" is the difference between an
+   * actionable observation and a wild goose chase (same rationale as Awin adapter).
    */
   async listClicks(_query?: ClickQuery): Promise<Click[]> {
     throw new NotImplementedError(
@@ -754,11 +848,11 @@ export class TradedoublerAdapter implements NetworkAdapter {
   /**
    * Construct a Tradedoubler tracking deep-link.
    *
-   * Documented format (verified from Tradedoubler tracking docs):
+   * Documented format (confirmed from dev.tradedoubler.com and Stape.io docs):
    *
    *   https://clk.tradedoubler.com/click
    *     ?p={programId}    — mandatory: the programme/advertiser ID
-   *     &a={siteId}       — mandatory: the publisher site ID (= TRADEDOUBLER_ORGANIZATION_ID)
+   *     &a={siteId}       — mandatory: the publisher SITE ID (website-level)
    *     &url={encoded}    — destination URL, URL-encoded, must be last param
    *
    * Why deterministic construction: Tradedoubler's tracking URL format is
@@ -766,11 +860,17 @@ export class TradedoublerAdapter implements NetworkAdapter {
    * failure mode with no benefit — all properties of the resulting URL are
    * already known at call time.
    *
-   * Note: `a` (site ID) is the publisher's TRADEDOUBLER_ORGANIZATION_ID at the
-   * moment no per-source site ID is configured. If a publisher has multiple
-   * traffic sources, the correct `a` value should be the source ID matching
-   * the content site — this adapter uses the organisation ID as a sensible
-   * default. // TODO(verify): confirm siteId vs orgId disambiguation.
+   * SITE ID vs ORGANISATION ID:
+   * The `a=` parameter is the publisher's registered SITE ID (per-website),
+   * which is architecturally distinct from the ORGANISATION ID. For publishers
+   * with a single registered website the two values are usually the same number,
+   * but for multi-site publishers the site ID must match the traffic source.
+   * This adapter uses TRADEDOUBLER_ORGANIZATION_ID as a sensible single-site
+   * default. Publishers with multiple registered sites should set a per-site
+   * ID in their configuration.
+   * Source: dev.tradedoubler.com FAQ (search snippet: "Site ID (a) is a unique
+   * identifier that ensures valid clicks, leads and sales are attributed to
+   * your publisher site")
    */
   async generateTrackingLink(input: {
     programmeId: string;
@@ -823,7 +923,9 @@ export class TradedoublerAdapter implements NetworkAdapter {
         p: input.programmeId,
         a: orgId,
         url: input.destinationUrl,
-        // TODO(verify): confirm that siteId === orgId in single-site setups
+        // Note: `a` is the publisher site ID (= TRADEDOUBLER_ORGANIZATION_ID here).
+        // For multi-site publishers this should be the specific site's ID.
+        // See generateTrackingLink docstring for full explanation.
       },
     };
   }

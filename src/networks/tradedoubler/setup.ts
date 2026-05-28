@@ -20,16 +20,26 @@ export function setupSteps(): SetupStep[] {
   return [
     {
       field: 'TRADEDOUBLER_API_TOKEN',
-      label: 'Tradedoubler API Token (bearer)',
+      label: 'Tradedoubler API Bearer Token',
       type: 'password',
       description:
-        'Generate an API token in the Tradedoubler publisher dashboard:\n' +
-        '  1. Log in at https://login.tradedoubler.com/.\n' +
-        '  2. Go to Account → Manage tokens.\n' +
-        '  3. Create a new token for your publisher account and copy it.\n' +
-        'This is the bearer token used by the connect.tradedoubler.com API. ' +
-        'It is different from the per-product tokens (PRODUCTS, CONVERSIONS, VOUCHERS) ' +
-        'used by the older api.tradedoubler.com surface.',
+        'The OAuth2 bearer token for the connect.tradedoubler.com API.\n' +
+        '\n' +
+        'How to obtain:\n' +
+        '  1. Log in at https://publishers.tradedoubler.com/.\n' +
+        '  2. Go to Tools → API Info → Clients.\n' +
+        '  3. Click "Add client" to create an API client — save the Client ID and\n' +
+        '     Client Secret (the secret is shown only once).\n' +
+        '  4. Use the OAuth2 Resource Owner Password Credentials flow to obtain a\n' +
+        '     bearer token:\n' +
+        '       POST https://connect.tradedoubler.com/uaa/oauth/token\n' +
+        '       grant_type=password&client_id=<id>&client_secret=<secret>\n' +
+        '       &username=<your-email>&password=<your-password>\n' +
+        '  5. Copy the `access_token` from the response.\n' +
+        '\n' +
+        'This is the connect.tradedoubler.com bearer token, distinct from the\n' +
+        'per-product tokens (PRODUCTS, CONVERSIONS, VOUCHERS) used by the\n' +
+        'older api.tradedoubler.com surface.',
       example: 'eyJhbGciOiJSUzI1NiJ9...',
       validateOnEntry: (v) => validateCredential('TRADEDOUBLER_API_TOKEN', v),
     },
