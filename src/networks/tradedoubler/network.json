@@ -1,0 +1,22 @@
+{
+  "slug": "tradedoubler",
+  "name": "Tradedoubler",
+  "base_url": "https://connect.tradedoubler.com",
+  "auth_model": "bearer",
+  "env_vars": ["TRADEDOUBLER_API_TOKEN", "TRADEDOUBLER_ORGANIZATION_ID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Click-level data is not exposed via the public Tradedoubler publisher API; listClicks is unsupported.",
+    "Tradedoubler uses separate per-product tokens (PRODUCTS, CONVERSIONS, VOUCHERS); this adapter uses the main Organisation API token (bearer) from connect.tradedoubler.com.",
+    "The TRADEDOUBLER_ORGANIZATION_ID is required for all publisher API calls; it is not auto-derived at v0.1."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-05-28",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://tradedoubler.docs.apiary.io/"
+}
