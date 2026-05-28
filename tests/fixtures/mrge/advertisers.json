@@ -1,0 +1,38 @@
+[
+  {
+    "id": 1001,
+    "advertiser_id": 1001,
+    "name": "Atolls Bookshop",
+    "status": "active",
+    "url": "https://www.atollsbookshop.example.com",
+    "categories": ["books", "education"],
+    "commission": "8",
+    "commission_type": "percent",
+    "currency": "EUR",
+    "tracking_url": "https://click.yieldkit.com/1001?site_id=12345"
+  },
+  {
+    "id": 1002,
+    "advertiser_id": 1002,
+    "name": "Reef Outfitters",
+    "status": "active",
+    "url": "https://www.reefoutfitters.example.com",
+    "categories": ["outdoor", "sports"],
+    "commission": "5.5",
+    "commission_type": "percent",
+    "currency": "EUR",
+    "tracking_url": "https://click.yieldkit.com/1002?site_id=12345"
+  },
+  {
+    "id": 1003,
+    "advertiser_id": 1003,
+    "name": "Coral Electronics",
+    "status": "suspended",
+    "url": "https://www.coralelectronics.example.com",
+    "categories": ["electronics"],
+    "commission": "3",
+    "commission_type": "percent",
+    "currency": "EUR",
+    "tracking_url": "https://click.yieldkit.com/1003?site_id=12345"
+  }
+]

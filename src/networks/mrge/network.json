@@ -1,0 +1,24 @@
+{
+  "slug": "mrge",
+  "name": "mrge",
+  "base_url": "https://api.yieldkit.com",
+  "auth_model": "custom",
+  "env_vars": ["MRGE_API_KEY", "MRGE_API_SECRET", "MRGE_SITE_ID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "mrge public API documentation is limited; publisher-api.mrge.com returns 403 to automated fetches.",
+    "Click-level data is not grounded in public API documentation; listClicks throws NotImplementedError.",
+    "getProgramme is not grounded in public docs as a separate endpoint; it filters the listProgrammes result client-side.",
+    "Reporting API host and full path are uncertain (TODO: verify); listTransactions may fail until verified.",
+    "generateTrackingLink uses a URL pattern derived from Yieldkit documentation; the format requires live verification."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-05-28",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://publisher-api.mrge.com/documentation/"
+}
