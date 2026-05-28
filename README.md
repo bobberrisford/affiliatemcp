@@ -121,10 +121,47 @@ npx affiliate-networks-mcp test
 You should see one line per network: `ok` for everything that's healthy,
 `error — <reason>` for anything that isn't.
 
-**3. Tell Claude about it.** If you're on Claude Desktop, open the
-config file (the example at
-[`examples/claude-desktop-config.md`](./examples/claude-desktop-config.md)
-shows you where it lives on your operating system) and paste:
+**3. Connect it to Claude.** Pick the one that matches how you use Claude.
+
+The setup wizard offers this at the end automatically — say yes and you can
+skip the rest of this step. If you want to run it later, or want to do it
+by hand, the options are below.
+
+**Claude Desktop (Mac/Windows app) — most users:**
+
+```
+npx affiliate-networks-mcp install
+```
+
+This finds your Claude Desktop config, adds the `affiliate` entry alongside
+anything else you already have, and tells you which file it touched. It
+takes a timestamped backup first, so your existing MCP servers are safe.
+Restart Claude Desktop after it finishes.
+
+**Claude Code (terminal):**
+
+```
+claude mcp add affiliate -- npx affiliate-networks-mcp
+```
+
+Or run the same `install` command above — it detects Claude Code too and
+will offer to wire it up.
+
+**Flags:** `--desktop` / `--code` to pick one, `--all` to skip prompting,
+`--dry-run` to preview changes, `--force-overwrite` if your existing config
+is malformed JSON.
+
+<details>
+<summary>Prefer to edit the config yourself?</summary>
+
+Open the Claude Desktop config file at:
+
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+Add the `affiliate` entry inside `mcpServers`. If `mcpServers` already
+exists, add the entry alongside the others — don't replace the whole
+block.
 
 ```json
 {
@@ -137,11 +174,17 @@ shows you where it lives on your operating system) and paste:
 }
 ```
 
-Restart Claude Desktop. Open a new conversation and type
-**"list my affiliate networks"** — you should see every network you
+Restart Claude Desktop after saving.
+
+</details>
+
+**Check it worked.** In a new Claude conversation, ask **"What affiliate
+networks do you have access to?"** — you should see every network you
 configured. If you registered any brands, also try **"list my brands"**.
 
 That's it. Ask it questions.
+
+To disconnect later, run `npx affiliate-networks-mcp uninstall`.
 
 ## What you can ask
 

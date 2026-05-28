@@ -137,7 +137,35 @@ export async function runSetup(opts: SetupOptions = {}): Promise<number> {
   out('');
   out(`Wrote ${paths.envFile}.`);
   out('You are set up. Test with `affiliate-networks-mcp test`.');
+
+  await offerConnectToClaude(prompter);
   return 0;
+}
+
+/**
+ * Offer to wire this server up to whichever Claude clients are present. The
+ * orchestrator prompts further (which clients, conflict handling), so we ask
+ * a single yes/no here and delegate. Failures inside the install flow do not
+ * fail setup — the credentials are still saved.
+ */
+async function offerConnectToClaude(prompter: Prompter): Promise<void> {
+  out('');
+  const yes = await prompter.confirm(
+    'Connect this to Claude Desktop / Claude Code now?',
+    { defaultYes: true },
+  );
+  if (!yes) {
+    out('Skipped. Run `affiliate-networks-mcp install` later to connect.');
+    return;
+  }
+  try {
+    const { runInstall } = await import('./install.js');
+    await runInstall({ prompter });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    out(`Install step failed: ${msg}`);
+    out('Your credentials are saved. Run `affiliate-networks-mcp install` to retry.');
+  }
 }
 
 // ---------------------------------------------------------------------------

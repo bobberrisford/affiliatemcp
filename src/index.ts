@@ -39,11 +39,52 @@ function printHelp(): void {
   write('Usage:');
   write('  affiliate-networks-mcp                 Start the MCP server on stdio');
   write('  affiliate-networks-mcp setup           Interactive setup wizard');
+  write('  affiliate-networks-mcp install         Connect to Claude Desktop / Claude Code');
+  write('  affiliate-networks-mcp uninstall       Remove the affiliate entry from Claude clients');
   write('  affiliate-networks-mcp test            Friendly diagnostic against configured networks');
   write('  affiliate-networks-mcp doctor          Verbose diagnostic with raw responses');
   write('  affiliate-networks-mcp validate <slug> Run the full validation suite against one network');
   write('  affiliate-networks-mcp --help          Show this help');
   write('');
+  write('install/uninstall flags:');
+  write('  --desktop          Target Claude Desktop only');
+  write('  --code             Target Claude Code only');
+  write('  --all              Target both, no prompt');
+  write('  --dry-run          Show what would change without writing');
+  write('  --force-overwrite  Rewrite a malformed Claude Desktop config (backs up first)');
+  write('');
+}
+
+interface InstallFlags {
+  target: 'auto' | 'desktop' | 'code' | 'all';
+  dryRun: boolean;
+  forceOverwrite: boolean;
+}
+
+function parseInstallFlags(rest: string[]): InstallFlags {
+  const flags: InstallFlags = { target: 'auto', dryRun: false, forceOverwrite: false };
+  for (const arg of rest) {
+    switch (arg) {
+      case '--desktop':
+        flags.target = 'desktop';
+        break;
+      case '--code':
+        flags.target = 'code';
+        break;
+      case '--all':
+        flags.target = 'all';
+        break;
+      case '--dry-run':
+        flags.dryRun = true;
+        break;
+      case '--force-overwrite':
+        flags.forceOverwrite = true;
+        break;
+      default:
+        throw new Error(`Unknown flag for install/uninstall: ${arg}`);
+    }
+  }
+  return flags;
 }
 
 async function main(argv: string[]): Promise<number> {
@@ -70,6 +111,26 @@ async function main(argv: string[]): Promise<number> {
     case 'setup': {
       const { runSetup } = await import('./cli/setup.js');
       return await runSetup();
+    }
+    case 'install': {
+      const { runInstall } = await import('./cli/install.js');
+      try {
+        const flags = parseInstallFlags(rest);
+        return await runInstall(flags);
+      } catch (err) {
+        write((err as Error).message);
+        return 2;
+      }
+    }
+    case 'uninstall': {
+      const { runUninstall } = await import('./cli/install.js');
+      try {
+        const flags = parseInstallFlags(rest);
+        return await runUninstall(flags);
+      } catch (err) {
+        write((err as Error).message);
+        return 2;
+      }
     }
     case 'test': {
       const { runTest } = await import('./cli/test.js');
