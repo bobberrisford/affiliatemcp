@@ -441,7 +441,9 @@ bug report as evidence about the underlying API.
 What's coming next — onboarding-friction work, the long tail of
 daily affiliate-manager questions, the finance / CFO pack, and the
 order we'll promote adapters from `experimental` to `production` —
-is laid out in the [roadmap](./docs/product/roadmap.md).
+is laid out as a to-do list in the
+[roadmap](./docs/product/roadmap.md), each item with the prompt to
+build it.
 
 ## Licence
 

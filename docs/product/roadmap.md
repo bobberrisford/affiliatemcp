@@ -1,449 +1,721 @@
 # Roadmap
 
-> A list of things `affiliate-mcp` does not yet do, in the order we
-> think they matter. UK English throughout. Dates are intent, not
-> commitment — we'll publish what ships when it ships.
+> A to-do list. Each item has a build prompt underneath it — paste
+> the prompt into Claude Code (or an equivalent agent) inside this
+> repo to start the work. UK English throughout. Status of the
+> shipping adapters lives in [`REPORT.md`](../../REPORT.md);
+> architectural rationale lives in
+> [`ai-native-affiliate-data.md`](./ai-native-affiliate-data.md).
 
-The shape of the roadmap is two questions:
+The list is shaped by two questions:
 
 1. **Can someone get this running in five minutes without help?**
-2. **Once it's running, does it cover what an affiliate manager
-   actually does on a Monday morning?**
+2. **Once running, does it cover what an affiliate manager actually
+   does on a Monday morning?**
 
-Everything below sits under one of those headings. Where we have
-already shipped something, we say so and point at the existing
-skill or doc. Where we have not, we describe the gap honestly.
+If you pick something up, open an issue first and link the PR to it
+so two contributors don't duplicate the work.
 
-The state of the underlying network adapters lives in
-[`REPORT.md`](../../REPORT.md). The architectural rationale and the
-network-by-network priorities live in
-[`ai-native-affiliate-data.md`](./ai-native-affiliate-data.md). This
-file is the product view across both.
+## Onboarding — make it easy to start
 
-## Where we are today (v0.1, late May 2026)
+- [ ] **`install` subcommand that writes the Claude Desktop config in place.**
+  Wraps the manual JSON edit step at the end of setup. Detects which
+  MCP-capable clients are installed (Claude Desktop, Claude Code,
+  Cursor, Codex, VS Code MCP) and offers to wire each one up.
 
-Five networks ship as publisher adapters; three of them also ship as
-brand-side (advertiser) adapters. Eight skills cover the
-highest-frequency workflows — earnings reports, link audits,
-programme performance, portfolio rollups, anomaly watch. Setup is a
-single `npx affiliate-networks-mcp setup` command followed by a
-Claude Desktop config edit. Credentials live in
-`~/.affiliate-mcp/.env`, locked to the user account, never leave the
-machine.
+  > Add an `install` subcommand to `affiliate-networks-mcp` (entry
+  > point `src/index.ts`, sibling to `setup`, `test`, `doctor`).
+  > Implement it under `src/cli/install.ts`. It must:
+  > (1) detect each MCP-capable client installed on the host —
+  > Claude Desktop config path varies by OS (see
+  > `examples/claude-desktop-config.md` for locations), Claude Code
+  > uses `~/.claude/settings.json`, Cursor uses
+  > `~/.cursor/mcp.json`, Codex CLI uses its own config — and
+  > report which it found;
+  > (2) for each detected client, show the JSON block it will add
+  > and ask for confirmation before writing;
+  > (3) write the block atomically (read existing JSON, merge,
+  > write to a temp file, rename);
+  > (4) verify by re-reading the file and asserting the block
+  > round-trips;
+  > (5) print the exact phrase the user should type into the client
+  > to confirm wiring ("list my affiliate networks").
+  > Tests in `tests/cli/install.test.ts` mirroring the style of
+  > `tests/cli/setup.test.ts`. No new dependencies — use Node's
+  > `fs/promises`. UK English in all user-facing strings.
 
-All publisher adapters ship at `claim_status: partial` (implemented
-and unit-tested, not yet exercised against a live account). All
-brand-side adapters ship at `experimental`. Promoting any of them
-to `production` is a 2026-Q3 goal contingent on live acceptance
-tests against real accounts.
+- [ ] **`doctor` self-fix mode.**
+  Today `doctor` reports failures and exits. The shape of every
+  common failure is already known — trailing whitespace in a token,
+  expired bearer, missing `EBAY_MARKETPLACE_ID` on a US account —
+  so it should offer to fix them inline.
 
-## Onboarding: get someone running in five minutes, no help required
+  > Extend `src/cli/doctor.ts` with a `--fix` flag. Walk every
+  > failure that the existing diagnostic surfaces and, for each one
+  > whose remediation is mechanical, prompt the user with the
+  > proposed fix and apply it on confirmation. Start with:
+  > (a) trailing whitespace / newline in any env value at
+  > `~/.affiliate-mcp/.env` — strip and rewrite;
+  > (b) expired Rakuten bearer — force a token refresh via
+  > `src/networks/rakuten/auth.ts._resetTokenCache` and re-test;
+  > (c) missing `EBAY_MARKETPLACE_ID` on a credential whose
+  > `verifyAuth` 4xx body mentions marketplace — prompt for the
+  > value, default `EBAY_GB`, write to env;
+  > (d) `~/.affiliate-mcp/.env` mode not `0600` — re-chmod.
+  > Each fix runs through the existing `envfile` helpers in
+  > `src/cli/wizard/envfile.ts`; never write env state outside that
+  > module. Add tests in `tests/cli/doctor.test.ts` with fixture
+  > env files; no live API calls.
 
-### The friction we know about
+- [ ] **"Did you mean…" credential hints in the setup wizard.**
+  The single biggest setup-time failure is pasting the wrong field
+  from the dashboard. Recognise the shape of common mispastes per
+  network and say so before validation.
 
-A first-time user today has to:
+  > Add a per-network `recognise(input: string): MispasteHint | null`
+  > helper to each adapter's `setup` brief (see how `setupBrief`
+  > works in `src/networks/awin/setup.ts`). The helper inspects a
+  > pasted credential value and, where the shape matches a known
+  > *other* field on the same network, returns a hint like
+  > `"that looks like an Impact Account SID, not the Auth Token —
+  > the Auth Token is the field immediately below it on the API
+  > Settings page"`. Wire it into `src/cli/wizard/prompts.ts` so the
+  > hint appears *before* the live validation call (saves a round-
+  > trip). Cover the three highest-frequency mispastes per network:
+  > Awin (publisher ID into token slot), CJ (company ID into token
+  > slot), Impact (SID into auth-token slot, vice versa), Rakuten
+  > (client ID into client secret), eBay (App ID into Cert ID).
+  > Tests in `tests/cli/wizard/recognise.test.ts` per network.
 
-1. Install Node 20+ if they don't have it.
-2. Open a terminal, paste an `npx` command.
-3. Find their API token in each network dashboard.
-4. Find Claude Desktop's config file on their operating system, open
-   it in a text editor, paste a JSON block, restart Claude.
-5. Type "list my affiliate networks" to confirm the wiring.
+- [ ] **MCPB / `.dxt` bundle.**
+  The Node-install step is the single biggest non-affiliate
+  barrier. Packaging as an MCP bundle collapses install to a
+  double-click.
 
-Of those, the only step that is genuinely network-specific (and
-therefore unavoidable) is step 3. Steps 2, 4, and 5 are friction we
-control. A non-technical affiliate manager — the persona we built
-this for — should not need to know what Node is, what a terminal is,
-or what JSON looks like.
+  > Produce an MCP bundle (`.dxt`) for `affiliate-networks-mcp` per
+  > the MCP project's bundling guidance
+  > (https://modelcontextprotocol.io/docs/develop/build-with-agent-skills
+  > and the bundle spec linked from there). The bundle should
+  > include the compiled `dist/` output and a pinned Node runtime;
+  > on first run it must still write to
+  > `~/.affiliate-mcp/.env` so credential storage is unchanged.
+  > Add a `npm run bundle` script under `scripts/bundle.ts` that
+  > produces the artefact, and a CI job in `.github/workflows/`
+  > that publishes the bundle alongside each npm release. Update
+  > `README.md` Getting Started with the bundle path *above* the
+  > `npx` path. Do not remove the `npx` path — it stays for
+  > technical users.
 
-### Now (next 6 weeks)
+- [ ] **OAuth where the network supports it.**
+  Three networks (Awin, Impact, eBay) accept OAuth even though we
+  paste tokens today. Move them to a browser handshake so the user
+  never sees an API token.
 
-- **`affiliate-networks-mcp install`** — a single command that writes the
-  Claude Desktop config in place rather than asking the user to.
-  Detects which IDEs/desktop clients are installed (Claude Desktop,
-  Claude Code, Cursor, Codex, VS Code with MCP), offers to wire each
-  one up, and prints the exact line to type into Claude as the
-  confirmation step. The wizard currently leaves step 4 to the user;
-  this folds it in.
-- **`doctor` self-fix**. When the diagnostic finds a fixable problem
-  (trailing whitespace in a token, an expired bearer, a missing
-  `EBAY_MARKETPLACE_ID` override on a US account), it offers to fix
-  it inline instead of describing the fix and exiting. The
-  diagnostic engine already knows the shape of every failure; the
-  remaining work is the prompt-and-rewrite path.
-- **Per-network "did you mean…" credential hints.** The most common
-  setup failure is pasting the wrong field from the network
-  dashboard — the Account SID into the Auth Token slot on Impact,
-  the username instead of the company ID on CJ. The wizard already
-  validates against the live network; the next step is to recognise
-  the *shape* of each common mispaste and say so ("that looks like
-  an Impact Account SID, not the Auth Token — try the field
-  immediately below it").
+  > For each of Awin, Impact, and eBay, add a browser-based OAuth
+  > path to the setup wizard. The reference is the brand-side Awin
+  > OAuth flow already in `src/networks/awin-advertiser/`. Each
+  > network's setup brief gains a `oauth: { authorizeUrl,
+  > tokenUrl, scopes, clientId? }` block; when present, the wizard
+  > offers OAuth as the default and "paste a token" as the
+  > fallback. Implement the loopback redirect on an ephemeral
+  > localhost port (no public callback URL). Persist only the
+  > resulting bearer / refresh token to `~/.affiliate-mcp/.env`;
+  > never the client secret if the network's flow doesn't need one
+  > on disk. CJ and Rakuten stay paste-only — their public APIs
+  > don't expose an OAuth flow for publisher credentials.
 
-### Next (6–12 weeks)
+- [ ] **Brand auto-discovery with pre-filled nicknames.**
+  Today the wizard lists discovered brands and asks for a nickname
+  per brand. Pre-fill a sensible default (slugified display name)
+  so most users press enter through the list.
 
-- **MCPB / `.dxt` bundle.** The Node-install step is the single
-  biggest non-affiliate barrier. Packaging the server as an MCP
-  bundle (per the MCP project's deployment guidance) collapses
-  install to a double-click. The bundle still writes to
-  `~/.affiliate-mcp/.env` for credential storage; no behavioural
-  change beyond install.
-- **OAuth flows where the network supports them.** Three of the five
-  networks (Awin, Impact, eBay) require a token paste today even
-  though their dashboards support an OAuth handshake. Adding the
-  OAuth path means a user clicks "Connect Awin", lands on the Awin
-  login page in their browser, approves the scope, and lands back in
-  the wizard with the token already saved. CJ and Rakuten do not
-  expose OAuth for the public publisher API; they stay paste-only.
-  Brand-side Awin already uses OAuth — that's the reference for
-  this work.
-- **Brand auto-discovery during setup.** On the brand side, the
-  wizard already calls `listBrands` on each advertiser network and
-  offers the discovered set for nicknaming. The next iteration
-  pre-fills sensible nicknames (the brand's display name, lowercased
-  and slugified) and lets the user keep / rename / skip in one
-  pass. Empty for the publisher-only path.
+  > In `src/cli/wizard/brands.ts` (or equivalent — the file that
+  > orchestrates the `listBrands` → nickname loop), after fetching
+  > each network's discovered brand list, compute a default
+  > nickname per brand: lowercase, ASCII-fold, replace any non-
+  > `[a-z0-9]` run with `-`, trim hyphens, dedupe against already-
+  > assigned nicknames in this session by appending `-2`, `-3`,
+  > etc. Present each row as `[discovered name] → suggested
+  > nickname [press enter to accept, or type a new one]`. Skipping
+  > a brand stays an option. Tests in
+  > `tests/cli/wizard/brands.test.ts`.
 
-### Later (Q3 2026 and beyond)
+- [ ] **Hosted / cloud-mode MCP endpoint (opt-in).**
+  For agency operators who want to ask questions from their phone.
+  Local-first stays the default; this is a separate path with its
+  own auth.
 
-- **Cloud / mobile path for the truly non-technical user.** A
-  managed Streamable-HTTP MCP endpoint, OAuth in, no local install.
-  Local-first stays the default and the privacy-preserving baseline;
-  this is the path for an agency operator who wants to ask
-  questions from their phone between meetings. The trade-off
-  (credentials on a hosted service vs. on the user's machine) is
-  explicit at signup and reversible by deleting the account.
-- **Embedded setup inside Claude Desktop itself.** When MCP gains a
-  first-class "add a server" UI, we want the affiliate-mcp listing
-  to be the first one a user can install without leaving the chat
-  window. This depends on Anthropic's roadmap, not ours.
+  > Add a `remote/` deployment target alongside the existing
+  > stdio server. Use Streamable HTTP per the MCP transport spec.
+  > Auth is OAuth at the server boundary; per-user credential
+  > storage is server-side encrypted at rest with a KMS key the
+  > operator controls. Do not start this without an issue covering
+  > the threat model (specifically: what changes vs. local-first,
+  > and what users opt in to). The server shares the adapter and
+  > tools layer with stdio — only the transport differs.
 
-## Daily questions: cover the long tail of what an affiliate manager actually does
+## Publisher daily questions
 
-We started with the questions we were sure mattered (earnings, link
-audit, portfolio rollup). The next step is to cover the long tail —
-the questions that an affiliate manager asks every Monday but that
-the network dashboards make awkward.
+- [ ] **`upcoming-payouts` skill.**
+  *"When am I getting paid next, by who, for how much?"* across
+  every network in one response. Each network has its own payment
+  cadence — apply the cadence to the approved-but-unpaid pool.
 
-### Publisher side — what we don't yet cover well
+  > New skill at `src/skills/upcoming-payouts/SKILL.md` following
+  > the style of `affiliate-earnings-report`. The skill:
+  > (1) calls each registered publisher network's
+  > `affiliate_<network>_list_transactions` with `status: approved`
+  > (and `paid: false` derivation per network);
+  > (2) groups by network and computes the next-payout date per
+  > network using the cadence rules below — keep these in
+  > `src/skills/upcoming-payouts/payout-cadence.json` so they can
+  > be edited without code: Awin (1st and 15th, Net-30 on
+  > validation date), CJ (20th of the month, Net-20), Impact
+  > (bi-weekly), Rakuten (monthly), eBay (monthly);
+  > (3) outputs a table with columns network / next payout date /
+  > amount (per currency) / number of transactions, sorted by
+  > date ascending;
+  > (4) flags any approved transactions older than 2× the
+  > network's documented cadence as a chase candidate.
+  > Tests in `tests/skills/upcoming-payouts/` with fixture
+  > responses per network.
 
-A working list, in rough order of how often the question comes up:
+- [ ] **`reversal-investigator` skill.**
+  *"Why was this transaction reversed?"* — take a transaction ID,
+  fetch the full record, explain the reason, compare against the
+  programme's historical reversal rate.
 
-- **"Where are my payments?"** Each network publishes a payment
-  schedule (Awin: 1st and 15th, Net-30 on validated commissions;
-  CJ: 20th of the month, Net-20; Impact: bi-weekly; Rakuten:
-  monthly; eBay: monthly). Today you have to know each. We want
-  *"when am I getting paid next, by who, for how much?"* to answer
-  in a single response across every network — pull the approved-
-  but-unpaid pool per network, apply the network's payout policy,
-  surface the date and amount. This is the **`upcoming-payouts`**
-  skill, scheduled for Q3.
-- **"Why was this transaction reversed?"** Reversal reasons live
-  in `rawNetworkData` today; the earnings report flags them but
-  doesn't drill in. A **`reversal-investigator`** skill takes a
-  transaction ID, fetches the full record, explains the reason in
-  English, and (where the network exposes it) compares against the
-  publisher's historical reversal rate for that programme.
-- **"Generate me a tracking link"** is technically possible via
-  raw tool calls today, but there's no skill for it. **`build-link`**
-  takes a destination URL + optional subid and picks the right
-  network + programme to generate from, honouring the user's
-  registered networks. Bulk variant: paste a list of URLs, get
-  links back in a table.
-- **"Find me programmes I'm not on but should be."** Most networks
-  expose a `/programmes?status=available` filter. A
-  **`programme-discovery`** skill scans the available pool, ranks
-  by EPC (where the network publishes it) or commission rate, and
-  filters by category if the user names one. Application itself
-  stays manual on most networks — we surface the apply URL.
-- **"Compare networks for the same brand."** Several big brands run
-  programmes on multiple networks at different rates (Nike on CJ
-  vs Awin; ASOS on Awin vs Impact). **`compare-networks-for-brand`**
-  pulls the live commission rate, EPC, and cookie window from each
-  and tells the user which programme is better today.
-- **"Export this for my accountant."** Today the user has to ask
-  Claude to format the response as a CSV; **`tax-export`** does the
-  filtering (paid transactions in a given financial year, per
-  currency, per network) and emits a CSV with the columns
-  accountants want (date, network, brand, gross sale, commission,
-  currency, status).
+  > New skill at `src/skills/reversal-investigator/SKILL.md`. It
+  > accepts a transaction ID and (optionally) a network slug. If
+  > the slug is omitted, it tries each registered network's
+  > `getTransactionById` (Awin already exposes this; add a
+  > shared `getTransactionById(id: string): Transaction | null`
+  > op to the canonical contract for the other networks and
+  > implement it where the underlying API supports it). Surface:
+  > the verbatim `reversalReason` / `declineReason` from
+  > `rawNetworkData`, the canonical status, and a single-line
+  > English explanation. Then call `listTransactions` for the
+  > same programme over the trailing 90 days and report
+  > "this programme's reversal rate over the last 90 days is X%
+  > (Y reversed out of Z)". No invention; if the network doesn't
+  > expose enough data, say so.
 
-### Brand side — what we don't yet cover well
+- [ ] **`build-link` skill.**
+  *"Give me an affiliate link for [URL]"*, single or bulk. Picks
+  the right network + programme from the user's registered set.
 
-- **"Approve / decline this batch of pending transactions."** The
-  brand-side adapters are read-only at v0.1. The write path is on
-  the roadmap behind a hard consent gate (user types the action and
-  confirms before any non-GET HTTP method leaves the machine). The
-  highest-value write op is transaction validation — today an
-  in-house brand manager logs in to each network to approve
-  pending sales individually. A **`validate-transactions`** skill
-  with a single "approve this list?" confirmation per network is
-  the target. Read-only stays the default for the network; write
-  is opt-in per credential.
-- **"Onboard a new publisher."** Publisher application triage
-  today happens in each network's dashboard. The data is
-  available via API on most networks (applications since date X,
-  publisher metadata, traffic source). A
-  **`new-publisher-triage`** skill surfaces the pending pool
-  weekly with a recommendation per applicant. Approval itself
+  > New skill at `src/skills/build-link/SKILL.md`. Single-URL
+  > path: ask the user which network/programme to use if the URL
+  > matches more than one of their registered programmes; pick
+  > automatically if it matches exactly one. Bulk path: accept a
+  > Markdown table or CSV of URLs (+ optional subid column),
+  > generate links in parallel via each adapter's
+  > `generateTrackingLink`, return as a table with original URL,
+  > network, programme, tracking link, subid. Honour deterministic
+  > construction where the adapter supports it (Awin, CJ, eBay,
+  > Rakuten — no API round-trip); fall back to the API for Impact.
+  > Tests in `tests/skills/build-link/` covering single and bulk.
+
+- [ ] **`programme-discovery` skill.**
+  *"Find me programmes I'm not on but should be."* Scans the
+  available-programme pool per network, ranks by EPC / commission
+  rate, filters by category.
+
+  > New skill at `src/skills/programme-discovery/SKILL.md`. Calls
+  > `listProgrammes({ status: 'available' })` on each registered
+  > network and merges results. Sort by EPC where the network
+  > publishes it (Awin yes, Impact yes, CJ partial, Rakuten no);
+  > fall back to commission-rate sort otherwise. Accept a
+  > `category` filter ("fashion", "DTC", "finance" etc.) and a
+  > `minEpc` filter. Output a table; per row include the apply
+  > URL so the user can complete the join on the network's
+  > dashboard. Do *not* attempt to apply via API in this skill —
+  > that's a separate write-path item.
+
+- [ ] **`compare-networks-for-brand` skill.**
+  *"Nike runs on Awin and CJ — which pays better today?"*
+
+  > New skill at `src/skills/compare-networks-for-brand/SKILL.md`.
+  > Accepts a brand name or advertiser ID. Looks across the user's
+  > registered networks for any programme whose name fuzzy-matches
+  > the input. For each match, pull live commission rate, EPC,
+  > cookie window from `getProgramme`. Output a side-by-side
+  > comparison with a one-line recommendation: "Awin pays 8% with
+  > a 30-day cookie; CJ pays 6% with a 45-day cookie. If your
+  > typical conversion is fast (<7 days) Awin wins on
+  > commission." Never invent figures — only the fields the
+  > network published.
+
+- [ ] **`tax-export` skill (publisher).**
+  Emits paid transactions in a shape an accountant or tax
+  software expects.
+
+  > New skill at `src/skills/tax-export/SKILL.md`. Accepts a tax
+  > year (`2025`, `FY2025`, or explicit dates) and an optional
+  > jurisdiction (`US`, `UK`, `EU`). Pulls
+  > `status: paid` transactions from every registered network,
+  > groups per currency, and emits CSV with columns: date, network,
+  > brand, gross sale, commission, currency, status, transaction
+  > ID. For `US` jurisdiction, additionally annotate per-network
+  > whether the user crossed the 1099 threshold ($600 in a
+  > calendar year). For `UK` and `EU`, emit VAT-relevant fields
+  > where the network exposes them. Output is the CSV plus a
+  > one-paragraph summary the user can paste into an email to
+  > their accountant.
+
+- [ ] **`publisher-anomaly-watch` skill.**
+  The brand-side `programme-anomaly-watch` skill exists; this is
+  its publisher equivalent. Weekly scan for revenue drops,
+  reversal spikes, dead programmes, top-merchant dropouts.
+
+  > New skill at `src/skills/publisher-anomaly-watch/SKILL.md`,
+  > mirroring `src/skills/programme-anomaly-watch/SKILL.md` on the
+  > publisher side. Compute week-over-week deltas per programme;
+  > flag programmes whose revenue dropped >30% or whose reversal
+  > rate jumped >2× their trailing-90-day baseline; flag
+  > programmes that went from non-zero to zero ("dead"); flag
+  > merchants that left the user's top-10. Same scheduling-friendly
+  > output shape — terse, structured, designed to be triggered by
+  > Claude's own scheduling on a weekly cadence.
+
+## Brand-side daily questions
+
+- [ ] **`validate-transactions` skill (write path).**
+  The highest-value brand-side write op. Behind a hard consent
+  gate: list what will be approved, get explicit "approve"
+  confirmation before any non-GET HTTP call goes out.
+
+  > This is the first write op for the project. Read the read-
+  > only stance documented in
+  > `src/networks/<slug>-advertiser/client.ts` (HTTP client
+  > refuses non-GET methods) and design the relaxation carefully.
+  > Add a `writeMode: 'never' | 'on-confirm'` flag per credential
+  > in `~/.affiliate-mcp/.env`, default `'never'`. The skill at
+  > `src/skills/validate-transactions/SKILL.md`:
+  > (1) calls `listTransactions({ status: 'pending' })` per brand
+  > × network;
+  > (2) summarises the queue (count, total commission per
+  > currency, per-publisher breakdown);
+  > (3) asks the user to type the word `approve` (not just press
+  > enter) before proceeding;
+  > (4) calls `approveTransaction(id)` per row, with a fresh
+  > `withResilience` invocation per call. Add `approveTransaction`
+  > to the canonical advertiser contract in
+  > `src/shared/types.ts` and implement it on Awin, CJ, Impact
+  > advertiser adapters where the underlying API supports it.
+  > Errors envelope as per principle 4.1. Tests must cover the
+  > consent gate refusing to proceed without the explicit string.
+
+- [ ] **`new-publisher-triage` skill.**
+  Weekly look at pending publisher applications. Approval itself
   stays a network-dashboard action until the write path lands.
-- **"Why is my tracking broken?"** A **`tracking-diagnostic`**
-  skill takes a test order ID or click ID and walks it through
-  the network's reporting — was the click received, did the
-  conversion attribute, did the commission compute. Today the
-  brand manager has to know which network log to check.
-- **"Coupon code leak watch."** Brands give exclusive codes to
-  specific publishers. Codes leak. A **`coupon-leak-watch`**
-  skill correlates code usage by publisher against the publisher
-  who was supposed to own it and flags mismatches. Most networks
-  expose the coupon-used field on transactions; the work is
-  in the correlation, not the data fetch.
-- **"Brief my publishers about the Black Friday promo."** A
-  **`publisher-brief-drafter`** skill takes a brief in English
-  and drafts a per-publisher email (or a single newsletter)
-  tailored to each publisher's traffic profile and historical
-  conversion rate. Send-out itself stays in the user's email
-  client; we draft, we don't send.
 
-### Agency side — make the weekly client report disappear
+  > New skill at `src/skills/new-publisher-triage/SKILL.md`. For
+  > each registered advertiser network, call the listPublishers
+  > op with `status: pending`. (The op is scaffolded today and
+  > throws `NotImplementedError`; this skill is the trigger to
+  > implement it on Awin, CJ, Impact advertisers where the
+  > network's API exposes the pending application pool.) For each
+  > applicant, fetch publisher metadata (traffic source category,
+  > monthly visitors if disclosed, network tenure, prior approvals
+  > history). Recommend approve / decline / hold per applicant
+  > with a one-sentence rationale. Output is a table; clicking
+  > the approve link sends the user to the network dashboard
+  > (write op stays manual at this stage).
 
-The portfolio rollup skill exists ([`agency-portfolio-rollup`](../../src/skills/agency-portfolio-rollup/SKILL.md))
-and answers "how is the whole book doing this week?" The agency
-roadmap is what comes after that:
+- [ ] **`tracking-diagnostic` skill.**
+  *"Why isn't my tracking firing?"* — walk a test order ID or
+  click ID through the network's reporting.
 
-- **Scheduled weekly client reports.** Agencies run the same
-  questions every Monday for every client. Pair the existing
-  [`programme-performance-report`](../../src/skills/programme-performance-report/SKILL.md)
-  with Claude's own scheduling so each client gets a tailored
-  report in their inbox without anyone touching a dashboard.
-  We don't run the schedule — Claude does — but we tune the skill
-  to produce the same shape every week so the agency can drop the
-  output straight into their client portal.
-- **Monthly / quarterly deck generator.** A
-  **`client-deck`** skill emits a slide-shaped Markdown
-  (title slide, headline numbers, top publisher table, trend
-  chart description, callouts) that the user can convert to
-  Google Slides via a separate Claude artifact step. Same data
-  the rollup pulls; different shape.
-- **White-label output.** The reports today are rendered in our
-  default voice. The next iteration honours a per-brand
-  `agency-profile.json` (logo URL, primary colour, signoff
-  block) so the same skill emits Acme-branded output for Acme
-  and Globex-branded output for Globex. The profile is local;
-  we never ship it.
-- **Cross-client benchmarking.** "How does Acme's conversion
-  rate compare to the rest of my DTC clients this quarter?" —
-  needs careful anonymisation so client A doesn't see client B's
-  numbers. The skill computes the comparator from the agency's
-  own book; we never look at it.
-- **New client onboarding.** Adding a brand to `brands.json`
-  today is a re-run of the setup wizard. An agency adding a new
-  client wants to: name the brand, pick the networks the brand
-  is on, paste each network's brand ID, done. A
-  **`add-brand`** subcommand does exactly that, skipping the
-  unrelated credential prompts.
+  > New skill at `src/skills/tracking-diagnostic/SKILL.md`.
+  > Accepts a click ID, transaction ID, or order ID and a network
+  > slug. Pulls the click record (if available), the conversion
+  > record (if available), the commission record (if available)
+  > and reports which step recorded the event and which did not.
+  > For each gap, surface the network's documented common cause
+  > (cookie blocked, attribution-window expired, programme paused,
+  > etc.) from a per-network knowledge file at
+  > `src/networks/<slug>-advertiser/tracking-troubleshoot.md`.
+  > No invention — if the network has no record of the event,
+  > say so.
 
-### Finance side — the CFO chasing network payments
+- [ ] **`coupon-leak-watch` skill.**
+  Brands give exclusive codes to specific publishers. Codes leak.
+  Correlate code usage against the publisher who should own it.
 
-The CFO and the agency finance lead share a different vocabulary
-from the affiliate manager: A/R aging, accrual, clawback rate,
-multi-currency reconciliation, 1099 generation. Today
-`affiliate-mcp` exposes the raw transaction data that these
-workflows need; the skills don't yet speak the CFO's language. The
-finance pack is:
+  > New skill at `src/skills/coupon-leak-watch/SKILL.md`. Reads a
+  > `coupon-owners.json` configured by the user (per brand: map
+  > of `couponCode → owningPublisherId`). Pulls the last 30 days
+  > of transactions per brand × network, extracts the coupon
+  > field where the network exposes it (`PromoCode` on Impact,
+  > `voucherCode` on Awin transactions), and flags any
+  > transaction whose coupon belongs to a publisher other than
+  > the one whose tracking link drove the sale. Output is a
+  > per-brand table of flagged transactions. Honest about the
+  > limitation: networks that don't expose the coupon field on
+  > the transaction record can't be diagnosed.
 
-- **Aging report.** "What's owed to me, by who, how long has it
-  been waiting?" Approved-but-unpaid transactions per network,
-  bucketed by age (0–30, 30–60, 60–90, 90+ days). Flag anything
-  past the network's published payment timeline as a chase
-  candidate. The publisher-side version of this exists in
-  [`affiliate-earnings-report`](../../src/skills/affiliate-earnings-report/SKILL.md)
-  as a "flag anything unpaid >90 days" line; the CFO skill turns
-  it into a structured A/R table with chase recommendations.
-- **Payment reconciliation.** When Awin pays out, did the payment
-  match the locked-in commissions you expected? A
-  **`reconcile-payout`** skill takes a payment statement (paste
-  it; CSV or PDF text), matches it line-by-line against the
-  network's reported paid transactions, and flags variances.
-- **Reversal-rate watch.** A spike in reversals is a finance
-  signal as much as an ops one. A
-  **`reversal-rate-watch`** skill computes the reversal rate by
-  network and by programme, week-over-week, and flags any
-  programme whose reversal rate jumped >2σ above its trailing
-  90-day baseline.
-- **Revenue forecast from pipeline.** Locked + pending
-  transactions across every network, with the network's
-  historical approval rate applied, projects "how much will
-  actually land". Honest about the inputs: forecast is bounded
-  below by paid + approved, bounded above by paid + approved +
-  pending × historical-approval-rate.
-- **Multi-currency rollup with FX timestamping.** The agency
-  rollup keeps each currency on its own sub-line today
-  (deliberately — agencies invoice in client currencies). The
-  finance skill takes the opposite stance: rolls everything to
-  a reporting currency at the FX rate from the transaction
-  date, with the rate source named. We don't ship an FX feed;
-  we read from a configurable provider (default: ECB daily
-  reference rates, public, free).
-- **1099 / tax exports.** US publishers crossing $600 in a
-  calendar year get a 1099 from each network. **`tax-export`**
-  on the publisher side emits the data in the shape an
-  accountant expects (per network, per status, per currency,
-  per financial year). UK / EU equivalents (Self Assessment,
-  VAT-relevant fields) ship alongside.
+- [ ] **`publisher-brief-drafter` skill.**
+  Draft a tailored email to top publishers about an upcoming
+  promo. We draft, we don't send.
+
+  > New skill at `src/skills/publisher-brief-drafter/SKILL.md`.
+  > Inputs: promo dates, headline offer, brand. Pulls the top N
+  > publishers (default 50) by trailing-90-day commission across
+  > the brand's bound networks. For each, draft a short email
+  > including the promo details and a per-publisher line citing
+  > their recent performance. Output is a single Markdown
+  > document with one section per publisher; the user copies
+  > each section into their email client. No SMTP integration —
+  > sending stays outside the tool.
+
+## Agency workflows
+
+- [ ] **Scheduled weekly client reports.**
+  The portfolio rollup already runs on-demand; the agency wants
+  it scheduled per client and delivered without anyone touching
+  a dashboard.
+
+  > Update `src/skills/programme-performance-report/SKILL.md`
+  > with a stable "weekly report" output shape (fixed sections,
+  > fixed headings, fixed order) so the agency can drop it
+  > straight into their client portal each Monday. Add a worked
+  > example showing how to wire it to Claude's own scheduling
+  > (no scheduler in this repo — we just produce the
+  > deterministic output). Add an
+  > `examples/agency-weekly-schedule.md` walkthrough showing the
+  > Claude side of the wiring.
+
+- [ ] **`client-deck` skill.**
+  Monthly / quarterly performance deck. Emits slide-shaped
+  Markdown the user converts to Google Slides via a separate
+  Claude artifact step.
+
+  > New skill at `src/skills/client-deck/SKILL.md`. Accepts a
+  > brand slug and a period (`month`, `quarter`, explicit dates).
+  > Output is a Markdown document with H1-per-slide structure:
+  > title slide, headline numbers, top-publisher table, trend
+  > description (we describe the trend in prose; Claude renders
+  > the chart in the conversation), callouts. The same data the
+  > `programme-performance-report` already pulls; different
+  > shape.
+
+- [ ] **White-label output via `agency-profile.json`.**
+  Today reports use our default voice. Honour a per-agency
+  profile so the same skill emits Acme-branded output for Acme
+  and Globex-branded output for Globex.
+
+  > Add support for an optional
+  > `~/.affiliate-mcp/agency-profile.json` with fields
+  > `agencyName`, `agencyLogoUrl`, `primaryColour`, `signoffBlock`,
+  > and per-brand overrides under `brands.<slug>`. Update
+  > `agency-portfolio-rollup`, `programme-performance-report`,
+  > and `client-deck` skills to read the profile and inject the
+  > brand-appropriate header/footer. Profile stays local —
+  > never read, never sent anywhere. Tests cover the no-profile
+  > path producing today's default output unchanged.
+
+- [ ] **`cross-client-benchmark` skill.**
+  *"How does Acme's CR compare to my other DTC clients?"* Careful
+  anonymisation — client A never sees client B's numbers.
+
+  > New skill at `src/skills/cross-client-benchmark/SKILL.md`.
+  > Accepts a focus brand and an optional comparator pool
+  > (default: all other brands in the agency's `brands.json`).
+  > Computes conversion rate, AOV, EPC, reversal rate for the
+  > focus brand and a single anonymised "comparator pool"
+  > aggregate (mean, median, p25, p75). The output names the
+  > focus brand explicitly and refers to the pool only as
+  > "your other clients (n=X)". Never names another brand in
+  > the comparator side of the output. Tests verify the
+  > anonymisation invariant.
+
+- [ ] **`add-brand` subcommand.**
+  Adding a brand to `brands.json` today requires re-running the
+  full setup wizard. Agencies onboarding a new client want a
+  fast path that skips credential prompts.
+
+  > Add `affiliate-networks-mcp add-brand [slug]` to the CLI.
+  > Implements at `src/cli/add-brand.ts`. Skips all credential
+  > prompts (credentials are already configured). Lists the
+  > registered advertiser networks; asks which the new brand is
+  > on; for each, asks for the network's brand ID (or offers a
+  > `listBrands` discovery pass). Writes the resulting
+  > bindings to `~/.affiliate-mcp/brands.json` atomically. Tests
+  > in `tests/cli/add-brand.test.ts`.
+
+## Finance / CFO workflows
+
+- [ ] **`aging-report` skill.**
+  *"What's owed to me, by who, how long has it been waiting?"*
+
+  > New skill at `src/skills/aging-report/SKILL.md`. Pulls
+  > approved-but-unpaid transactions per network (publisher side)
+  > or per brand × network (brand-side / agency). Buckets by age:
+  > 0–30, 30–60, 60–90, 90+ days. Compares each bucket against the
+  > network's documented payment cadence (same
+  > `payout-cadence.json` as `upcoming-payouts`); flags any bucket
+  > whose age exceeds the cadence as a chase candidate. Output is
+  > a table per currency. Pair with `upcoming-payouts` for the
+  > forward-looking view.
+
+- [ ] **`reconcile-payout` skill.**
+  When the network pays out, did the payment match the
+  locked-in commissions? Match a statement against reported paid
+  transactions.
+
+  > New skill at `src/skills/reconcile-payout/SKILL.md`. Inputs:
+  > a paste of the payment statement (CSV, table, or extracted
+  > PDF text — accept all three) and a network slug. Pulls
+  > `status: paid` transactions from that network over a date
+  > window straddling the statement, matches line-by-line on
+  > transaction ID where the statement exposes it (otherwise on
+  > date + amount), and reports variance: matched, missing
+  > from statement, missing from network. Surface the verbatim
+  > unmatched rows; never silently bucket them.
+
+- [ ] **`reversal-rate-watch` skill.**
+  A reversal-rate spike is a finance signal as much as an ops
+  one. Week-over-week by network and by programme, flag
+  anything >2σ above its trailing-90-day baseline.
+
+  > New skill at `src/skills/reversal-rate-watch/SKILL.md`.
+  > Compute reversal rate (count of reversed / count of all
+  > finalised) per network and per programme over the last 7
+  > days. Compare against the trailing 90-day baseline mean and
+  > stdev. Flag any series that is >2σ above its baseline.
+  > Output: table sorted by z-score descending. Honest about
+  > small-sample noise — suppress series with <20 finalised
+  > transactions in the window.
+
+- [ ] **`revenue-forecast` skill.**
+  Pipeline-based forecast: paid + approved + pending ×
+  approval-rate.
+
+  > New skill at `src/skills/revenue-forecast/SKILL.md`. For each
+  > registered publisher network (or brand-side programme):
+  > paid_to_date + approved_unpaid + (pending × historical-90-day
+  > approval-rate-for-this-programme). Output a low/mid/high
+  > bounded estimate per currency: low = paid + approved, high =
+  > paid + approved + pending, mid = paid + approved + pending ×
+  > approval-rate. Each component named explicitly. Tests verify
+  > the bound invariants (mid lies between low and high).
+
+- [ ] **Multi-currency rollup with FX timestamping.**
+  Agencies invoice in client currencies — that stance stays the
+  default in `agency-portfolio-rollup`. This is the opposite
+  stance for the CFO workflow: roll everything to one reporting
+  currency at the transaction-date FX rate, with the source
+  named.
+
+  > New skill at `src/skills/finance-rollup/SKILL.md`. Accepts a
+  > reporting currency (default `USD`) and a date range. Pulls
+  > every transaction across registered networks; for each row
+  > whose currency differs from the reporting currency, fetches
+  > the ECB daily reference rate for that transaction's date
+  > (https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html — public, free, no auth).
+  > Cache rates locally at `~/.affiliate-mcp/fx-cache.json` per
+  > date+pair. Output names the rate source on every converted
+  > row. If the user prefers a different provider, the source URL
+  > is configurable via `FX_RATE_SOURCE_URL` env var.
+
+- [ ] **`tax-export` (CFO variant).**
+  The publisher tax-export above ships per-publisher; this is
+  the agency-finance equivalent for an agency that needs the
+  same shape across every client.
+
+  > Once the publisher `tax-export` skill is in, extend it with a
+  > `scope: 'agency'` mode that iterates every brand in
+  > `brands.json` and emits one CSV per brand plus an aggregate
+  > summary. Both modes share the same column shape; only the
+  > grouping changes.
 
 ## Network coverage
 
-Two threads here: more networks, and existing networks promoted to
-`production`.
+- [ ] **Add Tradedoubler (publisher).**
+  Public REST API with token auth.
 
-### More networks (wanted)
+  > Use the `contribute` skill (auto-loaded when you open this
+  > repo in Claude Code). Type *"add Tradedoubler to
+  > affiliate-mcp"*. The skill walks scaffold selection, API
+  > research, adapter implementation, tests, and docs. Reference:
+  > the tracking issue in
+  > `docs/wanted-networks.json` and the [Tradedoubler API docs](https://dev.tradedoubler.com/).
+  > Ship at `claim_status: experimental` until exercised against
+  > a live account.
 
-The README's [Wanted](../../README.md#wanted) table lists four
-networks people have specifically asked for: Tradedoubler, Partnerize,
-Skimlinks, Webgains. None of them have an adapter today. Adding any
-of them is a `contribute`-skill conversation; the priority order is
-roughly the order in the table. If a network's own engineering team
-adopts the adapter (via [`CONTRIBUTING.md`](../../CONTRIBUTING.md)
-under "Adopting your network"), they jump the queue.
+- [ ] **Add Partnerize (publisher + advertiser).**
+  Separate publisher- and advertiser-tier APIs; aim to ship
+  both adapters in one pass.
 
-Beyond the wanted list, the next tier of networks to consider —
-based on share of inbound questions to the project — is ShareASale,
-ClickBank, Refersion, and PartnerStack. Each is a separate
-contribution; no commitment to any of them by us, but the scaffold
-is ready ([`templates/new-network/`](../../templates/new-network/)).
+  > Use the `contribute` skill. Type *"add Partnerize to
+  > affiliate-mcp, both sides"*. The skill knows the
+  > publisher-vs-advertiser fork from the brief; pick "both" at
+  > the early prompt. Reference docs:
+  > https://api-docs.partnerize.com/.
 
-### Promote existing adapters from partial / experimental → production
+- [ ] **Add Skimlinks (publisher).**
+  > Use the `contribute` skill. Type *"add Skimlinks to
+  > affiliate-mcp, publisher side"*. Reference docs:
+  > https://developers.skimlinks.com/.
 
-This depends on live acceptance tests against real accounts. The
-order, once accounts are available:
+- [ ] **Add Webgains (publisher).**
+  > Use the `contribute` skill. Type *"add Webgains to
+  > affiliate-mcp, publisher side"*. Approval may be required for
+  > API access — surface that in the setup brief like Rakuten
+  > does. Reference docs:
+  > https://www.webgains.com/public/en/help-section/.
 
-1. **Awin (publisher)** — already the reference implementation;
-   smallest gap to production.
-2. **Impact (publisher)** — second; the 5xx-storm workarounds need
-   one real-world week of telemetry to confirm the retry envelope
-   is still right.
-3. **CJ (publisher)** — third; the GraphQL-on-200 error path
-   particularly wants live evidence.
-4. **Awin (advertiser)** — first brand-side promotion; rate-budget
-   behaviour on a multi-brand Accelerate account needs verifying.
-5. **Impact (advertiser)** — second brand-side; the sync-vs-async
-   report polling path has `// TODO(verify)` notes.
-6. **CJ (advertiser)** — third brand-side; `viewer.companyMemberships`
-   field name verification, performance row status mapping.
-7. **Rakuten (publisher)** — only after Publisher Solutions grants
-   API access on the test account.
-8. **eBay (publisher)** — only after the EPN developer-account
-   approval gate; needs a real reporting endpoint round-trip.
+- [ ] **Promote Awin (publisher) to `production`.**
+  > Run the live acceptance test against a real Awin publisher
+  > account: `npm run validate:network -- awin` with credentials
+  > configured. Confirm all six implemented ops pass; confirm the
+  > `listClicks` `NotImplementedError` is the only structural
+  > gap. Flip `claim_status` in `src/networks/awin/network.json`
+  > from `partial` to `production` and regenerate `REPORT.md`
+  > (`npm run generate:report`). Add a brief "live validation"
+  > note to `docs/findings/awin.md` with the date and the test
+  > account scope.
 
-Promotion mechanics: each adapter's `network.json` carries a
-`claim_status` field. A live acceptance run flips it to `production`;
-a regression flips it back. The summary table in
-[`REPORT.md`](../../REPORT.md) regenerates on every merge, so the
-public view stays honest.
+- [ ] **Promote Impact (publisher) to `production`.**
+  > Same shape as the Awin promotion. Additionally: the
+  > 5xx-storm workarounds in `src/networks/impact/adapter.ts`
+  > (`ACTIONS_RESILIENCE` constant) should be re-tested against
+  > current Impact behaviour during validation. If Impact's
+  > stability has improved, dial back retries from 4 to the
+  > default 2 in the same PR.
 
-### Brand-side parity
+- [ ] **Promote CJ (publisher) to `production`.**
+  > Same shape. The GraphQL-on-200 error path
+  > (`tests/networks/cj/adapter.test.ts → "surfaces GraphQL
+  > errors payloads verbatim even on HTTP 200"`) wants live
+  > evidence — exercise at least one query that CJ rejects (a
+  > malformed field) and confirm the verbatim error body reaches
+  > the user.
 
-Three networks (Awin, CJ, Impact) ship brand-side adapters today.
-The gap:
+- [ ] **Promote Awin / CJ / Impact advertiser adapters to `partial` then `production`.**
+  > Three separate live-validation passes, one per network. The
+  > target for each is the same shape as the publisher
+  > promotions. The Awin advertiser pass particularly wants a
+  > multi-brand Accelerate account to verify the 20-per-minute
+  > rate-budget handling under load. The Impact advertiser pass
+  > wants a tenant that exercises the sync-vs-async report
+  > polling path (currently `// TODO(verify)`).
 
-- **Rakuten brand-side.** Rakuten has an advertiser-tier API but a
-  more complex auth model than the publisher side. We skipped it at
-  v0.1; v0.2 is the right place to revisit.
-- **Partnerize, when added.** Partnerize is uncommon in that the
-  same network has clearly separated publisher- and advertiser-tier
-  credentials, both well-documented. Adding it should produce two
-  adapters in one pass.
+- [ ] **Promote Rakuten (publisher) to `production`.**
+  > Requires Publisher Solutions to grant API access on the test
+  > account (~5 business days). Once granted, run the validation
+  > and also implement `listClicks` against `clicks_reports` if
+  > the upgraded account has access — the implementation is a
+  > ~20-line addition mirroring `listTransactions`'s shape.
 
-Brand-side parity for eBay is a non-goal — EPN has only one
-advertiser (eBay itself), so there's no brand-side surface to
-integrate with.
+- [ ] **Promote eBay (publisher) to `partial` then `production`.**
+  > Requires the EPN developer-account approval gate (~3 business
+  > days). The reporting endpoints in particular need a real
+  > round-trip — every field name, status string, and pagination
+  > shape in the adapter today is synthesised from documentation
+  > only.
 
-## Action, not just reporting
+- [ ] **Add Rakuten (advertiser).**
+  > Use the `contribute` skill. Type *"add Rakuten advertiser
+  > adapter to affiliate-mcp"*. Auth model is more complex than
+  > the publisher side — start by mapping the OAuth flow
+  > carefully. The skill will pick the brand-side scaffold and
+  > the read-only stance per the existing brand-side adapters'
+  > conventions.
 
-Every adapter today is read-only on the brand side and effectively
-read-only on the publisher side (the only mutating op is
-`generateTrackingLink`, and on most networks that's deterministic URL
-construction with no API call). The roadmap for write paths is
-deliberate: we add them one operation at a time, behind explicit
-consent, with the diff visible before it happens.
+## Action / write paths
 
-The first writes to ship, in order:
+- [ ] **`adjust-commission-rate` skill (write path).**
+  The brand manager's second recurring write workflow after
+  transaction validation.
 
-1. **Validate a pending transaction (brand side).** Highest-value
-   write op for in-house brand managers. Hard consent gate: the
-   user types the list of transaction IDs, the skill summarises
-   what will be approved (count, total commission, per-publisher
-   breakdown), the user types "approve" before any HTTP call goes
-   out.
-2. **Adjust a single publisher's commission rate (brand side).**
-   The brand manager's other recurring write workflow.
-3. **Apply to a programme (publisher side).** Where the network
-   supports application via API (Awin does; CJ does for some
-   programme types; Impact does). Today's roadmap surfaces the
-   apply URL; the upgrade is to fill the form and submit it on the
-   user's confirmation.
+  > Add an `adjustCommissionRate` op to the canonical advertiser
+  > contract in `src/shared/types.ts` and implement it on the
+  > advertiser adapters whose APIs support it. New skill at
+  > `src/skills/adjust-commission-rate/SKILL.md` follows the
+  > same consent-gate pattern as `validate-transactions`: list
+  > the proposed changes (publisher, current rate, new rate,
+  > effective date), require the user to type `apply` before
+  > any non-GET call goes out. Tests cover the consent gate.
 
-Writes are gated per credential, not per network. A user with
-read-only credentials at Awin and read-write credentials at Impact
-gets Impact writes and not Awin writes; we never lie about scope.
+- [ ] **`apply-to-programme` skill (write path).**
+  Today programme-discovery surfaces the apply URL; the upgrade
+  is to submit the application via API on the user's
+  confirmation.
 
-## Skills that need to exist but don't fit elsewhere
+  > Add an `applyToProgramme(programmeId: string, body:
+  > ApplicationBody): ApplicationResult` op to the canonical
+  > publisher contract in `src/shared/types.ts` and implement it
+  > on the publisher adapters whose APIs support it (Awin yes;
+  > CJ partial — depends on programme type; Impact yes; Rakuten
+  > and eBay no). New skill at
+  > `src/skills/apply-to-programme/SKILL.md` follows the same
+  > consent-gate pattern.
 
-A few skills don't belong to a single persona but would help all of
-them:
+## Cross-cutting
 
-- **`affiliate-quick-question`** — a small fast skill that answers
-  one-off questions ("what's my Awin token's expiry?", "how many
-  programmes am I on?", "what was my best day last month?") without
-  the structured shape of the bigger skills. Lower latency, lower
-  ceremony.
-- **`affiliate-explain`** — explains a row, a status, or a
-  network-specific term in English. "Why is this transaction
-  `LOCKED`?", "What does Awin mean by `validationDate`?". Reads from
-  the same per-network notes the findings docs are built on. Helps
-  new users in particular.
-- **`affiliate-network-status-page`** — checks the public status
-  page of every configured network (Awin, CJ, Impact, eBay, Rakuten
-  all publish one) and surfaces ongoing incidents alongside the
-  user's data. If you see lower numbers than expected, this tells
-  you whether it's your problem or theirs.
+- [ ] **`affiliate-quick-question` skill.**
+  Lower-ceremony skill for one-off questions that don't justify
+  the structured shape of the bigger skills.
+
+  > New skill at `src/skills/affiliate-quick-question/SKILL.md`.
+  > Designed to answer single-fact questions ("how many
+  > programmes am I on?", "what was my best day last month?",
+  > "what's my Awin token's expiry?") with one or two lines.
+  > Picks the right adapter call from the question; never fans
+  > out across networks unless the question explicitly demands
+  > it. The smaller surface keeps latency down — most questions
+  > should resolve in one tool call.
+
+- [ ] **`affiliate-explain` skill.**
+  Explains a row, a status, or a network-specific term in
+  English. Reads from per-network notes.
+
+  > New skill at `src/skills/affiliate-explain/SKILL.md`. Reads
+  > from a shared knowledge base at
+  > `src/skills/affiliate-explain/glossary/<slug>.md` per
+  > network — same content as the findings docs, but indexed by
+  > term. The skill takes a snippet ("status: LOCKED",
+  > "validationDate", "EXTENDED") and explains what the term
+  > means on the network it came from. Helps new users
+  > particularly; cheap to ship because the knowledge already
+  > exists in `docs/findings/`.
+
+- [ ] **`network-status-page` skill.**
+  Surfaces ongoing network incidents alongside the user's data.
+  Helps the user distinguish their problem from the network's.
+
+  > New skill at `src/skills/network-status-page/SKILL.md`.
+  > Fetches each registered network's public status page (Awin,
+  > CJ, Impact, eBay, Rakuten all publish one) and parses the
+  > current-status block. URLs and parsers live per network at
+  > `src/networks/<slug>/status-page.ts`. Output is one line per
+  > network, sorted so any ongoing incident is at the top.
+  > Read-only; no credential required (the status pages are
+  > public).
 
 ## Non-goals
 
-Things we deliberately do not plan to build, with the rationale:
+Things we deliberately do not plan to build:
 
-- **Our own dashboard / hosted UI.** The product is the
-  conversation. If the user wants a chart, Claude makes them a
-  chart. We don't compete with the network dashboards on their
-  own terms.
-- **Scraping where an API exists.** Every operation today maps to a
-  documented public API. We won't scrape rendered dashboards for
-  data the network chose not to expose; we'll surface that the data
-  isn't available and explain why (per the
-  `NotImplementedError` pattern documented in
-  [`AGENTS.md`](../../AGENTS.md)).
-- **A hosted credential store.** Credentials stay on the user's
-  machine. The cloud / mobile path in the Onboarding section is the
-  one exception, and it's opt-in, separately auth'd, and explicit
-  about the trade-off.
-- **Cross-network FX normalisation by default.** Agencies report in
-  client currencies; publishers care about their payment currency.
-  The finance pack's roll-to-reporting-currency is opt-in for
-  exactly the CFO workflow; the default stays per-currency.
-- **Affiliate fraud detection beyond what the networks themselves
-  surface.** We can flag anomalies the user can see in their own
-  data. We do not run our own fraud model against publisher
-  behaviour, traffic patterns, or external signals.
+- Our own dashboard / hosted UI.
+- Scraping where an API exists.
+- A hosted credential store (the cloud / mobile path above is
+  the one explicit exception and is opt-in).
+- Cross-network FX normalisation by default (it's opt-in for
+  the CFO workflow only).
+- Affiliate fraud detection beyond what the networks themselves
+  surface.
 
 ## How this roadmap changes
 
-This document is intent. The honest state of every shipping
-adapter is in [`REPORT.md`](../../REPORT.md), regenerated from
-each adapter's `network.json` on every merge. The status of any
-in-flight skill or feature is in the GitHub issue tracker, not
+This document is the to-do list. The honest state of every
+shipping adapter is in [`REPORT.md`](../../REPORT.md), regenerated
+from each adapter's `network.json` on every merge. The status of
+any in-flight skill or feature is in the GitHub issue tracker, not
 here.
 
-If you think a workflow on this list is in the wrong order — or a
+If you think a workflow on this list is in the wrong place — or a
 workflow you do every day isn't on the list — open an issue and
 say what you do. We treat every "I wish it could…" as a vote.
