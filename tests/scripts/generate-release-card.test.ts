@@ -1,10 +1,10 @@
 /**
  * Tests for `scripts/generate-release-card.ts`.
  *
- * Playwright is not exercised here — the tests assert on the pure data
- * assembly, HTML composition (what the headless browser rasterises) and the
- * LinkedIn post copy. Rasterisation is a single integration concern best
- * validated by running the script where Playwright is installed.
+ * The rasteriser (`@resvg/resvg-js`) is not exercised here — the tests assert
+ * on the pure data assembly, SVG composition (what resvg rasterises) and the
+ * LinkedIn post copy. Rasterisation is a single integration concern validated
+ * by running the script.
  */
 
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
@@ -19,7 +19,7 @@ import {
   normaliseVersion,
   parseArgs,
   renderLinkedInPostCopy,
-  renderReleaseCardHtml,
+  renderReleaseCardSvg,
 } from '../../scripts/generate-release-card.js';
 
 /**
@@ -151,7 +151,7 @@ describe('buildReleaseCardData', () => {
   });
 });
 
-describe('renderReleaseCardHtml', () => {
+describe('renderReleaseCardSvg', () => {
   const baseData = {
     version: 'v0.3.0',
     hook: 'Chat to your affiliate data with Claude.',
@@ -161,41 +161,53 @@ describe('renderReleaseCardHtml', () => {
     newNetworks: ['Rakuten (brand side)'],
   };
 
-  it('renders a complete HTML document', () => {
-    const html = renderReleaseCardHtml(baseData);
-    expect(html).toMatch(/^<!doctype html>/i);
-    expect(html).toContain('</html>');
-    expect(html).toContain('v0.3.0');
-    expect(html).toContain('Added Rakuten advertiser adapter');
-    expect(html).toContain('18 networks · publisher + brand side');
-    expect(html).toContain('Rakuten (brand side)');
+  it('renders a well-formed SVG document at the LinkedIn ratio', () => {
+    const svg = renderReleaseCardSvg(baseData);
+    expect(svg).toMatch(/^<svg /);
+    expect(svg).toContain('</svg>');
+    expect(svg).toContain('width="1200"');
+    expect(svg).toContain('height="627"');
+    expect(svg).toContain('v0.3.0');
+    expect(svg).toContain('Added Rakuten advertiser adapter');
+    expect(svg).toContain('18 networks · publisher + brand side');
+    expect(svg).toContain('Rakuten (brand side)');
   });
 
-  it('omits the spotlight block when there are no new networks', () => {
-    const withSpotlight = renderReleaseCardHtml(baseData);
-    const without = renderReleaseCardHtml({ ...baseData, newNetworks: [] });
-    // The CSS class is always defined; assert on the rendered DOM block.
-    expect(withSpotlight).toContain('<div class="spotlight">');
-    expect(without).not.toContain('<div class="spotlight">');
+  it('omits the spotlight chip when there are no new networks', () => {
+    const without = renderReleaseCardSvg({ ...baseData, newNetworks: [] });
+    expect(without).not.toContain('Rakuten (brand side)');
+    expect(without).not.toContain('>NEW<');
+    // The chip is the only place the "NEW" label appears.
+    expect(renderReleaseCardSvg(baseData)).toContain('>NEW<');
   });
 
   it('shows a plain network count when not both sides', () => {
-    const html = renderReleaseCardHtml({ ...baseData, bothSides: false });
-    expect(html).toContain('18 networks');
-    expect(html).not.toContain('publisher + brand side');
+    const svg = renderReleaseCardSvg({ ...baseData, bothSides: false });
+    expect(svg).toContain('18 networks');
+    expect(svg).not.toContain('publisher + brand side');
   });
 
-  it('escapes HTML special characters', () => {
-    const html = renderReleaseCardHtml({
+  it('escapes XML special characters', () => {
+    const svg = renderReleaseCardSvg({
       ...baseData,
       changes: ['A & B <script>'],
     });
-    expect(html).toContain('A &amp; B &lt;script&gt;');
-    expect(html).not.toContain('<script>');
+    expect(svg).toContain('A &amp; B &lt;script&gt;');
+    expect(svg).not.toContain('<script>');
+  });
+
+  it('wraps a long change line across multiple text runs', () => {
+    const long =
+      'A very long change description that will certainly exceed the available content width of the card and wrap';
+    const svg = renderReleaseCardSvg({ ...baseData, changes: [long] });
+    // The single change should produce more than one <text> run for its lines,
+    // beyond the fixed text runs (brand, version, hook, coverage, footer).
+    const textRuns = (svg.match(/<text /g) ?? []).length;
+    expect(textRuns).toBeGreaterThan(6);
   });
 
   it('is deterministic for the same input', () => {
-    expect(renderReleaseCardHtml(baseData)).toEqual(renderReleaseCardHtml(baseData));
+    expect(renderReleaseCardSvg(baseData)).toEqual(renderReleaseCardSvg(baseData));
   });
 });
 

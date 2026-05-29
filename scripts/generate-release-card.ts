@@ -21,10 +21,11 @@
  *   - network count   — concrete, growing coverage figure (both sides)
  *   - new-network spotlight — when a release adds adapters, name them
  *
- * Mirrors `scripts/generate-report-image.ts`: the HTML composition and post
- * copy are pure functions exercised by the test suite, and Playwright is an
- * optional, dynamically-imported dependency so the script fails loudly (rather
- * than fabricating an image) when it is not installed.
+ * Rendering: the card is composed as a self-contained SVG (a pure function
+ * exercised by the test suite) and rasterised with `@resvg/resvg-js` — a
+ * pure-npm dependency that needs no browser, so this works in headless/CI and
+ * web environments where Playwright's browser binaries can't be downloaded.
+ * The SVG is written alongside the PNG so it can be re-rendered anywhere.
  *
  * Usage:
  *   npm run generate:release-card -- \
@@ -49,8 +50,12 @@ import { loadReportData, type ReportData } from './report-data.js';
 
 const CARD_WIDTH = 1200;
 const CARD_HEIGHT = 627; // LinkedIn single-image optimum (1.91:1)
+const RENDER_SCALE = 2; // rasterise at 2× for crispness after LinkedIn re-compresses
+const PAD = 72;
 const MAX_CHANGES = 4;
 const REPO_URL = 'https://github.com/bobberrisford/affiliatemcp';
+// Font stack: resvg matches the first family it can load from system fonts.
+const FONT_STACK = 'DejaVu Sans, Liberation Sans, Arial, Helvetica, sans-serif';
 
 /** Resolved data the card and post copy are rendered from. */
 export interface ReleaseCardData {
@@ -159,171 +164,156 @@ export function buildReleaseCardData(options: BuildReleaseCardOptions = {}): Rel
 }
 
 // ---------------------------------------------------------------------------
-// HTML composition (pure)
+// SVG composition (pure)
 // ---------------------------------------------------------------------------
 
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 /**
- * Pure HTML composition for the release card. Returns the full HTML document a
- * headless browser rasterises at CARD_WIDTH × CARD_HEIGHT. Dark, branded,
- * high-contrast — built to stop the scroll in a LinkedIn feed.
+ * Approximate rendered width of a string. SVG has no layout engine, so the
+ * card positions text manually; `charW` is an average glyph-width ratio tuned
+ * for the sans-serif stack. Good enough for wrapping and chip sizing.
  */
-export function renderReleaseCardHtml(data: ReleaseCardData): string {
+function textWidth(s: string, fontSize: number, charW = 0.54): number {
+  return s.length * fontSize * charW;
+}
+
+/** Greedy word-wrap to a maximum pixel width. */
+function wrap(text: string, fontSize: number, maxWidth: number, charW = 0.54): string[] {
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let line = '';
+  const fits = (s: string): boolean => textWidth(s, fontSize, charW) <= maxWidth;
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (fits(candidate) || !line) {
+      line = candidate;
+    } else {
+      lines.push(line);
+      line = word;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+/**
+ * Pure SVG composition for the release card at CARD_WIDTH × CARD_HEIGHT. Dark,
+ * branded, high-contrast — built to stop the scroll in a LinkedIn feed.
+ * Deterministic for a given input.
+ */
+export function renderReleaseCardSvg(data: ReleaseCardData): string {
+  const contentW = CARD_WIDTH - PAD * 2;
+  const parts: string[] = [];
+
+  parts.push(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" viewBox="0 0 ${CARD_WIDTH} ${CARD_HEIGHT}">`,
+  );
+  parts.push(`<defs>
+    <radialGradient id="bg" cx="0%" cy="0%" r="120%">
+      <stop offset="0%" stop-color="#1d2a4d"/>
+      <stop offset="55%" stop-color="#0b1020"/>
+      <stop offset="100%" stop-color="#070a14"/>
+    </radialGradient>
+    <radialGradient id="accent" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#638cff" stop-opacity="0.35"/>
+      <stop offset="70%" stop-color="#638cff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>`);
+  parts.push(`<rect width="${CARD_WIDTH}" height="${CARD_HEIGHT}" fill="url(#bg)"/>`);
+  parts.push(`<circle cx="${CARD_WIDTH - 60}" cy="60" r="240" fill="url(#accent)"/>`);
+
+  // Top row — brand (left) and version pill (right).
+  parts.push(
+    `<text x="${PAD}" y="${PAD + 28}" font-family="${FONT_STACK}" font-size="24" font-weight="bold" fill="#c7d2fe">affiliate-mcp</text>`,
+  );
+  const vFont = 24;
+  const vTextW = textWidth(data.version, vFont, 0.6);
+  const pillPadX = 20;
+  const pillW = vTextW + pillPadX * 2;
+  const pillH = 44;
+  const pillX = CARD_WIDTH - PAD - pillW;
+  const pillY = PAD;
+  parts.push(
+    `<rect x="${pillX}" y="${pillY}" width="${pillW}" height="${pillH}" rx="22" fill="none" stroke="#c7d2fe" stroke-opacity="0.4" stroke-width="1.5"/>`,
+  );
+  parts.push(
+    `<text x="${pillX + pillW / 2}" y="${pillY + pillH / 2 + 9}" text-anchor="middle" font-family="${FONT_STACK}" font-size="${vFont}" font-weight="bold" fill="#e8edff">${escapeXml(data.version)}</text>`,
+  );
+
+  // Hook.
+  const hookFont = 50;
+  let y = 250;
+  for (const line of wrap(data.hook, hookFont, contentW, 0.56)) {
+    parts.push(
+      `<text x="${PAD}" y="${y}" font-family="${FONT_STACK}" font-size="${hookFont}" font-weight="bold" fill="#f5f7fb">${escapeXml(line)}</text>`,
+    );
+    y += hookFont * 1.12;
+  }
+
+  // Changes.
+  y += 18;
+  const chFont = 24;
+  for (const change of data.changes) {
+    parts.push(
+      `<rect x="${PAD + 2}" y="${y - chFont + 6}" width="12" height="12" rx="3" fill="#6c8cff"/>`,
+    );
+    for (const line of wrap(change, chFont, contentW - 34, 0.54)) {
+      parts.push(
+        `<text x="${PAD + 34}" y="${y}" font-family="${FONT_STACK}" font-size="${chFont}" fill="#d7deec">${escapeXml(line)}</text>`,
+      );
+      y += chFont * 1.3;
+    }
+    y += 6;
+  }
+
+  // New-network spotlight chip.
+  if (data.newNetworks.length > 0) {
+    const label = 'NEW';
+    const names = data.newNetworks.join('  ·  ');
+    const labelFont = 14;
+    const nameFont = 22;
+    const chipPadX = 18;
+    const gap = 16;
+    // Bold + 1.5px letter-spacing across the label glyphs — widen the estimate.
+    const labelW = textWidth(label, labelFont, 0.78) + 1.5 * label.length;
+    const namesW = textWidth(names, nameFont, 0.56);
+    const chipW = chipPadX * 2 + labelW + gap + namesW;
+    const chipH = 46;
+    const chipY = y + 6;
+    parts.push(
+      `<rect x="${PAD}" y="${chipY}" width="${chipW}" height="${chipH}" rx="12" fill="#6c8cff" fill-opacity="0.16" stroke="#6c8cff" stroke-opacity="0.45" stroke-width="1.5"/>`,
+    );
+    parts.push(
+      `<text x="${PAD + chipPadX}" y="${chipY + chipH / 2 + 5}" font-family="${FONT_STACK}" font-size="${labelFont}" font-weight="bold" fill="#aebdff" letter-spacing="1.5">${label}</text>`,
+    );
+    parts.push(
+      `<text x="${PAD + chipPadX + labelW + gap}" y="${chipY + chipH / 2 + 8}" font-family="${FONT_STACK}" font-size="${nameFont}" font-weight="bold" fill="#f5f7fb">${escapeXml(names)}</text>`,
+    );
+  }
+
+  // Bottom row — coverage (left) and licence note (right).
   const coverage = data.bothSides
     ? `${data.networkCount} networks · publisher + brand side`
     : `${data.networkCount} networks`;
+  const bottomY = CARD_HEIGHT - PAD + 8;
+  parts.push(
+    `<text x="${PAD}" y="${bottomY}" font-family="${FONT_STACK}" font-size="22" font-weight="bold" fill="#aebdff">${escapeXml(coverage)}</text>`,
+  );
+  const footer = 'Open source · MIT · bring your own keys';
+  const footerW = textWidth(footer, 18, 0.52);
+  parts.push(
+    `<text x="${CARD_WIDTH - PAD - footerW}" y="${bottomY}" font-family="${FONT_STACK}" font-size="18" fill="#8a97b8">${escapeXml(footer)}</text>`,
+  );
 
-  const changeItems = data.changes
-    .map((c) => `      <li>${escapeHtml(c)}</li>`)
-    .join('\n');
-
-  const spotlight =
-    data.newNetworks.length > 0
-      ? `  <div class="spotlight">
-    <span class="spotlight-label">New</span>
-    <span class="spotlight-names">${escapeHtml(data.newNetworks.join(' · '))}</span>
-  </div>`
-      : '';
-
-  return `<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<title>affiliate-mcp ${escapeHtml(data.version)} — release</title>
-<style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  }
-  .card {
-    width: ${CARD_WIDTH}px;
-    height: ${CARD_HEIGHT}px;
-    box-sizing: border-box;
-    padding: 64px 72px;
-    background: radial-gradient(120% 120% at 0% 0%, #1d2a4d 0%, #0b1020 55%, #070a14 100%);
-    color: #f5f7fb;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    position: relative;
-    overflow: hidden;
-  }
-  .accent {
-    position: absolute;
-    right: -120px;
-    top: -120px;
-    width: 360px;
-    height: 360px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 50% 50%, rgba(99,140,255,0.35), rgba(99,140,255,0) 70%);
-  }
-  .top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    z-index: 1;
-  }
-  .brand {
-    font-size: 22px;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    color: #c7d2fe;
-  }
-  .version {
-    font-size: 22px;
-    font-weight: 700;
-    padding: 8px 18px;
-    border: 1px solid rgba(199,210,254,0.4);
-    border-radius: 999px;
-    color: #e8edff;
-  }
-  .body { z-index: 1; }
-  .hook {
-    font-size: 52px;
-    line-height: 1.08;
-    font-weight: 700;
-    margin: 0 0 28px 0;
-    max-width: 900px;
-  }
-  ul.changes {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  ul.changes li {
-    font-size: 24px;
-    line-height: 1.3;
-    color: #d7deec;
-    padding-left: 34px;
-    position: relative;
-  }
-  ul.changes li::before {
-    content: "";
-    position: absolute;
-    left: 4px;
-    top: 12px;
-    width: 12px;
-    height: 12px;
-    border-radius: 3px;
-    background: #6c8cff;
-  }
-  .spotlight {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 26px;
-    padding: 10px 18px;
-    background: rgba(108,140,255,0.16);
-    border: 1px solid rgba(108,140,255,0.45);
-    border-radius: 12px;
-    width: fit-content;
-  }
-  .spotlight-label {
-    font-size: 14px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #aebdff;
-  }
-  .spotlight-names { font-size: 22px; font-weight: 600; color: #f5f7fb; }
-  .bottom {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    z-index: 1;
-  }
-  .coverage {
-    font-size: 22px;
-    font-weight: 600;
-    color: #aebdff;
-  }
-  .footer-note { font-size: 18px; color: #8a97b8; }
-</style>
-</head>
-<body>
-<div class="card">
-  <div class="accent"></div>
-  <div class="top">
-    <div class="brand">affiliate-mcp</div>
-    <div class="version">${escapeHtml(data.version)}</div>
-  </div>
-  <div class="body">
-    <h1 class="hook">${escapeHtml(data.hook)}</h1>
-    <ul class="changes">
-${changeItems}
-    </ul>
-${spotlight}
-  </div>
-  <div class="bottom">
-    <div class="coverage">${escapeHtml(coverage)}</div>
-    <div class="footer-note">Open source · MIT · bring your own keys</div>
-  </div>
-</div>
-</body>
-</html>`;
+  parts.push(`</svg>`);
+  return parts.join('\n');
 }
 
 // ---------------------------------------------------------------------------
@@ -367,14 +357,6 @@ export function renderLinkedInPostCopy(data: ReleaseCardData, repoUrl = REPO_URL
   // Appended for convenience, clearly separated; not part of the post body.
   const releaseUrl = `${repoUrl}/releases/tag/${data.version}`;
   return `${post}\n\n---\nFirst comment (paste separately):\n${releaseUrl}\n`;
-}
-
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
 }
 
 // ---------------------------------------------------------------------------
@@ -435,70 +417,53 @@ async function runCli(argv: string[]): Promise<number> {
     newNetworks: cli.newNetworks,
   });
 
-  const html = renderReleaseCardHtml(data);
+  const svg = renderReleaseCardSvg(data);
   const post = renderLinkedInPostCopy(data);
 
   const outDir = path.join(repoRoot, 'docs', 'images');
   mkdirSync(outDir, { recursive: true });
-  const outPath = cli.outPath
-    ? path.resolve(cli.outPath)
-    : path.join(outDir, 'release-card.png');
+  const outPath = cli.outPath ? path.resolve(cli.outPath) : path.join(outDir, 'release-card.png');
+  const svgPath = path.join(outDir, 'release-card.svg');
   const postPath = path.join(outDir, 'release-post.txt');
 
-  // Always write the post copy — it does not depend on Playwright.
+  // The SVG and post copy don't depend on the rasteriser — always write them.
+  writeFileSync(svgPath, svg, 'utf8');
   writeFileSync(postPath, post, 'utf8');
+  process.stderr.write(`Wrote ${svgPath}.\n`);
   process.stderr.write(`Wrote ${postPath}.\n`);
 
-  // Dynamic import so the script doesn't hard-require Playwright at parse time.
-  // Playwright is intentionally not a declared dependency (its browser-binary
-  // download is heavyweight); install it explicitly to render the card. The
-  // dynamic import is typed loosely on purpose.
-  //
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let chromium: any;
+  // resvg-js is a declared devDependency; import it lazily so the pure
+  // functions above stay loadable (e.g. in tests) without the native binary.
+  let Resvg: typeof import('@resvg/resvg-js').Resvg;
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pw: any = await import('playwright' as string).catch(() => null);
-    if (!pw) throw new Error('playwright module not found');
-    chromium = pw.chromium;
+    ({ Resvg } = await import('@resvg/resvg-js'));
   } catch {
     process.stderr.write(
-      'generate-release-card: Playwright is not installed.\n' +
-        '  Install it with: npm install --save-dev playwright\n' +
-        '  Then install the browsers: npx playwright install chromium\n' +
-        `  The LinkedIn post copy was still written to ${postPath}.\n`,
+      'generate-release-card: @resvg/resvg-js is not installed.\n' +
+        '  Install dev dependencies with: npm install\n' +
+        `  The SVG (${svgPath}) and post copy (${postPath}) were still written;\n` +
+        '  you can rasterise the SVG with any tool.\n',
     );
-    // Write the HTML alongside so the card can still be inspected/rendered.
-    const htmlPath = path.join(outDir, 'release-card.html');
-    writeFileSync(htmlPath, html, 'utf8');
-    process.stderr.write(`  Card HTML written to ${htmlPath} for inspection.\n`);
     return 1;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let browser: any;
   try {
-    browser = await chromium.launch();
-    const ctx = await browser.newContext({
-      viewport: { width: CARD_WIDTH, height: CARD_HEIGHT },
-      deviceScaleFactor: 2, // crisp on retina / when LinkedIn re-compresses
+    const resvg = new Resvg(svg, {
+      font: { loadSystemFonts: true },
+      fitTo: { mode: 'width', value: CARD_WIDTH * RENDER_SCALE },
     });
-    const page = await ctx.newPage();
-    await page.setContent(html, { waitUntil: 'load' });
-    const cardHandle = page.locator('.card');
-    await cardHandle.screenshot({ path: outPath, type: 'png' });
-    process.stderr.write(`Wrote ${outPath} (${CARD_WIDTH}×${CARD_HEIGHT}).\n`);
+    const png = resvg.render().asPng();
+    writeFileSync(outPath, png);
+    process.stderr.write(
+      `Wrote ${outPath} (${CARD_WIDTH * RENDER_SCALE}×${CARD_HEIGHT * RENDER_SCALE}, ${RENDER_SCALE}× of ${CARD_WIDTH}×${CARD_HEIGHT}).\n`,
+    );
     return 0;
   } catch (err) {
     process.stderr.write(
-      `generate-release-card: rasterisation failed — ${(err as Error).message}\n`,
+      `generate-release-card: rasterisation failed — ${(err as Error).message}\n` +
+        `  The SVG was written to ${svgPath} for inspection.\n`,
     );
-    const htmlPath = path.join(outDir, 'release-card.html');
-    writeFileSync(htmlPath, html, 'utf8');
-    process.stderr.write(`  HTML written to ${htmlPath} for inspection.\n`);
     return 2;
-  } finally {
-    if (browser) await browser.close();
   }
 }
 
@@ -514,9 +479,7 @@ if (isMain) {
   runCli(process.argv.slice(2)).then(
     (code) => process.exit(code),
     (err) => {
-      process.stderr.write(
-        `generate-release-card fatal: ${(err as Error).stack ?? String(err)}\n`,
-      );
+      process.stderr.write(`generate-release-card fatal: ${(err as Error).stack ?? String(err)}\n`);
       process.exit(1);
     },
   );

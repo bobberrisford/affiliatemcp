@@ -17,7 +17,8 @@ package; used during development and CI.
 - `generate-release-card.ts` — render a branded 1200×627 LinkedIn
   "release card" PNG plus ready-to-paste post copy for a release.
   Invoked as `npm run generate:release-card -- --version vX.Y.Z
-  --change "…" [--new-network "…"] [--notes notes.md]`. Outputs to
-  `docs/images/release-card.png` and `docs/images/release-post.txt`
-  (PNG needs Playwright; the post copy is always written). See
+  --change "…" [--new-network "…"] [--notes notes.md]`. Outputs
+  `docs/images/release-card.{png,svg}` and
+  `docs/images/release-post.txt`. Rasterises the SVG with
+  `@resvg/resvg-js` (no browser needed). See
   `docs/product/linkedin-release-posts.md` for the why and the workflow.

@@ -53,15 +53,17 @@ npm run generate:release-card -- --version v0.3.0 --notes release-notes.md
 Outputs (in `docs/images/`):
 
 - `release-card.png` — 1200×627 (LinkedIn's optimal 1.91:1 single-image
-  ratio), rendered at 2× for crispness. **Requires Playwright** —
-  `npm i -D playwright && npx playwright install chromium`. If Playwright
-  isn't present the script still writes the post copy and a
-  `release-card.html` you can open and screenshot manually.
+  ratio), rasterised at 2× for crispness.
+- `release-card.svg` — the same card as vector, in case you want to tweak
+  it or re-render at another size.
 - `release-post.txt` — ready-to-paste post copy.
 
-The network count is read live from the `network.json` manifests, so it
-never drifts from reality. These files are regenerated per release and are
-not committed.
+The card is composed as an SVG and rasterised with `@resvg/resvg-js` (a
+dev dependency) — **no browser needed**, so this runs anywhere `npm
+install` runs, including headless CI and Claude Code on the web. The
+network count is read live from the `network.json` manifests, so it never
+drifts from reality. These files are regenerated per release and are not
+committed.
 
 ### 2. Posting convention
 
