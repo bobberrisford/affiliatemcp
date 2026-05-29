@@ -14,6 +14,52 @@ English throughout, including the canonical noun "programme".
 The project is pre-launch. The full state of each network's adapter — what
 ships, what is stubbed, what is known to misbehave — is in `REPORT.md`.
 
+## Product north star
+
+Affiliate data should be available where affiliate work happens. This repo
+turns public affiliate network APIs into local-first MCP tools, skills, prompts,
+and workflows so affiliate professionals can use their own data from the AI
+workspace they already use.
+
+The product is workflow-oriented. A user should be able to investigate
+performance, find partners, prepare a QBR, check unpaid commissions, draft
+outreach, audit links, or diagnose anomalies without bouncing between network
+dashboards, CSV exports, spreadsheets, docs, and email.
+
+## Target cohorts
+
+Keep these audiences in mind when writing docs, tools, setup flows, and PR
+notes:
+
+- **Advertisers, brands, and agencies** who manage programmes, optimise
+  partners, prepare client updates, and use Claude, ChatGPT, or similar tools.
+- **Publishers** who track earnings, pending commissions, unpaid transactions,
+  link health, programme performance, and cross-network reporting.
+- **Semi-technical operators** who can follow guided setup, GitHub instructions,
+  terminals, Claude Code, Codex, Cowork, or Cursor, but should not need to read
+  the internals.
+- **Developers and data teams** building internal tools, reporting workflows,
+  reconciliation jobs, or agent-native affiliate operations.
+- **Affiliate network employees** who may adopt, correct, own, or improve their
+  own adapter.
+- **AI coding agents** that need explicit boundaries so changes stay focused,
+  safe, and reviewable.
+
+## Product boundaries
+
+- Public and documented APIs only. No scraping, browser automation, private
+  endpoints, or workarounds around access limits.
+- Local-first by default. Users bring their own credentials and credentials stay
+  on the user's machine unless a future remote option is explicitly designed
+  with auth, consent, auditability, and security.
+- Safe typed tools, not raw chaos. The assistant can reason over operations,
+  but must not invent data or hide upstream API limitations.
+- Workflows over endpoint trivia. Prefer affiliate tasks such as performance
+  briefs, anomaly checks, QBR prep, partner discovery, outreach, unpaid
+  commission checks, and link audits.
+- Honest network truth. Document whether support is production, partial,
+  experimental, unsupported, gated, or unverified.
+
 ## Editorial tone
 
 Matter-of-fact. Not snarky. No marketing language. When a network's API is
@@ -87,6 +133,61 @@ under `docs/findings/` set the tone — copy that register.
 When in doubt: open an issue describing the question, read Awin again, do not
 guess at the shape of `src/shared/types.ts`.
 
+## Before touching code
+
+1. Confirm the task type: docs-only, adapter implementation, setup flow, skill,
+   workflow, fixture, generated report, or infrastructure.
+2. Read the files that own the relevant contract before editing. For adapters,
+   read `src/shared/types.ts` and the Awin reference first.
+3. Check `git status --short` and preserve any existing user changes.
+4. Keep the change set small. Do not combine unrelated docs, code, fixtures,
+   generated files, and dependency changes in one PR.
+5. If the user asks for documentation or alignment, do not edit source code.
+   Keep the PR documentation-only. At the end, run `git diff --name-only` and
+   confirm that only Markdown, docs, templates, or GitHub community files
+   changed.
+
+## Documentation-first behaviour
+
+- Prefer updating docs when the requested change is about product direction,
+  contributor guidance, setup clarity, known limitations, or workflow framing.
+- Do not make runtime changes to make a documentation point.
+- If docs and code disagree, document the mismatch in the PR and only change
+  code when the user explicitly asked for implementation.
+- Keep prose practical. Avoid hype, vague claims, and startup language.
+- Avoid em dashes in new prose. Use commas, colons, semicolons, or short
+  sentences.
+
+## Branch naming
+
+Use descriptive branch names that explain the work:
+
+- `docs/manifesto-product-direction`
+- `docs/contribution-onboarding`
+- `feat/network-skimlinks-publisher`
+- `feat/network-awin-advertiser-tools`
+- `fix/impact-pagination`
+- `fix/cj-auth-error-envelope`
+- `chore/cowork-install-flow`
+
+Avoid random poetic names, vague names such as `updates` or `fixes`, and
+generated names that do not explain the work.
+
+## PR discipline
+
+- One PR should do one thing. Split product docs, adapter behaviour, generated
+  reports, and dependency changes unless the maintainer explicitly asks for a
+  combined change.
+- Explain what changed, why it changed, how it was checked, and what remains
+  uncertain.
+- For AI-assisted PRs, state what the assistant generated and what a human or
+  agent manually reviewed.
+- Do not include credentials, real account IDs, unsanitised fixtures, or local
+  config files.
+- Run the relevant commands from this file. For docs-only changes, at minimum
+  inspect the diff and confirm the changed paths are documentation or GitHub
+  community files only.
+
 ## Conventions
 
 - **TypeScript strict.** `tsconfig.json` runs strict mode and `noUnusedLocals`.
@@ -134,6 +235,48 @@ CLI entry points (built or via `npm run dev`):
 - `affiliate-networks-mcp setup [slug]` — interactive credential wizard.
 - `affiliate-networks-mcp test [slug]` — run capability checks per network.
 - `affiliate-networks-mcp doctor` — environment + config diagnostic.
+
+## When adding a network
+
+- Confirm the network exposes a public REST or GraphQL API for the side being
+  added. Do not add scraping or dashboard automation.
+- Start from `templates/new-network/` or the existing side-specific reference.
+- Implement only the adapter contract from `src/shared/types.ts`. Do not invent
+  extra generated tools for one network.
+- Record unsupported, gated, or unverified operations honestly in
+  `network.json`, setup docs, tests, and PR notes.
+- Add scrubbed fixtures. Never commit real credentials, publisher IDs,
+  advertiser IDs, order IDs, or account-specific secrets.
+- Keep changes inside the new network's directory unless the task explicitly
+  needs shared contract work.
+- Run `npm run validate:network -- <slug>` and the standard checks before
+  requesting review.
+
+## When adding a skill or workflow
+
+- Start with an affiliate job-to-be-done: QBR prep, anomaly review, partner
+  discovery, publisher outreach, unpaid commission check, link audit, setup
+  guidance, or performance brief.
+- Use existing tools and adapter operations. Do not add new tool surfaces just
+  because a workflow would be convenient.
+- Include the assumptions, required credentials, expected inputs, and known
+  unsupported cases.
+- Make the workflow useful to semi-technical operators. They should not need to
+  know endpoint names.
+- Keep network limitations visible. A skill may explain a gap, but must not
+  hide it.
+
+## When only doing docs
+
+- Do not edit TypeScript, tests, package files, generated reports, build config,
+  dependencies, fixtures, or runtime behaviour.
+- Prefer Markdown, files under `docs/`, templates, `.github/` community files,
+  and repo-level contributor guidance.
+- Do not regenerate README tables or REPORT unless the task explicitly asks for
+  generated artefacts.
+- Run `git diff --name-only` before committing and confirm the paths are docs
+  or community files only.
+- If a follow-up requires code, list it separately instead of implementing it.
 
 ## What not to do
 

@@ -34,6 +34,9 @@ into a sheet, an artifact, an email to your boss, whatever you want.
 
 Free and open source. MIT licensed. Bring your own keys.
 
+For the product philosophy and contribution direction, read the
+[AI-native affiliate data manifesto](./docs/product/manifesto.md).
+
 ## Who this is for
 
 This tool serves two audiences. Pick the one that fits — or both, if
