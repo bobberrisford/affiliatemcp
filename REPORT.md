@@ -1,6 +1,6 @@
 # affiliate-mcp Report — the state of affiliate-network APIs in May 2026
 
-_Date-stamped: 2026-05-28._
+_Date-stamped: 2026-05-29._
 
 This report describes the state of four affiliate-network APIs as observed
 during the construction of the affiliate-mcp MCP server: Awin, CJ Affiliate,
@@ -3146,4 +3146,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-05-28 20:52 UTC._
+_Last regenerated 2026-05-29 04:44 UTC._
