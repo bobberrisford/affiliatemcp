@@ -27,7 +27,7 @@ import {
 } from './install/claude-code.js';
 import { detectClients, type DetectionResult } from './install/detect.js';
 
-export type InstallTarget = 'auto' | 'desktop' | 'code' | 'all';
+export type InstallTarget = 'auto' | 'desktop' | 'code' | 'all' | 'cowork';
 
 export interface InstallOptions {
   prompter?: Prompter;
@@ -38,6 +38,8 @@ export interface InstallOptions {
   detection?: DetectionResult;
   desktopConfigPathOverride?: string;
   spawnClaudeCode?: import('./install/claude-code.js').SpawnFn;
+  /** Override for tests — the Cowork mirror runner. */
+  coworkMirror?: typeof import('./install/cowork-mirror.js').runCoworkMirror;
   /** When true, suppress the post-run "restart Claude" / verify hints. */
   quiet?: boolean;
 }
@@ -49,6 +51,7 @@ function out(line = ''): void {
 interface ResolvedTargets {
   desktop: boolean;
   code: boolean;
+  cowork: boolean;
 }
 
 async function resolveTargets(
@@ -56,22 +59,38 @@ async function resolveTargets(
   target: InstallTarget,
   prompter: Prompter,
 ): Promise<ResolvedTargets | null> {
-  if (target === 'desktop') return { desktop: true, code: false };
-  if (target === 'code') return { desktop: false, code: true };
+  if (target === 'desktop') return { desktop: true, code: false, cowork: false };
+  if (target === 'code') return { desktop: false, code: true, cowork: false };
+  if (target === 'cowork') return { desktop: false, code: false, cowork: true };
   if (target === 'all') {
+    // --all is the no-prompt path. Cowork is deliberately excluded: it creates
+    // a GitHub repo and is best done interactively (or via `--cowork`).
     return {
       desktop: detection.desktop !== 'notSupported',
       code: true,
+      cowork: false,
     };
   }
 
-  // auto mode — pick from what's detected.
+  // auto mode — pick from what's detected. Cowork can't be reliably detected
+  // on disk (separate org app), so it's always offered as a choice rather than
+  // gated on detection.
   const desktopAvailable = detection.desktop === 'present';
   const codeAvailable = detection.code === 'present';
 
   if (!desktopAvailable && !codeAvailable) {
+    // No config-editable client. The likely intent of a bare `install` here is
+    // Cowork (an org product that ships without Desktop/Code) — offer it rather
+    // than dead-ending. This is the KPI path for a non-technical Cowork user.
+    const choice = await prompter.menu(
+      'No Claude Desktop or Code found. Set this up for Claude Cowork (org marketplace)?',
+      [
+        { key: 'cowork', label: 'yes — create a private GitHub mirror for Cowork' },
+        { key: 'cancel', label: 'no — make no changes' },
+      ],
+    );
+    if (choice === 'cowork') return { desktop: false, code: false, cowork: true };
     if (detection.desktop === 'notSupported') {
-      out('No supported Claude client detected.');
       out('Claude Desktop is not supported on this platform.');
       out('Install Claude Code (https://claude.com/claude-code) and re-run.');
     } else {
@@ -87,16 +106,18 @@ async function resolveTargets(
       { key: 'all', label: 'both — Claude Desktop and Claude Code' },
       { key: 'desktop', label: 'Claude Desktop only' },
       { key: 'code', label: 'Claude Code only' },
+      { key: 'cowork', label: 'Claude Cowork (org marketplace via private mirror)' },
       { key: 'cancel', label: 'cancel — make no changes' },
     ]);
     if (choice === 'cancel') return null;
-    if (choice === 'desktop') return { desktop: true, code: false };
-    if (choice === 'code') return { desktop: false, code: true };
-    return { desktop: true, code: true };
+    if (choice === 'desktop') return { desktop: true, code: false, cowork: false };
+    if (choice === 'code') return { desktop: false, code: true, cowork: false };
+    if (choice === 'cowork') return { desktop: false, code: false, cowork: true };
+    return { desktop: true, code: true, cowork: false };
   }
 
-  // Exactly one is available.
-  return { desktop: desktopAvailable, code: codeAvailable };
+  // Exactly one config-editable client is available.
+  return { desktop: desktopAvailable, code: codeAvailable, cowork: false };
 }
 
 export async function runInstall(opts: InstallOptions = {}): Promise<number> {
@@ -121,6 +142,21 @@ export async function runInstall(opts: InstallOptions = {}): Promise<number> {
 
   const targets = await resolveTargets(detection, target, prompter);
   if (!targets) return 0;
+
+  if (targets.cowork) {
+    const { CoworkMirrorError, GitHubBackendError } = await import('./install/cowork-mirror.js');
+    const mirror = opts.coworkMirror ?? (await import('./install/cowork-mirror.js')).runCoworkMirror;
+    try {
+      await mirror({ dryRun, prompter });
+      return 0;
+    } catch (err) {
+      if (err instanceof CoworkMirrorError || err instanceof GitHubBackendError) {
+        out(err.message);
+        return 1;
+      }
+      throw err;
+    }
+  }
 
   if (targets.desktop && detection.desktop === 'notSupported') {
     out('Claude Desktop is not supported on this platform. Skipping.');
@@ -212,6 +248,16 @@ export async function runUninstall(opts: InstallOptions = {}): Promise<number> {
   const detection = opts.detection ?? (await detectClients());
   const targets = await resolveTargets(detection, target, prompter);
   if (!targets) return 0;
+
+  if (targets.cowork) {
+    // We can't remove a plugin from someone's Cowork org marketplace from out
+    // here, so we hand back the manual steps rather than pretend to act.
+    out('To remove from Cowork: Organization settings → Plugins → find');
+    out("'affiliate-networks-mcp' → Remove.");
+    out('If you no longer need it, you can also delete the private mirror repo');
+    out('from GitHub.');
+    return 0;
+  }
 
   if (targets.desktop && detection.desktop === 'notSupported') {
     targets.desktop = false;
