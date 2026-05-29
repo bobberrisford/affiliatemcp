@@ -1,0 +1,24 @@
+{
+  "slug": "skimlinks",
+  "name": "Skimlinks",
+  "base_url": "https://api-reports.skimlinks.com",
+  "auth_model": "oauth2",
+  "env_vars": ["SKIMLINKS_CLIENT_ID", "SKIMLINKS_CLIENT_SECRET", "SKIMLINKS_PUBLISHER_ID", "SKIMLINKS_DOMAIN_ID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "listProgrammes / getProgramme require the Skimlinks Merchant API (api-merchants.skimlinks.com), gated behind a Managed account and a Product Key; both operations throw NotImplementedError for non-managed accounts.",
+    "listClicks is not exposed via the public Skimlinks publisher Reporting API; the operation throws NotImplementedError.",
+    "generateTrackingLink requires SKIMLINKS_DOMAIN_ID (the number after the X in your Site ID, found in Hub → Settings → Sites). The deeplink id parameter is {publisherId}X{domainId} — domainId is always distinct from publisherId.",
+    "OAuth2 access tokens have a limited lifetime; the adapter caches the token in memory and re-fetches on expiry.",
+    "Maximum date window per commissions API call is not publicly documented; live account verification required."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-05-28",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://developers.skimlinks.com/reporting.html"
+}

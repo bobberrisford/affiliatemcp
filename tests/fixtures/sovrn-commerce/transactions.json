@@ -1,0 +1,126 @@
+[
+  {
+    "account": {
+      "accountId": 9001,
+      "campaignId": 5001,
+      "campaignName": "My Publisher Site"
+    },
+    "commission": {
+      "revenueId": "rv-2001",
+      "commissionId": "cm-3001",
+      "commissionDate": "2026-04-15",
+      "updateDate": "2026-04-16",
+      "orderValue": 49.99,
+      "publisherNetRevenue": 2.50,
+      "programType": "cpa"
+    },
+    "click": {
+      "clickId": "ck-4001",
+      "clickDate": "2026-04-15",
+      "cuid": null,
+      "linkUrl": "https://www.example-bookshop.com/book-title",
+      "pageUrl": "https://www.mypublishersite.com/review",
+      "country": "US",
+      "device": "desktop"
+    },
+    "merchant": {
+      "merchantGroupId": 11001,
+      "merchantGroupName": "Example Books",
+      "network": "Sovrn"
+    },
+    "product": []
+  },
+  {
+    "account": {
+      "accountId": 9001,
+      "campaignId": 5001,
+      "campaignName": "My Publisher Site"
+    },
+    "commission": {
+      "revenueId": "rv-2002",
+      "commissionId": "cm-3002",
+      "commissionDate": "2026-04-20",
+      "updateDate": "2026-04-21",
+      "orderValue": 199.00,
+      "publisherNetRevenue": 8.95,
+      "programType": "cpa"
+    },
+    "click": {
+      "clickId": "ck-4002",
+      "clickDate": "2026-04-20",
+      "cuid": null,
+      "linkUrl": "https://www.techgadgets.example.com/product",
+      "pageUrl": "https://www.mypublishersite.com/review",
+      "country": "US",
+      "device": "mobile"
+    },
+    "merchant": {
+      "merchantGroupId": 11002,
+      "merchantGroupName": "Tech Gadgets Online",
+      "network": "Sovrn"
+    },
+    "product": []
+  },
+  {
+    "account": {
+      "accountId": 9001,
+      "campaignId": 5001,
+      "campaignName": "My Publisher Site"
+    },
+    "commission": {
+      "revenueId": "rv-2003",
+      "commissionId": "cm-3003",
+      "commissionDate": "2024-11-01",
+      "updateDate": "2024-11-02",
+      "orderValue": 75.00,
+      "publisherNetRevenue": 3.75,
+      "programType": "cpa"
+    },
+    "click": {
+      "clickId": "ck-4003",
+      "clickDate": "2024-11-01",
+      "cuid": null,
+      "linkUrl": "https://www.fashionforward.example.com/item",
+      "pageUrl": "https://www.mypublishersite.com/fashion",
+      "country": "US",
+      "device": "desktop"
+    },
+    "merchant": {
+      "merchantGroupId": 11003,
+      "merchantGroupName": "Fashion Forward",
+      "network": "Sovrn"
+    },
+    "product": []
+  },
+  {
+    "account": {
+      "accountId": 9001,
+      "campaignId": 5001,
+      "campaignName": "My Publisher Site"
+    },
+    "commission": {
+      "revenueId": "rv-2004",
+      "commissionId": "cm-3004",
+      "commissionDate": "2024-09-10",
+      "updateDate": "2024-09-11",
+      "orderValue": 250.00,
+      "publisherNetRevenue": 12.50,
+      "programType": "cpa"
+    },
+    "click": {
+      "clickId": "ck-4004",
+      "clickDate": "2024-09-10",
+      "cuid": null,
+      "linkUrl": "https://www.example-bookshop.com/another-book",
+      "pageUrl": "https://www.mypublishersite.com/books",
+      "country": "GB",
+      "device": "desktop"
+    },
+    "merchant": {
+      "merchantGroupId": 11001,
+      "merchantGroupName": "Example Books",
+      "network": "Sovrn"
+    },
+    "product": []
+  }
+]

@@ -1,0 +1,63 @@
+[
+  {
+    "event_id": "E-2001",
+    "commission_id": "C-2001",
+    "advertiser_id": 1001,
+    "advertiser_name": "Atolls Bookshop",
+    "commission": 8.00,
+    "sale_amount": 100.00,
+    "currency": "EUR",
+    "state": "CONFIRMED",
+    "sales_date": "2024-01-15T10:00:00Z",
+    "modified_date": "2024-01-30T12:00:00Z",
+    "click_date": "2024-01-15T09:55:00Z",
+    "event_type": "UPDATE",
+    "click_id": "yk_abc123"
+  },
+  {
+    "event_id": "E-2002",
+    "commission_id": "C-2002",
+    "advertiser_id": 1001,
+    "advertiser_name": "Atolls Bookshop",
+    "commission": 4.00,
+    "sale_amount": 50.00,
+    "currency": "EUR",
+    "state": "OPEN",
+    "sales_date": "2026-04-01T14:00:00Z",
+    "modified_date": "2026-04-01T14:05:00Z",
+    "click_date": "2026-04-01T13:50:00Z",
+    "event_type": "NEW",
+    "click_id": "yk_def456"
+  },
+  {
+    "event_id": "E-2003",
+    "commission_id": "C-2003",
+    "advertiser_id": 1002,
+    "advertiser_name": "Reef Outfitters",
+    "commission": 0.00,
+    "sale_amount": 200.00,
+    "currency": "EUR",
+    "state": "REJECTED",
+    "sales_date": "2025-09-10T09:00:00Z",
+    "modified_date": "2025-09-20T16:00:00Z",
+    "click_date": "2025-09-10T08:45:00Z",
+    "event_type": "UPDATE",
+    "click_id": "yk_ghi789",
+    "rejection_reason": "Customer returned the item within 14 days"
+  },
+  {
+    "event_id": "E-2004",
+    "commission_id": "C-2004",
+    "advertiser_id": 1002,
+    "advertiser_name": "Reef Outfitters",
+    "commission": 11.00,
+    "sale_amount": 200.00,
+    "currency": "EUR",
+    "state": "DELAYED",
+    "sales_date": "2026-05-01T11:00:00Z",
+    "modified_date": "2026-05-01T11:05:00Z",
+    "click_date": "2026-05-01T10:55:00Z",
+    "event_type": "NEW",
+    "click_id": "yk_jkl012"
+  }
+]

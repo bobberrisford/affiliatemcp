@@ -1,0 +1,36 @@
+{
+  "affiliates": [
+    {
+      "network_affiliate_id": 7,
+      "network_id": 5,
+      "name": "BestDeals.com",
+      "account_status": "active",
+      "account_manager_id": 201,
+      "account_manager_name": "Jane Smith",
+      "default_currency_id": "USD"
+    },
+    {
+      "network_affiliate_id": 8,
+      "network_id": 5,
+      "name": "PendingPartner",
+      "account_status": "pending",
+      "account_manager_id": 202,
+      "account_manager_name": "Bob Jones",
+      "default_currency_id": "USD"
+    },
+    {
+      "network_affiliate_id": 9,
+      "network_id": 5,
+      "name": "InactiveAffiliate",
+      "account_status": "inactive",
+      "account_manager_id": 201,
+      "account_manager_name": "Jane Smith",
+      "default_currency_id": "USD"
+    }
+  ],
+  "paging": {
+    "page": 1,
+    "page_size": 100,
+    "total_count": 3
+  }
+}

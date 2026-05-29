@@ -1,0 +1,45 @@
+{
+  "advertisers": [
+    {
+      "network_advertiser_id": 101,
+      "network_id": 5,
+      "name": "Acme Widgets Ltd",
+      "account_status": "active",
+      "account_manager_id": 201,
+      "account_manager_name": "Jane Smith",
+      "platform_name": "Acme Platform",
+      "platform_url": "https://www.acmewidgets.com",
+      "default_currency_id": "USD",
+      "reporting_timezone_id": 67
+    },
+    {
+      "network_advertiser_id": 102,
+      "network_id": 5,
+      "name": "Beta Corp",
+      "account_status": "inactive",
+      "account_manager_id": 202,
+      "account_manager_name": "Bob Jones",
+      "platform_name": "BetaShop",
+      "platform_url": "https://www.betacorp.com",
+      "default_currency_id": "GBP",
+      "reporting_timezone_id": 68
+    },
+    {
+      "network_advertiser_id": 103,
+      "network_id": 5,
+      "name": "Gamma Services",
+      "account_status": "suspended",
+      "account_manager_id": 201,
+      "account_manager_name": "Jane Smith",
+      "platform_name": null,
+      "platform_url": null,
+      "default_currency_id": "EUR",
+      "reporting_timezone_id": 67
+    }
+  ],
+  "paging": {
+    "page": 1,
+    "page_size": 100,
+    "total_count": 3
+  }
+}

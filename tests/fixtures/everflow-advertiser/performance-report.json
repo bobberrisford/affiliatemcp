@@ -1,0 +1,55 @@
+{
+  "table": [
+    {
+      "columns": [
+        {
+          "column_type": "affiliate",
+          "id": "7",
+          "label": "BestDeals.com"
+        }
+      ],
+      "reporting": {
+        "imp": 50000,
+        "total_click": 1200,
+        "unique_click": 1100,
+        "cv": 45,
+        "cvr": 0.0375,
+        "revenue": 2250.00,
+        "payout": 225.00,
+        "rpc": 1.875,
+        "epc": 0.1875
+      }
+    },
+    {
+      "columns": [
+        {
+          "column_type": "affiliate",
+          "id": "8",
+          "label": "PendingPartner"
+        }
+      ],
+      "reporting": {
+        "imp": 10000,
+        "total_click": 300,
+        "unique_click": 280,
+        "cv": 5,
+        "cvr": 0.0167,
+        "revenue": 250.00,
+        "payout": 25.00,
+        "rpc": 0.833,
+        "epc": 0.0833
+      }
+    }
+  ],
+  "summary": {
+    "imp": 60000,
+    "total_click": 1500,
+    "unique_click": 1380,
+    "cv": 50,
+    "cvr": 0.0333,
+    "revenue": 2500.00,
+    "payout": 250.00
+  },
+  "currency": "USD",
+  "incomplete_results": false
+}

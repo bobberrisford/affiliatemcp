@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report name="aAffiliateEventBreakdownReport" time="2026-05-28 12:00">
+  <matrix rowcount="4">
+    <columns>
+      <timeOfEvent type="date">Event Date</timeOfEvent>
+      <siteId type="integer">Publisher Site ID</siteId>
+      <siteName type="string">Publisher Site Name</siteName>
+      <pendingStatus type="string">Status</pendingStatus>
+      <orderValue type="decimal">Order Value</orderValue>
+      <affiliateCommission type="decimal">Affiliate Commission</affiliateCommission>
+      <programId type="integer">Programme ID</programId>
+      <eventName type="string">Event Name</eventName>
+      <currencyId type="string">Currency</currencyId>
+    </columns>
+    <rows>
+      <row>
+        <timeOfEvent>01.05.2026</timeOfEvent>
+        <siteId>5001</siteId>
+        <siteName>BestDeals.co.uk</siteName>
+        <pendingStatus>A</pendingStatus>
+        <orderValue>150.00</orderValue>
+        <affiliateCommission>7.50</affiliateCommission>
+        <programId>11111</programId>
+        <eventName>Sale</eventName>
+        <currencyId>GBP</currencyId>
+      </row>
+      <row>
+        <timeOfEvent>03.05.2026</timeOfEvent>
+        <siteId>5002</siteId>
+        <siteName>VoucherWorld</siteName>
+        <pendingStatus>P</pendingStatus>
+        <orderValue>89.99</orderValue>
+        <affiliateCommission>4.50</affiliateCommission>
+        <programId>11111</programId>
+        <eventName>Sale</eventName>
+        <currencyId>GBP</currencyId>
+      </row>
+      <row>
+        <timeOfEvent>05.05.2026</timeOfEvent>
+        <siteId>5003</siteId>
+        <siteName>CashbackSite</siteName>
+        <pendingStatus>D</pendingStatus>
+        <orderValue>200.00</orderValue>
+        <affiliateCommission>10.00</affiliateCommission>
+        <programId>22222</programId>
+        <eventName>Sale</eventName>
+        <currencyId>EUR</currencyId>
+      </row>
+      <row>
+        <timeOfEvent>07.05.2026</timeOfEvent>
+        <siteId>5001</siteId>
+        <siteName>BestDeals.co.uk</siteName>
+        <pendingStatus>A</pendingStatus>
+        <orderValue>75.00</orderValue>
+        <affiliateCommission>3.75</affiliateCommission>
+        <programId>11111</programId>
+        <eventName>Lead</eventName>
+        <currencyId>GBP</currencyId>
+      </row>
+    </rows>
+  </matrix>
+</report>
