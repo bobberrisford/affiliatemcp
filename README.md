@@ -152,19 +152,25 @@ Registers the MCP server and bundled skills in one step. (Or use the
 
 **Claude Cowork desktop (org accounts):**
 
-Cowork orgs sync plugins from GitHub via the **Organization settings →
-Plugins → Add plugin** flow. Cowork blocks **public** repos from being
-synced into an org marketplace, so you'll need a private mirror first:
+Cowork syncs plugins from a GitHub repo, but blocks **public** repos from org
+marketplaces — so you need a **private mirror** first. The setup wizard offers
+this at the end, or run `install` and pick Cowork:
 
 ```
-scripts/fork-for-cowork.sh
+npx affiliate-networks-mcp install      # detects your clients, offers Cowork
 ```
 
-(Requires `gh` authed. Creates `<you>/affiliatemcp-internal` as a private
-repo and mirror-pushes the upstream into it. Re-run with `--sync` to
-refresh against new releases.) Then in Cowork: Organization settings →
-Plugins → Add plugin → GitHub → enter `<you>/affiliatemcp-internal` →
-install `affiliate-networks-mcp` from the synced marketplace.
+(Or go straight to it: `npx affiliate-networks-mcp cowork-mirror`.)
+
+It creates `<you>/affiliatemcp-internal` as a private repo and mirrors the
+upstream into it. If you have the GitHub CLI (`gh`) signed in, it's used
+automatically; otherwise it tells you exactly where to get a GitHub token and
+prompts you to paste it — the same "paste a credential" flow as setting up a
+network. Re-run with `--sync` to refresh against new releases.
+
+Then, with **org-admin** access, in Cowork: **Organization settings → Plugins
+→ Add plugin → GitHub** → enter `<you>/affiliatemcp-internal` → install
+`affiliate-networks-mcp` from the synced marketplace.
 
 <details>
 <summary>Prefer to edit Claude Desktop config by hand?</summary>
@@ -205,8 +211,8 @@ shell command, not a chat slash command. Run `claude plugin marketplace
 add ...` from your terminal, not inside the conversation.
 
 **Cowork rejects the marketplace repo.** Confirm the repo is **private**.
-Public repos are blocked for org-marketplace sync. Use the mirror script
-above if needed.
+Public repos are blocked for org-marketplace sync. Run `npx
+affiliate-networks-mcp cowork-mirror` to create a private mirror.
 
 **`What affiliate networks…` returns nothing.** The MCP server is loaded
 but credentials are missing. Trigger the bundled

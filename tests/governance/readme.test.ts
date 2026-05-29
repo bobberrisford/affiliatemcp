@@ -80,11 +80,19 @@ describe('README.md (PRD §15.20)', () => {
 
   it('quick-start npx commands reference real CLI subcommands', () => {
     const body = readReadme();
-    const validSubcommands = new Set(['setup', 'test', 'doctor', 'validate', 'install', 'uninstall']);
+    const validSubcommands = new Set([
+      'setup',
+      'test',
+      'doctor',
+      'validate',
+      'install',
+      'uninstall',
+      'cowork-mirror',
+    ]);
     const quickStartMatch = body.match(/##\s+(?:Quick[- ]start|Getting started)[\s\S]*?(?=^##\s)/im);
     expect(quickStartMatch).not.toBeNull();
     const quickStart = quickStartMatch![0];
-    const re = /npx\s+affiliate-networks-mcp(?:\s+([a-z]+))?/g;
+    const re = /npx\s+affiliate-networks-mcp(?:\s+([a-z-]+))?/g;
     let m: RegExpExecArray | null;
     while ((m = re.exec(quickStart)) !== null) {
       const sub = m[1];
