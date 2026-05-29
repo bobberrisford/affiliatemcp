@@ -41,7 +41,8 @@
     "validate:network": "tsx scripts/validate-network-json.ts",
     "generate:readme": "tsx scripts/generate-readme-table.ts",
     "generate:report": "tsx scripts/generate-report.ts",
-    "generate:report-image": "tsx scripts/generate-report-image.ts"
+    "generate:report-image": "tsx scripts/generate-report-image.ts",
+    "generate:release-card": "tsx scripts/generate-release-card.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
