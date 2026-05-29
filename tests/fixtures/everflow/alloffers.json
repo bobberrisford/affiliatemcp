@@ -1,0 +1,61 @@
+{
+  "offers": [
+    {
+      "network_offer_id": 1001,
+      "network_id": 42,
+      "name": "Atolls Bookshop",
+      "offer_status": "active",
+      "currency_id": "USD",
+      "preview_url": "https://www.atolls-bookshop.example.com",
+      "thumbnail_url": "https://cdn.example.com/atolls-logo.png",
+      "html_description": "Books for all readers",
+      "visibility": "public",
+      "default_payout": 5.00,
+      "payout_type": "cpa",
+      "network_category_id": 7,
+      "network_category_name": "Books",
+      "relationship": {
+        "status": "approved"
+      }
+    },
+    {
+      "network_offer_id": 1002,
+      "network_id": 42,
+      "name": "Coral Coast Travel",
+      "offer_status": "active",
+      "currency_id": "USD",
+      "preview_url": "https://www.coral-travel.example.com",
+      "thumbnail_url": null,
+      "html_description": "Premium travel deals",
+      "visibility": "public",
+      "default_payout": 3.5,
+      "payout_type": "cpa",
+      "network_category_id": 12,
+      "network_category_name": "Travel",
+      "relationship": {
+        "status": "pending"
+      }
+    },
+    {
+      "network_offer_id": 1003,
+      "network_id": 42,
+      "name": "Ridge Runner Outdoors",
+      "offer_status": "active",
+      "currency_id": "GBP",
+      "preview_url": "https://www.ridge-runner.example.com",
+      "thumbnail_url": null,
+      "html_description": "Outdoor gear and apparel",
+      "visibility": "require_approval",
+      "default_payout": 8.0,
+      "payout_type": "cps",
+      "network_category_id": 5,
+      "network_category_name": "Sports",
+      "relationship": {
+        "status": "declined"
+      }
+    }
+  ],
+  "page": 1,
+  "page_size": 100,
+  "total_count": 3
+}

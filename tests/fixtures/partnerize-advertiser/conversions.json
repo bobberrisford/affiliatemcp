@@ -1,0 +1,50 @@
+{
+  "conversions": [
+    {
+      "conversion_id": "CONV-5001",
+      "publisher_id": "PUB-201",
+      "campaign_id": "CAM-1001",
+      "campaign_name": "Acme Widgets UK",
+      "status": "approved",
+      "sale_amount": "120.00",
+      "commission": "12.00",
+      "currency": "GBP",
+      "click_time": "2026-05-01T10:00:00Z",
+      "conversion_time": "2026-05-01T10:05:00Z",
+      "approved_at": "2026-05-05T09:00:00Z",
+      "paid_at": null,
+      "rejection_reason": null
+    },
+    {
+      "conversion_id": "CONV-5002",
+      "publisher_id": "PUB-202",
+      "campaign_id": "CAM-1001",
+      "campaign_name": "Acme Widgets UK",
+      "status": "pending",
+      "sale_amount": "85.50",
+      "commission": "8.55",
+      "currency": "GBP",
+      "click_time": "2026-05-10T14:00:00Z",
+      "conversion_time": "2026-05-10T14:03:00Z",
+      "approved_at": null,
+      "paid_at": null,
+      "rejection_reason": null
+    },
+    {
+      "conversion_id": "CONV-5003",
+      "publisher_id": "PUB-201",
+      "campaign_id": "CAM-1001",
+      "campaign_name": "Acme Widgets UK",
+      "status": "rejected",
+      "sale_amount": "200.00",
+      "commission": "20.00",
+      "currency": "GBP",
+      "click_time": "2026-04-20T08:00:00Z",
+      "conversion_time": "2026-04-20T08:10:00Z",
+      "approved_at": null,
+      "paid_at": null,
+      "rejection_reason": "Item returned within 30 days"
+    }
+  ],
+  "total": 3
+}

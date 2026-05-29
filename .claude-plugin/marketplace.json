@@ -11,9 +11,9 @@
     {
       "name": "affiliate-networks-mcp",
       "source": "./",
-      "description": "Chat with your affiliate-network data in Claude. Awin, CJ, eBay Partner Network, Impact, and Rakuten.",
+      "description": "Chat with your affiliate-network data in Claude. Awin, CJ, eBay Partner Network, Impact, Rakuten, Skimlinks, Partnerize, Tradedoubler, Sovrn Commerce, Everflow and mrge (newer networks experimental).",
       "category": "data",
-      "tags": ["affiliate", "mcp", "awin", "cj", "impact", "rakuten", "ebay"]
+      "tags": ["affiliate", "mcp", "awin", "cj", "impact", "rakuten", "ebay", "skimlinks", "partnerize", "tradedoubler", "sovrn", "everflow", "mrge"]
     }
   ]
 }

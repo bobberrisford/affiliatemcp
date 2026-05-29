@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<report name="aAffiliateMyProgramsReport" time="2026-05-28 12:00">
+  <matrix rowcount="3">
+    <columns>
+      <programId type="integer">Programme ID</programId>
+      <programName type="string">Programme Name</programName>
+      <status type="string">Status</status>
+      <programTariffPercentage type="percentage">Commission %</programTariffPercentage>
+      <programTariffAmount type="decimal">Commission Amount</programTariffAmount>
+      <programTariffCurrency type="string">Currency</programTariffCurrency>
+    </columns>
+    <rows>
+      <row>
+        <programId>11111</programId>
+        <programName>Acme Widgets UK</programName>
+        <status>A</status>
+        <programTariffPercentage>5.00</programTariffPercentage>
+        <programTariffAmount>0</programTariffAmount>
+        <programTariffCurrency>GBP</programTariffCurrency>
+      </row>
+      <row>
+        <programId>22222</programId>
+        <programName>Globex Electronics</programName>
+        <status>A</status>
+        <programTariffPercentage>0</programTariffPercentage>
+        <programTariffAmount>2.50</programTariffAmount>
+        <programTariffCurrency>EUR</programTariffCurrency>
+      </row>
+      <row>
+        <programId>33333</programId>
+        <programName>Initech Software</programName>
+        <status>S</status>
+        <programTariffPercentage>8.00</programTariffPercentage>
+        <programTariffAmount>0</programTariffAmount>
+        <programTariffCurrency>GBP</programTariffCurrency>
+      </row>
+    </rows>
+  </matrix>
+</report>

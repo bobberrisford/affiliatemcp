@@ -1,0 +1,76 @@
+{
+  "clicks": [
+    {
+      "transaction_id": "TXN001abc",
+      "is_unique": 1,
+      "unix_timestamp": 1746748800,
+      "tracking_url": "https://track.network.com",
+      "source_id": "src1",
+      "sub1": "banner_top",
+      "sub2": null,
+      "sub3": null,
+      "sub4": null,
+      "sub5": null,
+      "payout_type": "cpa",
+      "revenue_type": "cpa",
+      "payout": 5.00,
+      "revenue": 50.00,
+      "referer": "https://bestdeals.com/page",
+      "url": "https://www.acmewidgets.com/landing",
+      "error_code": 0,
+      "error_message": null,
+      "user_ip": "198.51.100.1",
+      "has_conversion": 1,
+      "currency_id": "USD",
+      "relationship": {
+        "offer": {
+          "network_offer_id": 201,
+          "network_id": 5,
+          "name": "Acme Widgets Summer Sale",
+          "offer_status": "active",
+          "network_advertiser_id": 101
+        },
+        "affiliate": {
+          "network_affiliate_id": 7,
+          "name": "BestDeals.com"
+        }
+      }
+    },
+    {
+      "transaction_id": "TXN002def",
+      "is_unique": 1,
+      "unix_timestamp": 1746752400,
+      "tracking_url": "https://track.network.com",
+      "source_id": "src2",
+      "sub1": null,
+      "sub2": null,
+      "sub3": null,
+      "sub4": null,
+      "sub5": null,
+      "payout_type": "cpa",
+      "revenue_type": "cpa",
+      "payout": 0.00,
+      "revenue": 0.00,
+      "referer": null,
+      "url": "https://www.acmewidgets.com/product/42",
+      "error_code": 0,
+      "error_message": null,
+      "user_ip": "198.51.100.2",
+      "has_conversion": 0,
+      "currency_id": "USD",
+      "relationship": {
+        "offer": {
+          "network_offer_id": 201,
+          "network_id": 5,
+          "name": "Acme Widgets Summer Sale",
+          "offer_status": "active",
+          "network_advertiser_id": 101
+        },
+        "affiliate": {
+          "network_affiliate_id": 8,
+          "name": "PendingPartner"
+        }
+      }
+    }
+  ]
+}
