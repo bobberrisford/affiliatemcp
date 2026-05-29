@@ -30,12 +30,25 @@ export interface SpawnResult {
   stderr: string;
 }
 
-/** Runs an arbitrary command. Differs from claude-code's `SpawnFn`, which is bound to `claude`. */
-export type SpawnFn = (cmd: string, args: string[]) => Promise<SpawnResult>;
+export interface SpawnOptions {
+  /**
+   * Extra environment for the child. When set it *replaces* the inherited
+   * environment, so callers that only want to add a few vars must spread
+   * `process.env` themselves. Used to pass credentials to `git` via env rather
+   * than argv (argv is world-readable through `/proc/<pid>/cmdline` and `ps`).
+   */
+  env?: NodeJS.ProcessEnv;
+}
 
-export const defaultSpawn: SpawnFn = (cmd, args) =>
+/** Runs an arbitrary command. Differs from claude-code's `SpawnFn`, which is bound to `claude`. */
+export type SpawnFn = (cmd: string, args: string[], opts?: SpawnOptions) => Promise<SpawnResult>;
+
+export const defaultSpawn: SpawnFn = (cmd, args, opts) =>
   new Promise<SpawnResult>((resolve, reject) => {
-    const child = nodeSpawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = nodeSpawn(cmd, args, {
+      stdio: ['ignore', 'pipe', 'pipe'],
+      ...(opts?.env ? { env: opts.env } : {}),
+    });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (chunk: Buffer) => {
@@ -64,10 +77,28 @@ export interface GitHubBackend {
   /** Create a private repo under the signed-in user. `name` is the bare repo name. */
   createPrivateRepo(name: string, description: string): Promise<void>;
   /**
-   * Extra `git` args that authenticate a push without leaking the token into
-   * the remote URL / reflog. Empty for gh (its credential helper handles it).
+   * Environment variables to merge into the `git push` so it authenticates
+   * without leaking the credential into argv (visible via `ps` /
+   * `/proc/<pid>/cmdline`), the remote URL, or the reflog. Git reads the auth
+   * header from `GIT_CONFIG_*`, which on Linux is only readable by the process
+   * owner. Both backends mint a token and authenticate the push themselves, so
+   * neither depends on the user's ambient git credential helper.
    */
-  gitAuthArgs(): string[];
+  authEnv(): Promise<Record<string, string>>;
+}
+
+/**
+ * Build the `GIT_CONFIG_*` env that injects an HTTP `AUTHORIZATION` header for
+ * github.com pushes. `x-access-token:<token>` Basic auth is GitHub's documented
+ * token scheme and works for both PATs and `gh`-minted OAuth tokens.
+ */
+function gitAuthHeaderEnv(token: string): Record<string, string> {
+  const basic = Buffer.from(`x-access-token:${token}`).toString('base64');
+  return {
+    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: 'http.https://github.com/.extraheader',
+    GIT_CONFIG_VALUE_0: `AUTHORIZATION: basic ${basic}`,
+  };
 }
 
 export class GitHubBackendError extends Error {
@@ -124,8 +155,17 @@ export class GhBackend implements GitHubBackend {
     }
   }
 
-  gitAuthArgs(): string[] {
-    return [];
+  async authEnv(): Promise<Record<string, string>> {
+    // `gh auth status` passing does NOT guarantee HTTPS git pushes are
+    // credentialed (the user may never have run `gh auth setup-git`). Rather
+    // than depend on — or mutate — their global git config, mint a token from
+    // gh and authenticate the push ourselves, exactly like the PAT path.
+    const res = await this.spawn('gh', ['auth', 'token']);
+    const token = res.stdout.trim();
+    if (res.code !== 0 || !token) {
+      throw new GitHubBackendError('gh', 'get a token for the mirror push', res.stderr || res.stdout);
+    }
+    return gitAuthHeaderEnv(token);
   }
 }
 
@@ -194,12 +234,11 @@ export class PatBackend implements GitHubBackend {
     }
   }
 
-  gitAuthArgs(): string[] {
-    // Authenticate via an HTTP header rather than baking the token into the
-    // remote URL — keeps it out of .git/config, the reflog and `ps` output.
-    // `x-access-token:<token>` Basic auth is GitHub's documented token scheme.
-    const basic = Buffer.from(`x-access-token:${this.token}`).toString('base64');
-    return ['-c', `http.https://github.com/.extraheader=AUTHORIZATION: basic ${basic}`];
+  async authEnv(): Promise<Record<string, string>> {
+    // Authenticate via an HTTP header passed through the environment (not argv),
+    // so the token stays out of the remote URL, .git/config, the reflog, and
+    // `ps` / `/proc/<pid>/cmdline`.
+    return gitAuthHeaderEnv(this.token);
   }
 }
 

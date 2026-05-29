@@ -105,8 +105,20 @@ describe('GhBackend', () => {
     );
   });
 
-  it('needs no extra git auth args (credential helper handles it)', () => {
-    expect(new GhBackend(recorder([]).spawn).gitAuthArgs()).toEqual([]);
+  it('mints a token via `gh auth token` and authenticates the push through env', async () => {
+    const { spawn, calls } = recorder([ok('gh-oauth-token\n')]);
+    const env = await new GhBackend(spawn).authEnv();
+    expect(calls[0]).toEqual(['gh', ['auth', 'token']]);
+    expect(env['GIT_CONFIG_KEY_0']).toBe('http.https://github.com/.extraheader');
+    const expected = Buffer.from('x-access-token:gh-oauth-token').toString('base64');
+    expect(env['GIT_CONFIG_VALUE_0']).toBe(`AUTHORIZATION: basic ${expected}`);
+    // The raw token must never appear (only its base64 form).
+    expect(JSON.stringify(env)).not.toContain('gh-oauth-token');
+  });
+
+  it('fails clearly when `gh auth token` yields nothing', async () => {
+    const { spawn } = recorder([fail('not logged in')]);
+    await expect(new GhBackend(spawn).authEnv()).rejects.toBeInstanceOf(GitHubBackendError);
   });
 });
 
@@ -168,13 +180,14 @@ describe('PatBackend', () => {
     );
   });
 
-  it('authenticates the push via an http header, never the URL', () => {
-    const args = new PatBackend('s3cr3t').gitAuthArgs();
-    expect(args[0]).toBe('-c');
+  it('authenticates the push via an http header in the env, never argv or the URL', async () => {
+    const env = await new PatBackend('s3cr3t').authEnv();
+    expect(env['GIT_CONFIG_COUNT']).toBe('1');
+    expect(env['GIT_CONFIG_KEY_0']).toBe('http.https://github.com/.extraheader');
     const expected = Buffer.from('x-access-token:s3cr3t').toString('base64');
-    expect(args[1]).toBe(`http.https://github.com/.extraheader=AUTHORIZATION: basic ${expected}`);
+    expect(env['GIT_CONFIG_VALUE_0']).toBe(`AUTHORIZATION: basic ${expected}`);
     // The raw token must not appear (only its base64 form).
-    expect(args[1]).not.toContain('s3cr3t');
+    expect(JSON.stringify(env)).not.toContain('s3cr3t');
   });
 });
 

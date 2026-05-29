@@ -27,13 +27,19 @@ function fail(stderr = 'boom', code = 1): SpawnResult {
   return { code, stdout: '', stderr };
 }
 
+interface SpawnCall {
+  cmd: string;
+  args: string[];
+  env?: NodeJS.ProcessEnv;
+}
+
 function routeSpawn(handler: (cmd: string, args: string[]) => SpawnResult): {
   spawn: SpawnFn;
-  calls: Array<[string, string[]]>;
+  calls: SpawnCall[];
 } {
-  const calls: Array<[string, string[]]> = [];
-  const spawn: SpawnFn = async (cmd, args) => {
-    calls.push([cmd, args]);
+  const calls: SpawnCall[] = [];
+  const spawn: SpawnFn = async (cmd, args, opts) => {
+    calls.push({ cmd, args, ...(opts?.env ? { env: opts.env } : {}) });
     return handler(cmd, args);
   };
   return { spawn, calls };
@@ -45,6 +51,7 @@ function ghHandler(repoPresent: boolean): (cmd: string, args: string[]) => Spawn
     if (cmd === 'gh' && args[0] === 'api' && args[1] === 'user') return ok(`${LOGIN}\n`);
     if (cmd === 'gh' && args[0] === 'repo' && args[1] === 'view') return repoPresent ? ok() : fail();
     if (cmd === 'gh' && args[0] === 'repo' && args[1] === 'create') return ok();
+    if (cmd === 'gh' && args[0] === 'auth' && args[1] === 'token') return ok('gh-oauth-token\n');
     if (cmd === 'git' && args[0] === 'clone') return ok();
     if (cmd === 'git' && args.includes('push')) return ok();
     throw new Error(`unexpected spawn: ${cmd} ${args.join(' ')}`);
@@ -101,15 +108,16 @@ describe('runCoworkMirror — gh backend', () => {
     expect(result.action).toBe('created');
     expect(result.backend).toBe('gh');
     expect(result.targetFullName).toBe(TARGET);
-    const verbs = calls.map(([c, a]) => {
-      if (c === 'git') return a.includes('push') ? 'git push' : `git ${a[0]}`;
-      return `${c} ${a[0]} ${a[1]}`;
+    const verbs = calls.map(({ cmd, args }) => {
+      if (cmd === 'git') return args.includes('push') ? 'git push' : `git ${args[0]}`;
+      return `${cmd} ${args[0]} ${args[1]}`;
     });
     expect(verbs).toEqual([
       'gh api user',
       'gh repo view',
       'gh repo create',
       'git clone',
+      'gh auth token',
       'git push',
     ]);
     expect(lines.join('\n')).toContain(`Enter: ${TARGET}`);
@@ -127,7 +135,7 @@ describe('runCoworkMirror — gh backend', () => {
       probeGh: ghUp,
     });
     expect(result.action).toBe('synced');
-    expect(calls.some(([c, a]) => c === 'gh' && a[1] === 'create')).toBe(false);
+    expect(calls.some(({ cmd, args }) => cmd === 'gh' && args[1] === 'create')).toBe(false);
   });
 
   it('refuses to clobber an existing repo without --sync', async () => {
@@ -171,8 +179,8 @@ describe('runCoworkMirror — gh backend', () => {
       probeGh: ghUp,
     });
     expect(result.action).toBe('dry-run');
-    expect(calls.some(([c, a]) => c === 'gh' && a[1] === 'create')).toBe(false);
-    expect(calls.some(([c]) => c === 'git')).toBe(false);
+    expect(calls.some(({ cmd, args }) => cmd === 'gh' && args[1] === 'create')).toBe(false);
+    expect(calls.some(({ cmd }) => cmd === 'git')).toBe(false);
     expect(lines.join('\n')).toMatch(/\[dry-run] Would create/);
   });
 });
@@ -212,9 +220,12 @@ describe('runCoworkMirror — PAT backend', () => {
     expect(result.action).toBe('created');
     // token persisted
     expect(readEnv(envFile)[GITHUB_TOKEN_ENV]).toBe('ghp_testtoken');
-    // push authenticated via http header, not the URL
-    const pushCall = calls.find(([c, a]) => c === 'git' && a.includes('push'));
-    expect(pushCall?.[1].join(' ')).toContain('extraheader=AUTHORIZATION: basic');
+    // push authenticated via http header in the env, not argv or the URL
+    const pushCall = calls.find(({ cmd, args }) => cmd === 'git' && args.includes('push'));
+    expect(pushCall?.args.join(' ')).not.toContain('extraheader');
+    expect(pushCall?.env?.['GIT_CONFIG_VALUE_0']).toContain('AUTHORIZATION: basic');
+    const expectedBasic = Buffer.from('x-access-token:ghp_testtoken').toString('base64');
+    expect(pushCall?.env?.['GIT_CONFIG_VALUE_0']).toBe(`AUTHORIZATION: basic ${expectedBasic}`);
   });
 
   it('does not save the token when the user declines', async () => {
@@ -234,6 +245,32 @@ describe('runCoworkMirror — PAT backend', () => {
       probeGh: ghDown,
     });
     expect(readEnv(envFile)[GITHUB_TOKEN_ENV]).toBeUndefined();
+  });
+
+  it('never writes the pasted token to disk on a dry run', async () => {
+    const { spawn, calls } = routeSpawn(ghHandler(false));
+    const { fetchImpl } = patFetch(false);
+    const { out } = sink();
+    const envFile = path.join(dir, '.env');
+    // Only the token prompt should be reached — the save prompt is skipped on
+    // a dry run, so a stray `true` here would also (incorrectly) save it.
+    const prompter = new FakePrompter(['ghp_drytoken', true, true]);
+
+    const result = await runCoworkMirror({
+      spawn,
+      fetchImpl,
+      out,
+      env: {},
+      prompter,
+      envFilePath: envFile,
+      dryRun: true,
+      probeGh: ghDown,
+    });
+
+    expect(result.action).toBe('dry-run');
+    // Nothing written to disk, and no git ran.
+    expect(readEnv(envFile)[GITHUB_TOKEN_ENV]).toBeUndefined();
+    expect(calls.some(({ cmd }) => cmd === 'git')).toBe(false);
   });
 
   it('uses a stored env token without prompting', async () => {

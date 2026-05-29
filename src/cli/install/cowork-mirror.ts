@@ -121,8 +121,9 @@ export async function runCoworkMirror(opts: CoworkMirrorOptions = {}): Promise<C
   const login = await backend.getViewerLogin();
   out(`Authenticated as ${login}.`);
 
-  // If the user pasted a token, offer to save it for next time. Opt-in only.
-  if (capturedToken && interactive && prompter) {
+  // If the user pasted a token, offer to save it for next time. Opt-in only,
+  // and never on a dry run — `--dry-run` promises to touch nothing on disk.
+  if (capturedToken && interactive && prompter && !dryRun) {
     const save = await prompter.confirm("Save this token so you don't re-enter it next time?", {
       defaultYes: false,
     });
@@ -214,15 +215,14 @@ async function mirrorPush(
     }
 
     out('Pushing mirror ...');
-    const push = await spawn('git', [
-      '-C',
-      mirrorDir,
-      ...backend.gitAuthArgs(),
-      'push',
-      '--mirror',
-      '--quiet',
-      targetUrl,
-    ]);
+    // Auth goes through the environment, not argv, so the token never appears
+    // in `ps` / `/proc/<pid>/cmdline`, the remote URL, or the reflog.
+    const authEnv = await backend.authEnv();
+    const push = await spawn(
+      'git',
+      ['-C', mirrorDir, 'push', '--mirror', '--quiet', targetUrl],
+      { env: { ...process.env, ...authEnv } },
+    );
     if (push.code !== 0) {
       throw new CoworkMirrorError('push the mirror', push.stderr || push.stdout);
     }
