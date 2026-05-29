@@ -21,12 +21,36 @@ body:
         - other
     validations:
       required: true
+  - type: dropdown
+    id: side
+    attributes:
+      label: Which side
+      options:
+        - publisher
+        - advertiser
+        - unsure
+    validations:
+      required: true
   - type: input
     id: operation
     attributes:
       label: Which operation
       description: The canonical operation name (e.g. list_transactions, get_programme).
       placeholder: list_transactions
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What should the operation have returned or done?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What happened instead?
     validations:
       required: true
   - type: textarea
@@ -37,6 +61,14 @@ body:
       render: text
     validations:
       required: true
+  - type: textarea
+    id: redacted-response
+    attributes:
+      label: Redacted response or fixture
+      description: Optional. Paste a redacted upstream response if it helps. Remove credentials, account IDs, order IDs, and user-specific data.
+      render: json
+    validations:
+      required: false
   - type: textarea
     id: doctor-output
     attributes:

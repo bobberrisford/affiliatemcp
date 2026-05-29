@@ -12,7 +12,12 @@ The user need or upstream change that motivated the work.
 - [ ] `npm run lint`
 - [ ] `npm test`
 - [ ] `npm run build`
-- [ ] Manual verification (if relevant — describe)
+- [ ] Manual verification, if relevant, describe it here
+
+## AI-assisted contribution
+
+If an AI assistant helped, state what it generated, what you manually checked,
+and what remains uncertain. Delete this section if not relevant.
 
 ## Screenshots
 
