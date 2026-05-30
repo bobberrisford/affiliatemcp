@@ -47,6 +47,10 @@ then doing the next piece of affiliate work:
 - QBR prep, client updates, and internal performance briefs.
 - Setup and diagnostic guidance for semi-technical operators.
 
+For agencies, the next step is recording each client's strategy and KPIs so the
+reports above are judged against what the client wants — see
+[Recording client strategy](./agency-automation.md).
+
 ## Who this is for
 
 - **Publishers** who care about earnings, pending commissions, unpaid

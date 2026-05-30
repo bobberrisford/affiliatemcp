@@ -250,6 +250,10 @@ type.
   scan for revenue drops, reversal spikes, top-10 dropouts, dead
   programmes. Designed to run on a schedule via Claude's own scheduling.
 
+Where this is heading for agencies: recording each client's strategy and
+KPIs so these reports are judged against what the client actually wants. See
+[Recording client strategy](docs/product/agency-automation.md).
+
 ## Networks
 
 Five network families are bundled today. Three of them — **Awin**,

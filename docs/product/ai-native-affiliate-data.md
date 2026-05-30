@@ -93,3 +93,7 @@ is genuinely shared.
 6. **Resources and apps.** Add resources for static API inventories and, later,
    richer UI widgets for offer pickers, performance tables, and link builders
    if plain tool results are not ergonomic enough.
+
+For the agency/brand side, the next design step is recording each client's
+strategy and KPIs as living markdown so the reporting and anomaly work is judged
+against client intent — see [Recording client strategy](./agency-automation.md).
