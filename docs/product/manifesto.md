@@ -65,9 +65,12 @@ then doing the next piece of affiliate work:
 
 ## Principles
 
-1. **Public APIs only.** Use documented APIs that users are already allowed to
-   access. No scraping, dashboard automation, private endpoints, or workarounds
-   around access limits.
+1. **APIs first, browser where there is no API.** Prefer documented APIs that
+   users are already allowed to access. Where a network exposes no API for a
+   task, the doing layer may automate the dashboard the user is authorised to
+   use, locally and with assisted login. Never to evade access limits, defeat a
+   security control, reach another tenant's data, or access anything the user is
+   not entitled to. See `docs/product/browser-doing-layer.md`.
 2. **Local-first by default.** Users bring their own credentials. Credentials
    stay on the user's machine unless a future remote option is designed with
    explicit auth, consent, auditability, and security.
@@ -89,8 +92,11 @@ then doing the next piece of affiliate work:
 
 ## What the project will not do
 
-- Scrape dashboards or automate browser sessions.
-- Store user credentials in a hosted service by default.
+- Automate access a user is not authorised to have, evade access limits, or
+  defeat a security control. Browser automation is for dashboards the user can
+  already log into.
+- Store user credentials in a hosted service. Browser sessions are stored
+  encrypted on the user's own machine.
 - Phone home with telemetry or analytics.
 - Pretend unsupported operations work by returning empty arrays.
 - Hide upstream API errors or replace them with vague failures.

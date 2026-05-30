@@ -47,8 +47,13 @@ notes:
 
 ## Product boundaries
 
-- Public and documented APIs only. No scraping, browser automation, private
-  endpoints, or workarounds around access limits.
+- Documented APIs first; browser automation where no API exists. Prefer the
+  public, documented API a user is already allowed to use. Where a network
+  exposes no API for a task, the doing layer may drive the dashboard the user is
+  authorised to access (see `docs/product/browser-doing-layer.md`). Never to
+  evade access limits, defeat a security control, reach another tenant's data,
+  or access anything the user is not entitled to. Be honest, per network, about
+  Terms of Service that restrict automated access.
 - Local-first by default. Users bring their own credentials and credentials stay
   on the user's machine unless a future remote option is explicitly designed
   with auth, consent, auditability, and security.
@@ -239,7 +244,10 @@ CLI entry points (built or via `npm run dev`):
 ## When adding a network
 
 - Confirm the network exposes a public REST or GraphQL API for the side being
-  added. Do not add scraping or dashboard automation.
+  added. Prefer the API path. Where no API exists for a needed action, a browser
+  flow belongs in the fenced browser subsystem, not in an API adapter (see
+  `docs/product/browser-doing-layer.md`), and must automate only dashboards the
+  user is authorised to access.
 - Start from `templates/new-network/` or the existing side-specific reference.
 - Implement only the adapter contract from `src/shared/types.ts`. Do not invent
   extra generated tools for one network.
