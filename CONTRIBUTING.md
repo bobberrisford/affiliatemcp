@@ -55,21 +55,23 @@ Contributions, in roughly the order we care about:
 ## Product direction
 
 The project exists to make affiliate data available where affiliate work
-happens. It wraps public affiliate network APIs into local-first MCP tools,
-skills, prompts, and workflow guidance so users can work with their own data in
-Claude, ChatGPT, Codex, Cursor, Cowork, and similar clients.
+happens. It wraps affiliate network access into local-first MCP tools, skills,
+prompts, and workflow guidance so users can work with their own data in Claude,
+ChatGPT, Codex, Cursor, Cowork, and similar clients.
 
 Useful contributions should reinforce these boundaries:
 
-- Public APIs only. No scraping, dashboard automation, private endpoints, or
-  access-limit workarounds.
+- API-first, browser as fallback. Prefer a network's public, documented API.
+  Where no usable API exists, automate the user's own authenticated session to
+  do what they could do by hand, and label those operations as browser-driven.
 - Local-first by default. Users bring their own credentials and credentials stay
   on their machine.
 - Safe typed tools. Do not ask the assistant to guess at raw API behaviour.
 - Workflows over endpoint trivia. Affiliate professionals need briefs,
   diagnostics, outreach, reporting, and checks, not API memorisation.
 - Honest network truth. Unsupported, gated, partial, experimental, or
-  unverified support must be visible.
+  unverified support must be visible, and so must whether an operation is
+  API-backed or browser-driven.
 
 Read [`docs/product/manifesto.md`](./docs/product/manifesto.md) for the concise
 product statement.
@@ -305,10 +307,11 @@ file PRs that:
 - Add write operations that move money or reputation on the advertiser
   side — approving publishers, paying out commission, editing
   programme terms. Read-only insight ops only at this stage.
-- Add scraping fallbacks when a network's API is down. Surface the
-  failure with the verbatim error envelope; do not invent data.
-- Add a network without a real public API. (Browser-automation
-  adapters are out of scope for now.)
+- Silently switch an API-backed operation to a browser fallback when the
+  API is merely down. Surface the failure with the verbatim error
+  envelope; do not invent data or quietly swap mechanisms. A
+  browser-driven path is for networks with no usable API, and it must be
+  labelled as such, not a hidden cover for an API outage.
 - Mix tiers in one adapter folder. If a network's brand-tier needs a
   separate credential bundle, prefix the env vars (e.g.
   `AWIN_ADVERTISER_*`) and ship a separate `<slug>-advertiser/`

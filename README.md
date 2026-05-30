@@ -539,6 +539,7 @@ MIT. See [`LICENCE`](./LICENCE).
 This project is only possible because the engineering teams at Awin,
 CJ Affiliate, eBay Partner Network, Impact, and Rakuten Advertising
 publish public, documented APIs — both the publisher endpoints and
-(for Awin, CJ, and Impact) the brand-side advertiser endpoints. The
-adapters here read those APIs; they do not scrape, simulate, or work
-around any rate or access limits.
+(for Awin, CJ, and Impact) the brand-side advertiser endpoints. These
+adapters read those APIs directly. Where a network has no usable API, an
+adapter may instead drive the user's own authenticated dashboard session,
+labelled as browser-driven.
