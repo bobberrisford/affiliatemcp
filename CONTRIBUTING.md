@@ -302,13 +302,20 @@ file PRs that:
   user brings their own.
 - Add affiliate-link cloaking, click-spoofing, or anything that would
   violate a network's terms of service.
-- Add write operations that move money or reputation on the advertiser
-  side — approving publishers, paying out commission, editing
-  programme terms. Read-only insight ops only at this stage.
+- Add write operations that move money or reputation **to a network
+  adapter**. Adapters stay read-only: no paying out commission, no
+  editing programme terms, no actioning via an API. Operator actions
+  that have no public API (e.g. approving publisher applications) belong
+  in a separate, opt-in, browser-driven workflow skill that drives the
+  operator's own signed-in dashboard session — see
+  [`docs/product/publisher-approvals-automation.md`](./docs/product/publisher-approvals-automation.md)
+  and the `publisher-application-approvals` skill — not in an adapter.
 - Add scraping fallbacks when a network's API is down. Surface the
   failure with the verbatim error envelope; do not invent data.
 - Add a network without a real public API. (Browser-automation
-  adapters are out of scope for now.)
+  *adapters* are out of scope; browser-driven *workflow skills* that act
+  in the operator's own session, like `publisher-application-approvals`,
+  are a separate, opt-in path.)
 - Mix tiers in one adapter folder. If a network's brand-tier needs a
   separate credential bundle, prefix the env vars (e.g.
   `AWIN_ADVERTISER_*`) and ship a separate `<slug>-advertiser/`

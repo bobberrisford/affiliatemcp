@@ -234,3 +234,70 @@ describe('agency-side skills (PR 4)', () => {
     });
   }
 });
+
+// Browser-driven operator skills. Unlike the API-backed skills above these
+// drive the operator's live dashboard via a browser tool and do NOT call any
+// `affiliate_*` MCP tool, so the tool-name checks are deliberately omitted.
+// They ship an editable rubric the workflow is the contract for.
+const BROWSER_SKILLS = [
+  {
+    slug: 'publisher-application-approvals',
+    extraFiles: ['rubric.md'],
+  },
+] as const;
+
+describe('browser-driven operator skills', () => {
+  for (const { slug, extraFiles } of BROWSER_SKILLS) {
+    describe(slug, () => {
+      const skillDir = join(skillsRoot, slug);
+      const skillPath = join(skillDir, 'SKILL.md');
+
+      it('SKILL.md exists', () => {
+        expect(existsSync(skillPath), `expected ${skillPath} to exist`).toBe(true);
+      });
+
+      it('has valid frontmatter with name + description', () => {
+        const content = readFileSync(skillPath, 'utf8');
+        const { name, description } = parseFrontmatter(content);
+        expect(name).toBe(slug);
+        expect(description, 'description must be present').toBeTruthy();
+        expect(description!.length).toBeGreaterThan(20);
+      });
+
+      it('description quotes at least one trigger phrase', () => {
+        const content = readFileSync(skillPath, 'utf8');
+        const { description } = parseFrontmatter(content);
+        const triggerMatches = description!.match(/"[^"]{8,}"/g) ?? [];
+        expect(
+          triggerMatches.length,
+          `expected at least one quoted trigger phrase in description; got: ${description}`,
+        ).toBeGreaterThanOrEqual(1);
+      });
+
+      it('documents the escalate verdict and a recommend-only mode', () => {
+        const body = readFileSync(skillPath, 'utf8');
+        // The auto-clear / escalate-borderline policy and the no-click safety
+        // mode are the load-bearing guarantees for an action skill.
+        expect(body).toMatch(/escalate/i);
+        expect(body).toMatch(/recommend-only/i);
+      });
+
+      it('ships its declared supporting files', () => {
+        for (const file of extraFiles) {
+          const full = join(skillDir, file);
+          expect(existsSync(full), `expected ${full} to exist`).toBe(true);
+        }
+      });
+
+      it('has at least one example file', () => {
+        const examplesDir = join(skillDir, 'examples');
+        expect(existsSync(examplesDir), `expected ${examplesDir} to exist`).toBe(true);
+        const entries = readdirSync(examplesDir).filter((f) => f.endsWith('.md'));
+        expect(
+          entries.length,
+          `expected at least one example markdown in ${examplesDir}`,
+        ).toBeGreaterThanOrEqual(1);
+      });
+    });
+  }
+});

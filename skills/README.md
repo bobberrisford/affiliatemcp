@@ -32,5 +32,16 @@ and optional supporting files.
   week-over-week scan for revenue drops, reversal spikes, top-10
   dropouts, dead programmes. Designed to run on a schedule.
 
+### Browser-driven (operator side)
+
+- [`publisher-application-approvals/`](./publisher-application-approvals) —
+  works through a network's pending publisher application queue,
+  judges each applicant against an editable appropriateness rubric,
+  auto-actions the clear-cut cases and escalates the borderline ones.
+  Unlike the other skills it drives the live dashboard (Awin first) in
+  the operator's own signed-in browser session — there is no API for
+  actioning applications. See
+  [`docs/product/publisher-approvals-automation.md`](../docs/product/publisher-approvals-automation.md).
+
 Adding a skill is one of the contribution paths in
 [`.claude/skills/contribute/SKILL.md`](../../.claude/skills/contribute/SKILL.md).
