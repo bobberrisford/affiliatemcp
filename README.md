@@ -528,13 +528,12 @@ npm run build
 
 ## Status
 
-Pre-launch. The five publisher adapters ship as `claim_status:
-partial`. The three brand-side adapters (Awin, CJ, Impact) ship as
-`experimental` until exercised against real agency or in-house brand
-accounts — read-only stance and rate handling are in, but a few
-endpoint shapes remain `// TODO(verify)` until live confirmation. If
-you hit something odd on either side, open an issue — we treat every
-bug report as evidence about the underlying API.
+Pre-launch. The five publisher adapters ship as `claim_status: partial`. The
+three brand-side adapters (Awin, CJ, Impact) ship as `experimental` until
+exercised against real agency or in-house brand accounts — read-only stance
+and rate handling are in, but a few endpoint shapes remain `// TODO(verify)`
+until live confirmation. If you hit something odd on either side, open an
+issue — we treat every bug report as evidence about the underlying API.
 
 ## Licence
 
@@ -546,6 +545,5 @@ This project is only possible because the engineering teams at Awin,
 CJ Affiliate, eBay Partner Network, Impact, and Rakuten Advertising
 publish public, documented APIs — both the publisher endpoints and
 (for Awin, CJ, and Impact) the brand-side advertiser endpoints. These
-adapters read those APIs directly. Where a network has no usable API, an
-adapter may instead drive the user's own authenticated dashboard session,
-labelled as browser-driven.
+adapters read those APIs directly. Where a network has no usable API,
+an adapter may instead drive the user's own dashboard session (browser-driven).
