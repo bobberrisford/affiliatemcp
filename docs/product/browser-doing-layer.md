@@ -67,6 +67,43 @@ to adapt to small layout changes, not from externalised CSS selectors. That is
 both the strength (resilient to minor DOM drift) and the weakness (less
 deterministic than codified selectors) of this tier.
 
+### The runtime primitive: `ApiGapResponse` and `BrowserHandoff`
+
+The emitter side of Tier A has a concrete shape, prototyped in PR #5
+("RFC: API-gap + browser-handoff primitive"). Two types in `src/shared/types.ts`:
+
+- `ApiGapResponse` — returned by an adapter operation the API cannot fulfil. It
+  is a normal return value, **never thrown** (an outage still goes through
+  `NetworkErrorEnvelope`, principle 4.1). It carries a factual `reason`, a
+  verbatim `userMessage` the calling agent shows the user, and an optional
+  `browserFallback`.
+- `BrowserHandoff` — the network-agnostic payload one general consumer skill
+  drives: `goal`, `startingUrl`, `inputs`, `constraints`, `mutates`, `verify`,
+  and optional best-effort `hints`. No per-network playbook tree.
+
+This is exactly the Tier A shape this document argues for, in code: it triggers
+only on a genuine, permanent API gap; it never stores credentials; it relies on
+the user's authenticated browser; and one consumer skill reads every handoff.
+
+Two reconciliations between PR #5 and the consent model in `doing-layer.md`:
+
+- **Opt-in versus standing consent.** PR #5's phrasing rule 5 asks the user
+  every time and forbids a silent fallback. That is the correct *default*, but
+  it conflicts with standing consent. The resolution: per-action opt-in is the
+  default; a `consent.json` standing grant for the action class is the bounded,
+  expiring, audited exception that lets the handoff proceed without asking.
+  Rule 5 gains a carve-out for granted classes; everything else still asks.
+- **`mutates` and `verify` are the lightweight plan/apply.** PR #5 folds the
+  two-phase gate into the `mutates` flag plus a "summarise and wait for explicit
+  confirmation" constraint, and the `verify` block is the read-back. We adopt
+  this lighter model rather than a separate formal plan/apply for browser
+  handoffs; reserve the heavier two-phase for higher-risk API writes if needed.
+
+Open items PR #5 leaves for a follow-up, which this design owns: the audit and
+evidence trail (screenshots or the extension's GIF recording), reporting
+browser-backed operations in `capabilitiesCheck` (`supported: true`,
+`note: 'via browser handoff'`), and shipping the single consumer skill.
+
 ### Verification still rules: never invent success
 
 Principle 4.1 is harder in a browser and matters more. A click that silently
@@ -149,10 +186,12 @@ Everything in `doing-layer.md` applies, with the risk dial turned up:
 ## Phasing
 
 - **Phase 0 (this note and the boundary revision).** Decide and document.
-- **Phase 1.** One network browser skill via Tier A, end to end: connect the
-  extension, perform one verified action on one dashboard with read-back
-  confirmation, capture evidence, and apply the consent and audit gates. Treated
-  as `experimental` until proven against a real account.
+- **Phase 1.** Land the emitter primitive (PR #5: `ApiGapResponse` /
+  `BrowserHandoff`, with Impact `applyToProgram` as the worked example), then one
+  network browser skill via Tier A end to end: connect the extension, perform one
+  verified action on one dashboard with read-back confirmation, capture evidence,
+  and apply the consent and audit gates. Treated as `experimental` until proven
+  against a real account.
 - **Phase 2.** A second network and a second action class, proving the
   skill-and-verification model generalises before any broad abstraction.
 - **Phase 3.** Revisit Tier B only if Phase 1 and 2 expose a real need for

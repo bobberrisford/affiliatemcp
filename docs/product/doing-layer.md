@@ -104,6 +104,15 @@ The point is that skipping a prompt is never a global setting. It is the
 consequence of a specific, bounded, expiring grant the client made. Revoking
 the grant returns the action to prompt-always immediately.
 
+This is the same model the browser doing layer uses, and it is the seam to
+reconcile with the API-gap primitive in PR #5 (see
+`browser-doing-layer.md`). That primitive's phrasing rules require the agent to
+ask the user every time and forbid a silent fallback. That rule is the
+prompt-always default, stated for the browser case. A standing grant for the
+action class is the carve-out: within bounds it lets the browser handoff proceed
+without the per-action question, still recorded and audited. One trust model
+governs both API writes and browser handoffs; only the transport differs.
+
 ### Consent record shape (proposed)
 
 Stored at `~/.affiliate-mcp/consent.json`, owned by a wizard, readable by the
