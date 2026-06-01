@@ -1,22 +1,15 @@
 import { requireCredential } from '../../../shared/config.js';
 import { buildErrorEnvelope, NetworkError } from '../../../shared/errors.js';
+import { getAccessToken } from '../auth.js';
 
 export const TD_SLUG = 'tradedoubler';
 
 /**
- * Require the bearer token credential.
- *
- * Tradedoubler's connect.tradedoubler.com API uses OAuth2 bearer tokens.
- * The token is passed in the `Authorization: Bearer {token}` header.
+ * Obtain a valid bearer token via the OAuth2 ROPC flow.
+ * Returns a Promise — callers must await it.
  */
-export function requireToken(operation: string): string {
-  return requireCredential('TRADEDOUBLER_API_TOKEN', {
-    network: TD_SLUG,
-    operation,
-    hint:
-      'Generate an API token in the Tradedoubler dashboard → Account → Manage tokens. ' +
-      'Set TRADEDOUBLER_API_TOKEN in ~/.affiliate-mcp/.env.',
-  });
+export async function requireToken(): Promise<string> {
+  return getAccessToken();
 }
 
 /**

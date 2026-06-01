@@ -15,9 +15,8 @@
  *               POST /uaa/oauth/token
  *               grant_type=password, client_id, client_secret, username, password
  *             Credentials are created under publisher dashboard → Tools → API Info.
- *             This adapter stores the resulting bearer token directly as
- *             TRADEDOUBLER_API_TOKEN. Token refresh is the operator's
- *             responsibility at v0.1.
+ *             Tokens are obtained automatically via fetchOAuthToken() on each
+ *             session and cached for 55 minutes.
  *             Source: packagist.org/packages/eelcol/laravel-tradedoubler,
  *                     Funnel Knowledge Base (help.funnel.io)
  *
@@ -129,14 +128,14 @@ const META: NetworkMeta = {
   name: NAME,
   baseUrl: 'https://connect.tradedoubler.com',
   authModel: 'bearer',
-  docsUrl: 'https://tradedoubler.docs.apiary.io/',
+  docsUrl: 'https://docs.tradedoubler.com/',
   adapterVersion: '0.1.1',
   lastVerified: '2026-05-28',
   claimStatus: 'experimental',
   knownLimitations: [
     'Adapter built from public API documentation; not yet verified against a live account.',
     'Click-level data is not exposed via the public Tradedoubler publisher API; only aggregated statistics (counts by programme/site/ad) are available. listClicks throws NotImplementedError.',
-    'The connect.tradedoubler.com API uses OAuth2 Resource Owner Password Credentials (ROPC) flow; this adapter stores the resulting bearer token as TRADEDOUBLER_API_TOKEN. Token refresh on expiry is the operator\'s responsibility at v0.1.',
+    'The connect.tradedoubler.com API uses OAuth2 Resource Owner Password Credentials (ROPC) flow; tokens are obtained automatically from TRADEDOUBLER_CLIENT_ID/CLIENT_SECRET/USERNAME/PASSWORD and cached for 55 minutes.',
     'The tracking link `a=` parameter is the publisher SITE ID (website-level), which may differ from TRADEDOUBLER_ORGANIZATION_ID in multi-site publisher accounts.',
     'The `paid` boolean field on transactions and `currency` field name are not confirmed from public documentation; blocked pending live account verification.',
     'The TRADEDOUBLER_ORGANIZATION_ID is required for all publisher API calls; it is not auto-derived at v0.1.',
@@ -285,6 +284,46 @@ interface TdTransactionsResponse {
   offset?: number;
   limit?: number;
   total?: number;
+}
+
+/**
+ * A single publisher source (registered website/site) returned by
+ * GET /publisher/sources.
+ *
+ * Field names sourced from Tradedoubler publisher API docs (2026-06-01).
+ * All fields are optional defensively; `id` is the site ID used as the
+ * `a=` parameter in tracking links.
+ */
+interface TdSourceRaw {
+  id?: number | string;
+  name?: string;
+  url?: string;
+  type?: string;
+  status?: string;
+}
+
+/**
+ * Paginated response from GET /publisher/sources.
+ */
+interface TdSourcesResponse {
+  items?: TdSourceRaw[];
+  offset?: number;
+  limit?: number;
+  total?: number;
+}
+
+/**
+ * A publisher source (registered site) — the canonical shape returned by
+ * `listPublisherSources`. Network-specific to Tradedoubler; not a shared
+ * cross-network type.
+ */
+export interface TdPublisherSource {
+  id: string;
+  name: string;
+  url?: string;
+  type?: string;
+  status?: string;
+  rawNetworkData: unknown;
 }
 
 // TdEarningsSummaryRaw is not used directly at v0.1 (we derive earnings from
@@ -490,6 +529,23 @@ function toTransaction(raw: TdTransactionRaw, now: Date = new Date()): Transacti
 }
 
 // ---------------------------------------------------------------------------
+// Source transformer
+// ---------------------------------------------------------------------------
+
+function toSource(raw: TdSourceRaw): TdPublisherSource {
+  const id = String(raw.id ?? '');
+  const name = raw.name ?? id;
+  return {
+    id,
+    name,
+    url: raw.url,
+    type: raw.type,
+    status: raw.status,
+    rawNetworkData: raw,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Pagination helper — Tradedoubler paginates with offset + limit (max 100)
 // ---------------------------------------------------------------------------
 
@@ -565,10 +621,7 @@ export class TradedoublerAdapter implements NetworkAdapter {
    * BLOCKED (not confirmed from public docs).
    */
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
-    const token = requireToken('listProgrammes');
-    const orgId = requireOrganizationId('listProgrammes');
-
-    void orgId; // used for future per-org scoping if Tradedoubler requires it
+    const token = await requireToken();
 
     const raw = await fetchAllPages<TdProgrammeRaw>(
       (offset, limit) =>
@@ -637,9 +690,7 @@ export class TradedoublerAdapter implements NetworkAdapter {
       );
     }
 
-    const token = requireToken('getProgramme');
-    const orgId = requireOrganizationId('getProgramme');
-    void orgId;
+    const token = await requireToken();
 
     const raw = await tradedoublerRequest<TdProgrammeRaw | { program?: TdProgrammeRaw }>({
       operation: 'getProgramme',
@@ -672,10 +723,7 @@ export class TradedoublerAdapter implements NetworkAdapter {
    * applied client-side after normalisation.
    */
   async listTransactions(query?: TransactionQuery): Promise<Transaction[]> {
-    const token = requireToken('listTransactions');
-    const orgId = requireOrganizationId('listTransactions');
-    void orgId;
-
+    const token = await requireToken();
     const now = new Date();
     const window = defaultWindow(30);
     const toDate = query?.to ? new Date(query.to) : window.to;
@@ -902,7 +950,7 @@ export class TradedoublerAdapter implements NetworkAdapter {
 
     // We require credentials as a sanity check even though we don't make a
     // network call — better to fail now than at first click.
-    requireToken('generateTrackingLink');
+    await requireToken();
     const orgId = requireOrganizationId('generateTrackingLink');
 
     // `url=` must be the last parameter so it captures the full encoded URL.
@@ -968,6 +1016,38 @@ export class TradedoublerAdapter implements NetworkAdapter {
 
   setupSteps(): SetupStep[] {
     return setupSteps();
+  }
+
+  // -------------------------------------------------------------------------
+  // listPublisherSources
+  // -------------------------------------------------------------------------
+
+  /**
+   * List publisher sources (registered websites/sites) for this account.
+   *
+   * Tradedoubler endpoint: GET /publisher/sources
+   *
+   * Sources are the publisher's registered sites. The `id` of each source is
+   * the site ID used as the `a=` parameter in tracking links, and may be used
+   * as a filter parameter in other publisher endpoints.
+   *
+   * Source: https://docs.tradedoubler.com/docs/publisher/jdqpo3oryw7zn-list-publisher-sources
+   */
+  async listPublisherSources(): Promise<TdPublisherSource[]> {
+    const token = await requireToken();
+
+    const raw = await fetchAllPages<TdSourceRaw>(
+      (offset, limit) =>
+        tradedoublerRequest<TdSourcesResponse>({
+          operation: 'listPublisherSources',
+          path: '/publisher/sources',
+          token,
+          query: { offset, limit },
+          resilience: RESILIENCE.default,
+        }),
+    );
+
+    return raw.map(toSource);
   }
 
   // -------------------------------------------------------------------------
@@ -1073,6 +1153,7 @@ export const _internals = {
   computeAgeDays,
   toProgramme,
   toTransaction,
+  toSource,
   formatTdDate,
 };
 

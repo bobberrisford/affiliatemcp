@@ -22,6 +22,7 @@ import { NotImplementedError } from '../shared/types.js';
 import { getAdapters } from '../shared/registry.js';
 import { loadBrands } from '../shared/brands.js';
 import { generateAwinTools } from '../networks/awin/tools.js';
+import { generateTradedoublerTools } from '../networks/tradedoubler/tools.js';
 import type { ToolDefinition } from './types.js';
 import { toJsonSchema } from './schema.js';
 
@@ -368,6 +369,7 @@ export function generateAllTools(): ToolDefinition[] {
   const adapterTools = getAdapters().flatMap((a) => [
     ...generateToolsFor(a),
     ...(a.slug === 'awin' ? generateAwinTools() : []),
+    ...(a.slug === 'tradedoubler' ? generateTradedoublerTools() : []),
   ]);
   return [...generateMetaTools(), ...adapterTools];
 }

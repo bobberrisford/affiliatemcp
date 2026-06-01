@@ -2649,7 +2649,7 @@ Once credentials are available, run `verifyAuth()` and inspect the raw `merchant
 - **Claim status**: experimental
 - **Adapter version**: 0.1.1
 - **Last verified**: 2026-05-28
-- **Documentation**: https://tradedoubler.docs.apiary.io/
+- **Documentation**: https://docs.tradedoubler.com/
 
 ### Operations
 
