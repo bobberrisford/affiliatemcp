@@ -15,9 +15,12 @@ draft the explanation, and remember which caveats apply to each network.
 
 Make affiliate network data available where affiliate work happens.
 
-This project wraps public affiliate network APIs into local-first MCP tools,
-skills, prompts, and workflow guidance. Users bring their own credentials. The
-server calls the same network APIs they are already allowed to use, then gives
+This project wraps affiliate network access into local-first MCP tools, skills,
+prompts, and workflow guidance. The preferred path is a network's public,
+documented API. Where a network has no usable API, or only exposes part of the
+job through one, the project can drive the user's own authenticated session to
+do what the user could already do by hand in the dashboard. Users bring their
+own credentials. Everything runs against access the user already has, then gives
 AI clients a typed and auditable way to work with that data.
 
 ## What AI-native affiliate data means
@@ -28,7 +31,8 @@ catalogue. It means:
 - **Typed tools** that expose understandable affiliate operations.
 - **Reusable workflows** that match real affiliate tasks.
 - **Honest responses** that preserve upstream limits, errors, and missing API
-  support.
+  support, and that make clear when data came from an API or from a browser-driven
+  session.
 - **Local control** so credentials stay on the user's machine by default.
 - **Portable context** so Claude, ChatGPT, Codex, Cursor, Cowork, and future MCP
   clients can use the same affiliate data layer.
@@ -36,7 +40,9 @@ catalogue. It means:
 ## What this enables
 
 The useful workflow is not only pulling data. It is pulling network data and
-then doing the next piece of affiliate work:
+then doing the next piece of affiliate work. For networks with a capable API
+this runs through the API; for legacy networks it can run through the user's own
+dashboard session:
 
 - Performance analysis across programmes, brands, partners, and networks.
 - Partner discovery and programme opportunity reviews.
@@ -65,9 +71,11 @@ then doing the next piece of affiliate work:
 
 ## Principles
 
-1. **Public APIs only.** Use documented APIs that users are already allowed to
-   access. No scraping, dashboard automation, private endpoints, or workarounds
-   around access limits.
+1. **API-first, browser as fallback.** Prefer a network's public, documented
+   API. Where no usable API exists, or it covers only part of the job, automate
+   the user's own authenticated session to do what they could do by hand.
+   Browser-driven operations are more brittle and UI-dependent, so label them as
+   such and keep them behind the same typed contract as API-backed operations.
 2. **Local-first by default.** Users bring their own credentials. Credentials
    stay on the user's machine unless a future remote option is designed with
    explicit auth, consent, auditability, and security.
@@ -78,9 +86,11 @@ then doing the next piece of affiliate work:
    to prepare a QBR, investigate unpaid commissions, or draft publisher
    outreach.
 5. **Honest network truth.** Every adapter must be clear about what is
-   supported, partial, experimental, unsupported, gated, or unverified.
-6. **No fake support.** If an API does not expose click data, brand-side access,
-   or a reporting field, the docs and adapter should say so.
+   supported, partial, experimental, unsupported, gated, or unverified, and
+   whether an operation is API-backed or browser-driven.
+6. **No fake support.** If a network does not expose click data, brand-side
+   access, or a reporting field through any available path, the docs and adapter
+   should say so.
 7. **Contributor-friendly and agent-friendly.** Humans and AI agents should be
    able to find the right files, understand the boundaries, run the checks, and
    open focused PRs.
@@ -89,7 +99,6 @@ then doing the next piece of affiliate work:
 
 ## What the project will not do
 
-- Scrape dashboards or automate browser sessions.
 - Store user credentials in a hosted service by default.
 - Phone home with telemetry or analytics.
 - Pretend unsupported operations work by returning empty arrays.

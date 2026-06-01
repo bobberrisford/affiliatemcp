@@ -47,8 +47,10 @@ notes:
 
 ## Product boundaries
 
-- Public and documented APIs only. No scraping, browser automation, private
-  endpoints, or workarounds around access limits.
+- API-first. Prefer a network's public, documented API. Where no usable API
+  exists, or it covers only part of the job, automate the user's own
+  authenticated session to do what they could do by hand. Keep browser-driven
+  operations behind the same typed contract and label them as more brittle.
 - Local-first by default. Users bring their own credentials and credentials stay
   on the user's machine unless a future remote option is explicitly designed
   with auth, consent, auditability, and security.
@@ -58,7 +60,8 @@ notes:
   briefs, anomaly checks, QBR prep, partner discovery, outreach, unpaid
   commission checks, and link audits.
 - Honest network truth. Document whether support is production, partial,
-  experimental, unsupported, gated, or unverified.
+  experimental, unsupported, gated, or unverified, and whether an operation is
+  API-backed or browser-driven.
 
 ## Editorial tone
 
@@ -238,8 +241,10 @@ CLI entry points (built or via `npm run dev`):
 
 ## When adding a network
 
-- Confirm the network exposes a public REST or GraphQL API for the side being
-  added. Do not add scraping or dashboard automation.
+- Check whether the network exposes a public REST or GraphQL API for the side
+  being added and prefer it. Where no usable API exists, a browser-driven
+  adapter over the user's own authenticated session is acceptable; mark those
+  operations as browser-driven and brittle.
 - Start from `templates/new-network/` or the existing side-specific reference.
 - Implement only the adapter contract from `src/shared/types.ts`. Do not invent
   extra generated tools for one network.
