@@ -91,11 +91,7 @@ export async function fetchOAuthToken(): Promise<string> {
   });
 
   const basicCredential = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-  /*const basicCredential = requireCredential('TRADEDOUBLER_HASHED_CLIENT', {
-    network: TD_SLUG,
-    operation: 'fetchOAuthToken',
-    hint: 'Set TRADEDOUBLER_HASHED_CLIENT in ~/.affiliate-mcp/.env.',
-  });*/
+
   const body = new URLSearchParams({
     grant_type: 'password',
     username,
@@ -114,17 +110,9 @@ export async function fetchOAuthToken(): Promise<string> {
     headers: requestHeaders,
     body: requestBody,
   });
-  const rawHeaders = JSON.stringify(requestHeaders);
+
   const rawBody = await res.text();
 
-  // DEBUG — write response directly to stderr so it's visible even if Pino redacts it.
-  process.stderr.write(
-    JSON.stringify({
-      debug: 'tradedoubler fetchOAuthToken response',
-      httpStatus: res.status,
-      rawBody,
-    }) + '\n',
-  );
 
   if (!res.ok) {
     throw new NetworkError(
@@ -134,7 +122,7 @@ export async function fetchOAuthToken(): Promise<string> {
         operation: 'fetchOAuthToken',
         httpStatus: res.status,
         networkErrorBody: rawBody,
-        message: `Tradedoubler OAuth token request failed with HTTP ${res.status}: ${requestBody}|${basicCredential}|${requestHeaders}|${rawHeaders}`,
+        message: `Tradedoubler OAuth token request failed with HTTP ${res.status}`,
       }),
     );
   }

@@ -2,7 +2,7 @@
   "slug": "tradedoubler",
   "name": "Tradedoubler",
   "base_url": "https://connect.tradedoubler.com",
-  "auth_model": "oauth2_ropc",
+  "auth_model": "oauth2",
   "env_vars": ["TRADEDOUBLER_CLIENT_ID", "TRADEDOUBLER_CLIENT_SECRET", "TRADEDOUBLER_USERNAME", "TRADEDOUBLER_PASSWORD", "TRADEDOUBLER_ORGANIZATION_ID"],
   "setup_time_estimate_minutes": 15,
   "setup_requires_approval": false,
@@ -20,5 +20,5 @@
   "supports_brand_ops": false,
   "side": "publisher",
   "credential_scope": "single-brand",
-  "docs_url": "https://tradedoubler.docs.apiary.io/"
+  "docs_url": "https://docs.tradedoubler.com/publisher"
 }
