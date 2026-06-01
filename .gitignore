@@ -17,3 +17,6 @@ scratch/
 .claude/sessions/
 .claude/worktrees/
 .claude/settings.local.json
+
+# Local submission notes — not for the repo
+SUBMISSION.md

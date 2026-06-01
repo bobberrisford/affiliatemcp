@@ -31,17 +31,50 @@ want a maintainer to give it before you open the PR.
 
 Contributions, in roughly the order we care about:
 
-- **Networks adopting their own adapter(s)** — see "Adopting your
+- **Networks adopting their own adapter(s)**, see "Adopting your
   network" below. This is the canonical path. Adoption can cover the
   publisher side, the advertiser side, or both.
-- **Adding a network from outside** — same workflow, smaller surface.
-- **Bug fixes and adapter regressions** when a network changes its API.
-- **Setup-doc improvements** — clearer screenshots, additional
-  common-failure entries, dashboard navigation updates.
-- **Corrections to [`REPORT.md`](./REPORT.md)** — if a claim about a
-  network's API is wrong, we want to fix it.
-- **New skills** that compose existing tools in useful ways — publisher
-  or brand/agency side.
+- **New network adapters from the community**, especially publisher-side
+  adapters backed by public API docs and scrubbed fixtures.
+- **Bug reports and adapter regressions** when a network changes its API,
+  authentication, pagination, field names, or rate limits.
+- **API corrections** where our docs, fixtures, or adapter behaviour do
+  not match the public API.
+- **Setup-doc improvements**, clearer screenshots, additional
+  common-failure entries, dashboard navigation updates, and wizard wording.
+- **Fixtures** that capture real upstream response shapes after credentials,
+  account IDs, order IDs, and other user-specific data have been removed.
+- **Skills and workflow packs** that compose existing tools into useful
+  affiliate work, such as QBR prep, anomaly review, link audits, unpaid
+  commission checks, partner discovery, or outreach drafting.
+- **Product docs** that explain direction, boundaries, contribution paths,
+  and network ownership without marketing language.
+- **Good first issues** for small docs fixes, fixture cleanup, setup guidance,
+  and contained adapter corrections.
+
+## Product direction
+
+The project exists to make affiliate data available where affiliate work
+happens. It wraps affiliate network access into local-first MCP tools, skills,
+prompts, and workflow guidance so users can work with their own data in Claude,
+ChatGPT, Codex, Cursor, Cowork, and similar clients.
+
+Useful contributions should reinforce these boundaries:
+
+- API-first, browser as fallback. Prefer a network's public, documented API.
+  Where no usable API exists, automate the user's own authenticated session to
+  do what they could do by hand, and label those operations as browser-driven.
+- Local-first by default. Users bring their own credentials and credentials stay
+  on their machine.
+- Safe typed tools. Do not ask the assistant to guess at raw API behaviour.
+- Workflows over endpoint trivia. Affiliate professionals need briefs,
+  diagnostics, outreach, reporting, and checks, not API memorisation.
+- Honest network truth. Unsupported, gated, partial, experimental, or
+  unverified support must be visible, and so must whether an operation is
+  API-backed or browser-driven.
+
+Read [`docs/product/manifesto.md`](./docs/product/manifesto.md) for the concise
+product statement.
 
 ## Code of Conduct
 
@@ -63,6 +96,26 @@ npm run build
 Node 20+ is required. There are no native dependencies. The test suite
 does not hit any live API — fixtures live under
 `tests/networks/<slug>/fixtures/`.
+
+## AI-assisted contributions
+
+AI-assisted PRs are welcome. Claude Code, Codex, Cursor agents, and similar
+tools can be helpful for scaffolding, fixture tests, setup docs, and review
+checklists. The contributor still owns the result.
+
+Before opening an AI-assisted PR:
+
+- Review the full diff yourself. Do not submit generated changes you cannot
+  explain.
+- Keep the PR small and focused. Do not mix unrelated adapter, docs, generated
+  report, and dependency changes.
+- Remove credentials, real account IDs, order IDs, publisher IDs, advertiser
+  IDs, and user-specific data from fixtures and docs.
+- Represent unsupported operations honestly. Do not return empty arrays or fake
+  success for missing API support.
+- Make sure CI is green, or explain clearly which command could not run and why.
+- In the PR description, say what was generated, what was manually checked, and
+  what remains uncertain.
 
 ## Adopting your network
 
@@ -216,8 +269,12 @@ adapter's `network.json`. To add or correct a finding:
 
 ## PR process
 
-1. Branch from `main`. Use a descriptive name (`feature/network-skimlinks`,
-   `fix/awin-pagination`, `docs/cj-setup-clarification`).
+1. Branch from `main`. Use a descriptive name such as
+   `docs/manifesto-product-direction`, `docs/contribution-onboarding`,
+   `feat/network-skimlinks-publisher`, `feat/network-awin-advertiser-tools`,
+   `fix/impact-pagination`, `fix/cj-auth-error-envelope`, or
+   `chore/cowork-install-flow`. Avoid vague or generated branch names that do
+   not explain the work.
 2. Make sure `npm run typecheck`, `npm run lint`, `npm test`, and
    `npm run build` are all green locally.
 3. Open the PR with one of the templates under
@@ -226,9 +283,12 @@ adapter's `network.json`. To add or correct a finding:
      (`?template=new-network.md` in the PR-create URL).
    - For everything else, the default template (a short summary + test
      plan) is enough.
-4. Tag the CODEOWNER if one is set; otherwise tag a maintainer. CI
+4. For docs-only PRs, run `git diff --name-only` before opening the PR and
+   confirm that only Markdown, docs, templates, or GitHub community files
+   changed.
+5. Tag the CODEOWNER if one is set; otherwise tag a maintainer. CI
    must be green before merge.
-5. Squash-merge is the default. Keep the squashed commit message brief
+6. Squash-merge is the default. Keep the squashed commit message brief
    and matter-of-fact.
 
 ## What not to do
@@ -247,10 +307,11 @@ file PRs that:
 - Add write operations that move money or reputation on the advertiser
   side — approving publishers, paying out commission, editing
   programme terms. Read-only insight ops only at this stage.
-- Add scraping fallbacks when a network's API is down. Surface the
-  failure with the verbatim error envelope; do not invent data.
-- Add a network without a real public API. (Browser-automation
-  adapters are out of scope for now.)
+- Silently switch an API-backed operation to a browser fallback when the
+  API is merely down. Surface the failure with the verbatim error
+  envelope; do not invent data or quietly swap mechanisms. A
+  browser-driven path is for networks with no usable API, and it must be
+  labelled as such, not a hidden cover for an API outage.
 - Mix tiers in one adapter folder. If a network's brand-tier needs a
   separate credential bundle, prefix the env vars (e.g.
   `AWIN_ADVERTISER_*`) and ship a separate `<slug>-advertiser/`

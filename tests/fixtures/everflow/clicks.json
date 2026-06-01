@@ -1,0 +1,41 @@
+{
+  "clicks": [
+    {
+      "transaction_id": "txn_001_click_aaaa",
+      "unix_timestamp": 1752912600,
+      "tracking_url": "https://track.eflow.team/click/1001?aff_id=12345",
+      "referer": "https://blog.example.com/books",
+      "user_ip": "203.0.113.42",
+      "error_code": 0,
+      "error_message": null,
+      "is_unique": true,
+      "relationship": {
+        "offer": {
+          "network_offer_id": 1001,
+          "name": "Atolls Bookshop",
+          "offer_status": "active"
+        }
+      }
+    },
+    {
+      "transaction_id": "txn_002_click_bbbb",
+      "unix_timestamp": 1752998400,
+      "tracking_url": "https://track.eflow.team/click/1001?aff_id=12345",
+      "referer": "https://social.example.com/post/42",
+      "user_ip": "198.51.100.7",
+      "error_code": 0,
+      "error_message": null,
+      "is_unique": true,
+      "relationship": {
+        "offer": {
+          "network_offer_id": 1001,
+          "name": "Atolls Bookshop",
+          "offer_status": "active"
+        }
+      }
+    }
+  ],
+  "page": 1,
+  "page_size": 50,
+  "total_count": 2
+}

@@ -1,0 +1,24 @@
+{
+  "slug": "partnerize-advertiser",
+  "name": "Partnerize (Advertiser)",
+  "base_url": "https://api.partnerize.com",
+  "auth_model": "basic",
+  "env_vars": ["PARTNERIZE_APPLICATION_KEY", "PARTNERIZE_USER_API_KEY"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Click-level data is not exposed by the Partnerize Brand API; listClicks is unsupported.",
+    "getProgramme is not implemented at v0.1; use listProgrammes (listBrands) and filter client-side.",
+    "getEarningsSummary is not implemented at v0.1; use getProgrammePerformance for the per-publisher rollup.",
+    "generateTrackingLink is a publisher-side operation and is not applicable to the advertiser adapter.",
+    "Conversion (transaction) reporting scope is per-campaign and requires a campaign_id context from AdapterCallContext."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-05-28",
+  "supports_brand_ops": false,
+  "side": "advertiser",
+  "credential_scope": "multi-brand",
+  "docs_url": "https://api-docs.partnerize.com/brand/"
+}

@@ -4,7 +4,9 @@ This repo should make affiliate network APIs usable from the AI tools where
 affiliate professionals already work. The product is not a dashboard clone. It
 is a clean, local-first data and action layer that lets an assistant answer
 questions, generate briefs, inspect edge cases, and prepare safe next actions
-using the public APIs a user is already allowed to access.
+using the network access a user is already allowed to use. The preferred path is
+a network's public API; where none exists, the layer can drive the user's own
+authenticated dashboard session.
 
 ## Users
 
@@ -18,15 +20,16 @@ using the public APIs a user is already allowed to access.
   reconciliation jobs, or agent-native affiliate operations on top of public
   affiliate network APIs.
 - **Affiliate network employees or implementation partners** exploring how
-  their own public API surfaces should appear in AI clients.
+  their own data and API surfaces should appear in AI clients.
 
 ## Product principle
 
 AI-native affiliate data means three things:
 
-1. **The model gets safe tools, not scraped screens.** MCP tools should map to
-   documented API operations with typed inputs, explicit auth requirements, raw
-   network data preserved, and clear error envelopes.
+1. **The model gets safe typed tools, not raw screens.** MCP tools should map to
+   a typed contract with typed inputs, explicit auth requirements, raw network
+   data preserved, and clear error envelopes, whether an operation is backed by a
+   documented API or a browser-driven session.
 2. **The user gets workflows, not endpoint trivia.** MCP prompts should encode
    common affiliate journeys: performance briefs, offer discovery, link
    generation, transaction investigation, and programme opportunity scans.

@@ -1,0 +1,32 @@
+{
+  "campaigns": {
+    "campaign": [
+      {
+        "campaign_id": "10l176",
+        "campaign_title": "Acme Online Shop",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "7.5",
+          "value_type": "percentage"
+        },
+        "url": "https://www.acme-example.com",
+        "camref": "1101l3ofu"
+      },
+      {
+        "campaign_id": "10l177",
+        "campaign_title": "Beta Gadgets Ltd",
+        "approval_state": "approved",
+        "currency": "EUR",
+        "default_commission": {
+          "type": "fixed",
+          "value": "5.00",
+          "value_type": "fixed"
+        },
+        "url": "https://www.betagadgets-example.com",
+        "camref": "1101l4abc"
+      }
+    ]
+  }
+}

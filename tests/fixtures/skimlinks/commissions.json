@@ -1,0 +1,69 @@
+{
+  "count": 4,
+  "commissions": [
+    {
+      "commissionId": "10001",
+      "amount": 5.50,
+      "currency": "GBP",
+      "status": "pending",
+      "merchantId": "2001",
+      "merchantName": "Example Books Ltd",
+      "url": "https://www.examplebooks.test/product/123",
+      "customId": null,
+      "clickTime": "2026-04-01T10:00:00Z",
+      "transactionDate": "2026-04-01T10:15:00Z",
+      "approvedDate": null,
+      "paidDate": null,
+      "orderValue": 55.00,
+      "declineReason": null
+    },
+    {
+      "commissionId": "10002",
+      "amount": 12.75,
+      "currency": "GBP",
+      "status": "approved",
+      "merchantId": "2001",
+      "merchantName": "Example Books Ltd",
+      "url": "https://www.examplebooks.test/product/456",
+      "customId": "sub123",
+      "clickTime": "2024-01-15T08:30:00Z",
+      "transactionDate": "2024-01-15T08:45:00Z",
+      "approvedDate": "2024-01-20T12:00:00Z",
+      "paidDate": null,
+      "orderValue": 127.50,
+      "declineReason": null
+    },
+    {
+      "commissionId": "10003",
+      "amount": 3.20,
+      "currency": "GBP",
+      "status": "declined",
+      "merchantId": "2002",
+      "merchantName": "Test Electronics Co",
+      "url": "https://www.testelectronics.test/item/789",
+      "customId": null,
+      "clickTime": "2025-09-10T14:00:00Z",
+      "transactionDate": "2025-09-10T14:20:00Z",
+      "approvedDate": "2025-09-15T09:00:00Z",
+      "paidDate": null,
+      "orderValue": 32.00,
+      "declineReason": "Customer returned the item within 30 days"
+    },
+    {
+      "commissionId": "10004",
+      "amount": 8.00,
+      "currency": "GBP",
+      "status": "paid",
+      "merchantId": "2002",
+      "merchantName": "Test Electronics Co",
+      "url": "https://www.testelectronics.test/item/101",
+      "customId": null,
+      "clickTime": "2024-09-01T09:00:00Z",
+      "transactionDate": "2024-09-01T09:30:00Z",
+      "approvedDate": "2024-09-05T10:00:00Z",
+      "paidDate": "2024-10-01T00:00:00Z",
+      "orderValue": 80.00,
+      "declineReason": null
+    }
+  ]
+}

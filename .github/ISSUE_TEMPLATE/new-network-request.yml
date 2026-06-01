@@ -14,7 +14,7 @@ body:
     id: network-name
     attributes:
       label: Network name
-      description: The publisher-facing brand name.
+      description: The public network or platform name.
       placeholder: e.g. Skimlinks
     validations:
       required: true
@@ -26,11 +26,21 @@ body:
       placeholder: e.g. skimlinks
     validations:
       required: true
+  - type: dropdown
+    id: side
+    attributes:
+      label: Which side matters first
+      options:
+        - publisher
+        - advertiser
+        - both
+    validations:
+      required: true
   - type: input
     id: dashboard-url
     attributes:
-      label: Publisher dashboard URL
-      description: Where a publisher logs in.
+      label: Dashboard URL
+      description: Where users log in for the side requested above.
       placeholder: https://...
     validations:
       required: true
@@ -42,17 +52,35 @@ body:
       placeholder: https://...
     validations:
       required: true
+  - type: dropdown
+    id: auth-model
+    attributes:
+      label: Auth model
+      options:
+        - bearer token
+        - OAuth 2
+        - basic auth
+        - custom or unsure
+    validations:
+      required: true
   - type: textarea
     id: account-requirements
     attributes:
       label: Account requirements
-      description: What does a publisher need to do to get API access? Approval? Tier? Minimum revenue?
+      description: What does a user need to do to get API access? Approval, tier, minimum revenue, region, or contract requirement?
+    validations:
+      required: true
+  - type: textarea
+    id: workflows
+    attributes:
+      label: Which workflows matter most
+      description: "Examples: performance briefs, partner discovery, unpaid commission checks, link audits, QBR prep, anomaly reviews, outreach drafting."
     validations:
       required: true
   - type: textarea
     id: why-useful
     attributes:
-      label: Why this is useful for publishers
-      description: Who uses this network and what problem does covering it solve?
+      label: Who this helps
+      description: Tell us whether this mainly helps publishers, advertisers, agencies, developers, or network teams.
     validations:
       required: true

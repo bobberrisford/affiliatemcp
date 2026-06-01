@@ -1,0 +1,54 @@
+{
+  "items": [
+    {
+      "id": 1001,
+      "name": "Atolls Bookshop UK",
+      "status": "JOINED",
+      "currency": "GBP",
+      "advertiserUrl": "https://www.atolls-bookshop.example.com",
+      "category": "Books & Media",
+      "commissionMin": 5.0,
+      "commissionMax": 10.0,
+      "commissionType": "percent"
+    },
+    {
+      "id": 1002,
+      "name": "Nordic Outdoors AB",
+      "status": "APPLIED",
+      "currency": "EUR",
+      "advertiserUrl": "https://www.nordic-outdoors.example.com",
+      "categories": [
+        { "name": "Sports & Outdoors" },
+        { "name": "Clothing" }
+      ],
+      "commissionMin": 8.0,
+      "commissionType": "percent"
+    },
+    {
+      "id": 1003,
+      "name": "TechGadgets GmbH",
+      "status": "DECLINED",
+      "currency": "EUR",
+      "advertiserUrl": "https://www.techgadgets.example.com"
+    },
+    {
+      "id": 1004,
+      "name": "SuperSales Ltd",
+      "status": "NOT_JOINED",
+      "currency": "GBP",
+      "advertiserUrl": "https://www.supersales.example.com",
+      "commissionMax": 15.0,
+      "commissionType": "percent"
+    },
+    {
+      "id": 1005,
+      "name": "EcoGoods Co",
+      "status": "TERMINATED",
+      "currency": "GBP",
+      "advertiserUrl": "https://www.ecogoods.example.com"
+    }
+  ],
+  "offset": 0,
+  "limit": 100,
+  "total": 5
+}

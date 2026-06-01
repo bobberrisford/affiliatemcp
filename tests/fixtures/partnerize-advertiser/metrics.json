@@ -1,0 +1,26 @@
+{
+  "data": [
+    {
+      "date": "2026-05-01",
+      "publisher_id": "PUB-201",
+      "publisher_name": "BestDealsDaily",
+      "clicks": 850,
+      "conversions": 12,
+      "sale_amount": "1440.00",
+      "commission": "144.00",
+      "currency": "GBP",
+      "status": "approved"
+    },
+    {
+      "date": "2026-05-01",
+      "publisher_id": "PUB-202",
+      "publisher_name": "CouponHub",
+      "clicks": 320,
+      "conversions": 4,
+      "sale_amount": "342.00",
+      "commission": "34.20",
+      "currency": "GBP",
+      "status": "pending"
+    }
+  ]
+}

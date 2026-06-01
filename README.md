@@ -34,6 +34,9 @@ into a sheet, an artifact, an email to your boss, whatever you want.
 
 Free and open source. MIT licensed. Bring your own keys.
 
+For the product philosophy and contribution direction, read the
+[AI-native affiliate data manifesto](./docs/product/manifesto.md).
+
 ## Who this is for
 
 This tool serves two audiences. Pick the one that fits — or both, if
@@ -271,9 +274,18 @@ the brand-side has a more complex auth model and we skipped it.
 | CJ Affiliate | 8 min | no | 6 / 7 | no clicks |
 | CJ Affiliate (advertiser) | 8 min | no | 7 / 7 | pagination quirks |
 | eBay Partner Network | 10 min | yes (~3 days) | 7 / 7 | see notes |
+| Everflow | 10 min | yes (~1 days) | 7 / 7 | see notes |
+| Everflow (Advertiser) | 10 min | no | 7 / 7 | no clicks |
 | Impact | 6 min | no | 7 / 7 | upstream variability |
 | Impact (advertiser) | 8 min | no | 7 / 7 | see notes |
+| mrge | 10 min | no | 6 / 7 | no clicks |
+| Partnerize | 10 min | no | 7 / 7 | no clicks |
+| Partnerize (Advertiser) | 5 min | no | 6 / 7 | no clicks |
 | Rakuten Advertising | 12 min | yes (~5 days) | 6 / 7 | clicks gated |
+| Skimlinks | 10 min | no | 6 / 7 | no clicks |
+| Sovrn Commerce | 10 min | no | 6 / 7 | no clicks |
+| Tradedoubler | 15 min | no | 6 / 7 | clicks gated |
+| Tradedoubler (Advertiser) | 10 min | no | 7 / 7 | no clicks |
 <!-- AFFILIATE_MCP_NETWORK_TABLE_END -->
 
 A few networks make you wait for approval (eBay, Rakuten) before they
@@ -407,14 +419,23 @@ click for credentials, and common stumbling blocks:
 - [Awin](./docs/networks/awin.md) — API token + publisher ID.
 - [CJ Affiliate](./docs/networks/cj.md) — Developer Key (GraphQL).
 - [eBay Partner Network](./docs/networks/ebay.md) — OAuth client + secret + campaign ID; approval required.
+- [Everflow](./docs/networks/everflow.md) — API key (admin-issued); experimental, built from public docs.
 - [Impact](./docs/networks/impact.md) — Account SID + Auth Token.
+- [mrge](./docs/networks/mrge.md) — API key + secret + site ID; experimental, built from public docs.
+- [Partnerize](./docs/networks/partnerize.md) — application key + user API key; experimental, built from public docs.
 - [Rakuten Advertising](./docs/networks/rakuten.md) — OAuth client + SID; approval required.
+- [Skimlinks](./docs/networks/skimlinks.md) — OAuth client ID + secret + publisher ID + domain ID; experimental, built from public docs.
+- [Sovrn Commerce](./docs/networks/sovrn-commerce.md) — API key + secret key; experimental, built from public docs.
+- [Tradedoubler](./docs/networks/tradedoubler.md) — bearer token + organisation ID; experimental, built from public docs.
 
 **Brand / advertiser side:**
 
 - [Awin (advertiser)](./docs/networks/awin-advertiser.md) — OAuth bearer token; multi-brand via `GET /accounts`; gated to Accelerate / Advanced plans; read-only.
 - [CJ Affiliate (advertiser)](./docs/networks/cj-advertiser.md) — Personal Access Token (GraphQL); multi-brand via CID list; read-only.
+- [Everflow (advertiser)](./docs/networks/everflow-advertiser.md) — API key (admin-issued); multi-brand; experimental, built from public docs.
 - [Impact (advertiser)](./docs/networks/impact-advertiser.md) — Account SID + Auth Token; agency or brand-direct; read-only.
+- [Partnerize (advertiser)](./docs/networks/partnerize-advertiser.md) — application key + user API key; multi-brand; experimental, built from public docs.
+- [Tradedoubler (advertiser)](./docs/networks/tradedoubler-advertiser.md) — reports token + organisation ID; multi-brand; experimental, built from public docs.
 
 ## For the curious (or technical)
 
@@ -524,6 +545,7 @@ MIT. See [`LICENCE`](./LICENCE).
 This project is only possible because the engineering teams at Awin,
 CJ Affiliate, eBay Partner Network, Impact, and Rakuten Advertising
 publish public, documented APIs — both the publisher endpoints and
-(for Awin, CJ, and Impact) the brand-side advertiser endpoints. The
-adapters here read those APIs; they do not scrape, simulate, or work
-around any rate or access limits.
+(for Awin, CJ, and Impact) the brand-side advertiser endpoints. These
+adapters read those APIs directly. Where a network has no usable API, an
+adapter may instead drive the user's own authenticated dashboard session,
+labelled as browser-driven.
