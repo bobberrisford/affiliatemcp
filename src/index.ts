@@ -43,20 +43,30 @@ function printHelp(): void {
   write('  affiliate-networks-mcp uninstall       Remove the affiliate entry from Claude clients');
   write('  affiliate-networks-mcp test            Friendly diagnostic against configured networks');
   write('  affiliate-networks-mcp doctor          Verbose diagnostic with raw responses');
+  write('  affiliate-networks-mcp cowork-mirror   Create a private GitHub mirror for Claude Cowork');
   write('  affiliate-networks-mcp validate <slug> Run the full validation suite against one network');
   write('  affiliate-networks-mcp --help          Show this help');
   write('');
   write('install/uninstall flags:');
   write('  --desktop          Target Claude Desktop only');
   write('  --code             Target Claude Code only');
-  write('  --all              Target both, no prompt');
+  write('  --cowork           Set up for Claude Cowork (private GitHub mirror)');
+  write('  --all              Target Desktop + Code, no prompt');
   write('  --dry-run          Show what would change without writing');
   write('  --force-overwrite  Rewrite a malformed Claude Desktop config (backs up first)');
+  write('');
+  write('cowork-mirror flags:');
+  write('  [name]             Repo name to create (default: affiliatemcp-internal)');
+  write('  --sync             Re-mirror upstream into an existing private repo');
+  write('  --use-gh           Force the GitHub CLI path');
+  write('  --use-pat          Force the token path (skip gh detection)');
+  write('  --non-interactive  Never prompt; requires gh or AFFILIATE_MCP_GITHUB_TOKEN');
+  write('  --dry-run          Report what would change without touching GitHub');
   write('');
 }
 
 interface InstallFlags {
-  target: 'auto' | 'desktop' | 'code' | 'all';
+  target: 'auto' | 'desktop' | 'code' | 'all' | 'cowork';
   dryRun: boolean;
   forceOverwrite: boolean;
 }
@@ -71,6 +81,9 @@ function parseInstallFlags(rest: string[]): InstallFlags {
       case '--code':
         flags.target = 'code';
         break;
+      case '--cowork':
+        flags.target = 'cowork';
+        break;
       case '--all':
         flags.target = 'all';
         break;
@@ -82,6 +95,46 @@ function parseInstallFlags(rest: string[]): InstallFlags {
         break;
       default:
         throw new Error(`Unknown flag for install/uninstall: ${arg}`);
+    }
+  }
+  return flags;
+}
+
+interface CoworkMirrorFlags {
+  repoName?: string;
+  sync: boolean;
+  dryRun: boolean;
+  nonInteractive: boolean;
+  prefer?: 'gh' | 'pat';
+}
+
+function parseCoworkMirrorFlags(rest: string[]): CoworkMirrorFlags {
+  const flags: CoworkMirrorFlags = { sync: false, dryRun: false, nonInteractive: false };
+  for (const arg of rest) {
+    switch (arg) {
+      case '--sync':
+        flags.sync = true;
+        break;
+      case '--dry-run':
+        flags.dryRun = true;
+        break;
+      case '--non-interactive':
+        flags.nonInteractive = true;
+        break;
+      case '--use-gh':
+        flags.prefer = 'gh';
+        break;
+      case '--use-pat':
+        flags.prefer = 'pat';
+        break;
+      default:
+        if (arg.startsWith('-')) {
+          throw new Error(`Unknown flag for cowork-mirror: ${arg}`);
+        }
+        if (flags.repoName !== undefined) {
+          throw new Error(`Unexpected extra argument for cowork-mirror: ${arg}`);
+        }
+        flags.repoName = arg;
     }
   }
   return flags;
@@ -136,6 +189,32 @@ async function main(argv: string[]): Promise<number> {
       } catch (err) {
         write((err as Error).message);
         return 2;
+      }
+    }
+    case 'cowork-mirror': {
+      const { runCoworkMirror, CoworkMirrorError, GitHubBackendError } = await import(
+        './cli/install/cowork-mirror.js'
+      );
+      try {
+        const flags = parseCoworkMirrorFlags(rest);
+        await runCoworkMirror({
+          sync: flags.sync,
+          dryRun: flags.dryRun,
+          nonInteractive: flags.nonInteractive,
+          ...(flags.repoName ? { repoName: flags.repoName } : {}),
+          ...(flags.prefer ? { prefer: flags.prefer } : {}),
+        });
+        return 0;
+      } catch (err) {
+        if (err instanceof CoworkMirrorError || err instanceof GitHubBackendError) {
+          write(err.message);
+          return 1;
+        }
+        if (err instanceof Error && err.message.startsWith('Unknown flag')) {
+          write(err.message);
+          return 2;
+        }
+        throw err;
       }
     }
     case 'test': {

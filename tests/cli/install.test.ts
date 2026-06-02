@@ -124,20 +124,45 @@ describe('runInstall — auto mode, single client', () => {
 });
 
 describe('runInstall — no clients detected', () => {
-  it('reports nothing to do and exits 0 (Linux)', async () => {
+  it('offers Cowork; declining shows guidance and exits 0 (Linux)', async () => {
+    const prompter = new FakePrompter(['cancel']);
     const code = await runInstall({
+      prompter,
       detection: { desktop: 'notSupported', desktopConfigPath: null, code: 'absent' },
     });
     expect(code).toBe(0);
     expect(out()).toContain('Claude Desktop is not supported');
   });
 
-  it('reports nothing to do and exits 0 (macOS, nothing installed)', async () => {
+  it('offers Cowork; declining shows guidance and exits 0 (macOS, nothing installed)', async () => {
+    const prompter = new FakePrompter(['cancel']);
     const code = await runInstall({
+      prompter,
       detection: { desktop: 'absent', desktopConfigPath: path.join(tmp, 'x.json'), code: 'absent' },
     });
     expect(code).toBe(0);
     expect(out()).toContain('No Claude client detected.');
+  });
+
+  it('routes to the Cowork mirror when accepted', async () => {
+    const prompter = new FakePrompter(['cowork']);
+    let called = false;
+    const code = await runInstall({
+      prompter,
+      detection: { desktop: 'absent', desktopConfigPath: path.join(tmp, 'x.json'), code: 'absent' },
+      coworkMirror: async () => {
+        called = true;
+        return {
+          action: 'created',
+          backend: 'gh',
+          targetFullName: 'octocat/affiliatemcp-internal',
+          targetUrl: 'https://github.com/octocat/affiliatemcp-internal.git',
+          upstream: 'bobberrisford/affiliatemcp',
+        };
+      },
+    });
+    expect(code).toBe(0);
+    expect(called).toBe(true);
   });
 });
 
@@ -164,6 +189,43 @@ describe('runInstall — explicit targets', () => {
     expect(code).toBe(0);
     expect(out()).toContain("Claude Code: added 'affiliate'");
     expect(out()).not.toContain('Claude Desktop:');
+  });
+
+  it('--cowork runs only the mirror, never touches Desktop/Code', async () => {
+    const desktopPath = path.join(tmp, 'claude_desktop_config.json');
+    let mirrorArgs: unknown;
+    const code = await runInstall({
+      target: 'cowork',
+      dryRun: true,
+      detection: { desktop: 'present', desktopConfigPath: desktopPath, code: 'present' },
+      desktopConfigPathOverride: desktopPath,
+      spawnClaudeCode: fakeSpawn([]), // must never be called
+      coworkMirror: async (o) => {
+        mirrorArgs = o;
+        return {
+          action: 'dry-run',
+          backend: 'pat',
+          targetFullName: 'octocat/affiliatemcp-internal',
+          targetUrl: 'https://github.com/octocat/affiliatemcp-internal.git',
+          upstream: 'bobberrisford/affiliatemcp',
+        };
+      },
+    });
+    expect(code).toBe(0);
+    expect((mirrorArgs as { dryRun?: boolean }).dryRun).toBe(true);
+    expect(() => readFileSync(desktopPath, 'utf8')).toThrow(); // no desktop write
+  });
+
+  it('returns 1 when the mirror fails', async () => {
+    const { CoworkMirrorError } = await import('../../src/cli/install/cowork-mirror.js');
+    const code = await runInstall({
+      target: 'cowork',
+      coworkMirror: async () => {
+        throw new CoworkMirrorError('push the mirror', 'boom');
+      },
+    });
+    expect(code).toBe(1);
+    expect(out()).toContain("Couldn't push the mirror");
   });
 });
 
@@ -220,6 +282,16 @@ describe('runUninstall', () => {
     const after = JSON.parse(readFileSync(desktopPath, 'utf8')) as { mcpServers: Record<string, unknown> };
     expect(after.mcpServers).toEqual({ other: { command: 'x' } });
     expect(out()).toContain("Claude Code: removed 'affiliate'");
+  });
+
+  it('--cowork prints manual removal instructions', async () => {
+    const code = await runUninstall({
+      target: 'cowork',
+      detection: { desktop: 'absent', desktopConfigPath: null, code: 'absent' },
+    });
+    expect(code).toBe(0);
+    expect(out()).toContain('To remove from Cowork');
+    expect(out()).toContain('Organization settings → Plugins');
   });
 });
 
