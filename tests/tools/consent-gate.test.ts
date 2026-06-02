@@ -17,6 +17,7 @@ import path from 'node:path';
 import { consentGate, SELF_SUBJECT } from '../../src/tools/consent-gate.js';
 import { grantConsent } from '../../src/shared/consent.js';
 import { resetConfirmationStore } from '../../src/tools/confirmation.js';
+import { readAudit } from '../../src/shared/audit.js';
 
 let tmp: string;
 let originalConfigDir: string | undefined;
@@ -158,5 +159,67 @@ describe('consentGate — confirmation token round-trip', () => {
   it('a standing grant proceeds with no token at all', () => {
     grantConsent({ brand: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
     expect(consentGate(action()).allow).toBe(true);
+  });
+});
+
+describe('consentGate — audit recording', () => {
+  beforeEach(() => {
+    process.env['AFFILIATE_MCP_ENFORCE_CONSENT'] = '1';
+  });
+
+  const action = () => ({
+    operation: 'generateTrackingLink' as const,
+    network: 'awin',
+    subject: SELF_SUBJECT,
+    payload: { programmeId: '1', destinationUrl: 'https://shop.example/p' },
+  });
+
+  it('records a proposed entry on first prompt', () => {
+    consentGate(action());
+    const rows = readAudit();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.event).toBe('proposed');
+  });
+
+  it('records an applied entry (via token) on confirmation', () => {
+    const first = consentGate(action());
+    if (first.allow || first.result.kind !== 'confirmation_required') throw new Error('expected prompt');
+    consentGate({ ...action(), confirmationToken: first.result.confirmationToken });
+    const applied = readAudit().filter((e) => e.event === 'applied');
+    expect(applied).toHaveLength(1);
+    expect(applied[0]?.via).toBe('token');
+  });
+
+  it('records an applied entry (via standing) when a grant covers it', () => {
+    grantConsent({ brand: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
+    consentGate(action());
+    const applied = readAudit().filter((e) => e.event === 'applied');
+    expect(applied).toHaveLength(1);
+    expect(applied[0]?.via).toBe('standing');
+  });
+
+  it('records a denied entry on an explicit deny grant', () => {
+    grantConsent({ brand: SELF_SUBJECT, network: '*', actionClass: 'link.generate', mode: 'deny' });
+    consentGate(action());
+    expect(readAudit().filter((e) => e.event === 'denied')).toHaveLength(1);
+  });
+
+  it('enforces a per-day cap from the audit log: prompts once the cap is reached', () => {
+    grantConsent({
+      brand: SELF_SUBJECT,
+      network: 'awin',
+      actionClass: 'link.generate',
+      mode: 'standing',
+      bounds: { maxPerDay: 2 },
+    });
+    // Two standing-grant proceeds, each writing an `applied` entry.
+    expect(consentGate(action()).allow).toBe(true);
+    expect(consentGate(action()).allow).toBe(true);
+    // Third is over the cap → falls back to prompt.
+    const third = consentGate(action());
+    expect(third.allow).toBe(false);
+    if (third.allow) return;
+    expect(third.result.kind).toBe('confirmation_required');
+    expect(readAudit().filter((e) => e.event === 'applied')).toHaveLength(2);
   });
 });

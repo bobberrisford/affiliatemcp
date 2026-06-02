@@ -23,6 +23,7 @@
 import type { AdapterOperation } from '../shared/types.js';
 import { assertAuthorised, type ActionClass } from '../shared/consent.js';
 import { actionFingerprint, issueConfirmation, redeemConfirmation } from './confirmation.js';
+import { appendAudit, countAppliedToday } from '../shared/audit.js';
 import { createLogger } from '../shared/logging.js';
 
 const log = createLogger('consent-gate');
@@ -117,27 +118,34 @@ export function consentGate(input: GateInput): GateOutcome {
   if (!actionClass) return { allow: true }; // read or unmapped op
   if (!consentEnforcementEnabled()) return { allow: true }; // opt-in, default off
 
+  const base = {
+    network: input.network,
+    operation: input.operation,
+    subject: input.subject,
+    actionClass,
+  };
+
   const evaluation = assertAuthorised({
     brand: input.subject,
     network: input.network,
     actionClass,
     magnitude: input.magnitude,
-    usedToday: input.usedToday,
+    // Per-day caps read the running count from the audit log. If the caller
+    // supplied one (tests), honour it. If the log is unreadable, fail closed:
+    // an unknown count is treated as "cap reached" so a capped grant falls back
+    // to a prompt rather than silently proceeding.
+    usedToday: input.usedToday ?? appliedTodaySafe(base),
   });
 
   if (evaluation.decision === 'proceed') {
-    log.info(
-      { network: input.network, operation: input.operation, subject: input.subject, actionClass },
-      'consent: proceed',
-    );
+    log.info(base, 'consent: proceed');
+    appendAudit({ event: 'applied', via: 'standing', ...base });
     return { allow: true };
   }
 
   if (evaluation.decision === 'deny') {
-    log.warn(
-      { network: input.network, operation: input.operation, subject: input.subject, actionClass },
-      'consent: denied',
-    );
+    log.warn(base, 'consent: denied');
+    appendAudit({ event: 'denied', reason: evaluation.reason, ...base });
     return {
       allow: false,
       result: {
@@ -163,14 +171,13 @@ export function consentGate(input: GateInput): GateOutcome {
   if (input.confirmationToken) {
     const redeemed = redeemConfirmation(input.confirmationToken, fingerprint);
     if (redeemed.ok) {
-      log.info(
-        { network: input.network, operation: input.operation, subject: input.subject, actionClass },
-        'consent: confirmed via token',
-      );
+      log.info(base, 'consent: confirmed via token');
+      appendAudit({ event: 'applied', via: 'token', ...base });
       return { allow: true };
     }
     // Bad token: issue a fresh one and say why the old one failed.
     const reissue = issueConfirmation(fingerprint);
+    appendAudit({ event: 'proposed', reason: `token rejected: ${redeemed.reason}`, ...base });
     return {
       allow: false,
       result: {
@@ -190,6 +197,7 @@ export function consentGate(input: GateInput): GateOutcome {
   }
 
   const issued = issueConfirmation(fingerprint);
+  appendAudit({ event: 'proposed', reason: evaluation.reason, ...base });
   return {
     allow: false,
     result: {
@@ -206,4 +214,27 @@ export function consentGate(input: GateInput): GateOutcome {
         `${evaluation.reason} Show the user what will happen, then re-run with confirmationToken "${issued.token}" to proceed.`,
     },
   };
+}
+
+/**
+ * Read today's applied-action count from the audit log, failing closed: if the
+ * log cannot be read, return a count high enough that any `maxPerDay` bound is
+ * treated as reached, so a capped grant degrades to a prompt rather than
+ * proceeding on an unknown count.
+ */
+function appliedTodaySafe(base: {
+  network: string;
+  subject: string;
+  actionClass: string;
+}): number {
+  try {
+    return countAppliedToday({
+      subject: base.subject,
+      network: base.network,
+      actionClass: base.actionClass,
+    });
+  } catch (err) {
+    log.warn({ ...base, err: (err as Error).message }, 'consent: audit log unreadable; failing closed on per-day cap');
+    return Number.MAX_SAFE_INTEGER;
+  }
 }
