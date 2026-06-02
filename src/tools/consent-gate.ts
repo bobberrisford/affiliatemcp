@@ -22,6 +22,7 @@
 
 import type { AdapterOperation } from '../shared/types.js';
 import { assertAuthorised, type ActionClass } from '../shared/consent.js';
+import { actionFingerprint, issueConfirmation, redeemConfirmation } from './confirmation.js';
 import { createLogger } from '../shared/logging.js';
 
 const log = createLogger('consent-gate');
@@ -47,6 +48,11 @@ export const OPERATION_ACTION_CLASS: Partial<Record<AdapterOperation, ActionClas
  */
 export const SELF_SUBJECT = 'self';
 
+/** True if an operation is a gated action (vs a read that passes straight through). */
+export function isGatedOperation(operation: AdapterOperation): boolean {
+  return operation in OPERATION_ACTION_CLASS;
+}
+
 export interface ConfirmationRequired {
   kind: 'confirmation_required';
   network: string;
@@ -54,6 +60,10 @@ export interface ConfirmationRequired {
   actionClass: ActionClass;
   subject: string;
   reason: string;
+  /** Single-use token the caller passes back as `confirmationToken` to proceed. */
+  confirmationToken: string;
+  /** ISO expiry after which the token is rejected and a fresh confirmation is needed. */
+  expiresAt: string;
   /** A sentence the calling agent shows the user before re-running with confirmation. */
   message: string;
 }
@@ -76,6 +86,10 @@ export interface GateInput {
   network: string;
   /** Brand slug for advertiser ops; `SELF_SUBJECT` for publisher ops. */
   subject: string;
+  /** The action payload (tool args minus brand/confirmationToken). Bound into the confirmation token. */
+  payload?: unknown;
+  /** A confirmation token from a prior `confirmation_required`, passed back to proceed. */
+  confirmationToken?: string;
   /** Magnitude of this action, checked against a grant's `maxMagnitude` bound. */
   magnitude?: number;
   /** Count of this action class already applied today (from the audit log) for per-day caps. */
@@ -137,7 +151,45 @@ export function consentGate(input: GateInput): GateOutcome {
     };
   }
 
-  // decision === 'prompt'
+  // decision === 'prompt' — the action needs the user's say-so. Bind a token to
+  // this exact action; if the caller already presented a valid one, proceed.
+  const fingerprint = actionFingerprint({
+    operation: input.operation,
+    network: input.network,
+    subject: input.subject,
+    payload: input.payload,
+  });
+
+  if (input.confirmationToken) {
+    const redeemed = redeemConfirmation(input.confirmationToken, fingerprint);
+    if (redeemed.ok) {
+      log.info(
+        { network: input.network, operation: input.operation, subject: input.subject, actionClass },
+        'consent: confirmed via token',
+      );
+      return { allow: true };
+    }
+    // Bad token: issue a fresh one and say why the old one failed.
+    const reissue = issueConfirmation(fingerprint);
+    return {
+      allow: false,
+      result: {
+        kind: 'confirmation_required',
+        network: input.network,
+        operation: input.operation,
+        actionClass,
+        subject: input.subject,
+        reason: `${evaluation.reason} The token provided was rejected: ${redeemed.reason}.`,
+        confirmationToken: reissue.token,
+        expiresAt: reissue.expiresAt,
+        message:
+          `${input.network} ${input.operation} (${actionClass}) still needs confirmation: ${redeemed.reason}. ` +
+          `Re-run with confirmationToken "${reissue.token}" to proceed.`,
+      },
+    };
+  }
+
+  const issued = issueConfirmation(fingerprint);
   return {
     allow: false,
     result: {
@@ -147,9 +199,11 @@ export function consentGate(input: GateInput): GateOutcome {
       actionClass,
       subject: input.subject,
       reason: evaluation.reason,
+      confirmationToken: issued.token,
+      expiresAt: issued.expiresAt,
       message:
         `${input.network} ${input.operation} (${actionClass}) needs your confirmation before it runs. ` +
-        `${evaluation.reason} Confirm with the user, then re-run to proceed.`,
+        `${evaluation.reason} Show the user what will happen, then re-run with confirmationToken "${issued.token}" to proceed.`,
     },
   };
 }

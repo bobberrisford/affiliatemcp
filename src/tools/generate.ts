@@ -24,7 +24,7 @@ import { loadBrands } from '../shared/brands.js';
 import { generateAwinTools } from '../networks/awin/tools.js';
 import type { ToolDefinition } from './types.js';
 import { toJsonSchema } from './schema.js';
-import { consentGate, SELF_SUBJECT } from './consent-gate.js';
+import { consentGate, isGatedOperation, SELF_SUBJECT } from './consent-gate.js';
 
 export type { ToolDefinition } from './types.js';
 
@@ -237,20 +237,26 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
   const specs = OP_SPECS.filter((s) => isAdvertiser || !s.advertiserOnly);
 
   return specs.map((spec) => {
+    const gated = isGatedOperation(spec.op);
+
     if (!isAdvertiser) {
+      const publisherSchema = gated ? withConfirmationArg(spec.schema) : spec.schema;
       return {
         name: toolNameFor(adapter.slug, spec.op),
         description: spec.description(adapter.name),
-        inputSchema: toJsonSchema(spec.schema),
+        inputSchema: toJsonSchema(publisherSchema),
         handle: async (args: unknown) => {
           // Publisher actions address the operator's own account: subject `self`.
+          const { confirmationToken, payload } = splitConfirmation(args);
           const gate = consentGate({
             operation: spec.op,
             network: adapter.slug,
             subject: SELF_SUBJECT,
+            payload,
+            confirmationToken,
           });
           if (!gate.allow) return gate.result;
-          return spec.invoke(adapter, args);
+          return spec.invoke(adapter, payload);
         },
       };
     }
@@ -259,7 +265,9 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
     // `networkBrandId` via brands.json before the adapter is called. The
     // resolved ctx is threaded into the adapter invocation so each method
     // knows which brand under the multi-brand credential set to address.
-    const advertiserSchema = withBrandArg(spec.schema);
+    const advertiserSchema = gated
+      ? withConfirmationArg(withBrandArg(spec.schema))
+      : withBrandArg(spec.schema);
     return {
       name: toolNameFor(adapter.slug, spec.op),
       description: spec.description(adapter.name),
@@ -267,6 +275,7 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
       handle: async (args: unknown) => {
         const parsed = advertiserSchema.parse(args ?? {}) as {
           brand: string;
+          confirmationToken?: string;
         } & Record<string, unknown>;
         const { buildAdapterCallContext } = await import('../shared/brand-resolver.js');
         // Throws BrandNotRegistered (config_error envelope) if the brand
@@ -274,15 +283,17 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
         // network call goes out.
         const ctx = buildAdapterCallContext(parsed.brand, adapter.slug);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { brand: _brand, ...rest } = parsed;
+        const { brand: _brand, confirmationToken, ...payload } = parsed;
         // Advertiser actions are keyed on the client brand being acted upon.
         const gate = consentGate({
           operation: spec.op,
           network: adapter.slug,
           subject: parsed.brand,
+          payload,
+          confirmationToken,
         });
         if (!gate.allow) return gate.result;
-        return spec.invoke(adapter, rest, ctx);
+        return spec.invoke(adapter, payload, ctx);
       },
     };
   });
@@ -294,6 +305,34 @@ function withBrandArg(schema: z.ZodTypeAny): z.ZodTypeAny {
     return schema.extend({ brand: z.string().min(1) });
   }
   return z.object({ brand: z.string().min(1) }).strict();
+}
+
+/**
+ * Attach an optional `confirmationToken` field. Added only to gated action
+ * tools so the calling agent can pass back the token from a
+ * `confirmation_required` response to proceed.
+ */
+function withConfirmationArg(schema: z.ZodTypeAny): z.ZodTypeAny {
+  if (schema instanceof z.ZodObject) {
+    return schema.extend({ confirmationToken: z.string().optional() });
+  }
+  return schema;
+}
+
+/**
+ * Separate a `confirmationToken` from the rest of the raw tool args. The
+ * remainder is the action payload, parsed and fingerprinted independently so a
+ * token binds to the action, not to itself.
+ */
+function splitConfirmation(args: unknown): { confirmationToken?: string; payload: unknown } {
+  if (args && typeof args === 'object' && 'confirmationToken' in args) {
+    const { confirmationToken, ...payload } = args as Record<string, unknown>;
+    return {
+      confirmationToken: typeof confirmationToken === 'string' ? confirmationToken : undefined,
+      payload,
+    };
+  }
+  return { payload: args };
 }
 
 export function generateMetaTools(): ToolDefinition[] {
