@@ -20,7 +20,6 @@
  * agent surfaces to the user — the same philosophy as PR #5's `ApiGapResponse`.
  */
 
-import type { AdapterOperation } from '../shared/types.js';
 import { assertAuthorised, type ActionClass } from '../shared/consent.js';
 import { actionFingerprint, issueConfirmation, redeemConfirmation } from './confirmation.js';
 import { appendAudit, countAppliedToday } from '../shared/audit.js';
@@ -29,17 +28,18 @@ import { createLogger } from '../shared/logging.js';
 const log = createLogger('consent-gate');
 
 /**
- * Maps mutating adapter operations to a coarse consent action class. An
- * operation absent from this map is treated as a read and is never gated.
+ * Maps mutating operations to a coarse consent action class. An operation
+ * absent from this map is treated as a read and is never gated. Keyed by
+ * operation name (a string), so it covers both the canonical adapter operations
+ * and off-interface actions such as Impact's `applyToProgram`.
  *
- * Only `generateTrackingLink` is wired today, as the worked example. It is the
- * single quasi-write the adapters implement. (See the open question below: it
- * is arguably idempotent and low-risk, so it may not be the right long-term
- * gated path — a genuinely mutating op like an application or a commission
- * change is.)
+ * `generateTrackingLink` is the single quasi-write among the canonical ops; it
+ * is idempotent and low-risk. `applyToProgram` is the first genuinely mutating
+ * action (a browser handoff, since Impact exposes no API write endpoint).
  */
-export const OPERATION_ACTION_CLASS: Partial<Record<AdapterOperation, ActionClass>> = {
+export const OPERATION_ACTION_CLASS: Record<string, ActionClass> = {
   generateTrackingLink: 'link.generate',
+  applyToProgram: 'programme.apply',
 };
 
 /**
@@ -50,7 +50,7 @@ export const OPERATION_ACTION_CLASS: Partial<Record<AdapterOperation, ActionClas
 export const SELF_SUBJECT = 'self';
 
 /** True if an operation is a gated action (vs a read that passes straight through). */
-export function isGatedOperation(operation: AdapterOperation): boolean {
+export function isGatedOperation(operation: string): boolean {
   return operation in OPERATION_ACTION_CLASS;
 }
 
@@ -90,7 +90,7 @@ export type GateOutcome =
   | { allow: false; result: ConfirmationRequired | ActionDenied };
 
 export interface GateInput {
-  operation: AdapterOperation;
+  operation: string;
   network: string;
   /** Brand slug for advertiser ops; `SELF_SUBJECT` for publisher ops. */
   subject: string;

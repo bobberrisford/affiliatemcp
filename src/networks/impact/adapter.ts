@@ -424,6 +424,55 @@ function toClick(raw: ImpactClickRaw): Click {
 }
 
 // ---------------------------------------------------------------------------
+// applyToProgram — browser handoff result type
+// ---------------------------------------------------------------------------
+
+/**
+ * A structured browser-handoff payload. The agent presents this to the user
+ * when the desired action cannot be completed via a public API write endpoint.
+ * Mirrors the spirit of the ApiGapResponse / BrowserHandoff primitive proposed
+ * in docs/product/browser-doing-layer.md.
+ */
+export interface BrowserHandoffPayload {
+  /** Plain-English goal for the browser session. */
+  goal: string;
+  /** URL where the user should start the manual action. */
+  startingUrl: string;
+  /** Pre-filled values the user can copy into the form fields. */
+  inputs: Record<string, string>;
+  /** Constraints the browser session must not violate. */
+  constraints: string[];
+  /** True: this action mutates state on the network. */
+  mutates: true;
+  /** How the user can confirm the action succeeded. */
+  verify: string;
+}
+
+/**
+ * Return type of `applyToProgram`. Always a structured result; never throws for
+ * the API gap. The `userMessage` is the verbatim sentence the agent should show
+ * the user. The `browserHandoff` payload carries everything a supervised browser
+ * session would need to complete the application.
+ */
+export interface ApplyToProgramResult {
+  /**
+   * Identifies this as a browser-handoff response rather than a direct API
+   * result. Agents can branch on this to surface the right UX.
+   */
+  kind: 'browser_handoff';
+  network: 'impact';
+  operation: 'applyToProgram';
+  /**
+   * Impact does not expose a public write endpoint for programme applications.
+   * This field names the gap factually for logging and agent reasoning.
+   */
+  apiGapReason: string;
+  /** Verbatim sentence for the agent to surface to the user. */
+  userMessage: string;
+  browserHandoff: BrowserHandoffPayload;
+}
+
+// ---------------------------------------------------------------------------
 // The adapter
 // ---------------------------------------------------------------------------
 
@@ -916,6 +965,60 @@ export class ImpactAdapter implements NetworkAdapter {
       programmeId: input.programmeId,
       createdAt: new Date().toISOString(),
       rawNetworkData: response,
+    };
+  }
+
+  // -------------------------------------------------------------------------
+  // applyToProgram — browser handoff (Impact has no public API write endpoint)
+  // -------------------------------------------------------------------------
+
+  /**
+   * Apply to join an Impact programme.
+   *
+   * Impact does not expose programme applications via a public API write
+   * endpoint. The action is available only through the Mediapartners dashboard.
+   * This method returns a structured browser-handoff result rather than
+   * throwing: the gap is a known, expected condition, not an error. The calling
+   * agent should present `userMessage` to the user and offer the browser route.
+   *
+   * The result is always of kind `browser_handoff`; the consent gate records
+   * the audit trail before and after this method runs.
+   */
+  applyToProgram(input: { campaignId: string; notes?: string }): ApplyToProgramResult {
+    const dashboardUrl =
+      'https://app.impact.com/secure/mediapartner/updateRequestedApplicationDetail.ihtml';
+
+    const inputs: Record<string, string> = { CampaignId: input.campaignId };
+    if (input.notes) inputs['Notes'] = input.notes;
+
+    return {
+      kind: 'browser_handoff',
+      network: 'impact',
+      operation: 'applyToProgram',
+      apiGapReason:
+        'Impact does not expose a public API endpoint for submitting programme applications. ' +
+        'The action is available only through the Mediapartners dashboard.',
+      userMessage:
+        `Impact does not provide an API endpoint for programme applications, so this action ` +
+        `cannot be completed automatically. To apply to campaign ${input.campaignId}, ` +
+        `please visit the Impact Mediapartners dashboard, navigate to Programmes, find the ` +
+        `campaign, and submit an application there. ` +
+        `The browser handoff below pre-fills the known inputs for your session.`,
+      browserHandoff: {
+        goal: `Apply to join Impact campaign ${input.campaignId} as a media partner`,
+        startingUrl: dashboardUrl,
+        inputs,
+        constraints: [
+          'Do not submit applications to programmes you have already joined or been declined from.',
+          'Do not alter the campaign ID or any account credentials during the session.',
+          'Stop and report back if the dashboard asks for payment details or multi-factor re-authentication.',
+        ],
+        mutates: true,
+        verify:
+          `After submission, confirm the application appears under Programmes > Pending ` +
+          `Applications in the Impact Mediapartners dashboard, and note the application ` +
+          `reference number for the audit trail.`,
+      },
     };
   }
 
