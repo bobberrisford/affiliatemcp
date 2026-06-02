@@ -17,6 +17,9 @@ import { getAdapter, getAdapters } from '../shared/registry.js';
 import { resolveConfigPaths } from './wizard/paths.js';
 import { parseEnvFile } from '../shared/config.js';
 import { listBrandsForNetwork } from '../shared/brands.js';
+import { listGrants } from '../shared/consent.js';
+import { readAudit } from '../shared/audit.js';
+import { consentEnforcementEnabled } from '../tools/consent-gate.js';
 import type { NetworkAdapter, ResilienceConfigMap } from '../shared/types.js';
 
 function out(line: string): void {
@@ -55,6 +58,17 @@ export interface DoctorReport {
     brands?: Array<{ slug: string; networkBrandId: string; credentialId: string }>;
   }>;
   diagnostic: Awaited<ReturnType<typeof runDiagnostic>>;
+  /**
+   * Doing-layer consent status: whether enforcement is enabled, the active
+   * grants, and the most recent audit entries. An audit read error is captured
+   * in `auditReadError` rather than crashing the report.
+   */
+  consent: {
+    enforced: boolean;
+    grants: ReturnType<typeof listGrants>;
+    recentAudit: ReturnType<typeof readAudit>;
+    auditReadError?: string;
+  };
 }
 
 export async function buildReport(opts: DoctorOptions = {}): Promise<DoctorReport> {
@@ -75,6 +89,23 @@ export async function buildReport(opts: DoctorOptions = {}): Promise<DoctorRepor
     : getAdapters();
 
   const diagnostic = await runDiagnostic(opts.slug);
+
+  // Consent grants — read fresh; a missing or malformed file surfaces as empty.
+  let grants: ReturnType<typeof listGrants> = [];
+  try {
+    grants = listGrants();
+  } catch {
+    grants = [];
+  }
+
+  // Audit log — last 10 entries; a read error is captured, not thrown.
+  let recentAudit: ReturnType<typeof readAudit> = [];
+  let auditReadError: string | undefined;
+  try {
+    recentAudit = readAudit().slice(-10);
+  } catch (err) {
+    auditReadError = (err as Error).message;
+  }
 
   return {
     generatedAt: new Date().toISOString(),
@@ -108,6 +139,12 @@ export async function buildReport(opts: DoctorOptions = {}): Promise<DoctorRepor
       return { ...base, brands };
     }),
     diagnostic,
+    consent: {
+      enforced: consentEnforcementEnabled(),
+      grants,
+      recentAudit,
+      ...(auditReadError !== undefined && { auditReadError }),
+    },
   };
 }
 

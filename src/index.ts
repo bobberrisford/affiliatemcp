@@ -44,6 +44,7 @@ function printHelp(): void {
   write('  affiliate-networks-mcp test            Friendly diagnostic against configured networks');
   write('  affiliate-networks-mcp doctor          Verbose diagnostic with raw responses');
   write('  affiliate-networks-mcp validate <slug> Run the full validation suite against one network');
+  write('  affiliate-networks-mcp consent <action> Manage doing-layer consent grants (grant/revoke/list)');
   write('  affiliate-networks-mcp --help          Show this help');
   write('');
   write('install/uninstall flags:');
@@ -158,6 +159,15 @@ async function main(argv: string[]): Promise<number> {
       const result = await validateNetwork(slug);
       write(JSON.stringify(result, null, 2));
       return result.ok ? 0 : 1;
+    }
+    case 'consent': {
+      const { runConsent, parseConsentArgs } = await import('./cli/consent.js');
+      try {
+        return await runConsent(parseConsentArgs(rest));
+      } catch (err) {
+        write((err as Error).message);
+        return 2;
+      }
     }
     default: {
       write(`Unknown command: ${cmd}`);

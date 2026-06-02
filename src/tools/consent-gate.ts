@@ -133,7 +133,7 @@ export function consentGate(input: GateInput): GateOutcome {
   };
 
   const evaluation = assertAuthorised({
-    brand: input.subject,
+    subject: input.subject,
     network: input.network,
     actionClass,
     magnitude: input.magnitude,

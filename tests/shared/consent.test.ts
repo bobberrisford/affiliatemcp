@@ -44,7 +44,7 @@ afterEach(() => {
 });
 
 const standing = (over: Partial<ConsentGrant> = {}): ConsentGrant => ({
-  brand: 'acme',
+  subject: 'acme',
   network: 'awin-advertiser',
   actionClass: 'publisher.approve',
   mode: 'standing',
@@ -75,7 +75,7 @@ describe('loadConsent', () => {
   it('throws when a grant has an invalid mode', () => {
     writeFileSync(
       path.join(tmp, 'consent.json'),
-      JSON.stringify({ version: 1, grants: [{ brand: 'a', network: '*', actionClass: 'x.y', mode: 'maybe' }] }),
+      JSON.stringify({ version: 1, grants: [{ subject: 'a', network: '*', actionClass: 'x.y', mode: 'maybe' }] }),
     );
     expect(() => loadConsent()).toThrow(/unrecognised shape/);
   });
@@ -102,7 +102,7 @@ describe('saveConsent + loadConsent round-trip', () => {
 
 describe('assertAuthorised — base cases', () => {
   it('prompts when no grant exists', () => {
-    const res = assertAuthorised({ brand: 'acme', network: 'awin-advertiser', actionClass: 'publisher.approve' });
+    const res = assertAuthorised({ subject: 'acme', network: 'awin-advertiser', actionClass: 'publisher.approve' });
     expect(res.decision).toBe('prompt');
     expect(res.grant).toBeUndefined();
     expect(res.reason).toMatch(/no standing grant/i);
@@ -110,26 +110,26 @@ describe('assertAuthorised — base cases', () => {
 
   it('proceeds on a matching standing grant with no bounds', () => {
     grantConsent(standing());
-    const res = assertAuthorised({ brand: 'acme', network: 'awin-advertiser', actionClass: 'publisher.approve' });
+    const res = assertAuthorised({ subject: 'acme', network: 'awin-advertiser', actionClass: 'publisher.approve' });
     expect(res.decision).toBe('proceed');
     expect(res.grant?.actionClass).toBe('publisher.approve');
   });
 
   it('does not match a grant for a different action class', () => {
     grantConsent(standing());
-    const res = assertAuthorised({ brand: 'acme', network: 'awin-advertiser', actionClass: 'commission.adjust' });
+    const res = assertAuthorised({ subject: 'acme', network: 'awin-advertiser', actionClass: 'commission.adjust' });
     expect(res.decision).toBe('prompt');
   });
 
   it('does not match a grant for a different network', () => {
     grantConsent(standing({ network: 'awin-advertiser' }));
-    const res = assertAuthorised({ brand: 'acme', network: 'cj-advertiser', actionClass: 'publisher.approve' });
+    const res = assertAuthorised({ subject: 'acme', network: 'cj-advertiser', actionClass: 'publisher.approve' });
     expect(res.decision).toBe('prompt');
   });
 
   it('matches a wildcard-network grant for any network', () => {
     grantConsent(standing({ network: '*' }));
-    const res = assertAuthorised({ brand: 'acme', network: 'cj-advertiser', actionClass: 'publisher.approve' });
+    const res = assertAuthorised({ subject: 'acme', network: 'cj-advertiser', actionClass: 'publisher.approve' });
     expect(res.decision).toBe('proceed');
   });
 });
@@ -138,7 +138,7 @@ describe('assertAuthorised — bounds', () => {
   it('prompts when the grant has expired', () => {
     grantConsent(standing({ bounds: { expiresAt: '2026-01-01T00:00:00Z' } }));
     const res = assertAuthorised({
-      brand: 'acme',
+      subject: 'acme',
       network: 'awin-advertiser',
       actionClass: 'publisher.approve',
       now: new Date('2026-02-01T00:00:00Z'),
@@ -150,7 +150,7 @@ describe('assertAuthorised — bounds', () => {
   it('proceeds before expiry', () => {
     grantConsent(standing({ bounds: { expiresAt: '2026-12-31T00:00:00Z' } }));
     const res = assertAuthorised({
-      brand: 'acme',
+      subject: 'acme',
       network: 'awin-advertiser',
       actionClass: 'publisher.approve',
       now: new Date('2026-06-01T00:00:00Z'),
@@ -161,7 +161,7 @@ describe('assertAuthorised — bounds', () => {
   it('prompts when magnitude exceeds the bound', () => {
     grantConsent(standing({ actionClass: 'commission.adjust', bounds: { maxMagnitude: 5 } }));
     const res = assertAuthorised({
-      brand: 'acme',
+      subject: 'acme',
       network: 'awin-advertiser',
       actionClass: 'commission.adjust',
       magnitude: 8,
@@ -173,7 +173,7 @@ describe('assertAuthorised — bounds', () => {
   it('proceeds when magnitude is within the bound', () => {
     grantConsent(standing({ actionClass: 'commission.adjust', bounds: { maxMagnitude: 5 } }));
     const res = assertAuthorised({
-      brand: 'acme',
+      subject: 'acme',
       network: 'awin-advertiser',
       actionClass: 'commission.adjust',
       magnitude: 3,
@@ -184,7 +184,7 @@ describe('assertAuthorised — bounds', () => {
   it('prompts when the daily cap is reached', () => {
     grantConsent(standing({ bounds: { maxPerDay: 25 } }));
     const res = assertAuthorised({
-      brand: 'acme',
+      subject: 'acme',
       network: 'awin-advertiser',
       actionClass: 'publisher.approve',
       usedToday: 25,
@@ -196,7 +196,7 @@ describe('assertAuthorised — bounds', () => {
   it('proceeds below the daily cap', () => {
     grantConsent(standing({ bounds: { maxPerDay: 25 } }));
     const res = assertAuthorised({
-      brand: 'acme',
+      subject: 'acme',
       network: 'awin-advertiser',
       actionClass: 'publisher.approve',
       usedToday: 24,
@@ -209,7 +209,7 @@ describe('assertAuthorised — deny wins', () => {
   it('denies when an explicit deny grant matches, even alongside a standing grant', () => {
     grantConsent(standing());
     grantConsent(standing({ network: '*', mode: 'deny' }));
-    const res = assertAuthorised({ brand: 'acme', network: 'awin-advertiser', actionClass: 'publisher.approve' });
+    const res = assertAuthorised({ subject: 'acme', network: 'awin-advertiser', actionClass: 'publisher.approve' });
     expect(res.decision).toBe('deny');
     expect(res.grant?.mode).toBe('deny');
   });
@@ -218,7 +218,7 @@ describe('assertAuthorised — deny wins', () => {
 describe('assertAuthorised — resilience', () => {
   it('degrades to prompt (never throws) when the consent file is unreadable', () => {
     writeFileSync(path.join(tmp, 'consent.json'), '{ broken');
-    const res = assertAuthorised({ brand: 'acme', network: 'awin-advertiser', actionClass: 'publisher.approve' });
+    const res = assertAuthorised({ subject: 'acme', network: 'awin-advertiser', actionClass: 'publisher.approve' });
     expect(res.decision).toBe('prompt');
     expect(res.reason).toMatch(/unreadable/i);
   });
@@ -247,7 +247,7 @@ describe('grantConsent', () => {
   });
 
   it('rejects an invalid brand slug and writes nothing', () => {
-    expect(() => grantConsent(standing({ brand: 'Bad Slug!' }))).toThrow(/invalid/i);
+    expect(() => grantConsent(standing({ subject: 'Bad Slug!' }))).toThrow(/invalid/i);
     expect(existsSync(path.join(tmp, 'consent.json'))).toBe(false);
   });
 
@@ -274,17 +274,17 @@ describe('revokeConsent', () => {
   it('revoking returns the action to prompt', () => {
     grantConsent(standing());
     revokeConsent('acme', 'awin-advertiser', 'publisher.approve');
-    const res = assertAuthorised({ brand: 'acme', network: 'awin-advertiser', actionClass: 'publisher.approve' });
+    const res = assertAuthorised({ subject: 'acme', network: 'awin-advertiser', actionClass: 'publisher.approve' });
     expect(res.decision).toBe('prompt');
   });
 });
 
 describe('listGrants', () => {
   it('lists all grants, or filters by brand', () => {
-    grantConsent(standing({ brand: 'acme' }));
-    grantConsent(standing({ brand: 'globex' }));
+    grantConsent(standing({ subject: 'acme' }));
+    grantConsent(standing({ subject: 'globex' }));
     expect(listGrants()).toHaveLength(2);
-    expect(listGrants({ brand: 'acme' })).toHaveLength(1);
+    expect(listGrants({ subject: 'acme' })).toHaveLength(1);
   });
 });
 

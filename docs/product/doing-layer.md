@@ -130,8 +130,8 @@ server at dispatch time. Local-first, consistent with credentials and
   "version": 1,
   "grants": [
     {
-      "brand": "acme",                 // logical brand slug from brands.json
-      "network": "awin-advertiser",    // or "*" for all networks bound to the brand
+      "subject": "acme",               // brand slug from brands.json, or "self" for the operator's own account
+      "network": "awin-advertiser",    // or "*" for all networks bound to the subject
       "actionClass": "publisher.approve",
       "mode": "standing",              // "standing" skips prompts within bounds
       "bounds": {

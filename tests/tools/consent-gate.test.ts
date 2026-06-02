@@ -75,14 +75,14 @@ describe('consentGate — enforcement on', () => {
   });
 
   it('proceeds when a standing grant covers the action (self subject)', () => {
-    grantConsent({ brand: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
+    grantConsent({ subject: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
     expect(
       consentGate({ operation: 'generateTrackingLink', network: 'awin', subject: SELF_SUBJECT }).allow,
     ).toBe(true);
   });
 
   it('keeps the self grant scoped to the self subject, not a brand', () => {
-    grantConsent({ brand: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
+    grantConsent({ subject: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
     // An advertiser-style call keyed on a brand is not covered by the self grant.
     const outcome = consentGate({
       operation: 'generateTrackingLink',
@@ -93,7 +93,7 @@ describe('consentGate — enforcement on', () => {
   });
 
   it('denies when an explicit deny grant matches', () => {
-    grantConsent({ brand: SELF_SUBJECT, network: '*', actionClass: 'link.generate', mode: 'deny' });
+    grantConsent({ subject: SELF_SUBJECT, network: '*', actionClass: 'link.generate', mode: 'deny' });
     const outcome = consentGate({
       operation: 'generateTrackingLink',
       network: 'awin',
@@ -157,7 +157,7 @@ describe('consentGate — confirmation token round-trip', () => {
   });
 
   it('a standing grant proceeds with no token at all', () => {
-    grantConsent({ brand: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
+    grantConsent({ subject: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
     expect(consentGate(action()).allow).toBe(true);
   });
 });
@@ -211,7 +211,7 @@ describe('consentGate — audit recording', () => {
   });
 
   it('records an applied entry (via standing) when a grant covers it', () => {
-    grantConsent({ brand: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
+    grantConsent({ subject: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
     consentGate(action());
     const applied = readAudit().filter((e) => e.event === 'applied');
     expect(applied).toHaveLength(1);
@@ -219,13 +219,13 @@ describe('consentGate — audit recording', () => {
   });
 
   it('records a denied entry on an explicit deny grant', () => {
-    grantConsent({ brand: SELF_SUBJECT, network: '*', actionClass: 'link.generate', mode: 'deny' });
+    grantConsent({ subject: SELF_SUBJECT, network: '*', actionClass: 'link.generate', mode: 'deny' });
     consentGate(action());
     expect(readAudit().filter((e) => e.event === 'denied')).toHaveLength(1);
   });
 
   it('records succeeded when the dispatched action resolves', async () => {
-    grantConsent({ brand: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
+    grantConsent({ subject: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
     const gate = consentGate(action());
     const out = await dispatchAction(gate, async () => ({ trackingUrl: 'https://x' }));
     expect(out).toEqual({ trackingUrl: 'https://x' });
@@ -233,7 +233,7 @@ describe('consentGate — audit recording', () => {
   });
 
   it('records failed and re-raises when the dispatched action throws', async () => {
-    grantConsent({ brand: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
+    grantConsent({ subject: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
     const gate = consentGate(action());
     await expect(
       dispatchAction(gate, async () => {
@@ -247,7 +247,7 @@ describe('consentGate — audit recording', () => {
 
   it('enforces a per-day cap from the audit log: prompts once the cap is reached', () => {
     grantConsent({
-      brand: SELF_SUBJECT,
+      subject: SELF_SUBJECT,
       network: 'awin',
       actionClass: 'link.generate',
       mode: 'standing',

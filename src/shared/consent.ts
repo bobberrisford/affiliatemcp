@@ -79,9 +79,9 @@ export interface ConsentBounds {
 }
 
 export interface ConsentGrant {
-  /** Logical brand slug from brands.json. */
-  brand: string;
-  /** A network slug, or `*` for every network bound to the brand. */
+  /** Who the grant is about: a brand slug from brands.json, or `self` (the operator's own account). */
+  subject: string;
+  /** A network slug, or `*` for every network bound to the subject. */
   network: NetworkSlug | '*';
   actionClass: ActionClass;
   mode: ConsentMode;
@@ -110,7 +110,8 @@ export interface ConsentEvaluation {
 }
 
 export interface ConsentRequest {
-  brand: string;
+  /** A brand slug, or `self` (the operator's own account). */
+  subject: string;
   network: NetworkSlug;
   actionClass: ActionClass;
   /** Magnitude of this specific action, checked against `bounds.maxMagnitude`. */
@@ -204,7 +205,7 @@ export function assertAuthorised(req: ConsentRequest): ConsentEvaluation {
   if (denial) {
     return {
       decision: 'deny',
-      reason: `Client has explicitly denied ${req.actionClass} on ${req.brand} (${describeNetwork(denial.network)}).`,
+      reason: `Client has explicitly denied ${req.actionClass} on ${req.subject} (${describeNetwork(denial.network)}).`,
       grant: denial,
     };
   }
@@ -214,7 +215,7 @@ export function assertAuthorised(req: ConsentRequest): ConsentEvaluation {
     if (verdict.ok) {
       return {
         decision: 'proceed',
-        reason: `Standing grant covers ${req.actionClass} on ${req.brand}${grant.note ? ` (${grant.note})` : ''}.`,
+        reason: `Standing grant covers ${req.actionClass} on ${req.subject}${grant.note ? ` (${grant.note})` : ''}.`,
         grant,
       };
     }
@@ -222,14 +223,14 @@ export function assertAuthorised(req: ConsentRequest): ConsentEvaluation {
     // prompt with the specific reason — it never escalates to deny.
     return {
       decision: 'prompt',
-      reason: `Standing grant for ${req.actionClass} on ${req.brand} does not cover this action: ${verdict.reason}.`,
+      reason: `Standing grant for ${req.actionClass} on ${req.subject} does not cover this action: ${verdict.reason}.`,
       grant,
     };
   }
 
   return {
     decision: 'prompt',
-    reason: `No standing grant for ${req.actionClass} on ${req.brand}; confirm with the user.`,
+    reason: `No standing grant for ${req.actionClass} on ${req.subject}; confirm with the user.`,
   };
 }
 
@@ -247,7 +248,7 @@ export function grantConsent(grant: ConsentGrant): void {
   const file = loadConsent();
   const next: ConsentGrant = { ...grant, grantedAt: grant.grantedAt ?? new Date().toISOString() };
   const idx = file.grants.findIndex(
-    (g) => g.brand === grant.brand && g.network === grant.network && g.actionClass === grant.actionClass,
+    (g) => g.subject === grant.subject && g.network === grant.network && g.actionClass === grant.actionClass,
   );
   if (idx >= 0) file.grants[idx] = next;
   else file.grants.push(next);
@@ -260,25 +261,25 @@ export function grantConsent(grant: ConsentGrant): void {
  * immediately, by design.
  */
 export function revokeConsent(
-  brand: string,
+  subject: string,
   network: NetworkSlug | '*',
   actionClass: ActionClass,
 ): number {
   const file = loadConsent();
   const before = file.grants.length;
   file.grants = file.grants.filter(
-    (g) => !(g.brand === brand && g.network === network && g.actionClass === actionClass),
+    (g) => !(g.subject === subject && g.network === network && g.actionClass === actionClass),
   );
   const removed = before - file.grants.length;
   if (removed > 0) saveConsent(file);
   return removed;
 }
 
-/** List recorded grants, optionally filtered by brand. For the doctor surface. */
-export function listGrants(filter?: { brand?: string }): ConsentGrant[] {
+/** List recorded grants, optionally filtered by subject. For the doctor surface. */
+export function listGrants(filter?: { subject?: string }): ConsentGrant[] {
   const file = loadConsent();
-  if (!filter?.brand) return file.grants.slice();
-  return file.grants.filter((g) => g.brand === filter.brand);
+  if (!filter?.subject) return file.grants.slice();
+  return file.grants.filter((g) => g.subject === filter.subject);
 }
 
 /** Validate a `domain.verb` action-class string. */
@@ -291,7 +292,7 @@ export function isValidActionClass(value: string): boolean {
 // ---------------------------------------------------------------------------
 
 function grantMatches(grant: ConsentGrant, req: ConsentRequest): boolean {
-  if (grant.brand !== req.brand) return false;
+  if (grant.subject !== req.subject) return false;
   if (grant.actionClass !== req.actionClass) return false;
   return grant.network === '*' || grant.network === req.network;
 }
@@ -326,9 +327,9 @@ function describeNetwork(network: NetworkSlug | '*'): string {
 }
 
 function validateGrant(grant: ConsentGrant): void {
-  if (!isValidBrandSlug(grant.brand)) {
+  if (!isValidBrandSlug(grant.subject)) {
     throw new Error(
-      `Consent grant brand "${grant.brand}" is invalid. Use lowercase letters, digits, and hyphens only.`,
+      `Consent grant subject "${grant.subject}" is invalid. Use lowercase letters, digits, and hyphens only (or "self").`,
     );
   }
   if (grant.network !== '*' && (typeof grant.network !== 'string' || grant.network.trim() === '')) {
@@ -365,7 +366,7 @@ function isConsentFile(value: unknown): value is ConsentFile {
   for (const g of v['grants']) {
     if (!g || typeof g !== 'object') return false;
     const gg = g as Record<string, unknown>;
-    if (typeof gg['brand'] !== 'string') return false;
+    if (typeof gg['subject'] !== 'string') return false;
     if (typeof gg['network'] !== 'string') return false;
     if (typeof gg['actionClass'] !== 'string') return false;
     if (gg['mode'] !== 'standing' && gg['mode'] !== 'deny') return false;
