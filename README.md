@@ -1,6 +1,6 @@
 # affiliate-mcp
 
-> Integrate your affiliate networks with Claude or ChatGPT.
+> Integrate your affiliate networks with Claude.
 
 Affiliate networks have two sides — and neither has a Claude integration.
 
