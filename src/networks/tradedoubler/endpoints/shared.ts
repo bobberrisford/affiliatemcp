@@ -6,10 +6,11 @@ export const TD_SLUG = 'tradedoubler';
 
 /**
  * Obtain a valid bearer token via the OAuth2 ROPC flow.
- * Returns a Promise — callers must await it.
+ * `operation` is the calling adapter operation (e.g. `listTransactions`) and
+ * is threaded through to error envelopes so failures name the right operation.
  */
-export async function requireToken(): Promise<string> {
-  return getAccessToken();
+export async function requireToken(operation: string): Promise<string> {
+  return getAccessToken(operation);
 }
 
 /**

@@ -46,12 +46,14 @@ interface OAuthTokenResponse {
 // Expires 55 minutes after acquisition (tokens are typically valid for 1 hour).
 let cachedToken: string | undefined;
 let cacheExpiresAt: number = 0;
+let inFlightToken: Promise<string> | undefined;
 const TOKEN_CACHE_TTL_MS = 55 * 60 * 1000;
 
 /** Invalidate the in-process token cache (used in tests and on auth failure). */
 export function _clearTokenCache(): void {
   cachedToken = undefined;
   cacheExpiresAt = 0;
+  inFlightToken = undefined;
 }
 
 /** Pre-seed the token cache with a known value — test use only. */
@@ -62,31 +64,33 @@ export function _seedTokenCache(token: string): void {
 
 /**
  * Fetch a new bearer token from Tradedoubler's OAuth2 ROPC endpoint.
+ * `operation` is the calling adapter operation (e.g. `listTransactions`) so
+ * that error envelopes name the operation that triggered the token fetch.
  * Throws `NetworkError` if credentials are missing or the request fails.
  */
-export async function fetchOAuthToken(): Promise<string> {
+export async function fetchOAuthToken(operation: string): Promise<string> {
   const clientId = requireCredential('TRADEDOUBLER_CLIENT_ID', {
     network: TD_SLUG,
-    operation: 'fetchOAuthToken',
+    operation,
     hint:
       'Create an API client in the Tradedoubler dashboard → Tools → API Info → Clients. ' +
       'Set TRADEDOUBLER_CLIENT_ID in ~/.affiliate-mcp/.env.',
   });
   const clientSecret = requireCredential('TRADEDOUBLER_CLIENT_SECRET', {
     network: TD_SLUG,
-    operation: 'fetchOAuthToken',
+    operation,
     hint:
       'The client secret is shown once when creating the API client in Tradedoubler dashboard. ' +
       'Set TRADEDOUBLER_CLIENT_SECRET in ~/.affiliate-mcp/.env.',
   });
   const username = requireCredential('TRADEDOUBLER_USERNAME', {
     network: TD_SLUG,
-    operation: 'fetchOAuthToken',
+    operation,
     hint: 'Set TRADEDOUBLER_USERNAME to your Tradedoubler account email in ~/.affiliate-mcp/.env.',
   });
   const password = requireCredential('TRADEDOUBLER_PASSWORD', {
     network: TD_SLUG,
-    operation: 'fetchOAuthToken',
+    operation,
     hint: 'Set TRADEDOUBLER_PASSWORD to your Tradedoubler account password in ~/.affiliate-mcp/.env.',
   });
 
@@ -119,7 +123,7 @@ export async function fetchOAuthToken(): Promise<string> {
       buildErrorEnvelope({
         type: 'network_api_error',
         network: TD_SLUG,
-        operation: 'fetchOAuthToken',
+        operation,
         httpStatus: res.status,
         networkErrorBody: rawBody,
         message: `Tradedoubler OAuth token request failed with HTTP ${res.status}`,
@@ -135,7 +139,7 @@ export async function fetchOAuthToken(): Promise<string> {
       buildErrorEnvelope({
         type: 'network_api_error',
         network: TD_SLUG,
-        operation: 'fetchOAuthToken',
+        operation,
         httpStatus: res.status,
         networkErrorBody: rawBody,
         message: 'Tradedoubler OAuth token endpoint returned non-JSON response.',
@@ -148,7 +152,7 @@ export async function fetchOAuthToken(): Promise<string> {
       buildErrorEnvelope({
         type: 'network_api_error',
         network: TD_SLUG,
-        operation: 'fetchOAuthToken',
+        operation,
         networkErrorBody: rawBody,
         message: 'Tradedoubler OAuth token response did not include access_token.',
       }),
@@ -160,20 +164,32 @@ export async function fetchOAuthToken(): Promise<string> {
 
 /**
  * Return a valid bearer token, using the in-process cache when possible.
- * Fetches a fresh token if the cache is empty or expired.
+ * Concurrent callers share a single in-flight request so only one token
+ * fetch is issued even when multiple operations start simultaneously.
+ * `operation` is threaded through to error envelopes for debuggability.
  */
-export async function getAccessToken(): Promise<string> {
+export async function getAccessToken(operation: string): Promise<string> {
   const now = Date.now();
   if (cachedToken && now < cacheExpiresAt) {
     log.debug('tradedoubler getAccessToken: returning cached token');
     return cachedToken;
   }
 
-  const token = await fetchOAuthToken();
-  cachedToken = token;
-  cacheExpiresAt = now + TOKEN_CACHE_TTL_MS;
-  log.debug('tradedoubler getAccessToken: token acquired and cached');
-  return token;
+  if (inFlightToken) {
+    log.debug('tradedoubler getAccessToken: awaiting in-flight token request');
+    return inFlightToken;
+  }
+
+  inFlightToken = fetchOAuthToken(operation).then((token) => {
+    cachedToken = token;
+    cacheExpiresAt = Date.now() + TOKEN_CACHE_TTL_MS;
+    log.debug('tradedoubler getAccessToken: token acquired and cached');
+    return token;
+  }).finally(() => {
+    inFlightToken = undefined;
+  });
+
+  return inFlightToken;
 }
 
 /**
@@ -206,7 +222,7 @@ export interface VerifyAuthFail {
 export async function verifyAuth(): Promise<VerifyAuthOk | VerifyAuthFail> {
   let token: string;
   try {
-    token = await getAccessToken();
+    token = await getAccessToken('verifyAuth');
   } catch (err) {
     if (err instanceof NetworkError) {
       return { ok: false, reason: err.envelope.message, envelope: err.envelope };
@@ -232,9 +248,12 @@ export async function verifyAuth(): Promise<VerifyAuthOk | VerifyAuthFail> {
     return { ok: true, identity };
   } catch (err) {
     if (err instanceof NetworkError) {
-      // A 401 means the freshly-obtained token was rejected — clear the cache.
-      _clearTokenCache();
-      return { ok: false, reason: err.envelope.message, envelope: err.envelope };
+      if(err.envelope.httpStatus === 401){
+        // A 401 means the freshly-obtained token was rejected — clear the cache.
+        _clearTokenCache();
+        return { ok: false, reason: err.envelope.message, envelope: err.envelope };
+      }
+      
     }
     const envelope = buildErrorEnvelope({
       type: 'network_api_error',

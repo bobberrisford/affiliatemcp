@@ -621,7 +621,7 @@ export class TradedoublerAdapter implements NetworkAdapter {
    * BLOCKED (not confirmed from public docs).
    */
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
-    const token = await requireToken();
+    const token = await requireToken('listProgrammes');
 
     const raw = await fetchAllPages<TdProgrammeRaw>(
       (offset, limit) =>
@@ -690,7 +690,7 @@ export class TradedoublerAdapter implements NetworkAdapter {
       );
     }
 
-    const token = await requireToken();
+    const token = await requireToken('getProgramme');
 
     const raw = await tradedoublerRequest<TdProgrammeRaw | { program?: TdProgrammeRaw }>({
       operation: 'getProgramme',
@@ -723,7 +723,7 @@ export class TradedoublerAdapter implements NetworkAdapter {
    * applied client-side after normalisation.
    */
   async listTransactions(query?: TransactionQuery): Promise<Transaction[]> {
-    const token = await requireToken();
+    const token = await requireToken('listTransactions');
     const now = new Date();
     const window = defaultWindow(30);
     const toDate = query?.to ? new Date(query.to) : window.to;
@@ -950,7 +950,7 @@ export class TradedoublerAdapter implements NetworkAdapter {
 
     // We require credentials as a sanity check even though we don't make a
     // network call — better to fail now than at first click.
-    await requireToken();
+    await requireToken('generateTrackingLink');
     const orgId = requireOrganizationId('generateTrackingLink');
 
     // `url=` must be the last parameter so it captures the full encoded URL.
@@ -1034,7 +1034,7 @@ export class TradedoublerAdapter implements NetworkAdapter {
    * Source: https://docs.tradedoubler.com/docs/publisher/jdqpo3oryw7zn-list-publisher-sources
    */
   async listPublisherSources(): Promise<TdPublisherSource[]> {
-    const token = await requireToken();
+    const token = await requireToken('listPublisherSources');
 
     const raw = await fetchAllPages<TdSourceRaw>(
       (offset, limit) =>
