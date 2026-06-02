@@ -8,7 +8,7 @@
 ## Overview
 
 Tradedoubler is a European performance marketing network. This adapter targets the modern
-[Publisher Management API](https://tradedoubler.docs.apiary.io/) hosted at
+[Publisher Management API](https://docs.tradedoubler.com/publisher) hosted at
 `https://connect.tradedoubler.com`, which uses OAuth2 bearer tokens.
 
 Note: Tradedoubler also operates an older `api.tradedoubler.com` surface (Products, Vouchers,
@@ -121,6 +121,6 @@ Tradedoubler uses single-character status codes:
 
 ## API Documentation
 
-- Publisher Management API (Apiary): https://tradedoubler.docs.apiary.io/
+- Publisher Management API (Apiary): https://docs.tradedoubler.com/publisher
 - Developer portal: https://dev.tradedoubler.com/
 - Tracking documentation: https://dev.tradedoubler.com/link-converter/publisher/

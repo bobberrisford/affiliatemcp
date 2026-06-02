@@ -15,6 +15,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { tradedoublerAdapter, _internals } from '../../../src/networks/tradedoubler/adapter.js';
+import { _clearTokenCache, _seedTokenCache } from '../../../src/networks/tradedoubler/auth.js';
 import { _resetBreakers } from '../../../src/shared/resilience.js';
 import { NetworkError } from '../../../src/shared/errors.js';
 import { NotImplementedError } from '../../../src/shared/types.js';
@@ -53,13 +54,22 @@ function mockFetchQueue(responses: Response[]): ReturnType<typeof vi.fn> {
 
 beforeEach(() => {
   _resetBreakers();
-  process.env['TRADEDOUBLER_API_TOKEN'] = 'test-token-please-ignore';
+  // Pre-seed the token cache so tests don't need to mock the OAuth token endpoint.
+  _seedTokenCache('test-token-please-ignore');
+  process.env['TRADEDOUBLER_CLIENT_ID'] = 'test-client-id';
+  process.env['TRADEDOUBLER_CLIENT_SECRET'] = 'test-client-secret';
+  process.env['TRADEDOUBLER_USERNAME'] = 'test@example.com';
+  process.env['TRADEDOUBLER_PASSWORD'] = 'test-password';
   process.env['TRADEDOUBLER_ORGANIZATION_ID'] = '1234567';
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
-  delete process.env['TRADEDOUBLER_API_TOKEN'];
+  _clearTokenCache();
+  delete process.env['TRADEDOUBLER_CLIENT_ID'];
+  delete process.env['TRADEDOUBLER_CLIENT_SECRET'];
+  delete process.env['TRADEDOUBLER_USERNAME'];
+  delete process.env['TRADEDOUBLER_PASSWORD'];
   delete process.env['TRADEDOUBLER_ORGANIZATION_ID'];
 });
 
@@ -192,8 +202,9 @@ describe('TradedoublerAdapter.listProgrammes', () => {
     expect(results.length).toBeLessThanOrEqual(2);
   });
 
-  it('throws NetworkError when token is missing', async () => {
-    delete process.env['TRADEDOUBLER_API_TOKEN'];
+  it('throws NetworkError when OAuth credentials are missing', async () => {
+    _clearTokenCache();
+    delete process.env['TRADEDOUBLER_CLIENT_ID'];
     await expect(tradedoublerAdapter.listProgrammes()).rejects.toBeInstanceOf(NetworkError);
   });
 
@@ -258,8 +269,9 @@ describe('TradedoublerAdapter.listTransactions', () => {
     expect(only.length).toBe(1);
   });
 
-  it('emits a NetworkError when the token is missing (§15.4)', async () => {
-    delete process.env['TRADEDOUBLER_API_TOKEN'];
+  it('emits a NetworkError when OAuth credentials are missing (§15.4)', async () => {
+    _clearTokenCache();
+    delete process.env['TRADEDOUBLER_CLIENT_ID'];
     await expect(tradedoublerAdapter.listTransactions({})).rejects.toBeInstanceOf(
       NetworkError,
     );
@@ -416,25 +428,29 @@ describe('TradedoublerAdapter.validateCredential', () => {
     expect(r.ok).toBe(true);
   });
 
-  it('validates TRADEDOUBLER_API_TOKEN by calling /users/me', async () => {
-    mockFetchQueue([fakeResponse(loadFixture('me.json'))]);
+  it('validates TRADEDOUBLER_PASSWORD (last OAuth field) by performing live auth check', async () => {
+    // OAuth token fetch + /users/me call
+    mockFetchQueue([
+      fakeResponse({ access_token: 'fresh-token', token_type: 'Bearer', expires_in: 3600 }),
+      fakeResponse(loadFixture('me.json')),
+    ]);
     const r = await tradedoublerAdapter.validateCredential(
-      'TRADEDOUBLER_API_TOKEN',
-      'fresh-test-token',
+      'TRADEDOUBLER_PASSWORD',
+      'correct-password',
     );
     expect(r.ok).toBe(true);
   });
 
-  it('returns ok:false with hint when token validation fails', async () => {
+  it('returns ok:false with hint when OAuth token request fails', async () => {
     mockFetchQueue([
-      fakeResponse('{"error":"bad token"}', {
+      fakeResponse('{"error":"invalid_client"}', {
         status: 401,
-        rawBody: '{"error":"bad token"}',
+        rawBody: '{"error":"invalid_client"}',
       }),
     ]);
     const r = await tradedoublerAdapter.validateCredential(
-      'TRADEDOUBLER_API_TOKEN',
-      'bad-token',
+      'TRADEDOUBLER_CLIENT_SECRET',
+      'bad-secret',
     );
     expect(r.ok).toBe(false);
     expect(r.hint).toBeTruthy();
@@ -443,6 +459,58 @@ describe('TradedoublerAdapter.validateCredential', () => {
   it('returns ok:false for an unknown field name', async () => {
     const r = await tradedoublerAdapter.validateCredential('UNKNOWN_FIELD', 'value');
     expect(r.ok).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// listPublisherSources
+// ---------------------------------------------------------------------------
+
+describe('TradedoublerAdapter.listPublisherSources', () => {
+  it('returns sources mapped to canonical shape from fixture', async () => {
+    mockFetchQueue([fakeResponse(loadFixture('sources.json'))]);
+    const sources = await tradedoublerAdapter.listPublisherSources();
+    expect(sources.length).toBe(2);
+    const first = sources[0];
+    expect(first?.id).toBe('12345');
+    expect(first?.name).toBe('My Affiliate Website');
+    expect(first?.url).toBe('https://mywebsite.com');
+    expect(first?.status).toBe('ACTIVE');
+    expect(first?.rawNetworkData).toBeDefined();
+  });
+
+  it('returns empty array when items is empty', async () => {
+    mockFetchQueue([fakeResponse({ items: [], total: 0 })]);
+    const sources = await tradedoublerAdapter.listPublisherSources();
+    expect(sources).toEqual([]);
+  });
+
+  it('throws NetworkError when OAuth credentials are missing', async () => {
+    _clearTokenCache();
+    delete process.env['TRADEDOUBLER_CLIENT_ID'];
+    await expect(tradedoublerAdapter.listPublisherSources()).rejects.toBeInstanceOf(NetworkError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// toSource transformer
+// ---------------------------------------------------------------------------
+
+describe('Tradedoubler toSource transformer', () => {
+  it('maps id to string', () => {
+    const s = _internals.toSource({ id: 99, name: 'Test', status: 'ACTIVE' });
+    expect(s.id).toBe('99');
+  });
+
+  it('falls back name to id string when name is absent', () => {
+    const s = _internals.toSource({ id: 42 });
+    expect(s.name).toBe('42');
+  });
+
+  it('preserves rawNetworkData', () => {
+    const raw = { id: 1, name: 'X', url: 'https://x.com', type: 'WEBSITE', status: 'ACTIVE' };
+    const s = _internals.toSource(raw);
+    expect(s.rawNetworkData).toBe(raw);
   });
 });
 

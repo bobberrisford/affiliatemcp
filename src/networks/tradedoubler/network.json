@@ -2,14 +2,14 @@
   "slug": "tradedoubler",
   "name": "Tradedoubler",
   "base_url": "https://connect.tradedoubler.com",
-  "auth_model": "bearer",
-  "env_vars": ["TRADEDOUBLER_API_TOKEN", "TRADEDOUBLER_ORGANIZATION_ID"],
+  "auth_model": "oauth2",
+  "env_vars": ["TRADEDOUBLER_CLIENT_ID", "TRADEDOUBLER_CLIENT_SECRET", "TRADEDOUBLER_USERNAME", "TRADEDOUBLER_PASSWORD", "TRADEDOUBLER_ORGANIZATION_ID"],
   "setup_time_estimate_minutes": 15,
   "setup_requires_approval": false,
   "known_limitations": [
     "Adapter built from public API documentation; not yet verified against a live account.",
     "Click-level data is not exposed via the public Tradedoubler publisher API; only aggregated statistics (counts by programme/site/ad) are available. listClicks throws NotImplementedError.",
-    "The connect.tradedoubler.com API uses an OAuth2 Resource Owner Password Credentials (ROPC) flow. Obtain a bearer token via POST /uaa/oauth/token with client_id, client_secret, username, and password. Token refresh on expiry is the operator's responsibility.",
+    "The connect.tradedoubler.com API uses an OAuth2 Resource Owner Password Credentials (ROPC) flow. Tokens are obtained automatically from TRADEDOUBLER_CLIENT_ID/CLIENT_SECRET/USERNAME/PASSWORD and cached for 55 minutes.",
     "The tracking link `a=` parameter is the publisher SITE ID (per registered website), which may differ from TRADEDOUBLER_ORGANIZATION_ID in multi-site publisher accounts.",
     "The `paid` boolean field on transactions and the exact `currency` field name are not confirmed from public documentation; blocked pending live account verification.",
     "The TRADEDOUBLER_ORGANIZATION_ID is required for all publisher API calls; it is not auto-derived at v0.1."
@@ -20,5 +20,5 @@
   "supports_brand_ops": false,
   "side": "publisher",
   "credential_scope": "single-brand",
-  "docs_url": "https://tradedoubler.docs.apiary.io/"
+  "docs_url": "https://docs.tradedoubler.com/publisher"
 }

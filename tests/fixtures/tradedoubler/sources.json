@@ -1,0 +1,21 @@
+{
+  "items": [
+    {
+      "id": 12345,
+      "name": "My Affiliate Website",
+      "url": "https://mywebsite.com",
+      "type": "WEBSITE",
+      "status": "ACTIVE"
+    },
+    {
+      "id": 67890,
+      "name": "My Blog",
+      "url": "https://myblog.com",
+      "type": "WEBSITE",
+      "status": "ACTIVE"
+    }
+  ],
+  "offset": 0,
+  "limit": 100,
+  "total": 2
+}
