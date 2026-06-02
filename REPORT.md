@@ -1,6 +1,6 @@
-# affiliate-mcp Report — the state of affiliate-network APIs in May 2026
+# affiliate-mcp Report — the state of affiliate-network APIs in June 2026
 
-_Date-stamped: 2026-05-29._
+_Date-stamped: 2026-06-02._
 
 This report describes the state of four affiliate-network APIs as observed
 during the construction of the affiliate-mcp MCP server: Awin, CJ Affiliate,
@@ -2641,15 +2641,15 @@ Once credentials are available, run `verifyAuth()` and inspect the raw `merchant
 ### Quick facts
 
 - **Slug**: `tradedoubler`
-- **Auth model**: bearer
+- **Auth model**: oauth2
 - **Base URL**: https://connect.tradedoubler.com
-- **Environment variables**: `TRADEDOUBLER_API_TOKEN`, `TRADEDOUBLER_ORGANIZATION_ID`
+- **Environment variables**: `TRADEDOUBLER_CLIENT_ID`, `TRADEDOUBLER_CLIENT_SECRET`, `TRADEDOUBLER_USERNAME`, `TRADEDOUBLER_PASSWORD`, `TRADEDOUBLER_ORGANIZATION_ID`
 - **Setup time estimate**: 15 minutes
 - **Approval required**: no
 - **Claim status**: experimental
 - **Adapter version**: 0.1.1
 - **Last verified**: 2026-05-28
-- **Documentation**: https://docs.tradedoubler.com/
+- **Documentation**: https://docs.tradedoubler.com/publisher
 
 ### Operations
 
@@ -2667,7 +2667,7 @@ Once credentials are available, run `verifyAuth()` and inspect the raw `merchant
 
 - Adapter built from public API documentation; not yet verified against a live account.
 - Click-level data is not exposed via the public Tradedoubler publisher API; only aggregated statistics (counts by programme/site/ad) are available. listClicks throws NotImplementedError.
-- The connect.tradedoubler.com API uses an OAuth2 Resource Owner Password Credentials (ROPC) flow. Obtain a bearer token via POST /uaa/oauth/token with client_id, client_secret, username, and password. Token refresh on expiry is the operator's responsibility.
+- The connect.tradedoubler.com API uses an OAuth2 Resource Owner Password Credentials (ROPC) flow. Tokens are obtained automatically from TRADEDOUBLER_CLIENT_ID/CLIENT_SECRET/USERNAME/PASSWORD and cached for 55 minutes.
 - The tracking link `a=` parameter is the publisher SITE ID (per registered website), which may differ from TRADEDOUBLER_ORGANIZATION_ID in multi-site publisher accounts.
 - The `paid` boolean field on transactions and the exact `currency` field name are not confirmed from public documentation; blocked pending live account verification.
 - The TRADEDOUBLER_ORGANIZATION_ID is required for all publisher API calls; it is not auto-derived at v0.1.
@@ -3146,4 +3146,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-05-29 04:44 UTC._
+_Last regenerated 2026-06-02 11:51 UTC._

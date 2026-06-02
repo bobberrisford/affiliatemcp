@@ -102,21 +102,16 @@ export async function fetchOAuthToken(operation: string): Promise<string> {
     password,
   });
 
-  const requestHeaders = {
-    'Authorization': `Basic ${basicCredential}`,
-    'Content-Type': 'application/x-www-form-urlencoded'
-  };
-  const requestBody = body.toString();
-
-
   const res = await fetch(TD_TOKEN_URL, {
     method: 'POST',
-    headers: requestHeaders,
-    body: requestBody,
+    headers: {
+      Authorization: `Basic ${basicCredential}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: body.toString(),
   });
 
   const rawBody = await res.text();
-
 
   if (!res.ok) {
     throw new NetworkError(
@@ -248,12 +243,11 @@ export async function verifyAuth(): Promise<VerifyAuthOk | VerifyAuthFail> {
     return { ok: true, identity };
   } catch (err) {
     if (err instanceof NetworkError) {
-      if(err.envelope.httpStatus === 401){
+      if (err.envelope.httpStatus === 401) {
         // A 401 means the freshly-obtained token was rejected — clear the cache.
         _clearTokenCache();
-        return { ok: false, reason: err.envelope.message, envelope: err.envelope };
       }
-      
+      return { ok: false, reason: err.envelope.message, envelope: err.envelope };
     }
     const envelope = buildErrorEnvelope({
       type: 'network_api_error',
