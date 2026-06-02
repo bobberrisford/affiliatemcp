@@ -10,6 +10,10 @@ the advertiser clients throw on any non-GET, and `generateTrackingLink` is the
 single quasi-write. Adding actions introduces a second risk class, so the whole
 system has to learn to handle it. This note sets out how.
 
+It has a companion: `browser-doing-layer.md` covers actions that have no API and
+must go through the network's dashboard. This document covers the API side and
+the consent and audit model both share. Read them together.
+
 ## What "doing" means
 
 Actions are the things an operator does in a network dashboard that change
@@ -44,11 +48,13 @@ first slice we build.
 
 ### One honest constraint
 
-The product boundary forbids scraping and browser automation. The doing layer
-can only ever cover what each network's public API exposes. A real share of
-dashboard actions have no public API. Part of Phase 0 is an honest, per-network
+This document covers actions the doing layer performs through a network's public
+API. Many dashboard actions have no API. Those are not abandoned: they are
+handled by the browser doing layer, the companion design in
+`browser-doing-layer.md`, under the revised product boundary in `AGENTS.md` and
+`manifesto.md`. Either way we stay honest. Part of Phase 0 is a per-network
 reachability matrix (see below); we do not pretend an action is available
-because a workflow would be convenient.
+because a workflow would be convenient, whether by API or by browser.
 
 ## Principles
 

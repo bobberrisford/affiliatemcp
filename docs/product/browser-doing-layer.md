@@ -72,14 +72,14 @@ deterministic than codified selectors) of this tier.
 The emitter side of Tier A has a concrete shape, prototyped in PR #5
 ("RFC: API-gap + browser-handoff primitive"). Two types in `src/shared/types.ts`:
 
-- `ApiGapResponse` — returned by an adapter operation the API cannot fulfil. It
+- `ApiGapResponse`: returned by an adapter operation the API cannot fulfil. It
   is a normal return value, **never thrown** (an outage still goes through
   `NetworkErrorEnvelope`, principle 4.1). It carries a factual `reason`, a
   verbatim `userMessage` the calling agent shows the user, and an optional
   `browserFallback`.
-- `BrowserHandoff` — the network-agnostic payload one general consumer skill
-  drives: `goal`, `startingUrl`, `inputs`, `constraints`, `mutates`, `verify`,
-  and optional best-effort `hints`. No per-network playbook tree.
+- `BrowserHandoff`: the network-agnostic payload one general consumer skill
+  drives, with `goal`, `startingUrl`, `inputs`, `constraints`, `mutates`,
+  `verify`, and optional best-effort `hints`. No per-network playbook tree.
 
 This is exactly the Tier A shape this document argues for, in code: it triggers
 only on a genuine, permanent API gap; it never stores credentials; it relies on
@@ -136,7 +136,7 @@ Build this only when Tier A's limits actually constrain real use: when you need
 unattended or scheduled flows, deterministic and fixture-tested interactions, or
 a browser-doing path that works on non-Claude MCP clients.
 
-Tier B is the self-driven model from the earlier draft of this doc:
+Tier B is a self-driven browser subsystem that does not depend on the extension:
 
 - A `BrowserAdapter` per network, registered like `NetworkAdapter`, with a
   shared `login` / `isLoggedIn` / named-flow interface.
@@ -173,8 +173,10 @@ Everything in `doing-layer.md` applies, with the risk dial turned up:
 - **Action classes** are the same across transports. `publisher.approve` might
   be an API write on one network and a browser skill on another; the class, the
   consent check, and the audit entry are identical.
-- **Plan and apply.** A browser skill can navigate and preview without
-  submitting (`plan`), then submit and verify (`apply`).
+- **Confirm and verify.** The lightweight gate from the primitive above: a
+  browser skill previews what it will submit and waits for confirmation
+  (`mutates`), then submits and reads the result back (`verify`). No separate
+  formal plan/apply for handoffs.
 - **Standing consent** can let a supervised run skip prompts within bounds, but
   bounds matter more here. The audit record gains screenshots or the extension's
   GIF recording as evidence.
