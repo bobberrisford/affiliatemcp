@@ -24,6 +24,7 @@ import { loadBrands } from '../shared/brands.js';
 import { generateAwinTools } from '../networks/awin/tools.js';
 import type { ToolDefinition } from './types.js';
 import { toJsonSchema } from './schema.js';
+import { consentGate, SELF_SUBJECT } from './consent-gate.js';
 
 export type { ToolDefinition } from './types.js';
 
@@ -241,7 +242,16 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
         name: toolNameFor(adapter.slug, spec.op),
         description: spec.description(adapter.name),
         inputSchema: toJsonSchema(spec.schema),
-        handle: (args: unknown) => spec.invoke(adapter, args),
+        handle: async (args: unknown) => {
+          // Publisher actions address the operator's own account: subject `self`.
+          const gate = consentGate({
+            operation: spec.op,
+            network: adapter.slug,
+            subject: SELF_SUBJECT,
+          });
+          if (!gate.allow) return gate.result;
+          return spec.invoke(adapter, args);
+        },
       };
     }
 
@@ -265,6 +275,13 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
         const ctx = buildAdapterCallContext(parsed.brand, adapter.slug);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { brand: _brand, ...rest } = parsed;
+        // Advertiser actions are keyed on the client brand being acted upon.
+        const gate = consentGate({
+          operation: spec.op,
+          network: adapter.slug,
+          subject: parsed.brand,
+        });
+        if (!gate.allow) return gate.result;
         return spec.invoke(adapter, rest, ctx);
       },
     };
