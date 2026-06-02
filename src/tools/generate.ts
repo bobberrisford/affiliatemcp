@@ -24,7 +24,7 @@ import { loadBrands } from '../shared/brands.js';
 import { generateAwinTools } from '../networks/awin/tools.js';
 import type { ToolDefinition } from './types.js';
 import { toJsonSchema } from './schema.js';
-import { consentGate, isGatedOperation, SELF_SUBJECT } from './consent-gate.js';
+import { consentGate, dispatchAction, isGatedOperation, SELF_SUBJECT } from './consent-gate.js';
 
 export type { ToolDefinition } from './types.js';
 
@@ -255,8 +255,7 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
             payload,
             confirmationToken,
           });
-          if (!gate.allow) return gate.result;
-          return spec.invoke(adapter, payload);
+          return dispatchAction(gate, () => spec.invoke(adapter, payload));
         },
       };
     }
@@ -292,8 +291,7 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
           payload,
           confirmationToken,
         });
-        if (!gate.allow) return gate.result;
-        return spec.invoke(adapter, payload, ctx);
+        return dispatchAction(gate, () => spec.invoke(adapter, payload, ctx));
       },
     };
   });

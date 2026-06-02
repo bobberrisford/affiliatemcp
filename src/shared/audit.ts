@@ -13,19 +13,19 @@
  * mode 0600. Mirrors the file conventions in `src/shared/brands.ts` and
  * `src/shared/consent.ts`.
  *
- * Scope note: this records the *authorisation* of an action (`proposed`,
- * `applied`, `denied`). Recording the *outcome* of execution (succeeded /
- * failed at the network) needs wiring into the tool handler and is a deliberate
- * follow-up — see the doing-layer PR discussion. `applied` therefore means
- * "authorised and dispatched", which is the conservative basis for the per-day
- * cap: a dispatched-but-failed action still consumes the day's budget.
+ * The trail records the full plan -> apply -> outcome arc: `proposed` (a plan
+ * awaiting confirmation), `applied` (authorised and dispatched), and the
+ * execution outcome `succeeded` / `failed`, plus `denied` for a refusal. The
+ * per-day cap counts `applied`, the conservative basis: a dispatched-but-failed
+ * action still consumes the day's budget. The gate records `proposed`,
+ * `applied`, and `denied`; the dispatch helper records `succeeded` / `failed`.
  */
 
 import { appendFileSync, chmodSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import path from 'node:path';
 
-export type AuditEvent = 'proposed' | 'applied' | 'denied';
+export type AuditEvent = 'proposed' | 'applied' | 'succeeded' | 'failed' | 'denied';
 
 export interface AuditEntry {
   /** ISO timestamp. */

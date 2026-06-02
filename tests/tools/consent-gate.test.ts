@@ -14,7 +14,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-import { consentGate, SELF_SUBJECT } from '../../src/tools/consent-gate.js';
+import { consentGate, dispatchAction, SELF_SUBJECT } from '../../src/tools/consent-gate.js';
 import { grantConsent } from '../../src/shared/consent.js';
 import { resetConfirmationStore } from '../../src/tools/confirmation.js';
 import { readAudit } from '../../src/shared/audit.js';
@@ -77,8 +77,8 @@ describe('consentGate — enforcement on', () => {
   it('proceeds when a standing grant covers the action (self subject)', () => {
     grantConsent({ brand: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
     expect(
-      consentGate({ operation: 'generateTrackingLink', network: 'awin', subject: SELF_SUBJECT }),
-    ).toEqual({ allow: true });
+      consentGate({ operation: 'generateTrackingLink', network: 'awin', subject: SELF_SUBJECT }).allow,
+    ).toBe(true);
   });
 
   it('keeps the self grant scoped to the self subject, not a brand', () => {
@@ -128,7 +128,7 @@ describe('consentGate — confirmation token round-trip', () => {
     expect(token).toBeTruthy();
 
     const second = consentGate(action({ confirmationToken: token }));
-    expect(second).toEqual({ allow: true });
+    expect(second.allow).toBe(true);
   });
 
   it('does not let a token authorise a different action (payload changed)', () => {
@@ -159,6 +159,26 @@ describe('consentGate — confirmation token round-trip', () => {
   it('a standing grant proceeds with no token at all', () => {
     grantConsent({ brand: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
     expect(consentGate(action()).allow).toBe(true);
+  });
+});
+
+describe('dispatchAction — pass-through branches', () => {
+  it('returns the gate result without executing when the gate refused', async () => {
+    let ran = false;
+    const result = { kind: 'action_denied' as const, network: 'awin', operation: 'x', actionClass: 'a.b', subject: 'self', reason: 'no' };
+    const out = await dispatchAction({ allow: false, result }, async () => {
+      ran = true;
+      return 'nope';
+    });
+    expect(out).toBe(result);
+    expect(ran).toBe(false);
+    expect(readAudit()).toHaveLength(0);
+  });
+
+  it('runs without recording an outcome for an allow with no audit context (read / enforcement off)', async () => {
+    const out = await dispatchAction({ allow: true }, async () => 'data');
+    expect(out).toBe('data');
+    expect(readAudit()).toHaveLength(0);
   });
 });
 
@@ -202,6 +222,27 @@ describe('consentGate — audit recording', () => {
     grantConsent({ brand: SELF_SUBJECT, network: '*', actionClass: 'link.generate', mode: 'deny' });
     consentGate(action());
     expect(readAudit().filter((e) => e.event === 'denied')).toHaveLength(1);
+  });
+
+  it('records succeeded when the dispatched action resolves', async () => {
+    grantConsent({ brand: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
+    const gate = consentGate(action());
+    const out = await dispatchAction(gate, async () => ({ trackingUrl: 'https://x' }));
+    expect(out).toEqual({ trackingUrl: 'https://x' });
+    expect(readAudit().filter((e) => e.event === 'succeeded')).toHaveLength(1);
+  });
+
+  it('records failed and re-raises when the dispatched action throws', async () => {
+    grantConsent({ brand: SELF_SUBJECT, network: 'awin', actionClass: 'link.generate', mode: 'standing' });
+    const gate = consentGate(action());
+    await expect(
+      dispatchAction(gate, async () => {
+        throw new Error('network 500');
+      }),
+    ).rejects.toThrow('network 500');
+    const failed = readAudit().filter((e) => e.event === 'failed');
+    expect(failed).toHaveLength(1);
+    expect(failed[0]?.reason).toMatch(/network 500/);
   });
 
   it('enforces a per-day cap from the audit log: prompts once the cap is reached', () => {

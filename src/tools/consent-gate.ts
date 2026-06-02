@@ -78,8 +78,15 @@ export interface ActionDenied {
   reason: string;
 }
 
+export interface AuditActionContext {
+  network: string;
+  operation: string;
+  subject: string;
+  actionClass: ActionClass;
+}
+
 export type GateOutcome =
-  | { allow: true }
+  | { allow: true; audit?: AuditActionContext }
   | { allow: false; result: ConfirmationRequired | ActionDenied };
 
 export interface GateInput {
@@ -140,7 +147,7 @@ export function consentGate(input: GateInput): GateOutcome {
   if (evaluation.decision === 'proceed') {
     log.info(base, 'consent: proceed');
     appendAudit({ event: 'applied', via: 'standing', ...base });
-    return { allow: true };
+    return { allow: true, audit: base };
   }
 
   if (evaluation.decision === 'deny') {
@@ -173,7 +180,7 @@ export function consentGate(input: GateInput): GateOutcome {
     if (redeemed.ok) {
       log.info(base, 'consent: confirmed via token');
       appendAudit({ event: 'applied', via: 'token', ...base });
-      return { allow: true };
+      return { allow: true, audit: base };
     }
     // Bad token: issue a fresh one and say why the old one failed.
     const reissue = issueConfirmation(fingerprint);
@@ -214,6 +221,39 @@ export function consentGate(input: GateInput): GateOutcome {
         `${evaluation.reason} Show the user what will happen, then re-run with confirmationToken "${issued.token}" to proceed.`,
     },
   };
+}
+
+/**
+ * Run a gated action through to execution and record its outcome.
+ *
+ * - Gate refused (`allow: false`): return the structured result for the agent
+ *   to surface; nothing executes, no outcome is recorded.
+ * - Gate allowed a read / enforcement-off call (no `audit`): just run it.
+ * - Gate authorised an action (`audit` present): run it, then record
+ *   `succeeded` or `failed` to the audit log. A thrown error is re-raised after
+ *   recording so the server's error-envelope path is unchanged.
+ *
+ * Completes the plan -> apply -> outcome trail: the gate records `proposed` and
+ * `applied`; this records the execution outcome.
+ */
+export async function dispatchAction(
+  gate: GateOutcome,
+  run: () => Promise<unknown>,
+): Promise<unknown> {
+  if (!gate.allow) return gate.result;
+  if (!gate.audit) return run();
+  try {
+    const out = await run();
+    appendAudit({ event: 'succeeded', ...gate.audit });
+    return out;
+  } catch (err) {
+    appendAudit({
+      event: 'failed',
+      reason: err instanceof Error ? err.message : String(err),
+      ...gate.audit,
+    });
+    throw err;
+  }
 }
 
 /**
