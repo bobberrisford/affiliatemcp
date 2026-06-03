@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -19,9 +19,10 @@ describe('detectClients', () => {
   it('reports linux desktop as notSupported', async () => {
     const result = await detectClients({
       platform: 'linux',
-      env: {},
+      env: { HOME: tmp },
       probeClaudeCode: async () => false,
       probeDesktopBundle: () => false,
+      probeCodex: async () => false,
     });
     expect(result.desktop).toBe('notSupported');
     expect(result.desktopConfigPath).toBeNull();
@@ -34,14 +35,14 @@ describe('detectClients', () => {
     try {
       const configDir = path.join(tmp, 'Library', 'Application Support', 'Claude');
       const configPath = path.join(configDir, 'claude_desktop_config.json');
-      const { mkdirSync } = await import('node:fs');
       mkdirSync(configDir, { recursive: true });
       writeFileSync(configPath, '{}');
       const result = await detectClients({
         platform: 'darwin',
-        env: {},
+        env: { HOME: tmp },
         probeClaudeCode: async () => false,
         probeDesktopBundle: () => false,
+        probeCodex: async () => false,
       });
       expect(result.desktop).toBe('present');
       expect(result.desktopConfigPath).toBe(configPath);
@@ -57,9 +58,10 @@ describe('detectClients', () => {
     try {
       const result = await detectClients({
         platform: 'darwin',
-        env: {},
+        env: { HOME: tmp },
         probeClaudeCode: async () => false,
         probeDesktopBundle: () => true,
+        probeCodex: async () => false,
       });
       expect(result.desktop).toBe('present');
     } finally {
@@ -74,9 +76,10 @@ describe('detectClients', () => {
     try {
       const result = await detectClients({
         platform: 'darwin',
-        env: {},
+        env: { HOME: tmp },
         probeClaudeCode: async () => false,
         probeDesktopBundle: () => false,
+        probeCodex: async () => false,
       });
       expect(result.desktop).toBe('absent');
     } finally {
@@ -88,9 +91,10 @@ describe('detectClients', () => {
   it('reports win32 desktop notSupported when APPDATA is missing', async () => {
     const result = await detectClients({
       platform: 'win32',
-      env: {},
+      env: { HOME: tmp },
       probeClaudeCode: async () => false,
       probeDesktopBundle: () => false,
+      probeCodex: async () => false,
     });
     expect(result.desktop).toBe('notSupported');
     expect(result.desktopConfigPath).toBeNull();
@@ -99,9 +103,10 @@ describe('detectClients', () => {
   it('reports claude code present when the probe succeeds', async () => {
     const result = await detectClients({
       platform: 'linux',
-      env: {},
+      env: { HOME: tmp },
       probeClaudeCode: async () => true,
       probeDesktopBundle: () => false,
+      probeCodex: async () => false,
     });
     expect(result.code).toBe('present');
   });
@@ -109,10 +114,44 @@ describe('detectClients', () => {
   it('reports claude code absent when the probe fails', async () => {
     const result = await detectClients({
       platform: 'linux',
-      env: {},
+      env: { HOME: tmp },
+      probeClaudeCode: async () => false,
+      probeDesktopBundle: () => false,
+      probeCodex: async () => false,
+    });
+    expect(result.code).toBe('absent');
+  });
+
+  it('reports codex present when the probe succeeds', async () => {
+    const result = await detectClients({
+      platform: 'linux',
+      env: { HOME: tmp },
+      probeClaudeCode: async () => false,
+      probeDesktopBundle: () => false,
+      probeCodex: async () => true,
+    });
+    expect(result.codex).toBe('present');
+  });
+
+  it('reports codex present when the config directory exists', async () => {
+    mkdirSync(path.join(tmp, '.codex'), { recursive: true });
+    const result = await detectClients({
+      platform: 'linux',
+      env: { HOME: tmp },
       probeClaudeCode: async () => false,
       probeDesktopBundle: () => false,
     });
-    expect(result.code).toBe('absent');
+    expect(result.codex).toBe('present');
+  });
+
+  it('reports codex absent when the probe fails and no config directory exists', async () => {
+    const result = await detectClients({
+      platform: 'linux',
+      env: { HOME: tmp },
+      probeClaudeCode: async () => false,
+      probeDesktopBundle: () => false,
+      probeCodex: async () => false,
+    });
+    expect(result.codex).toBe('absent');
   });
 });

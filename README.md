@@ -1,13 +1,13 @@
 # affiliate-mcp
 
-> Integrate your affiliate networks with Claude.
+> Integrate your affiliate networks with Claude or Codex.
 
-Affiliate networks have two sides — and neither has a Claude integration.
+Affiliate networks have two sides — and neither has a first-class AI workspace integration.
 
 **Publishers** earn commissions from the programmes they join.
 **Brands** (and the agencies who manage them) run those programmes
 and pay the commissions out. I wanted to chat to my own affiliate
-data with Claude; none of the networks had shipped an integration
+data in the AI workspace I already use; none of the networks had shipped an integration
 for either side, so I built one that covers both. Well, for the
 biggest networks.
 
@@ -28,14 +28,12 @@ managing several — you can ask:
 >
 > *"Any anomalies in the affiliate data?"*
 
-Claude figures out which networks to call, fetches the data live from
-their APIs, and gives you the answer. You can use Claude to turn it
+Your AI workspace figures out which networks to call, fetches the data live from
+their APIs, and gives you the answer. You can use Claude or Codex to turn it
 into a sheet, an artifact, an email to your boss, whatever you want.
 
-Free and open source. MIT licensed. Bring your own keys.
-
-For the product philosophy and contribution direction, read the
-[AI-native affiliate data manifesto](./docs/product/manifesto.md).
+Free and open source. MIT licensed. Bring your own keys. For the product
+philosophy, read the [AI-native affiliate data manifesto](./docs/product/manifesto.md).
 
 ## Who this is for
 
@@ -57,63 +55,48 @@ need to write code. You need:
 
 - Your existing logins to the affiliate networks you already work with.
 - Five minutes to run the setup wizard.
-- Claude Desktop installed.
+- Claude Desktop, Claude Code, or Codex installed.
 
 That is the whole list.
 
-**And if you work for an affiliate network**, this is also for you,
-from the other side. The adapters bundled today are placeholders
-until each network adopts its own. We'd rather hand the keys over
-than maintain a guess at your API. See
+**And if you work for an affiliate network**, this is also for you. The
+bundled adapters are placeholders until each network adopts its own. See
 [`CONTRIBUTING.md`](./CONTRIBUTING.md) under "Adopting your network".
 
 ## Why bother?
 
-**One question, every network — and every brand.** "Show me earnings
-by programme" hits Awin, CJ, eBay, Impact and Rakuten in parallel and
-merges the results. On the brand side, "show me revenue across all my
-clients this week" fans out across every brand × network pair you've
-registered. The dashboards can't do that — they don't know about each
-other.
+**One question, every network and every brand.** "Show me earnings by
+programme" hits Awin, CJ, eBay, Impact and Rakuten in parallel. On the brand
+side, "show me revenue across all my clients this week" fans out across every
+brand × network pair you've registered.
 
-**Plain English, not filters.** No more clicking through date pickers
-and saved views. "Last quarter, status pending, sorted by amount" is
-the whole prompt — on either side.
+**Plain English, not filters.** No more clicking through date pickers and saved
+views. "Last quarter, status pending, sorted by amount" is the whole prompt.
 
-**Your data, your machine.** It runs locally. Your keys live in a
-file on your own computer (`~/.affiliate-mcp/.env`, locked to your
-user account). Nothing is sent to a third party, no account to sign
-up for, no telemetry. The networks see the same API calls they'd see
-if you used their own dashboard.
+**Your data, your machine.** It runs locally. Your keys live in
+`~/.affiliate-mcp/.env`, locked to your user account. No hosted account, no
+telemetry. The networks see the same API calls they'd see from their dashboard.
 
-**Catches what dashboards bury.** Stale transactions, programmes that
-have quietly gone inactive, links pointing at deeplinks that no
-longer resolve, brands whose top publisher dropped 40% week-on-week
-— the packaged skills look for these without being asked.
+**Catches what dashboards bury.** Stale transactions, inactive programmes, dead
+deeplinks and week-on-week drops are surfaced by the packaged skills.
 
 ## Getting started
 
-You'll need Node.js 20 or newer installed. If you don't have it, the
-[Node.js download page](https://nodejs.org/) takes about two minutes.
+You'll need Node.js 20 or newer installed. If you don't have it, use the
+[Node.js download page](https://nodejs.org/).
 
-**1. Run the setup wizard.** Open Terminal (macOS) or PowerShell
-(Windows) and paste:
+**1. Run the setup wizard.** Open Terminal (macOS) or PowerShell (Windows):
 
 ```
 npx affiliate-networks-mcp setup
 ```
 
-It walks you through one network at a time. For each one it asks
-which **side** you want — publisher or brand — tells you where in
-the dashboard to find the credential, asks you to paste it, and
-checks it against the live network before moving on. If a key is
-wrong, you'll know in the same minute you typed it.
+It walks you through one network at a time, asks which **side** you want,
+shows where to find each credential, then checks it against the live network.
 
-For brand-side networks, after credentials check out the wizard asks
-the network which brands those credentials can reach, then lets you
-pick a local nickname for each (e.g. `acme`, `globex`). That mapping
-goes into `~/.affiliate-mcp/brands.json` — see [Managing brands](#managing-brands)
-below.
+For brand-side networks, the wizard asks which brands those credentials can
+reach, then lets you pick local nicknames. The mapping is saved to
+`~/.affiliate-mcp/brands.json`, see [Managing brands](#managing-brands).
 
 **2. Check everything is wired up.**
 
@@ -124,9 +107,8 @@ npx affiliate-networks-mcp test
 You should see one line per network: `ok` for everything that's healthy,
 `error — <reason>` for anything that isn't.
 
-**3. Connect it to Claude.** Pick the path that matches how you use Claude.
-The setup wizard offers this at the end automatically — say yes and you can
-skip the rest of this step.
+**3. Connect it to Claude or Codex.** Pick the path that matches your client.
+The setup wizard offers this at the end automatically.
 
 **Claude Desktop (Mac/Windows app) — most users:**
 
@@ -136,8 +118,9 @@ npx affiliate-networks-mcp install
 
 Finds your Claude Desktop config, adds the `affiliate` entry alongside
 anything else you already have, takes a timestamped backup first. Restart
-Claude Desktop after it finishes. Flags: `--desktop` / `--code` to pick one,
-`--all` to skip prompting, `--dry-run` to preview, `--force-overwrite` if
+Claude Desktop after it finishes. Flags: `--desktop` / `--code` / `--codex`
+to pick one, `--all` to include Codex and skip prompting, `--dry-run` to
+preview, `--force-overwrite` if
 your existing config is malformed JSON.
 
 **Claude Code (terminal):**
@@ -149,6 +132,23 @@ claude plugin install affiliate-networks-mcp@affiliatemcp
 
 Registers the MCP server and bundled skills in one step. (Or use the
 `install` command above — it detects Claude Code too.)
+
+**Codex (OpenAI, terminal or IDE extension):**
+
+```
+npx affiliate-networks-mcp install --codex
+```
+
+This adds the local stdio MCP server to `~/.codex/config.toml`; the same MCP
+config is used by the Codex CLI and Codex IDE extension. Manual setup:
+
+```
+codex mcp add affiliate -- npx -y affiliate-networks-mcp
+```
+
+Verify: open Codex, run `/mcp`, then ask **"What affiliate networks do you
+have access to?"** This is OpenAI/Codex support, not ChatGPT connector
+support. ChatGPT requires a reachable HTTPS MCP server and is scoped separately.
 
 **Claude Cowork desktop (org accounts):**
 
