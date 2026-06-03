@@ -41,6 +41,8 @@ function printHelp(): void {
   write('  affiliate-networks-mcp setup           Interactive setup wizard');
   write('  affiliate-networks-mcp install         Connect to Claude Desktop / Claude Code / Codex');
   write('  affiliate-networks-mcp uninstall       Remove the affiliate entry from AI clients');
+  write('  affiliate-networks-mcp call <tool>     Invoke a network operation directly from the terminal');
+  write('  affiliate-networks-mcp call --list     List every callable network operation');
   write('  affiliate-networks-mcp test            Friendly diagnostic against configured networks');
   write('  affiliate-networks-mcp doctor          Verbose diagnostic with raw responses');
   write('  affiliate-networks-mcp telemetry       View or change anonymous telemetry consent');
@@ -57,6 +59,13 @@ function printHelp(): void {
   write('  --all              Target Desktop + Code + Codex, no prompt');
   write('  --dry-run          Show what would change without writing');
   write('  --force-overwrite  Rewrite a malformed Claude Desktop config (backs up first)');
+  write('');
+  write('call usage:');
+  write('  affiliate-networks-mcp call --list [--network <slug>]   List callable operations');
+  write('  affiliate-networks-mcp call --describe <tool>           Show a tool\'s description and input schema');
+  write('  affiliate-networks-mcp call <network> <operation> [key=value ...]');
+  write('  affiliate-networks-mcp call <tool-name> [key=value ...] [--args \'<json>\']');
+  write('  e.g. affiliate-networks-mcp call awin list_transactions from=2026-01-01 limit=50');
   write('');
   write('cowork-mirror flags:');
   write('  [name]             Repo name to create (default: affiliatemcp-internal)');
@@ -222,6 +231,10 @@ async function main(argv: string[]): Promise<number> {
         }
         throw err;
       }
+    }
+    case 'call': {
+      const { runCall } = await import('./cli/call.js');
+      return await runCall({ argv: rest });
     }
     case 'test': {
       const { runTest } = await import('./cli/test.js');

@@ -537,6 +537,53 @@ Three skills are tuned for the brand side:
 - [`programme-anomaly-watch`](./skills/programme-anomaly-watch/SKILL.md)
   — week-over-week anomaly scan, designed to run on a schedule.
 
+## Use it from the terminal
+
+The MCP tools are also callable directly from the command line, which is
+handy for quick checks, shell scripts, and CI, without going through an
+MCP client. The `call` command is a thin shell over the exact same tool
+registry the server exposes, so every operation on every configured
+network is reachable.
+
+List what's available:
+
+```
+npx affiliate-networks-mcp call --list
+npx affiliate-networks-mcp call --list --network awin
+```
+
+Inspect a single operation's arguments:
+
+```
+npx affiliate-networks-mcp call --describe awin list_transactions
+```
+
+Invoke an operation. Use the friendly `<network> <operation>` form (or
+the full `affiliate_<network>_<operation>` tool name) and pass arguments
+as `key=value` pairs:
+
+```
+npx affiliate-networks-mcp call awin list_transactions from=2026-01-01 to=2026-02-01 limit=50
+npx affiliate-networks-mcp call awin get_earnings_summary from=2026-01-01
+npx affiliate-networks-mcp call cj generate_tracking_link programmeId=12345 destinationUrl=https://example.com/product
+```
+
+Values are coerced to the type each operation expects: numbers become
+numbers (`limit=50`), numeric-looking ids stay strings
+(`programmeId=12345`), and list fields accept a comma-separated form
+(`status=approved,pending`) or a JSON array. For anything more complex,
+pass a full JSON object with `--args`:
+
+```
+npx affiliate-networks-mcp call awin list_transactions --args '{"from":"2026-01-01","status":["approved","pending"],"limit":50}'
+```
+
+The JSON result is printed to stdout. On failure you get the same
+`NetworkErrorEnvelope` the MCP tools return: the network, the operation,
+an HTTP status where there is one, and the verbatim upstream body. The
+envelope is printed to stderr with a non-zero exit code, so scripts can
+branch on it.
+
 ## When something goes wrong
 
 ```
