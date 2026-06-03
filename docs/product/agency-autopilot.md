@@ -92,31 +92,46 @@ the operator mutes it. The snapshot's primary job is therefore
 This state machine is the core deliverable of Rung 2. Getting it right
 is what earns the loop the trust to climb to drafting and acting.
 
-## Architecture: deterministic core, thin skill
+## Architecture: skill-driven, with one tiny store
 
-The fan-out, metric computation, diffing, and snapshot persistence live
-in **code**, not in a skill. This matches the project's creed — "the
-model gets safe typed tools, not raw screens" — and keeps the *numbers*
-reproducible run to run. The model does language, never arithmetic.
+A review for simplicity changed the original plan here. The project
+already computes its analysis **in the model**, from typed tool output —
+`programme-anomaly-watch` already defines every anomaly (revenue drop,
+reversal spike, top-10 dropout, silenced publisher, dead programme). A
+"deterministic code core" would have re-implemented that in TypeScript
+and introduced a second computation paradigm. So the autopilot keeps the
+analysis in a skill and adds only the one thing the codebase genuinely
+lacks: **a place to persist run-state**.
 
-- `src/autopilot/context.ts` — load the book + parse each client's
-  intent (prose passed through verbatim; thresholds parsed from the
-  fenced block, see below).
-- `src/autopilot/snapshot.ts` — read/write `state.json` atomically,
-  mirroring `src/shared/brands.ts`.
-- `src/autopilot/diff.ts` — compute deltas and resolve the four-state
-  alert lifecycle against the prior snapshot.
-- `src/autopilot/run.ts` — orchestrate one run: fan out via existing
-  adapters, compute, diff, persist, return structured findings.
+- `src/shared/autopilot.ts` — the store. Mirrors `src/shared/brands.ts`
+  (fresh read per call, atomic temp-write + rename, mode 0600). Loads the
+  book + each client's intent (prose verbatim; thresholds parsed from the
+  fenced block) + the last snapshot; saves the new snapshot, the digest,
+  and client intent. It does **not** compute anything.
+- Three meta-tools in `src/tools/generate.ts` (the `affiliate_resolve_brand`
+  pattern): `affiliate_autopilot_load_context`, `affiliate_autopilot_save_state`,
+  `affiliate_autopilot_save_intent`. These are the first server tools that
+  *write* under `~/.affiliate-mcp/`; writes are confined to the
+  `autopilot/` and `clients/` subtrees.
 
-This is surfaced as a single typed MCP tool, `affiliate_autopilot_run`,
-that returns the structured findings **and** writes the new snapshot as
-a side effect. The `autopilot-run` skill is thin: it calls the tool,
-then narrates the findings in each client's `strategy.md` voice.
+The `autopilot-run` skill carries the logic: load context, fan out via
+the existing per-network performance tools, compute anomalies (reusing
+anomaly-watch's definitions) against each client's thresholds, assign the
+four-state lifecycle by diffing against the loaded snapshot, render the
+digest in the client's voice, then save the snapshot.
 
-Determinism on the money is non-negotiable for an unattended loop:
-"is this £4k drop new?" must give the same answer regardless of which
-model runs the session.
+The snapshot freezes each run's numbers, so the run-to-run comparison is
+stable even though the figures are model-computed — the diff is "compare
+the stored number to the new number", which the model does reliably.
+
+## Intent storage: human-editable markdown, read via the store tool
+
+`strategy.md` and `kpi.md` stay plain markdown on disk so the operator can
+hand-edit them. A scheduled Claude Desktop session is not assumed to have
+a filesystem connector, so the **affiliate-mcp store tool reads the files
+off disk and returns their contents** — no external connector needed, and
+the files remain editable by hand. Onboarding writes them through the same
+tool.
 
 ## KPI format: prose plus a fenced threshold block
 
@@ -127,12 +142,14 @@ onboarding skill maintains and the loop parses:
 # affiliate-mcp:thresholds
 revenue_drop_wow_pct: 15
 reversal_rate_max_pct: 8
-quarterly_revenue_target: { GBP: 400000 }
+quarterly_revenue_target_gbp: 400000
 ````
 
-One human-readable, hand-editable file — no hidden `kpi.json` drifting
-out of sync with the prose around it. `strategy.md` stays fully prose
-(voice, priorities, what-to-escalate); only the model reads that part.
+Simple `key: value` lines (no nested objects — keep currency in the key,
+e.g. `_gbp`), so parsing needs no YAML dependency. One human-readable,
+hand-editable file — no hidden `kpi.json` drifting out of sync with the
+prose around it. `strategy.md` stays fully prose (voice, priorities,
+what-to-escalate); only the model reads that part.
 
 ## Skills (three, fresh)
 
@@ -143,8 +160,10 @@ out of sync with the prose around it. `strategy.md` stays fully prose
   registered, intent files present).
 - **`client-onboarding`** — captures and edits `strategy.md` + `kpi.md`
   by chat; confirms before writing.
-- **`autopilot-run`** — the thin payload the schedule fires; calls
-  `affiliate_autopilot_run` and narrates the digest.
+- **`autopilot-run`** — the payload the schedule fires; calls
+  `affiliate_autopilot_load_context`, fans out, computes, then
+  `affiliate_autopilot_save_state`, narrating the digest in each
+  client's voice.
 
 ## Scheduling: Claude Desktop, local-first
 
@@ -173,8 +192,8 @@ blocker.
 
 | Rung | Adds | Build |
 | --- | --- | --- |
-| **1** | Threshold digest vs intent | `autopilot-run` reading `kpi.md`; full standing state |
-| **2** | Deltas + alert lifecycle | `snapshot.ts` + `diff.ts` + the four-state machine |
+| **1** | Threshold digest vs intent | `autopilot-run` reading `kpi.md` thresholds; full standing state |
+| **2** | Deltas + alert lifecycle | the store (`src/shared/autopilot.ts`) + the four-state machine in `autopilot-run` |
 | **3** | Drafts the client update / next action (read-only; human sends) | Generation step in the skill, using `strategy.md` voice |
 | **4** | Consent-gated writes | A consent + audit layer; its own gated design |
 

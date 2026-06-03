@@ -362,6 +362,92 @@ export function generateMetaTools(): ToolDefinition[] {
         return rows;
       },
     },
+    {
+      name: 'affiliate_autopilot_load_context',
+      description:
+        'Load everything one autopilot run needs: the book of (brand, network) bindings, each client\'s recorded intent (strategy prose + parsed KPI thresholds), and the previous run\'s saved snapshot. ' +
+        'Use this as the first step of the autopilot-run skill so the run can judge current numbers against each client\'s targets and report only what changed since last time. ' +
+        'Returns { loop, bindings, clients, lastState }; pair with the per-network get_programme_performance tools to fan out and affiliate_autopilot_save_state to persist the new snapshot.',
+      inputSchema: {
+        type: 'object',
+        properties: { loop: { type: 'string' } },
+        required: ['loop'],
+        additionalProperties: false,
+      },
+      handle: async (args) => {
+        const parsed = z.object({ loop: z.string().min(1) }).strict().parse(args ?? {});
+        const { loadAutopilotContext } = await import('../shared/autopilot.js');
+        return loadAutopilotContext(parsed.loop);
+      },
+    },
+    {
+      name: 'affiliate_autopilot_save_state',
+      description:
+        'Persist this autopilot run\'s snapshot (and optionally the rendered digest) to the local config dir, so the next run can diff against it. ' +
+        'Use this as the final step of the autopilot-run skill, passing the per-binding metrics and open findings (with their new/ongoing/worsened/resolved state) you computed this run. ' +
+        'Returns { ok, stateFile, digestFile }; pair with affiliate_autopilot_load_context which reads back exactly what this writes. Writes only under ~/.affiliate-mcp/autopilot/.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          loop: { type: 'string' },
+          state: {},
+          digest: { type: 'string' },
+        },
+        required: ['loop', 'state'],
+        additionalProperties: false,
+      },
+      handle: async (args) => {
+        const parsed = z
+          .object({ loop: z.string().min(1), state: z.unknown(), digest: z.string().optional() })
+          .strict()
+          .parse(args ?? {});
+        const { saveAutopilotState, resolveStateFile, resolveDigestFile } = await import(
+          '../shared/autopilot.js'
+        );
+        saveAutopilotState(parsed.loop, parsed.state, parsed.digest);
+        return {
+          ok: true,
+          stateFile: resolveStateFile(parsed.loop),
+          digestFile: parsed.digest !== undefined ? resolveDigestFile(parsed.loop) : null,
+        };
+      },
+    },
+    {
+      name: 'affiliate_autopilot_save_intent',
+      description:
+        "Record (or update) one client's affiliate intent — the strategy prose and the KPI markdown (with its fenced threshold block) the autopilot loop reads to judge that client's numbers. " +
+        'Use this from the client-onboarding skill after interviewing the operator and drafting the files, or when they ask to change a target or add an alert; pass only the file(s) you are changing. ' +
+        'Returns { ok, slug, strategyFile, kpiFile }; pair with affiliate_autopilot_load_context to read intent back. Writes only under ~/.affiliate-mcp/clients/.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          slug: { type: 'string' },
+          strategy: { type: 'string' },
+          kpi: { type: 'string' },
+        },
+        required: ['slug'],
+        additionalProperties: false,
+      },
+      handle: async (args) => {
+        const parsed = z
+          .object({ slug: z.string().min(1), strategy: z.string().optional(), kpi: z.string().optional() })
+          .strict()
+          .parse(args ?? {});
+        if (parsed.strategy === undefined && parsed.kpi === undefined) {
+          throw new Error('Provide at least one of `strategy` or `kpi` to save.');
+        }
+        const { saveClientIntent, resolveStrategyFile, resolveKpiFile } = await import(
+          '../shared/autopilot.js'
+        );
+        saveClientIntent(parsed.slug, { strategyMd: parsed.strategy, kpiMd: parsed.kpi });
+        return {
+          ok: true,
+          slug: parsed.slug,
+          strategyFile: parsed.strategy !== undefined ? resolveStrategyFile(parsed.slug) : null,
+          kpiFile: parsed.kpi !== undefined ? resolveKpiFile(parsed.slug) : null,
+        };
+      },
+    },
   ];
 }
 

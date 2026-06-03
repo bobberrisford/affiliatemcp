@@ -76,10 +76,13 @@ function fakeAdapter(slug: string, name: string): NetworkAdapter {
 }
 
 describe('tool generator', () => {
-  it('always emits the three meta tools', () => {
+  it('always emits the meta tools', () => {
     const meta = generateMetaTools();
     const names = meta.map((t) => t.name).sort();
     expect(names).toEqual([
+      'affiliate_autopilot_load_context',
+      'affiliate_autopilot_save_intent',
+      'affiliate_autopilot_save_state',
       'affiliate_list_networks',
       'affiliate_resolve_brand',
       'affiliate_run_diagnostic',
@@ -89,6 +92,9 @@ describe('tool generator', () => {
   it('with no adapters registered, only meta tools are present', () => {
     const all = generateAllTools();
     expect(all.map((t) => t.name).sort()).toEqual([
+      'affiliate_autopilot_load_context',
+      'affiliate_autopilot_save_intent',
+      'affiliate_autopilot_save_state',
       'affiliate_list_networks',
       'affiliate_resolve_brand',
       'affiliate_run_diagnostic',
@@ -182,6 +188,75 @@ describe('affiliate_resolve_brand meta-tool', () => {
     const rows = (await tool.handle({ network: 'impact-advertiser' })) as Array<{ network: string }>;
     expect(rows).toHaveLength(1);
     expect(rows[0]!.network).toBe('impact-advertiser');
+  });
+});
+
+describe('autopilot meta-tools', () => {
+  const tool = (name: string) => generateMetaTools().find((t) => t.name === name)!;
+
+  it('load_context returns empty book + null state on a clean install', async () => {
+    const ctx = (await tool('affiliate_autopilot_load_context').handle({ loop: 'weekly' })) as {
+      bindings: unknown[];
+      clients: unknown[];
+      lastState: unknown;
+    };
+    expect(ctx.bindings).toEqual([]);
+    expect(ctx.clients).toEqual([]);
+    expect(ctx.lastState).toBeNull();
+  });
+
+  it('save_state then load_context round-trips the snapshot through the tools', async () => {
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [{ network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-1' }],
+      },
+    });
+    const saved = (await tool('affiliate_autopilot_save_state').handle({
+      loop: 'weekly',
+      state: { findings: [{ id: 'drop', state: 'new' }] },
+      digest: '# Digest',
+    })) as { ok: boolean; stateFile: string; digestFile: string | null };
+    expect(saved.ok).toBe(true);
+    expect(saved.digestFile).not.toBeNull();
+
+    const ctx = (await tool('affiliate_autopilot_load_context').handle({ loop: 'weekly' })) as {
+      bindings: unknown[];
+      lastState: { data: { findings: Array<{ state: string }> } };
+    };
+    expect(ctx.bindings).toHaveLength(1);
+    expect(ctx.lastState.data.findings[0]!.state).toBe('new');
+  });
+
+  it('save_intent writes the kpi file and load_context parses its thresholds', async () => {
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [{ network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-1' }],
+      },
+    });
+    await tool('affiliate_autopilot_save_intent').handle({
+      slug: 'acme',
+      kpi: '# affiliate-mcp:thresholds\nrevenue_drop_wow_pct: 15',
+    });
+    const ctx = (await tool('affiliate_autopilot_load_context').handle({ loop: 'weekly' })) as {
+      clients: Array<{ slug: string; thresholds: Record<string, number> }>;
+    };
+    expect(ctx.clients.find((c) => c.slug === 'acme')?.thresholds).toEqual({
+      revenue_drop_wow_pct: 15,
+    });
+  });
+
+  it('save_intent rejects a call with neither strategy nor kpi', async () => {
+    await expect(tool('affiliate_autopilot_save_intent').handle({ slug: 'acme' })).rejects.toThrow(
+      /at least one/i,
+    );
+  });
+
+  it('load_context rejects a path-traversal loop name', async () => {
+    await expect(
+      tool('affiliate_autopilot_load_context').handle({ loop: '../escape' }),
+    ).rejects.toThrow(/Invalid loop/);
   });
 });
 
