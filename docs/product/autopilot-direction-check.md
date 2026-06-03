@@ -28,17 +28,21 @@ shippable and trust-building on its own:
 
 | Rung | What it does | Status |
 | --- | --- | --- |
-| **1** | Scheduled digest judged against each client's targets | **shipped** |
-| **2** | Reports only what *changed* since last run (not standing facts) | **shipped** |
+| **1** | Scheduled digest judged against each client's targets | **built — on branch, not yet released** |
+| **2** | Reports only what *changed* since last run (not standing facts) | **built — on branch, not yet released** |
 | **3** | Drafts the client update / next action — human still sends | next |
 | **4** | Acts on the network (approve publisher, adjust rate) under consent | later, gated |
+
+> Status note: Rungs 1–2 are **code-complete on the feature branch with the
+> full test suite green** — they have not been merged or released. This note is
+> the gate before that happens.
 
 We deliberately ship the low-conflict rungs first. Rungs 1–3 stay **read-only**
 and **local-first**, which keeps us fully inside the manifesto. Rung 4 unwinds
 the read-only guarantee, so it's a separate, explicit decision with its own
 consent/audit design — not something that arrives by accident via a schedule.
 
-## What we just built (Rungs 1–2)
+## What we just built (Rungs 1–2, on the branch)
 
 Three things, deliberately small:
 
@@ -103,6 +107,7 @@ loop's arithmetic lives in the skill layer rather than in code?**
 
 ## Status
 
-Rungs 1–2 are on branch `claude/autonomous-project-architecture-6SCsS`: full
-test suite green, read-only, local-first, no new infrastructure. Ready to demo
-against fixtures and to decide whether Rung 3 (drafting) is the next build.
+Rungs 1–2 are **code-complete on branch `claude/autonomous-project-architecture-6SCsS`,
+not merged and not released**: full test suite green, read-only, local-first, no
+new infrastructure. Ready to demo against fixtures, and to decide whether to
+merge and whether Rung 3 (drafting) is the next build.
