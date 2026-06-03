@@ -59,7 +59,7 @@ need to write code. You need:
 
 - Your existing logins to the affiliate networks you already work with.
 - Five minutes to run the setup wizard.
-- Claude Desktop, Claude Code, or Codex installed.
+- Claude Desktop, Claude Code, Codex, or GitHub Copilot (VS Code) installed.
 
 That is the whole list.
 
@@ -111,8 +111,8 @@ npx affiliate-networks-mcp test
 You should see one line per network: `ok` for everything that's healthy,
 `error — <reason>` for anything that isn't.
 
-**3. Connect it to Claude or Codex.** Pick the path that matches your client.
-The setup wizard offers this at the end automatically.
+**3. Connect it to Claude, Codex, or GitHub Copilot.** Pick the path that
+matches your client. The setup wizard offers this at the end automatically.
 
 **Claude Desktop (Mac/Windows app) — most users:**
 
@@ -122,10 +122,10 @@ npx affiliate-networks-mcp install
 
 Finds your Claude Desktop config, adds the `affiliate` entry alongside
 anything else you already have, takes a timestamped backup first. Restart
-Claude Desktop after it finishes. Flags: `--desktop` / `--code` / `--codex`
-to pick one, `--all` to include Codex and skip prompting, `--dry-run` to
-preview, `--force-overwrite` if
-your existing config is malformed JSON.
+Claude Desktop after it finishes. Flags: `--desktop` / `--code` / `--codex` /
+`--copilot` to pick one, `--all` to include Codex and Copilot and skip
+prompting, `--dry-run` to preview, `--force-overwrite` if your existing config
+is malformed JSON.
 
 **Claude Code (terminal):**
 
@@ -153,6 +153,34 @@ codex mcp add affiliate -- npx -y affiliate-networks-mcp
 Verify: open Codex, run `/mcp`, then ask **"What affiliate networks do you
 have access to?"** This is OpenAI/Codex support, not ChatGPT connector
 support. ChatGPT requires a reachable HTTPS MCP server and is scoped separately.
+
+**GitHub Copilot (VS Code):**
+
+```
+npx affiliate-networks-mcp install --copilot
+```
+
+This adds the local stdio MCP server to VS Code's user `mcp.json` (the file you
+get from the **MCP: Open User Configuration** command), under the top-level
+`servers` key, alongside anything you already have. Manual setup — create or
+edit that file:
+
+```jsonc
+{
+  "servers": {
+    "affiliate": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "affiliate-networks-mcp"]
+    }
+  }
+}
+```
+
+Verify: reload the VS Code window, open the **Copilot Chat** view, switch to
+**Agent** mode, then ask **"What affiliate networks do you have access to?"**
+This is GitHub Copilot in VS Code (which consumes local MCP servers), not the
+Microsoft 365 / Copilot Studio chat product.
 
 **Claude Cowork desktop (org accounts):**
 

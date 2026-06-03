@@ -14,6 +14,10 @@
  * `codex --version` succeeding. The installer still supports `--codex` when
  * this probe says absent; detection is only for auto-mode prompts.
  *
+ * GitHub Copilot (VS Code) is detected by either the VS Code user config
+ * directory existing or `code --version` succeeding. As with Codex, `--copilot`
+ * still works when this probe says absent.
+ *
  * Linux Desktop is reported as `notSupported` rather than `absent` so the
  * orchestrator can tell the user why it's skipping rather than silently
  * doing nothing.
@@ -26,16 +30,19 @@ import path from 'node:path';
 
 import { resolveDesktopConfigPath } from './claude-desktop.js';
 import { resolveCodexConfigPath } from './codex.js';
+import { resolveCopilotUserDir } from './copilot.js';
 
 export type DesktopState = 'present' | 'absent' | 'notSupported';
 export type CodeState = 'present' | 'absent';
 export type CodexState = 'present' | 'absent';
+export type CopilotState = 'present' | 'absent';
 
 export interface DetectionResult {
   desktop: DesktopState;
   desktopConfigPath: string | null;
   code: CodeState;
   codex?: CodexState;
+  copilot?: CopilotState;
 }
 
 export interface DetectOptions {
@@ -47,6 +54,8 @@ export interface DetectOptions {
   probeDesktopBundle?: (platform: NodeJS.Platform, env: NodeJS.ProcessEnv) => boolean;
   /** Override for tests. Resolves to true if Codex appears installed. */
   probeCodex?: () => Promise<boolean>;
+  /** Override for tests. Resolves to true if VS Code (Copilot) appears installed. */
+  probeCopilot?: () => Promise<boolean>;
 }
 
 export async function detectClients(opts: DetectOptions = {}): Promise<DetectionResult> {
@@ -55,6 +64,7 @@ export async function detectClients(opts: DetectOptions = {}): Promise<Detection
   const probeCode = opts.probeClaudeCode ?? defaultProbeClaudeCode;
   const probeBundle = opts.probeDesktopBundle ?? defaultProbeDesktopBundle;
   const probeCodex = opts.probeCodex ?? (() => defaultProbeCodex(env));
+  const probeCopilot = opts.probeCopilot ?? (() => defaultProbeCopilot(platform, env));
 
   const desktopConfigPath = resolveDesktopConfigPath(platform, env);
   let desktop: DesktopState;
@@ -68,8 +78,9 @@ export async function detectClients(opts: DetectOptions = {}): Promise<Detection
 
   const code: CodeState = (await probeCode()) ? 'present' : 'absent';
   const codex: CodexState = (await probeCodex()) ? 'present' : 'absent';
+  const copilot: CopilotState = (await probeCopilot()) ? 'present' : 'absent';
 
-  return { desktop, desktopConfigPath, code, codex };
+  return { desktop, desktopConfigPath, code, codex, copilot };
 }
 
 function defaultProbeDesktopBundle(platform: NodeJS.Platform, env: NodeJS.ProcessEnv): boolean {
@@ -102,6 +113,15 @@ async function defaultProbeCodex(env: NodeJS.ProcessEnv): Promise<boolean> {
   if (existsSync(path.dirname(resolveCodexConfigPath(env)))) return true;
   return new Promise<boolean>((resolve) => {
     const child = spawn('codex', ['--version'], { stdio: 'ignore' });
+    child.on('error', () => resolve(false));
+    child.on('close', (code) => resolve(code === 0));
+  });
+}
+
+async function defaultProbeCopilot(platform: NodeJS.Platform, env: NodeJS.ProcessEnv): Promise<boolean> {
+  if (existsSync(resolveCopilotUserDir(platform, env))) return true;
+  return new Promise<boolean>((resolve) => {
+    const child = spawn('code', ['--version'], { stdio: 'ignore' });
     child.on('error', () => resolve(false));
     child.on('close', (code) => resolve(code === 0));
   });

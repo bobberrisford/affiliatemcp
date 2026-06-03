@@ -151,7 +151,44 @@ describe('detectClients', () => {
       probeClaudeCode: async () => false,
       probeDesktopBundle: () => false,
       probeCodex: async () => false,
+      probeCopilot: async () => false,
     });
     expect(result.codex).toBe('absent');
+  });
+
+  it('reports copilot present when the probe succeeds', async () => {
+    const result = await detectClients({
+      platform: 'linux',
+      env: { HOME: tmp },
+      probeClaudeCode: async () => false,
+      probeDesktopBundle: () => false,
+      probeCodex: async () => false,
+      probeCopilot: async () => true,
+    });
+    expect(result.copilot).toBe('present');
+  });
+
+  it('reports copilot present when the VS Code user directory exists', async () => {
+    mkdirSync(path.join(tmp, '.config', 'Code', 'User'), { recursive: true });
+    const result = await detectClients({
+      platform: 'linux',
+      env: { HOME: tmp },
+      probeClaudeCode: async () => false,
+      probeDesktopBundle: () => false,
+      probeCodex: async () => false,
+    });
+    expect(result.copilot).toBe('present');
+  });
+
+  it('reports copilot absent when the probe fails and no config directory exists', async () => {
+    const result = await detectClients({
+      platform: 'linux',
+      env: { HOME: tmp },
+      probeClaudeCode: async () => false,
+      probeDesktopBundle: () => false,
+      probeCodex: async () => false,
+      probeCopilot: async () => false,
+    });
+    expect(result.copilot).toBe('absent');
   });
 });
