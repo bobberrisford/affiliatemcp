@@ -52,7 +52,7 @@ function printHelp(): void {
   write('  --code             Target Claude Code only');
   write('  --codex            Target Codex only (OpenAI, local stdio MCP)');
   write('  --cowork           Set up for Claude Cowork (private GitHub mirror)');
-  write('  --all              Target Desktop + Code, no prompt');
+  write('  --all              Target Desktop + Code + Codex, no prompt');
   write('  --dry-run          Show what would change without writing');
   write('  --force-overwrite  Rewrite a malformed Claude Desktop config (backs up first)');
   write('');

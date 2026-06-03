@@ -118,8 +118,9 @@ npx affiliate-networks-mcp install
 
 Finds your Claude Desktop config, adds the `affiliate` entry alongside
 anything else you already have, takes a timestamped backup first. Restart
-Claude Desktop after it finishes. Flags: `--desktop` / `--code` to pick one,
-`--all` to skip prompting, `--dry-run` to preview, `--force-overwrite` if
+Claude Desktop after it finishes. Flags: `--desktop` / `--code` / `--codex`
+to pick one, `--all` to include Codex and skip prompting, `--dry-run` to
+preview, `--force-overwrite` if
 your existing config is malformed JSON.
 
 **Claude Code (terminal):**

@@ -73,13 +73,15 @@ async function resolveTargets(
   if (target === 'codex') return { desktop: false, code: false, cowork: false, codex: true };
   if (target === 'cowork') return { desktop: false, code: false, cowork: true, codex: false };
   if (target === 'all') {
-    // --all is the no-prompt path. Cowork is deliberately excluded: it creates
-    // a GitHub repo and is best done interactively (or via `--cowork`).
+    // --all is the no-prompt path. Codex is included because it is a local file
+    // write and does not require Codex to be installed. Cowork is deliberately
+    // excluded: it creates a GitHub repo and is best done interactively (or via
+    // `--cowork`).
     return {
       desktop: detection.desktop !== 'notSupported',
       code: true,
       cowork: false,
-      codex: false,
+      codex: true,
     };
   }
 
@@ -88,13 +90,14 @@ async function resolveTargets(
   // gated on detection.
   const desktopAvailable = detection.desktop === 'present';
   const codeAvailable = detection.code === 'present';
+  const codexAvailable = detection.codex === 'present';
+  const availableCount = [desktopAvailable, codeAvailable, codexAvailable].filter(Boolean).length;
 
-  if (!desktopAvailable && !codeAvailable) {
-    // No config-editable client. The likely intent of a bare `install` here is
-    // Cowork (an org product that ships without Desktop/Code) — offer it rather
-    // than dead-ending. This is the KPI path for a non-technical Cowork user.
+  if (availableCount === 0) {
+    // No detected config-editable client. Still offer Codex because the Codex
+    // installer only writes ~/.codex/config.toml and does not need the CLI.
     const choice = await prompter.menu(
-      'No Claude Desktop or Code found. Which client should I connect?',
+      'No Claude Desktop, Claude Code, or Codex found. Which client should I connect?',
       [
         { key: 'codex', label: 'connect to Codex (OpenAI, local MCP)' },
         { key: 'cowork', label: 'create a private GitHub mirror for Cowork' },
@@ -105,34 +108,35 @@ async function resolveTargets(
     if (choice === 'cowork') return { desktop: false, code: false, cowork: true, codex: false };
     if (detection.desktop === 'notSupported') {
       out('Claude Desktop is not supported on this platform.');
-      out('Install Claude Code (https://claude.com/claude-code) and re-run.');
+      out('Install Claude Code (https://claude.com/claude-code), Codex, or re-run with --codex.');
     } else {
-      out('No Claude client detected.');
-      out('Install Claude Desktop (https://claude.ai/download) or Claude Code');
-      out('(https://claude.com/claude-code) and re-run.');
+      out('No Claude or Codex client detected.');
+      out('Install Claude Desktop (https://claude.ai/download), Claude Code');
+      out('(https://claude.com/claude-code), Codex, or re-run with --codex.');
     }
     return null;
   }
 
-  if (desktopAvailable && codeAvailable) {
-    const choice = await prompter.menu('Which Claude client(s) should I connect?', [
-      { key: 'all', label: 'both — Claude Desktop and Claude Code' },
-      { key: 'desktop', label: 'Claude Desktop only' },
-      { key: 'code', label: 'Claude Code only' },
-      { key: 'codex', label: 'Codex (OpenAI, local MCP)' },
+  if (availableCount > 1) {
+    const choices = [{ key: 'all', label: 'all detected local clients' }];
+    if (desktopAvailable) choices.push({ key: 'desktop', label: 'Claude Desktop only' });
+    if (codeAvailable) choices.push({ key: 'code', label: 'Claude Code only' });
+    if (codexAvailable) choices.push({ key: 'codex', label: 'Codex only (OpenAI, local MCP)' });
+    choices.push(
       { key: 'cowork', label: 'Claude Cowork (org marketplace via private mirror)' },
       { key: 'cancel', label: 'cancel — make no changes' },
-    ]);
+    );
+    const choice = await prompter.menu('Which AI client(s) should I connect?', choices);
     if (choice === 'cancel') return null;
     if (choice === 'desktop') return { desktop: true, code: false, cowork: false, codex: false };
     if (choice === 'code') return { desktop: false, code: true, cowork: false, codex: false };
     if (choice === 'codex') return { desktop: false, code: false, cowork: false, codex: true };
     if (choice === 'cowork') return { desktop: false, code: false, cowork: true, codex: false };
-    return { desktop: true, code: true, cowork: false, codex: false };
+    return { desktop: desktopAvailable, code: codeAvailable, cowork: false, codex: codexAvailable };
   }
 
   // Exactly one config-editable client is available.
-  return { desktop: desktopAvailable, code: codeAvailable, cowork: false, codex: false };
+  return { desktop: desktopAvailable, code: codeAvailable, cowork: false, codex: codexAvailable };
 }
 
 export async function runInstall(opts: InstallOptions = {}): Promise<number> {
@@ -151,6 +155,7 @@ export async function runInstall(opts: InstallOptions = {}): Promise<number> {
   if (detection.desktop === 'present') detectedParts.push('Claude Desktop');
   if (detection.desktop === 'notSupported') detectedParts.push('(Claude Desktop not supported on this platform)');
   if (detection.code === 'present') detectedParts.push('Claude Code');
+  if (detection.codex === 'present') detectedParts.push('Codex');
   if (detectedParts.length === 0) detectedParts.push('none');
   out(`Detected: ${detectedParts.join(', ')}`);
   out('');

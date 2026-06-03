@@ -1,5 +1,5 @@
 /**
- * Detect which Claude clients are installed on this machine.
+ * Detect which Claude and Codex clients are installed on this machine.
  *
  * Claude Desktop is detected by either the config file or the app bundle
  * existing — we accept either signal because the config file is only created
@@ -10,6 +10,10 @@
  * on a `which`-style probe alone because shims or wrappers may pass it but
  * fail to exec; running the binary is the real test.
  *
+ * Codex is detected by either an existing `~/.codex` config directory or
+ * `codex --version` succeeding. The installer still supports `--codex` when
+ * this probe says absent; detection is only for auto-mode prompts.
+ *
  * Linux Desktop is reported as `notSupported` rather than `absent` so the
  * orchestrator can tell the user why it's skipping rather than silently
  * doing nothing.
@@ -17,16 +21,20 @@
 
 import { existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
+import path from 'node:path';
 
 import { resolveDesktopConfigPath } from './claude-desktop.js';
+import { resolveCodexConfigPath } from './codex.js';
 
 export type DesktopState = 'present' | 'absent' | 'notSupported';
 export type CodeState = 'present' | 'absent';
+export type CodexState = 'present' | 'absent';
 
 export interface DetectionResult {
   desktop: DesktopState;
   desktopConfigPath: string | null;
   code: CodeState;
+  codex?: CodexState;
 }
 
 export interface DetectOptions {
@@ -36,6 +44,8 @@ export interface DetectOptions {
   probeClaudeCode?: () => Promise<boolean>;
   /** Override for tests. Resolves to true if Claude Desktop app bundle exists. */
   probeDesktopBundle?: (platform: NodeJS.Platform, env: NodeJS.ProcessEnv) => boolean;
+  /** Override for tests. Resolves to true if Codex appears installed. */
+  probeCodex?: () => Promise<boolean>;
 }
 
 export async function detectClients(opts: DetectOptions = {}): Promise<DetectionResult> {
@@ -43,6 +53,7 @@ export async function detectClients(opts: DetectOptions = {}): Promise<Detection
   const env = opts.env ?? process.env;
   const probeCode = opts.probeClaudeCode ?? defaultProbeClaudeCode;
   const probeBundle = opts.probeDesktopBundle ?? defaultProbeDesktopBundle;
+  const probeCodex = opts.probeCodex ?? (() => defaultProbeCodex(env));
 
   const desktopConfigPath = resolveDesktopConfigPath(platform, env);
   let desktop: DesktopState;
@@ -55,8 +66,9 @@ export async function detectClients(opts: DetectOptions = {}): Promise<Detection
   }
 
   const code: CodeState = (await probeCode()) ? 'present' : 'absent';
+  const codex: CodexState = (await probeCodex()) ? 'present' : 'absent';
 
-  return { desktop, desktopConfigPath, code };
+  return { desktop, desktopConfigPath, code, codex };
 }
 
 function defaultProbeDesktopBundle(platform: NodeJS.Platform, env: NodeJS.ProcessEnv): boolean {
@@ -74,6 +86,15 @@ function defaultProbeDesktopBundle(platform: NodeJS.Platform, env: NodeJS.Proces
 async function defaultProbeClaudeCode(): Promise<boolean> {
   return new Promise<boolean>((resolve) => {
     const child = spawn('claude', ['--version'], { stdio: 'ignore' });
+    child.on('error', () => resolve(false));
+    child.on('close', (code) => resolve(code === 0));
+  });
+}
+
+async function defaultProbeCodex(env: NodeJS.ProcessEnv): Promise<boolean> {
+  if (existsSync(path.dirname(resolveCodexConfigPath(env)))) return true;
+  return new Promise<boolean>((resolve) => {
+    const child = spawn('codex', ['--version'], { stdio: 'ignore' });
     child.on('error', () => resolve(false));
     child.on('close', (code) => resolve(code === 0));
   });

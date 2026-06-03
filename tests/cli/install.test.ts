@@ -73,6 +73,27 @@ describe('runInstall — auto mode, both present', () => {
     expect(out()).toContain('Restart Claude Desktop');
   });
 
+  it('prompts when Desktop and Codex are detected, then installs both when selected', async () => {
+    const desktopPath = path.join(tmp, 'claude_desktop_config.json');
+    const codexPath = path.join(tmp, '.codex', 'config.toml');
+    const prompter = new FakePrompter(['all']);
+    const code = await runInstall({
+      prompter,
+      detection: { desktop: 'present', desktopConfigPath: desktopPath, code: 'absent', codex: 'present' },
+      desktopConfigPathOverride: desktopPath,
+      codexConfigPathOverride: codexPath,
+      spawnClaudeCode: fakeSpawn([]), // should never be called
+    });
+    expect(code).toBe(0);
+    expect(JSON.parse(readFileSync(desktopPath, 'utf8'))).toEqual({
+      mcpServers: { [AFFILIATE_ENTRY_KEY]: AFFILIATE_ENTRY_VALUE },
+    });
+    expect(readFileSync(codexPath, 'utf8')).toContain('[mcp_servers.affiliate]');
+    expect(out()).toContain('Claude Desktop: created');
+    expect(out()).toContain('Codex: created');
+    expect(out()).not.toContain('Claude Code:');
+  });
+
   it('lets the user pick Desktop only', async () => {
     const desktopPath = path.join(tmp, 'claude_desktop_config.json');
     const prompter = new FakePrompter(['desktop']);
@@ -141,7 +162,7 @@ describe('runInstall — no clients detected', () => {
       detection: { desktop: 'absent', desktopConfigPath: path.join(tmp, 'x.json'), code: 'absent' },
     });
     expect(code).toBe(0);
-    expect(out()).toContain('No Claude client detected.');
+    expect(out()).toContain('No Claude or Codex client detected.');
   });
 
   it('routes to the Cowork mirror when accepted', async () => {
@@ -206,6 +227,29 @@ describe('runInstall — explicit targets', () => {
     expect(out()).toContain('Codex: created');
     expect(out()).not.toContain('Claude Desktop:');
     expect(out()).not.toContain('Claude Code:');
+  });
+
+  it('--all includes Codex and still excludes Cowork', async () => {
+    const desktopPath = path.join(tmp, 'claude_desktop_config.json');
+    const codexPath = path.join(tmp, '.codex', 'config.toml');
+    let mirrorCalled = false;
+    const code = await runInstall({
+      target: 'all',
+      detection: { desktop: 'present', desktopConfigPath: desktopPath, code: 'present', codex: 'absent' },
+      desktopConfigPathOverride: desktopPath,
+      codexConfigPathOverride: codexPath,
+      spawnClaudeCode: fakeSpawn([ok(JSON.stringify({ mcpServers: {} })), ok('added')]),
+      coworkMirror: async () => {
+        mirrorCalled = true;
+        throw new Error('must not run Cowork from --all');
+      },
+    });
+    expect(code).toBe(0);
+    expect(out()).toContain('Claude Desktop: created');
+    expect(out()).toContain("Claude Code: added 'affiliate'");
+    expect(out()).toContain('Codex: created');
+    expect(readFileSync(codexPath, 'utf8')).toContain('[mcp_servers.affiliate]');
+    expect(mirrorCalled).toBe(false);
   });
 
   it('--cowork runs only the mirror, never touches Desktop/Code', async () => {
