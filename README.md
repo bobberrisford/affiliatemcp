@@ -303,6 +303,35 @@ v0.1 — the client refuses any non-GET HTTP method before it leaves
 your machine. The full editorial position, including known upstream
 quirks and the read-only stance, lives in [`REPORT.md`](./REPORT.md).
 
+## Contribute in 10 minutes
+
+A first PR shouldn't take longer than an evening. The path:
+
+1. **Pick an issue.** Browse the
+   [`good-first-pr`](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3Agood-first-pr)
+   queue. Each has a file path, acceptance bullets, and a how-to-test
+   line. Comment to claim it.
+2. **Get to green.** One command runs the full pre-PR check —
+   typecheck, lint, tests, build — in a few seconds:
+
+   ```
+   git clone https://github.com/bobberrisford/affiliatemcp.git
+   cd affiliatemcp
+   npm install
+   npm run verify
+   ```
+
+   If `npm run verify` passes locally, CI will pass.
+3. **Open the PR.** Use the default template (a short summary + test
+   plan). First review within 24h on weekdays — see
+   [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the full PR process and
+   the four ranked help-wanted areas.
+
+If you work for an affiliate network, the highest-leverage contribution
+is adopting your own adapter — see the
+[`adopt-this-network`](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3Aadopt-this-network)
+issues.
+
 ## Wanted
 
 Networks people have asked for but that don't have an adapter yet. If

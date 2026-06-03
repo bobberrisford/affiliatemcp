@@ -1,16 +1,34 @@
 # Contributing to affiliate-mcp
 
-**If you work for an affiliate network, this is for you.** The project's
-working assumption is that each network is the canonical author of its
-own adapter — you know your API, your dashboard, your tiers, and your
-quirks better than anyone outside the company. The adapters bundled
-today (Awin, CJ Affiliate, eBay Partner Network, Impact, Rakuten
-Advertising, plus advertiser-side adapters for Awin, CJ, and Impact)
-are placeholders until each network adopts its own. We'd rather hand
-the keys over than maintain a guess at your API.
+There are four ways to help, ranked by impact. Each links to live work:
 
-If you don't work for the network but want to contribute one anyway,
-that's also welcome — see "Adding a network from outside" below.
+1. **Adopt your network's adapter.** If you work for an affiliate
+   network we ship today, take ownership of its adapter — you know
+   your API better than we do. See the
+   [`adopt-this-network`](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3Aadopt-this-network)
+   issues (one per shipped network) and the "[Adopting your
+   network](#adopting-your-network)" section below.
+2. **Add a network we don't ship yet.** The
+   [Wanted networks table in the README](./README.md#wanted) lists 20
+   verified gaps with public APIs. Pick one, open a tracking issue,
+   send a PR. See "[Adding a network from
+   outside](#adding-a-network-from-outside)".
+3. **Land a small first PR.** Browse the
+   [`good-first-pr`](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3Agood-first-pr)
+   queue — fixture refreshes, setup-doc screenshots, code TODOs scoped
+   to ≤50 lines. Each issue has a file path, acceptance bullets, and a
+   how-to-test line.
+4. **Improve fixtures or setup docs.** See the
+   [`fixture-refresh`](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3Afixture-refresh)
+   and
+   [`setup-doc`](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3Asetup-doc)
+   queues.
+
+**Review SLA.** First reply on external PRs within 24 hours on
+weekdays. If you don't hear back in 48, ping `@bobberrisford` in the
+PR — it slipped through.
+
+If none of those fit, file an issue describing what you want to do.
 
 This document is the human-facing companion to
 [`.claude/skills/contribute/SKILL.md`](./.claude/skills/contribute/SKILL.md)
@@ -275,8 +293,8 @@ adapter's `network.json`. To add or correct a finding:
    `fix/impact-pagination`, `fix/cj-auth-error-envelope`, or
    `chore/cowork-install-flow`. Avoid vague or generated branch names that do
    not explain the work.
-2. Make sure `npm run typecheck`, `npm run lint`, `npm test`, and
-   `npm run build` are all green locally.
+2. Make sure `npm run verify` is green locally — it chains typecheck,
+   lint, test, and build. If `verify` passes, CI will pass.
 3. Open the PR with one of the templates under
    `.github/PULL_REQUEST_TEMPLATE/`:
    - For a new network adapter, use the `new-network.md` template
