@@ -1,8 +1,9 @@
 /**
- * `affiliate-networks-mcp install` — connect this MCP server to Claude.
+ * `affiliate-networks-mcp install` — connect this MCP server to AI clients.
  *
- * Detects which Claude clients are installed (Desktop, Code) and wires up the
- * `affiliate` entry for each. Desktop edits go through a safe-edit module that
+ * Detects which Claude clients are installed (Desktop, Code) and can also wire
+ * Codex directly through its local MCP config. Desktop edits go through a
+ * safe-edit module that
  * preserves any other MCP servers the user has configured and takes a
  * timestamped backup before any write. Code edits go through the `claude mcp`
  * CLI, which manages its own storage.
@@ -26,8 +27,14 @@ import {
   type CodeResult,
 } from './install/claude-code.js';
 import { detectClients, type DetectionResult } from './install/detect.js';
+import {
+  addAffiliateCodexEntry,
+  removeAffiliateCodexEntry,
+  resolveCodexConfigPath,
+  type CodexEditResult,
+} from './install/codex.js';
 
-export type InstallTarget = 'auto' | 'desktop' | 'code' | 'all' | 'cowork';
+export type InstallTarget = 'auto' | 'desktop' | 'code' | 'codex' | 'all' | 'cowork';
 
 export interface InstallOptions {
   prompter?: Prompter;
@@ -37,6 +44,7 @@ export interface InstallOptions {
   /** Overrides for tests. */
   detection?: DetectionResult;
   desktopConfigPathOverride?: string;
+  codexConfigPathOverride?: string;
   spawnClaudeCode?: import('./install/claude-code.js').SpawnFn;
   /** Override for tests — the Cowork mirror runner. */
   coworkMirror?: typeof import('./install/cowork-mirror.js').runCoworkMirror;
@@ -52,6 +60,7 @@ interface ResolvedTargets {
   desktop: boolean;
   code: boolean;
   cowork: boolean;
+  codex: boolean;
 }
 
 async function resolveTargets(
@@ -59,9 +68,10 @@ async function resolveTargets(
   target: InstallTarget,
   prompter: Prompter,
 ): Promise<ResolvedTargets | null> {
-  if (target === 'desktop') return { desktop: true, code: false, cowork: false };
-  if (target === 'code') return { desktop: false, code: true, cowork: false };
-  if (target === 'cowork') return { desktop: false, code: false, cowork: true };
+  if (target === 'desktop') return { desktop: true, code: false, cowork: false, codex: false };
+  if (target === 'code') return { desktop: false, code: true, cowork: false, codex: false };
+  if (target === 'codex') return { desktop: false, code: false, cowork: false, codex: true };
+  if (target === 'cowork') return { desktop: false, code: false, cowork: true, codex: false };
   if (target === 'all') {
     // --all is the no-prompt path. Cowork is deliberately excluded: it creates
     // a GitHub repo and is best done interactively (or via `--cowork`).
@@ -69,6 +79,7 @@ async function resolveTargets(
       desktop: detection.desktop !== 'notSupported',
       code: true,
       cowork: false,
+      codex: false,
     };
   }
 
@@ -83,13 +94,15 @@ async function resolveTargets(
     // Cowork (an org product that ships without Desktop/Code) — offer it rather
     // than dead-ending. This is the KPI path for a non-technical Cowork user.
     const choice = await prompter.menu(
-      'No Claude Desktop or Code found. Set this up for Claude Cowork (org marketplace)?',
+      'No Claude Desktop or Code found. Which client should I connect?',
       [
-        { key: 'cowork', label: 'yes — create a private GitHub mirror for Cowork' },
-        { key: 'cancel', label: 'no — make no changes' },
+        { key: 'codex', label: 'connect to Codex (OpenAI, local MCP)' },
+        { key: 'cowork', label: 'create a private GitHub mirror for Cowork' },
+        { key: 'cancel', label: 'make no changes' },
       ],
     );
-    if (choice === 'cowork') return { desktop: false, code: false, cowork: true };
+    if (choice === 'codex') return { desktop: false, code: false, cowork: false, codex: true };
+    if (choice === 'cowork') return { desktop: false, code: false, cowork: true, codex: false };
     if (detection.desktop === 'notSupported') {
       out('Claude Desktop is not supported on this platform.');
       out('Install Claude Code (https://claude.com/claude-code) and re-run.');
@@ -106,18 +119,20 @@ async function resolveTargets(
       { key: 'all', label: 'both — Claude Desktop and Claude Code' },
       { key: 'desktop', label: 'Claude Desktop only' },
       { key: 'code', label: 'Claude Code only' },
+      { key: 'codex', label: 'Codex (OpenAI, local MCP)' },
       { key: 'cowork', label: 'Claude Cowork (org marketplace via private mirror)' },
       { key: 'cancel', label: 'cancel — make no changes' },
     ]);
     if (choice === 'cancel') return null;
-    if (choice === 'desktop') return { desktop: true, code: false, cowork: false };
-    if (choice === 'code') return { desktop: false, code: true, cowork: false };
-    if (choice === 'cowork') return { desktop: false, code: false, cowork: true };
-    return { desktop: true, code: true, cowork: false };
+    if (choice === 'desktop') return { desktop: true, code: false, cowork: false, codex: false };
+    if (choice === 'code') return { desktop: false, code: true, cowork: false, codex: false };
+    if (choice === 'codex') return { desktop: false, code: false, cowork: false, codex: true };
+    if (choice === 'cowork') return { desktop: false, code: false, cowork: true, codex: false };
+    return { desktop: true, code: true, cowork: false, codex: false };
   }
 
   // Exactly one config-editable client is available.
-  return { desktop: desktopAvailable, code: codeAvailable, cowork: false };
+  return { desktop: desktopAvailable, code: codeAvailable, cowork: false, codex: false };
 }
 
 export async function runInstall(opts: InstallOptions = {}): Promise<number> {
@@ -127,8 +142,8 @@ export async function runInstall(opts: InstallOptions = {}): Promise<number> {
   const forceOverwrite = opts.forceOverwrite ?? false;
 
   out('');
-  out('  affiliate-networks-mcp — connect to Claude');
-  out('  -----------------------------------------');
+  out('  affiliate-networks-mcp — connect to AI clients');
+  out('  ---------------------------------------------');
   out('');
 
   const detection = opts.detection ?? (await detectClients());
@@ -163,7 +178,7 @@ export async function runInstall(opts: InstallOptions = {}): Promise<number> {
     targets.desktop = false;
   }
 
-  if (!targets.desktop && !targets.code) {
+  if (!targets.desktop && !targets.code && !targets.codex) {
     out('Nothing to do.');
     return 0;
   }
@@ -225,12 +240,30 @@ export async function runInstall(opts: InstallOptions = {}): Promise<number> {
     }
   }
 
+  if (targets.codex) {
+    try {
+      const result = await addAffiliateCodexEntry({
+        configPath: opts.codexConfigPathOverride ?? resolveCodexConfigPath(),
+        dryRun,
+      });
+      printCodexResult(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      out(`Codex: unexpected error — ${msg}`);
+      return 1;
+    }
+  }
+
   if (!opts.quiet) {
     out('');
     if (didDesktop && didRestart) {
       out('Restart Claude Desktop for changes to take effect.');
     }
-    out('Then ask Claude: "What affiliate networks do you have access to?"');
+    if (targets.codex) {
+      out('Open Codex, run /mcp, then ask: "What affiliate networks do you have access to?"');
+    } else {
+      out('Then ask Claude: "What affiliate networks do you have access to?"');
+    }
   }
   return 0;
 }
@@ -241,8 +274,8 @@ export async function runUninstall(opts: InstallOptions = {}): Promise<number> {
   const dryRun = opts.dryRun ?? false;
 
   out('');
-  out('  affiliate-networks-mcp — disconnect from Claude');
-  out('  ----------------------------------------------');
+  out('  affiliate-networks-mcp — disconnect from AI clients');
+  out('  --------------------------------------------------');
   out('');
 
   const detection = opts.detection ?? (await detectClients());
@@ -263,7 +296,7 @@ export async function runUninstall(opts: InstallOptions = {}): Promise<number> {
     targets.desktop = false;
   }
 
-  if (!targets.desktop && !targets.code) {
+  if (!targets.desktop && !targets.code && !targets.codex) {
     out('Nothing to do.');
     return 0;
   }
@@ -293,6 +326,20 @@ export async function runUninstall(opts: InstallOptions = {}): Promise<number> {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       out(`Claude Code: ${msg}`);
+      return 1;
+    }
+  }
+
+  if (targets.codex) {
+    try {
+      const result = await removeAffiliateCodexEntry({
+        configPath: opts.codexConfigPathOverride ?? resolveCodexConfigPath(),
+        dryRun,
+      });
+      printCodexResult(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      out(`Codex: ${msg}`);
       return 1;
     }
   }
@@ -332,6 +379,45 @@ function printDesktopResult(result: DesktopEditResult): void {
       break;
     case 'would-remove':
       out(`Claude Desktop (dry-run): would remove 'affiliate' from ${path}`);
+      break;
+  }
+  if (result.backupPath) {
+    out(`  Backup: ${result.backupPath}`);
+  }
+}
+
+function printCodexResult(result: CodexEditResult): void {
+  const path = result.path;
+  switch (result.action) {
+    case 'created':
+      out(`Codex: created ${path}`);
+      break;
+    case 'added':
+      out(`Codex: added 'affiliate' to ${path}`);
+      break;
+    case 'updated':
+      out(`Codex: updated 'affiliate' in ${path}`);
+      break;
+    case 'unchanged':
+      out(`Codex: 'affiliate' already configured in ${path} — no change`);
+      break;
+    case 'removed':
+      out(`Codex: removed 'affiliate' from ${path}`);
+      break;
+    case 'absent':
+      out(`Codex: 'affiliate' was not present in ${path}`);
+      break;
+    case 'would-create':
+      out(`Codex (dry-run): would create ${path}`);
+      break;
+    case 'would-add':
+      out(`Codex (dry-run): would add 'affiliate' to ${path}`);
+      break;
+    case 'would-update':
+      out(`Codex (dry-run): would update 'affiliate' in ${path}`);
+      break;
+    case 'would-remove':
+      out(`Codex (dry-run): would remove 'affiliate' from ${path}`);
       break;
   }
   if (result.backupPath) {

@@ -191,6 +191,23 @@ describe('runInstall — explicit targets', () => {
     expect(out()).not.toContain('Claude Desktop:');
   });
 
+  it('--codex writes Codex config and does not require the Codex CLI', async () => {
+    const desktopPath = path.join(tmp, 'claude_desktop_config.json');
+    const codexPath = path.join(tmp, '.codex', 'config.toml');
+    const code = await runInstall({
+      target: 'codex',
+      detection: { desktop: 'present', desktopConfigPath: desktopPath, code: 'present' },
+      codexConfigPathOverride: codexPath,
+      spawnClaudeCode: fakeSpawn([]), // must never be called
+    });
+    expect(code).toBe(0);
+    expect(readFileSync(codexPath, 'utf8')).toContain('[mcp_servers.affiliate]');
+    expect(readFileSync(codexPath, 'utf8')).toContain('args = ["-y", "affiliate-networks-mcp"]');
+    expect(out()).toContain('Codex: created');
+    expect(out()).not.toContain('Claude Desktop:');
+    expect(out()).not.toContain('Claude Code:');
+  });
+
   it('--cowork runs only the mirror, never touches Desktop/Code', async () => {
     const desktopPath = path.join(tmp, 'claude_desktop_config.json');
     let mirrorArgs: unknown;
