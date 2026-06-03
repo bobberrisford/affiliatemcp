@@ -6,6 +6,7 @@ coverage/
 ~/.affiliate-mcp/
 .affiliate-mcp/
 scratch/
+.draft-issues/
 .DS_Store
 *.log
 .idea/
