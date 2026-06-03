@@ -303,6 +303,35 @@ v0.1 — the client refuses any non-GET HTTP method before it leaves
 your machine. The full editorial position, including known upstream
 quirks and the read-only stance, lives in [`REPORT.md`](./REPORT.md).
 
+## Contribute in 10 minutes
+
+A first PR shouldn't take longer than an evening. The path:
+
+1. **Pick an issue.** Browse the
+   [`good-first-pr`](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3Agood-first-pr)
+   queue. Each has a file path, acceptance bullets, and a how-to-test
+   line. Comment to claim it.
+2. **Get to green.** One command runs the full pre-PR check —
+   typecheck, lint, tests, build — in a few seconds:
+
+   ```
+   git clone https://github.com/bobberrisford/affiliatemcp.git
+   cd affiliatemcp
+   npm install
+   npm run verify
+   ```
+
+   If `npm run verify` passes locally, CI will pass.
+3. **Open the PR.** Use the default template (a short summary + test
+   plan). First review within 24h on weekdays — see
+   [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the full PR process and
+   the four ranked help-wanted areas.
+
+If you work for an affiliate network, the highest-leverage contribution
+is adopting your own adapter — see the
+[`adopt-this-network`](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3Aadopt-this-network)
+issues.
+
 ## Wanted
 
 Networks people have asked for but that don't have an adapter yet. If
@@ -314,10 +343,26 @@ pile onto) a tracking issue before you start.
 <!-- AFFILIATE_MCP_WANTED_TABLE_START -->
 | Network | Side wanted | Notes | Tracking issue |
 | --- | --- | --- | --- |
-| Tradedoubler | publisher | Public REST API with token auth; publisher reporting and link generation are the priority. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Tradedoubler) |
-| Partnerize | publisher + advertiser | Has publisher- and advertiser-tier APIs; advertiser side should wait for advertiser-tier credentials. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Partnerize) |
-| Skimlinks | publisher | Publisher-only; reporting API plus link APIs. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Skimlinks) |
-| Webgains | publisher | Publisher reporting API; approval may be required for API access. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Webgains) |
+| Commission Factory | publisher + advertiser | APAC's largest network (owned by Awin Group but separate API). Public REST docs at dev.commissionfactory.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Commission%20Factory) |
+| Webgains | publisher | UK-headquartered. Smart Platform API publicly documented on Stoplight (docs.webgains.dev). | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Webgains) |
+| FlexOffers | publisher | US aggregator. Sales / Reporting / Payments APIs are public (api.flexoffers.com). | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20FlexOffers) |
+| Daisycon | publisher | NL/BE performance network. OAuth2 since 2023, public docs at developers.daisycon.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Daisycon) |
+| TradeTracker | publisher | Global, NL-headquartered. SOAP-based but functional; affiliate.tradetracker.com/webService. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20TradeTracker) |
+| Adtraction | publisher | Nordic network. v2/v3 REST docs public at apidocs.adtraction.net. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Adtraction) |
+| Adcell | publisher | DACH network (now under mrge holding). API exists for publishers but docs are dashboard-gated — expect reverse-engineering. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Adcell) |
+| ClickBank | publisher | Digital products giant. Analytics + Order APIs are public; no dev key required since 2023. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20ClickBank) |
+| Amazon Creators API | publisher | Successor to PA-API (which deprecates 15 May 2026). Docs at affiliate-program.amazon.com/creatorsapi/docs. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Amazon%20Creators%20API) |
+| TUNE (HasOffers) | publisher + advertiser | Long-running CPA platform. Public REST docs at developers.tune.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20TUNE%20(HasOffers)) |
+| Admitad | publisher | Global network, strong in CEE/EU. OAuth2 reporting API public at developers.admitad.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Admitad) |
+| ShopMy | publisher | US creator network. OAuth-based creator/brand API, public docs at docs.shopmy.us. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20ShopMy) |
+| Levanta | publisher + advertiser | Amazon-focused creator platform. /partners /products /reports endpoints public (knowledge.levanta.io/creator-api). | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Levanta) |
+| PartnerStack | publisher + advertiser | B2B SaaS partner standard. Separate Vendor + Partner APIs, both publicly documented at docs.partnerstack.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20PartnerStack) |
+| Tolt | advertiser | SaaS-focused affiliate platform. Bearer-auth REST, public docs at docs.tolt.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Tolt) |
+| Rewardful | advertiser | Stripe-native SaaS affiliate tool. Public REST docs at developers.rewardful.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Rewardful) |
+| Refersion | advertiser | Shopify-heavy affiliate platform. Full public docs at refersion.dev. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Refersion) |
+| Tapfiliate | advertiser | Mid-market multi-platform. v1.6 X-Api-Key REST, public docs at tapfiliate.com/docs/rest. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Tapfiliate) |
+| Howl (Narrativ) | publisher | Independent creator / journalist link network. API key + REST documented at docs.narrativ.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Howl%20(Narrativ)) |
+| Involve Asia | publisher | APAC's growing network. Public REST docs. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Involve%20Asia) |
 <!-- AFFILIATE_MCP_WANTED_TABLE_END -->
 
 ## Awin reference implementation

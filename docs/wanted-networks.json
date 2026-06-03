@@ -1,31 +1,143 @@
 {
   "wanted": [
     {
-      "name": "Tradedoubler",
-      "slug": "tradedoubler",
-      "side": "publisher",
-      "note": "Public REST API with token auth; publisher reporting and link generation are the priority.",
-      "issue": null
-    },
-    {
-      "name": "Partnerize",
-      "slug": "partnerize",
+      "name": "Commission Factory",
+      "slug": "commission-factory",
       "side": "both",
-      "note": "Has publisher- and advertiser-tier APIs; advertiser side should wait for advertiser-tier credentials.",
-      "issue": null
-    },
-    {
-      "name": "Skimlinks",
-      "slug": "skimlinks",
-      "side": "publisher",
-      "note": "Publisher-only; reporting API plus link APIs.",
+      "note": "APAC's largest network (owned by Awin Group but separate API). Public REST docs at dev.commissionfactory.com.",
       "issue": null
     },
     {
       "name": "Webgains",
       "slug": "webgains",
       "side": "publisher",
-      "note": "Publisher reporting API; approval may be required for API access.",
+      "note": "UK-headquartered. Smart Platform API publicly documented on Stoplight (docs.webgains.dev).",
+      "issue": null
+    },
+    {
+      "name": "FlexOffers",
+      "slug": "flexoffers",
+      "side": "publisher",
+      "note": "US aggregator. Sales / Reporting / Payments APIs are public (api.flexoffers.com).",
+      "issue": null
+    },
+    {
+      "name": "Daisycon",
+      "slug": "daisycon",
+      "side": "publisher",
+      "note": "NL/BE performance network. OAuth2 since 2023, public docs at developers.daisycon.com.",
+      "issue": null
+    },
+    {
+      "name": "TradeTracker",
+      "slug": "tradetracker",
+      "side": "publisher",
+      "note": "Global, NL-headquartered. SOAP-based but functional; affiliate.tradetracker.com/webService.",
+      "issue": null
+    },
+    {
+      "name": "Adtraction",
+      "slug": "adtraction",
+      "side": "publisher",
+      "note": "Nordic network. v2/v3 REST docs public at apidocs.adtraction.net.",
+      "issue": null
+    },
+    {
+      "name": "Adcell",
+      "slug": "adcell",
+      "side": "publisher",
+      "note": "DACH network (now under mrge holding). API exists for publishers but docs are dashboard-gated — expect reverse-engineering.",
+      "issue": null
+    },
+    {
+      "name": "ClickBank",
+      "slug": "clickbank",
+      "side": "publisher",
+      "note": "Digital products giant. Analytics + Order APIs are public; no dev key required since 2023.",
+      "issue": null
+    },
+    {
+      "name": "Amazon Creators API",
+      "slug": "amazon-creators",
+      "side": "publisher",
+      "note": "Successor to PA-API (which deprecates 15 May 2026). Docs at affiliate-program.amazon.com/creatorsapi/docs.",
+      "issue": null
+    },
+    {
+      "name": "TUNE (HasOffers)",
+      "slug": "tune",
+      "side": "both",
+      "note": "Long-running CPA platform. Public REST docs at developers.tune.com.",
+      "issue": null
+    },
+    {
+      "name": "Admitad",
+      "slug": "admitad",
+      "side": "publisher",
+      "note": "Global network, strong in CEE/EU. OAuth2 reporting API public at developers.admitad.com.",
+      "issue": null
+    },
+    {
+      "name": "ShopMy",
+      "slug": "shopmy",
+      "side": "publisher",
+      "note": "US creator network. OAuth-based creator/brand API, public docs at docs.shopmy.us.",
+      "issue": null
+    },
+    {
+      "name": "Levanta",
+      "slug": "levanta",
+      "side": "both",
+      "note": "Amazon-focused creator platform. /partners /products /reports endpoints public (knowledge.levanta.io/creator-api).",
+      "issue": null
+    },
+    {
+      "name": "PartnerStack",
+      "slug": "partnerstack",
+      "side": "both",
+      "note": "B2B SaaS partner standard. Separate Vendor + Partner APIs, both publicly documented at docs.partnerstack.com.",
+      "issue": null
+    },
+    {
+      "name": "Tolt",
+      "slug": "tolt",
+      "side": "advertiser",
+      "note": "SaaS-focused affiliate platform. Bearer-auth REST, public docs at docs.tolt.com.",
+      "issue": null
+    },
+    {
+      "name": "Rewardful",
+      "slug": "rewardful",
+      "side": "advertiser",
+      "note": "Stripe-native SaaS affiliate tool. Public REST docs at developers.rewardful.com.",
+      "issue": null
+    },
+    {
+      "name": "Refersion",
+      "slug": "refersion",
+      "side": "advertiser",
+      "note": "Shopify-heavy affiliate platform. Full public docs at refersion.dev.",
+      "issue": null
+    },
+    {
+      "name": "Tapfiliate",
+      "slug": "tapfiliate",
+      "side": "advertiser",
+      "note": "Mid-market multi-platform. v1.6 X-Api-Key REST, public docs at tapfiliate.com/docs/rest.",
+      "issue": null
+    },
+    {
+      "name": "Howl (Narrativ)",
+      "slug": "howl",
+      "side": "publisher",
+      "note": "Independent creator / journalist link network. API key + REST documented at docs.narrativ.com.",
+      "issue": null
+    },
+    {
+      "name": "Involve Asia",
+      "slug": "involve-asia",
+      "side": "publisher",
+      "note": "APAC's growing network. Public REST docs.",
       "issue": null
     }
   ]
