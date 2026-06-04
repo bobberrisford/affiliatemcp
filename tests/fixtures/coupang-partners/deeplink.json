@@ -1,0 +1,11 @@
+{
+  "rCode": "0",
+  "rMessage": "",
+  "data": [
+    {
+      "originalUrl": "https://www.coupang.com/vp/products/123456789",
+      "shortenUrl": "https://link.coupang.com/a/abc123",
+      "landingUrl": "https://www.coupang.com/vp/products/123456789?lptag=AF0000000&subId=&pageKey=123456789"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "slug": "coupang-partners",
+  "name": "Coupang Partners",
+  "base_url": "https://api-gateway.coupang.com",
+  "auth_model": "custom",
+  "env_vars": ["COUPANG_PARTNERS_ACCESS_KEY", "COUPANG_PARTNERS_SECRET_KEY"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Coupang Open API enforces strict rate limits (the affiliate product-search endpoint is documented at roughly 10 calls per hour; the reports endpoint is similarly throttled). Frequent polling returns HTTP 429.",
+    "listProgrammes / getProgramme throw NotImplementedError: Coupang Partners is a single-merchant network (the publisher promotes Coupang itself) and exposes no programme-listing API. Product search is a catalogue search, not a programme list.",
+    "listClicks throws NotImplementedError: the commission report exposes only an aggregate daily clickCount, not per-click rows.",
+    "listTransactions maps the reports/commission endpoint, which returns daily aggregate rows (date, clickCount, orderCount, gmv, commission) rather than individual orders; there is no per-row settlement status, so every transaction is normalised to status \"other\".",
+    "generateTrackingLink calls the deeplink API (POST .../v1/deeplink) and is subject to the same rate limits."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://partner-developers.coupangcorp.com/hc/ko/categories/360005470572-API-Docs"
+}
