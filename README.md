@@ -269,15 +269,29 @@ the brand-side has a more complex auth model and we skipped it.
 <!-- AFFILIATE_MCP_NETWORK_TABLE_START -->
 | Network | Setup time | Approval required | Supported ops | Notes |
 | --- | ---: | --- | ---: | --- |
+| Admitad | 15 min | no | 6 / 7 | clicks gated |
+| Adservice | 10 min | no | 6 / 7 | no clicks |
+| Adtraction | 5 min | no | 6 / 7 | no clicks |
+| Afilio | 10 min | no | 6 / 7 | no clicks |
 | Awin | 5 min | no | 6 / 7 | no clicks |
 | Awin (advertiser) | 6 min | no | 7 / 7 | see notes |
 | CJ Affiliate | 8 min | no | 6 / 7 | no clicks |
 | CJ Affiliate (advertiser) | 8 min | no | 7 / 7 | pagination quirks |
+| Commission Factory | 10 min | no | 6 / 7 | clicks gated |
+| Coupang Partners | 10 min | no | 6 / 7 | no clicks |
+| Daisycon | 15 min | no | 6 / 7 | no clicks |
 | eBay Partner Network | 10 min | yes (~3 days) | 7 / 7 | see notes |
+| Eduzz | 10 min | no | 6 / 7 | no clicks |
 | Everflow | 10 min | yes (~1 days) | 7 / 7 | see notes |
 | Everflow (Advertiser) | 10 min | no | 7 / 7 | no clicks |
+| FlexOffers | 10 min | no | 6 / 7 | no clicks |
+| Hotmart | 10 min | no | 6 / 7 | no clicks |
 | Impact | 6 min | no | 7 / 7 | upstream variability |
 | Impact (advertiser) | 8 min | no | 7 / 7 | see notes |
+| Indoleads | 5 min | no | 6 / 7 | no clicks |
+| Kwanko | 10 min | no | 6 / 7 | no clicks |
+| Lomadee | 15 min | no | 6 / 7 | no clicks |
+| Monetizze | 5 min | no | 6 / 7 | no clicks |
 | mrge | 10 min | no | 6 / 7 | no clicks |
 | Partnerize | 10 min | no | 7 / 7 | no clicks |
 | Partnerize (Advertiser) | 5 min | no | 6 / 7 | no clicks |
@@ -286,6 +300,8 @@ the brand-side has a more complex auth model and we skipped it.
 | Sovrn Commerce | 10 min | no | 6 / 7 | no clicks |
 | Tradedoubler | 15 min | no | 6 / 7 | clicks gated |
 | Tradedoubler (Advertiser) | 10 min | no | 7 / 7 | no clicks |
+| ValueCommerce | 10 min | no | 6 / 7 | no clicks |
+| Webgains | 10 min | no | 6 / 7 | no clicks |
 <!-- AFFILIATE_MCP_NETWORK_TABLE_END -->
 
 A few networks make you wait for approval (eBay, Rakuten) before they
@@ -343,17 +359,11 @@ pile onto) a tracking issue before you start.
 <!-- AFFILIATE_MCP_WANTED_TABLE_START -->
 | Network | Side wanted | Notes | Tracking issue |
 | --- | --- | --- | --- |
-| Commission Factory | publisher + advertiser | APAC's largest network (owned by Awin Group but separate API). Public REST docs at dev.commissionfactory.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Commission%20Factory) |
-| Webgains | publisher | UK-headquartered. Smart Platform API publicly documented on Stoplight (docs.webgains.dev). | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Webgains) |
-| FlexOffers | publisher | US aggregator. Sales / Reporting / Payments APIs are public (api.flexoffers.com). | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20FlexOffers) |
-| Daisycon | publisher | NL/BE performance network. OAuth2 since 2023, public docs at developers.daisycon.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Daisycon) |
 | TradeTracker | publisher | Global, NL-headquartered. SOAP-based but functional; affiliate.tradetracker.com/webService. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20TradeTracker) |
-| Adtraction | publisher | Nordic network. v2/v3 REST docs public at apidocs.adtraction.net. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Adtraction) |
 | Adcell | publisher | DACH network (now under mrge holding). API exists for publishers but docs are dashboard-gated — expect reverse-engineering. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Adcell) |
 | ClickBank | publisher | Digital products giant. Analytics + Order APIs are public; no dev key required since 2023. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20ClickBank) |
 | Amazon Creators API | publisher | Successor to PA-API (which deprecates 15 May 2026). Docs at affiliate-program.amazon.com/creatorsapi/docs. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Amazon%20Creators%20API) |
 | TUNE (HasOffers) | publisher + advertiser | Long-running CPA platform. Public REST docs at developers.tune.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20TUNE%20(HasOffers)) |
-| Admitad | publisher | Global network, strong in CEE/EU. OAuth2 reporting API public at developers.admitad.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Admitad) |
 | ShopMy | publisher | US creator network. OAuth-based creator/brand API, public docs at docs.shopmy.us. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20ShopMy) |
 | Levanta | publisher + advertiser | Amazon-focused creator platform. /partners /products /reports endpoints public (knowledge.levanta.io/creator-api). | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Levanta) |
 | PartnerStack | publisher + advertiser | B2B SaaS partner standard. Separate Vendor + Partner APIs, both publicly documented at docs.partnerstack.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20PartnerStack) |
@@ -472,6 +482,22 @@ click for credentials, and common stumbling blocks:
 - [Skimlinks](./docs/networks/skimlinks.md) — OAuth client ID + secret + publisher ID + domain ID; experimental, built from public docs.
 - [Sovrn Commerce](./docs/networks/sovrn-commerce.md) — API key + secret key; experimental, built from public docs.
 - [Tradedoubler](./docs/networks/tradedoubler.md) — bearer token + organisation ID; experimental, built from public docs.
+- [Admitad](./docs/networks/admitad.md) — OAuth2 client ID + secret + website ID; experimental, built from public docs.
+- [Adservice](./docs/networks/adservice.md) — UID + login token (cookie session); experimental, built from public docs.
+- [Adtraction](./docs/networks/adtraction.md) — API token; experimental, built from public docs.
+- [Afilio](./docs/networks/afilio.md) — affiliate token + Aff ID; experimental, built from public docs.
+- [Commission Factory](./docs/networks/commission-factory.md) — API key; experimental, built from public docs.
+- [Coupang Partners](./docs/networks/coupang-partners.md) — access key + secret key (HMAC); experimental, built from public docs.
+- [Daisycon](./docs/networks/daisycon.md) — OAuth2 client ID + secret + refresh token + publisher ID; experimental, built from public docs.
+- [Eduzz](./docs/networks/eduzz.md) — email + public key + API key; experimental, built from public docs.
+- [FlexOffers](./docs/networks/flexoffers.md) — API key; experimental, built from public docs.
+- [Hotmart](./docs/networks/hotmart.md) — OAuth2 client ID + secret; experimental, built from public docs.
+- [Indoleads](./docs/networks/indoleads.md) — bearer token; experimental, built from public docs.
+- [Kwanko](./docs/networks/kwanko.md) — API token; experimental, built from public docs.
+- [Lomadee](./docs/networks/lomadee.md) — app token + source ID + publisher ID + report login; experimental, built from public docs.
+- [Monetizze](./docs/networks/monetizze.md) — API key; experimental, built from public docs.
+- [ValueCommerce](./docs/networks/value-commerce.md) — report-API key pair; experimental, built from public docs.
+- [Webgains](./docs/networks/webgains.md) — API key + publisher ID + campaign ID; experimental, built from public docs.
 
 **Brand / advertiser side:**
 

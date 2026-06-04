@@ -357,7 +357,7 @@ export function extractTransactionNodes(tree: XmlNode): ValueCommerceTransaction
       const found = lower.get(name);
       if (found === undefined) continue;
       const arr = Array.isArray(found) ? found : [found];
-      return arr.filter((n): n is ValueCommerceTransactionRaw => typeof n === 'object' && n !== null);
+      return arr.filter((n) => typeof n === 'object' && n !== null) as unknown as ValueCommerceTransactionRaw[];
     }
     return [];
   };
