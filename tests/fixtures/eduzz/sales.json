@@ -1,0 +1,71 @@
+{
+  "profile": {
+    "start": 1717459200.0,
+    "token": "test-eduzz-jwt-please-ignore",
+    "token_valid_until": "2026-06-04T12:15:00Z",
+    "finish": 1717459200.5,
+    "process": 0.5
+  },
+  "data": [
+    {
+      "sale_id": "90001",
+      "content_id": "3001",
+      "content_title": "Curso de Marketing Digital",
+      "sale_status": "open",
+      "value": 297.0,
+      "affiliate_value": 89.1,
+      "currency": "BRL",
+      "date_create": "2026-05-20T10:00:00Z",
+      "date_payment": null,
+      "cancellation_reason": null
+    },
+    {
+      "sale_id": "90002",
+      "content_id": "3001",
+      "content_title": "Curso de Marketing Digital",
+      "sale_status": "paid",
+      "value": 297.0,
+      "affiliate_value": 89.1,
+      "currency": "BRL",
+      "date_create": "2024-01-15T08:45:00Z",
+      "date_payment": "2024-01-16T09:00:00Z",
+      "cancellation_reason": null
+    },
+    {
+      "sale_id": "90003",
+      "content_id": "3002",
+      "content_title": "Ebook Financas Pessoais",
+      "sale_status": "canceled",
+      "value": 47.0,
+      "affiliate_value": 14.1,
+      "currency": "BRL",
+      "date_create": "2025-09-10T14:20:00Z",
+      "date_payment": null,
+      "cancellation_reason": "Reembolso solicitado pelo cliente"
+    },
+    {
+      "sale_id": "90004",
+      "content_id": "3002",
+      "content_title": "Ebook Financas Pessoais",
+      "sale_status": "refunded",
+      "value": 47.0,
+      "affiliate_value": 14.1,
+      "currency": "BRL",
+      "date_create": "2026-04-01T09:30:00Z",
+      "date_payment": "2026-04-01T09:35:00Z",
+      "cancellation_reason": "Chargeback"
+    },
+    {
+      "sale_id": "90005",
+      "content_id": "3001",
+      "content_title": "Curso de Marketing Digital",
+      "sale_status": "waitingPayment",
+      "value": 297.0,
+      "affiliate_value": 89.1,
+      "currency": "BRL",
+      "date_create": "2024-02-01T11:00:00Z",
+      "date_payment": null,
+      "cancellation_reason": null
+    }
+  ]
+}
