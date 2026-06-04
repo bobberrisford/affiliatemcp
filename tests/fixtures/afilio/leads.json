@@ -1,0 +1,4 @@
+{
+  "_note": "Fake Afilio Leads API (type=lead) XML response. Reconstructed field names; no real data.",
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<leads>\n  <lead>\n    <transactionid>L-2001</transactionid>\n    <programid>5003</programid>\n    <programname>Seguros Demo</programname>\n    <status>aprovado</status>\n    <comissao>5,00</comissao>\n    <moeda>BRL</moeda>\n    <data>2026-05-20 16:00:00</data>\n  </lead>\n  <lead>\n    <transactionid>L-2002</transactionid>\n    <programid>5003</programid>\n    <programname>Seguros Demo</programname>\n    <status>pendente</status>\n    <comissao>5,00</comissao>\n    <moeda>BRL</moeda>\n    <data>2026-05-25 09:30:00</data>\n  </lead>\n</leads>\n"
+}

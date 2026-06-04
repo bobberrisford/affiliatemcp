@@ -1,0 +1,24 @@
+{
+  "slug": "afilio",
+  "name": "Afilio",
+  "base_url": "https://v2.afilio.com.br",
+  "auth_model": "custom",
+  "env_vars": ["AFILIO_AFFILIATE_TOKEN", "AFILIO_AFF_ID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Afilio documentation PDFs are served behind a WAF (HTTP 403 to automated clients), so the exact XML field names, the exact Campaign Description endpoint filename, and the full status vocabulary could not be read verbatim; field readers are defensive and all original data is preserved in rawNetworkData.",
+    "listClicks is not exposed by any documented Afilio affiliate API; the operation throws NotImplementedError.",
+    "generateTrackingLink is not implemented: Afilio deeplinks are generated inside the dashboard and no deterministic affiliate-side link format (from a campaign id + Aff ID) is documented; the operation throws NotImplementedError.",
+    "getProgramme filters the Campaign Description list client-side; Afilio does not document a single-campaign lookup endpoint.",
+    "Transaction currency defaults to BRL when the API response omits a currency field; the verbatim row is preserved in rawNetworkData."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://v2.afilio.com.br/Manual/manuais-v2.html"
+}

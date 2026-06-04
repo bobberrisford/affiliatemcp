@@ -1,0 +1,4 @@
+{
+  "_note": "Fake Afilio Leads API response with no rows.",
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<leads>\n</leads>\n"
+}
