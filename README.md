@@ -574,13 +574,16 @@ npm run build
 ## Status
 
 Beta — available now. Every bundled network adapter is live and ready to
-use today; treat this as a public beta and expect the odd rough edge. The
-publisher adapters ship as `claim_status: partial`. The three brand-side
-adapters (Awin, CJ, Impact) ship as `experimental` until exercised against
-real agency or in-house brand accounts — read-only stance and rate handling
-are in, but a few endpoint shapes remain `// TODO(verify)` until live
-confirmation. If you hit something odd on either side, open an issue — we
-treat every bug report as evidence about the underlying API.
+use today; treat this as a public beta and expect the odd rough edge.
+Eleven publisher adapters and six brand-side adapters ship across the
+bundled networks. The four longest-standing publisher adapters — Awin, CJ,
+Impact and Rakuten — ship as `claim_status: partial`; the newer publisher
+adapters and every brand-side adapter ship as `experimental` until exercised
+against real publisher, agency or in-house brand accounts. The brand side is
+read-only and rate handling is in, but a few endpoint shapes remain
+`// TODO(verify)` until live confirmation. If you hit something odd on either
+side, open an issue — we treat every bug report as evidence about the
+underlying API.
 
 ## Licence
 
