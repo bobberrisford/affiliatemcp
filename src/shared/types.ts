@@ -66,6 +66,14 @@ export interface NetworkMeta {
    * Inert metadata at this stage — no code path branches on it yet.
    */
   credentialScope: 'single-brand' | 'multi-brand';
+  /**
+   * IANA timezone (e.g. `"Europe/London"`, `"America/New_York"`) the network
+   * reports dates in when its API does not include an explicit offset.
+   * Lets cross-network consumers reason about "Awin reports in London" without
+   * stamping every Transaction row. Optional: absent means timestamps are
+   * already offset-qualified (the network returns ISO-8601 with `Z` or `±HH:MM`).
+   */
+  networkTimezone?: string;
 }
 
 export interface OperationCapability {
@@ -126,6 +134,25 @@ export interface Programme {
   commissionRate?: string | CommissionRateStructured;
   categories?: string[];
   advertiserUrl?: string;
+  /**
+   * Stable cross-network identity for the underlying merchant.
+   *
+   * When populated, consumers can group "Acme on Awin" with "Acme on CJ"
+   * without string-matching display names. Populated by the brand-resolver
+   * (see PR follow-up) from the `advertiserUrl` eTLD+1, the resolver's
+   * configured aliases, or a slugified `name` fallback.
+   *
+   * Optional in this PR; adapters begin populating in the per-network
+   * normalisation rollout. Absent means the consumer should not assume
+   * cross-network identity.
+   */
+  merchantKey?: string;
+  /**
+   * Provenance of `merchantKey`. Lets consumers weight matches —
+   * a `resolver`-sourced key is a confident identity; `fallback-name`
+   * is best-effort.
+   */
+  merchantKeySource?: 'resolver' | 'fallback-domain' | 'fallback-name' | 'none';
   rawNetworkData: unknown;
 }
 
@@ -146,6 +173,21 @@ export interface Transaction {
   programmeId: string;
   programmeName: string;
   status: TransactionStatus;
+  /**
+   * Verbatim upstream status token before mapping to the canonical
+   * `TransactionStatus` enum (e.g. Awin `"approved"`, Impact `"LOCKED"`,
+   * Tradedoubler `"A"`).
+   *
+   * Lets consumers distinguish rows that collapsed into `status: 'other'`
+   * and re-classify if their use case needs a finer split (Impact `LOCKED`
+   * is approved-and-irreversible; the canonical enum currently lumps it
+   * under `other`).
+   *
+   * Optional in this PR; adapters begin populating in the per-network
+   * normalisation rollout (Awin reference adapter first). Consumers must
+   * fall back to `status` when absent.
+   */
+  statusRaw?: string;
   amount: number;
   currency: string;
   commission: number;
@@ -156,6 +198,12 @@ export interface Transaction {
   /** Derived: age of the transaction in days at the point the adapter responded. */
   ageDays: number;
   reversalReason?: string;
+  /**
+   * Stable cross-network identity for the merchant this transaction
+   * belongs to. Inherited from the parent `Programme.merchantKey` at the
+   * tool layer; see `Programme.merchantKey` for semantics and provenance.
+   */
+  merchantKey?: string;
   rawNetworkData: unknown;
 }
 

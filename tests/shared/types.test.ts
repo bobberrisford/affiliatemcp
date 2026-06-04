@@ -5,7 +5,12 @@
 
 import { describe, expect, it } from 'vitest';
 import { NotImplementedError } from '../../src/shared/types.js';
-import type { NetworkErrorEnvelope, Programme, Transaction } from '../../src/shared/types.js';
+import type {
+  NetworkErrorEnvelope,
+  NetworkMeta,
+  Programme,
+  Transaction,
+} from '../../src/shared/types.js';
 
 describe('shared types', () => {
   it('NotImplementedError carries a reason', () => {
@@ -52,5 +57,58 @@ describe('shared types', () => {
       timestamp: new Date().toISOString(),
     };
     expect(env.type).toBe('auth_error');
+  });
+
+  it('Programme accepts additive cross-network identity fields', () => {
+    const p: Programme = {
+      id: 'X',
+      name: 'Acme',
+      network: 'awin',
+      status: 'joined',
+      rawNetworkData: {},
+      merchantKey: 'acme.com',
+      merchantKeySource: 'fallback-domain',
+    };
+    expect(p.merchantKey).toBe('acme.com');
+    expect(p.merchantKeySource).toBe('fallback-domain');
+  });
+
+  it('Transaction accepts additive statusRaw and merchantKey fields', () => {
+    const t: Transaction = {
+      id: 't1',
+      network: 'impact',
+      programmeId: 'p1',
+      programmeName: 'P',
+      status: 'other',
+      statusRaw: 'LOCKED',
+      amount: 10,
+      currency: 'USD',
+      commission: 1,
+      dateConverted: '2026-01-01T00:00:00Z',
+      ageDays: 7,
+      merchantKey: 'acme.com',
+      rawNetworkData: {},
+    };
+    expect(t.statusRaw).toBe('LOCKED');
+    expect(t.merchantKey).toBe('acme.com');
+  });
+
+  it('NetworkMeta accepts optional networkTimezone', () => {
+    const meta: NetworkMeta = {
+      slug: 'awin',
+      name: 'Awin',
+      baseUrl: 'https://api.awin.com',
+      authModel: 'bearer',
+      adapterVersion: '0.1.0',
+      claimStatus: 'partial',
+      knownLimitations: [],
+      supportsBrandOps: false,
+      setupTimeEstimateMinutes: 5,
+      setupRequiresApproval: false,
+      side: 'publisher',
+      credentialScope: 'single-brand',
+      networkTimezone: 'Europe/London',
+    };
+    expect(meta.networkTimezone).toBe('Europe/London');
   });
 });
