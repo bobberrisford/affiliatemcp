@@ -1,0 +1,24 @@
+{
+  "slug": "indoleads",
+  "name": "Indoleads",
+  "base_url": "https://app.indoleads.com/api",
+  "auth_model": "bearer",
+  "env_vars": ["INDOLEADS_API_TOKEN"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "The exact conversions-report endpoint path and its response field names could not be confirmed from the public documentation snippets (the full Confluence API page is access-gated); the adapter targets GET /api/conversions and reads field names defensively. BLOCKED(verify): confirm the path and payload shape against a live account.",
+    "listClicks is not exposed via the public Indoleads publisher API; the operation throws NotImplementedError.",
+    "getProgramme has no single-offer endpoint documented publicly; it is derived by filtering the GET /api/offers listing client-side.",
+    "The Indoleads API token can be supplied either as an Authorization: Bearer header or as a ?token= GET parameter; this adapter uses the Authorization header.",
+    "Maximum date window per conversions-report call is not publicly documented; a live account test is required to confirm no server-side cap exists."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://indoleads.atlassian.net/wiki/spaces/PUB/pages/53476781/API"
+}
