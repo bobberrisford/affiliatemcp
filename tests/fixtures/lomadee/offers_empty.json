@@ -1,0 +1,5 @@
+{
+  "requestInfo": { "status": "OK", "message": "no offers" },
+  "pagination": { "page": 1, "totalPage": 0, "size": 0 },
+  "offers": []
+}

@@ -1,0 +1,11 @@
+{
+  "requestInfo": { "status": "OK", "message": "success" },
+  "links": [
+    {
+      "id": "1",
+      "link": "https://www.lomadee.com/programa/BR/abc123",
+      "redirectLink": "https://redir.lomadee.com/v2/d/abc123",
+      "originalLink": "https://www.exemplo-loja.test/smartphone-xyz"
+    }
+  ]
+}

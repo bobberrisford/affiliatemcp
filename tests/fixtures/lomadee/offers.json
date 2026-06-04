@@ -1,0 +1,50 @@
+{
+  "requestInfo": { "status": "OK", "message": "success" },
+  "pagination": { "page": 1, "totalPage": 1, "size": 4 },
+  "offers": [
+    {
+      "id": "900001",
+      "name": "Smartphone XYZ 128GB",
+      "link": "https://www.exemplo-loja.test/smartphone-xyz",
+      "price": 1299.9,
+      "priceFrom": 1599.9,
+      "store": {
+        "id": "2001",
+        "name": "Loja Exemplo Eletronicos",
+        "link": "https://www.exemplo-loja.test/",
+        "thumbnail": "https://img.exemplo-loja.test/logo.png"
+      },
+      "category": { "id": "10", "name": "Eletronicos" }
+    },
+    {
+      "id": "900002",
+      "name": "Fone de Ouvido Bluetooth",
+      "link": "https://www.exemplo-loja.test/fone-bluetooth",
+      "price": 199.9,
+      "store": {
+        "id": "2001",
+        "name": "Loja Exemplo Eletronicos",
+        "link": "https://www.exemplo-loja.test/"
+      },
+      "category": { "id": "10", "name": "Eletronicos" }
+    },
+    {
+      "id": "900003",
+      "name": "Livro de Receitas",
+      "link": "https://www.exemplo-livros.test/livro-receitas",
+      "price": 49.9,
+      "store": {
+        "id": "2002",
+        "name": "Livraria Exemplo",
+        "link": "https://www.exemplo-livros.test/"
+      },
+      "category": { "id": "20", "name": "Livros" }
+    },
+    {
+      "id": "900004",
+      "name": "Oferta sem loja identificada",
+      "link": "https://www.exemplo.test/oferta",
+      "price": 10.0
+    }
+  ]
+}
