@@ -1,0 +1,60 @@
+{
+  "data": [
+    {
+      "id": "30001",
+      "campaign_id": "5001",
+      "campaign_name": "Voyages Exemple SARL",
+      "status": "pending",
+      "amount": 120.00,
+      "commission": 6.00,
+      "currency": "EUR",
+      "click_date": "2026-04-02T09:00:00Z",
+      "conversion_date": "2026-04-02T09:20:00Z",
+      "validation_date": null,
+      "payment_date": null,
+      "refusal_reason": null
+    },
+    {
+      "id": "30002",
+      "campaign_id": "5001",
+      "campaign_name": "Voyages Exemple SARL",
+      "status": "validated",
+      "amount": 250.00,
+      "commission": 12.50,
+      "currency": "EUR",
+      "click_date": "2024-01-10T08:00:00Z",
+      "conversion_date": "2024-01-10T08:30:00Z",
+      "validation_date": "2024-01-18T11:00:00Z",
+      "payment_date": null,
+      "refusal_reason": null
+    },
+    {
+      "id": "30003",
+      "campaign_id": "5002",
+      "campaign_name": "Boutique Test SAS",
+      "status": "refused",
+      "amount": 40.00,
+      "commission": 2.00,
+      "currency": "EUR",
+      "click_date": "2025-09-12T14:00:00Z",
+      "conversion_date": "2025-09-12T14:25:00Z",
+      "validation_date": "2025-09-16T10:00:00Z",
+      "payment_date": null,
+      "refusal_reason": "Commande annulee par le client"
+    },
+    {
+      "id": "30004",
+      "campaign_id": "5002",
+      "campaign_name": "Boutique Test SAS",
+      "status": "paid",
+      "amount": 90.00,
+      "commission": 4.50,
+      "currency": "EUR",
+      "click_date": "2024-09-02T09:00:00Z",
+      "conversion_date": "2024-09-02T09:40:00Z",
+      "validation_date": "2024-09-07T10:00:00Z",
+      "payment_date": "2024-10-01T00:00:00Z",
+      "refusal_reason": null
+    }
+  ]
+}
