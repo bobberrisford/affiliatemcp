@@ -11,7 +11,7 @@ clients (Claude Desktop, Claude Code, others). The user brings their own API
 credentials; the server is local-only, no hosted version, no telemetry. UK
 English throughout, including the canonical noun "programme".
 
-The project is pre-launch. The full state of each network's adapter — what
+The project is in public beta. The full state of each network's adapter — what
 ships, what is stubbed, what is known to misbehave — is in `REPORT.md`.
 
 ## Product north star
