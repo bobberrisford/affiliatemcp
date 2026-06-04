@@ -1,0 +1,8 @@
+{
+  "Id": "5003",
+  "Name": "Example Gadgets Ltd",
+  "CommissionType": "Percentage",
+  "CommissionRate": 7.5,
+  "Status": "Available",
+  "TargetUrl": "https://www.examplegadgets.test/"
+}

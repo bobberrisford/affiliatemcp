@@ -1,0 +1,24 @@
+{
+  "slug": "flexoffers",
+  "name": "FlexOffers",
+  "base_url": "https://api.flexoffers.com",
+  "auth_model": "custom",
+  "env_vars": ["FLEXOFFERS_API_KEY", "FLEXOFFERS_ACCOUNT_ID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "listProgrammes / getProgramme are not implemented: the publisher-side advertiser/programme listing endpoint shape is not documented well enough publicly to map joined-programme status reliably; both operations throw NotImplementedError until verified against a live account.",
+    "listClicks is not exposed as a click-level endpoint via the public FlexOffers Web Service API (only aggregated click counts appear in sales reports); the operation throws NotImplementedError.",
+    "generateTrackingLink builds a FlexLinks redirect URL (track.flexlinkspro.com) deterministically from FLEXOFFERS_ACCOUNT_ID and the advertiser id passed as programmeId; the exact redirect parameter names are taken from public link examples and require live verification.",
+    "The API key header name (apiKey) and the /allsales pagination parameter are taken from public integration write-ups, not a confirmed live response.",
+    "Per-row currency is read from each sales row; FlexOffers is a US aggregator and most rows clear in USD, but the adapter never hardcodes currency."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://www.flexoffers.com/publishers/web-service-api/"
+}

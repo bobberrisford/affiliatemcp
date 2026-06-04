@@ -1,0 +1,89 @@
+{
+  "results": [
+    {
+      "action_id": "90001",
+      "advcampaign_id": "3001",
+      "advcampaign_name": "Example Books Ltd",
+      "status": "pending",
+      "payment": 5.50,
+      "cart": 55.00,
+      "currency": "EUR",
+      "click_date": "2026-04-01 10:00:00",
+      "action_date": "2026-04-01 10:15:00",
+      "closing_date": null,
+      "payment_status": 0,
+      "comment": null,
+      "subid": "",
+      "order_id": "ORD-1"
+    },
+    {
+      "action_id": "90002",
+      "advcampaign_id": "3001",
+      "advcampaign_name": "Example Books Ltd",
+      "status": "approved",
+      "payment": 12.75,
+      "cart": 127.50,
+      "currency": "EUR",
+      "click_date": "2024-01-15 08:30:00",
+      "action_date": "2024-01-15 08:45:00",
+      "closing_date": "2024-01-20 12:00:00",
+      "payment_status": 0,
+      "comment": null,
+      "subid": "sub123",
+      "order_id": "ORD-2"
+    },
+    {
+      "action_id": "90003",
+      "advcampaign_id": "3002",
+      "advcampaign_name": "Test Electronics Co",
+      "status": "declined",
+      "payment": 3.20,
+      "cart": 32.00,
+      "currency": "EUR",
+      "click_date": "2025-09-10 14:00:00",
+      "action_date": "2025-09-10 14:20:00",
+      "closing_date": "2025-09-15 09:00:00",
+      "payment_status": 0,
+      "comment": "Customer returned the item within 30 days",
+      "subid": "",
+      "order_id": "ORD-3"
+    },
+    {
+      "action_id": "90004",
+      "advcampaign_id": "3002",
+      "advcampaign_name": "Test Electronics Co",
+      "status": "approved",
+      "payment": 8.00,
+      "cart": 80.00,
+      "currency": "EUR",
+      "click_date": "2024-09-01 09:00:00",
+      "action_date": "2024-09-01 09:30:00",
+      "closing_date": "2024-09-05 10:00:00",
+      "payment_status": 1,
+      "comment": null,
+      "subid": "",
+      "order_id": "ORD-4"
+    },
+    {
+      "action_id": "90005",
+      "advcampaign_id": "3003",
+      "advcampaign_name": "Niche Coffee Roasters",
+      "status": "approved_but_stalled",
+      "payment": 2.10,
+      "cart": 21.00,
+      "currency": "EUR",
+      "click_date": "2026-05-01 12:00:00",
+      "action_date": "2026-05-01 12:05:00",
+      "closing_date": "2026-05-03 08:00:00",
+      "payment_status": 0,
+      "comment": null,
+      "subid": "",
+      "order_id": "ORD-5"
+    }
+  ],
+  "_meta": {
+    "count": 5,
+    "limit": 500,
+    "offset": 0
+  }
+}

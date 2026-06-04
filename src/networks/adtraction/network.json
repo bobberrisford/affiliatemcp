@@ -1,0 +1,24 @@
+{
+  "slug": "adtraction",
+  "name": "Adtraction",
+  "base_url": "https://api.adtraction.com",
+  "auth_model": "custom",
+  "env_vars": ["ADTRACTION_API_TOKEN"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Authentication is a single API access token sent as a `token` query parameter (not a header); auth_model is \"custom\".",
+    "listClicks is not exposed via the Adtraction affiliate API; the operation throws NotImplementedError.",
+    "generateTrackingLink cannot be constructed deterministically from credentials: Adtraction tracking links are programme-specific and are returned by the programmes endpoint per approved programme. The operation throws NotImplementedError; use the trackingURL on the Programme returned by listProgrammes / getProgramme.",
+    "Exact v3 endpoint paths (/v3/affiliate/transactions/, /v3/affiliate/programs/), the request/response field names, and the API host (api.adtraction.com vs api.adtraction.net) are inferred from public docs and third-party guides; BLOCKED(verify) against a live account.",
+    "Rate limit is approximately 30 requests/minute (some endpoints 10/minute); heavy date windows may need to be split by the caller."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://adtractionv3.docs.apiary.io/"
+}

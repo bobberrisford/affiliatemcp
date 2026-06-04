@@ -1,0 +1,32 @@
+[
+  {
+    "id": "3001",
+    "name": "Example Travel BV",
+    "status": "active",
+    "media_subscription_status": "subscribed",
+    "currency_code": "EUR",
+    "commission": "8% of order value",
+    "categories": [{ "name": "Travel" }, { "name": "Holidays" }],
+    "url": "https://www.exampletravel.test/"
+  },
+  {
+    "id": "3002",
+    "name": "Test Electronics GmbH",
+    "status": "active",
+    "media_subscription_status": "subscribed",
+    "currency_code": "EUR",
+    "commission": { "type": "tiered", "tiers": [{ "value": 3 }, { "value": 5 }] },
+    "categories": ["Electronics"],
+    "website": "https://www.testelectronics.test/"
+  },
+  {
+    "id": "3003",
+    "name": "Pending Fashion Store",
+    "status": "pending",
+    "media_subscription_status": "pending",
+    "currency_code": "EUR",
+    "commission": "5%",
+    "categories": [{ "name": "Fashion" }],
+    "url": "https://www.pendingfashion.test/"
+  }
+]

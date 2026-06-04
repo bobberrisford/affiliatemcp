@@ -1,0 +1,58 @@
+[
+  {
+    "id": "70001",
+    "program_id": "3001",
+    "program_name": "Example Travel BV",
+    "status": "open",
+    "currency_code": "EUR",
+    "amount": "120.00",
+    "commission": "9.60",
+    "date_click": "2026-04-01T10:00:00Z",
+    "date": "2026-04-01T10:20:00Z",
+    "date_modified": "2026-04-02T08:00:00Z",
+    "date_paid": null,
+    "disapproved_reason": null
+  },
+  {
+    "id": "70002",
+    "program_id": "3001",
+    "program_name": "Example Travel BV",
+    "status": "approved",
+    "currency_code": "EUR",
+    "amount": "250.00",
+    "commission": "20.00",
+    "date_click": "2024-01-15T08:30:00Z",
+    "date": "2024-01-15T08:45:00Z",
+    "date_modified": "2024-01-20T12:00:00Z",
+    "date_paid": null,
+    "disapproved_reason": null
+  },
+  {
+    "id": "70003",
+    "program_id": "3002",
+    "program_name": "Test Electronics GmbH",
+    "status": "disapproved",
+    "currency_code": "GBP",
+    "amount": "40.00",
+    "commission": "3.20",
+    "date_click": "2025-09-10T14:00:00Z",
+    "date": "2025-09-10T14:20:00Z",
+    "date_modified": "2025-09-15T09:00:00Z",
+    "date_paid": null,
+    "disapproved_reason": "Order cancelled by the customer"
+  },
+  {
+    "id": "70004",
+    "program_id": "3002",
+    "program_name": "Test Electronics GmbH",
+    "status": "paid",
+    "currency_code": "EUR",
+    "amount": "80.00",
+    "commission": "8.00",
+    "date_click": "2024-09-01T09:00:00Z",
+    "date": "2024-09-01T09:30:00Z",
+    "date_modified": "2024-09-05T10:00:00Z",
+    "date_paid": "2024-10-01T00:00:00Z",
+    "disapproved_reason": null
+  }
+]
