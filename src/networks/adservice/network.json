@@ -1,0 +1,24 @@
+{
+  "slug": "adservice",
+  "name": "Adservice",
+  "base_url": "https://api.adservice.com/cgi-bin/publisher/API",
+  "auth_model": "custom",
+  "env_vars": ["ADSERVICE_UID", "ADSERVICE_LOGIN_TOKEN", "ADSERVICE_AFFILIATE_ID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Authentication uses a UID and a LoginToken supplied as cookies on every request, obtained via /Account.pl/loginToken; auth_model is \"custom\". The login exchange shape is BLOCKED(verify) — the documentation host returns HTTP 403 to automated fetches, so the adapter takes UID and LoginToken as configured credentials.",
+    "The Statistics.pl reporting endpoint returns AGGREGATE statistics grouped by a dimension (campaign, date, etc.), not row-level conversions. listTransactions maps each aggregate group to a summary Transaction (summed commission, pending vs. settled status); it does not return individual sales. Whether a row-level conversion endpoint exists is BLOCKED(verify).",
+    "listClicks throws NotImplementedError: Statistics.pl exposes aggregate click counts only; no row-level click-event endpoint (per-click timestamp/referrer) is documented in the accessible public API.",
+    "generateTrackingLink throws NotImplementedError: the deeplink/redirect URL format is not documented in any accessible public source.",
+    "Exact Statistics.pl / Campaigns.pl response field names and the precise base host (api.adservice.com vs publisher.adservice.com) are inferred from public docs and third-party guides; BLOCKED(verify) against a live account."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://publisher.adservice.com/doc/publisher/API/Statistics_pl.html"
+}

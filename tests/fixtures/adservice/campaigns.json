@@ -1,0 +1,31 @@
+{
+  "campaigns": [
+    {
+      "camp_id": "3001",
+      "camp_title": "Nordic Outdoor AB",
+      "status": "active",
+      "currency": "SEK",
+      "url": "https://www.nordicoutdoor.test/",
+      "category": "Outdoor & Sports",
+      "country": "SE"
+    },
+    {
+      "camp_id": "3002",
+      "camp_title": "Helsinki Home Oy",
+      "status": "pending",
+      "currency": "EUR",
+      "url": "https://www.helsinkihome.test/",
+      "category": "Home & Garden",
+      "country": "FI"
+    },
+    {
+      "camp_id": "3003",
+      "camp_title": "Oslo Gadgets AS",
+      "status": "paused",
+      "currency": "NOK",
+      "url": "https://www.oslogadgets.test/",
+      "category": "Electronics",
+      "country": "NO"
+    }
+  ]
+}
