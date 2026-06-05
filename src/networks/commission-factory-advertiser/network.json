@@ -1,0 +1,23 @@
+{
+  "slug": "commission-factory-advertiser",
+  "name": "Commission Factory (advertiser)",
+  "base_url": "https://api.commissionfactory.com/V1/",
+  "auth_model": "custom",
+  "env_vars": ["COMMISSION_FACTORY_ADVERTISER_API_KEY", "COMMISSION_FACTORY_ADVERTISER_MERCHANT_ID"],
+  "setup_time_estimate_minutes": 7,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Read-only at v0.1. The adapter refuses any non-GET HTTP method client-side.",
+    "A merchant API key addresses exactly one merchant; the merchant surface has no \"list my accounts\" endpoint. `listBrands()` therefore returns a single brand. credential_scope is declared multi-brand for uniformity with the other advertiser adapters.",
+    "getProgrammePerformance is a client-side per-publisher rollup of GET /Merchant/Transactions grouped by AffiliateId. Clicks are not reported on the merchant transactions surface, so per-row clicks are 0.",
+    "Pagination parameters for GET /Merchant/Transactions are not documented publicly; the adapter requests the full date window in a single call."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "multi-brand",
+  "docs_url": "https://dev.commissionfactory.com/V1/"
+}
