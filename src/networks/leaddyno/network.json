@@ -1,0 +1,26 @@
+{
+  "slug": "leaddyno",
+  "name": "LeadDyno",
+  "base_url": "https://api.leaddyno.com",
+  "auth_model": "custom",
+  "env_vars": ["LEADDYNO_API_KEY"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).",
+    "Authentication is a private key passed as the `key` query parameter (auth_model: custom), not a bearer or basic header. The key grants full account access; keep it secret.",
+    "advertiser + single-brand: one private key scopes one LeadDyno (merchant) account. Bind your single brand in brands.json manually.",
+    "Transactions are derived from GET /v1/purchases. Purchases carry purchase_amount and a cancelled flag but no per-purchase commission or currency; commission and currency live on the separate per-affiliate /commissions resource, so listTransactions reports commission as the commission_amount_override when present and currency falls back to a configured default. TODO(verify) against a live account.",
+    "Amount unit is assumed to be major units (e.g. 49.0 = 49.00), not minor units / cents, per the documented purchase examples. TODO(verify).",
+    "listClicks is unsupported: LeadDyno tracks visitors and leads, not raw click records, via this API.",
+    "generateTrackingLink is unsupported: affiliate links belong to individual affiliates (affiliate_url); the merchant API does not mint per-destination links.",
+    "Pagination is page-based, 100 records per page, sorted oldest-first. Pagination is capped at MAX_PAGES with a warning rather than a silent truncation."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "single-brand",
+  "docs_url": "https://app.theneo.io/leaddyno/leaddyno-rest-api"
+}

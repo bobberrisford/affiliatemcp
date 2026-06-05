@@ -1,0 +1,26 @@
+{
+  "slug": "partnero",
+  "name": "Partnero",
+  "base_url": "https://api.partnero.com",
+  "auth_model": "bearer",
+  "env_vars": ["PARTNERO_API_KEY"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).",
+    "transaction / reward / partner field names and the amount unit (assumed major currency units, per the PHP SDK example setAmount(99.99) and the is_currency / amount_units fields) have not been confirmed against a live account; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).",
+    "advertiser + single-brand: one API token scopes one Partnero programme (the token is generated per programme). Bind your single brand in brands.json manually.",
+    "listProgrammes / getProgramme return a single synthetic programme: Partnero has no /programs list endpoint, so the programme is modelled from the configured token and the supplied brand context.",
+    "listClicks is unsupported: Partnero exposes no raw click records via this API.",
+    "generateTrackingLink is unsupported: referral links belong to an individual partner; the merchant API does not mint per-destination links.",
+    "getProgrammePerformance is computed client-side from /transactions grouped by (partner, day). Clicks are not available from transactions and are reported as 0.",
+    "Commission per transaction is read from the transaction reward(s); a transaction with no reward contributes 0 commission."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "single-brand",
+  "docs_url": "https://developers.partnero.com/reference/general.html"
+}

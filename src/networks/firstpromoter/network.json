@@ -1,0 +1,25 @@
+{
+  "slug": "firstpromoter",
+  "name": "FirstPromoter",
+  "base_url": "https://api.firstpromoter.com",
+  "auth_model": "bearer",
+  "env_vars": ["FIRSTPROMOTER_API_KEY", "FIRSTPROMOTER_ACCOUNT_ID"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).",
+    "commission / promoter / campaign / referral field names and the amount unit (assumed minor units / cents) have not been confirmed against a live account; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).",
+    "advertiser + single-brand: one API key + account id pair scopes one FirstPromoter (merchant) account. Bind your single brand in brands.json manually.",
+    "listClicks is unsupported: the v2 admin API exposes aggregate click counts in reports, not raw click records.",
+    "generateTrackingLink is unsupported: referral links belong to individual promoters; the merchant API does not mint per-destination links.",
+    "getProgrammePerformance is computed client-side from /commissions grouped by (promoter, day). Clicks are not available from /commissions and are reported as 0.",
+    "Pagination is via the Link header (rel=\"next\"); wide pulls follow it page by page, capped at MAX_PAGES with a warning rather than a silent truncation. FirstPromoter rate-limits the API and returns HTTP 429, which the resilience layer retries."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "single-brand",
+  "docs_url": "https://docs.firstpromoter.com/api-reference-v2/api-admin/introduction"
+}

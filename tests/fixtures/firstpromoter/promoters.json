@@ -1,0 +1,32 @@
+[
+  {
+    "id": 5001,
+    "email": "alpha@example.com",
+    "name": "Alpha Reviewer",
+    "cust_id": "cus_alpha",
+    "state": "active",
+    "stats": {
+      "clicks_count": 120,
+      "referrals_count": 8,
+      "sales_count": 5,
+      "customers_count": 5,
+      "revenue_amount": 75000,
+      "active_customers_count": 4
+    }
+  },
+  {
+    "id": 5002,
+    "email": "beta@example.com",
+    "name": "",
+    "cust_id": null,
+    "state": "pending",
+    "stats": {
+      "clicks_count": 10,
+      "referrals_count": 1,
+      "sales_count": 0,
+      "customers_count": 0,
+      "revenue_amount": 0,
+      "active_customers_count": 0
+    }
+  }
+]

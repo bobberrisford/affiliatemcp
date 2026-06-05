@@ -50,18 +50,22 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Eduzz | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Everflow | 10 | yes (~1 days) | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-28 |
 | Everflow (Advertiser) | 10 | no | 7 / 7 | 6 | experimental | 0.2.0 | 2026-05-28 |
+| FirstPromoter | 5 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-05 |
 | FlexOffers | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| GrowSurf | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-05 |
 | Hotmart | 10 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-04 |
 | Impact | 6 | no | 7 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
 | Impact (advertiser) | 8 | no | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-23 |
 | Indoleads | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Kwanko | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-04 |
 | Kwanko (advertiser) | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
+| LeadDyno | 5 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-05 |
 | Lomadee | 15 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
 | Monetizze | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | mrge | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 | Partnerize | 10 | no | 7 / 7 | 4 | experimental | 0.1.0 | 2026-05-28 |
 | Partnerize (Advertiser) | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
+| Partnero | 5 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-05 |
 | PartnerStack | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | PartnerStack (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Rakuten Advertising | 12 | yes (~5 days) | 6 / 7 | 3 | partial | 0.1.0 | 2026-05-21 |
@@ -1606,6 +1610,47 @@ documentation, though live-account verification is still required before product
 Original: 2026-05-28  
 Hardening pass: 2026-05-28
 
+## FirstPromoter
+
+### Quick facts
+
+- **Slug**: `firstpromoter`
+- **Auth model**: bearer
+- **Base URL**: https://api.firstpromoter.com
+- **Environment variables**: `FIRSTPROMOTER_API_KEY`, `FIRSTPROMOTER_ACCOUNT_ID`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://docs.firstpromoter.com/api-reference-v2/api-admin/introduction
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).
+- commission / promoter / campaign / referral field names and the amount unit (assumed minor units / cents) have not been confirmed against a live account; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).
+- advertiser + single-brand: one API key + account id pair scopes one FirstPromoter (merchant) account. Bind your single brand in brands.json manually.
+- listClicks is unsupported: the v2 admin API exposes aggregate click counts in reports, not raw click records.
+- generateTrackingLink is unsupported: referral links belong to individual promoters; the merchant API does not mint per-destination links.
+- getProgrammePerformance is computed client-side from /commissions grouped by (promoter, day). Clicks are not available from /commissions and are reported as 0.
+- Pagination is via the Link header (rel="next"); wide pulls follow it page by page, capped at MAX_PAGES with a warning rather than a silent truncation. FirstPromoter rate-limits the API and returns HTTP 429, which the resilience layer retries.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/firstpromoter.md`._
+
 ## FlexOffers
 
 ### Quick facts
@@ -1645,6 +1690,47 @@ Hardening pass: 2026-05-28
 ### Findings
 
 _No findings document was supplied at `docs/findings/flexoffers.md`._
+
+## GrowSurf
+
+### Quick facts
+
+- **Slug**: `growsurf`
+- **Auth model**: bearer
+- **Base URL**: https://api.growsurf.com
+- **Environment variables**: `GROWSURF_API_KEY`, `GROWSURF_CAMPAIGN_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://docs.growsurf.com/developer-tools/rest-api
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).
+- GrowSurf is referral-credit oriented, not classic CPS. The API exposes no monetary commission per referral event, so each participant with referral credit is mapped to one Transaction whose amount/commission is the referral COUNT (not money) and whose currency is the sentinel "CREDIT". Reward fulfilment (coupons, credit, gift cards) is configured per campaign and not returned per event.
+- advertiser + single-brand: one API key + campaign id pair scopes one GrowSurf programme. Bind your single brand in brands.json manually.
+- listClicks is unsupported: GrowSurf exposes impression counts on participants, not raw click records.
+- generateTrackingLink is unsupported: a participant share URL (e.g. shareUrl) is minted per participant, not derivable from a destination URL via the merchant API.
+- The participants list wrapper key and the campaign reward field names have not been confirmed against a live account; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).
+- Participant list pagination is cursor-based (nextId / more); wide pulls are capped at MAX_PAGES with a warning rather than a silent truncation.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/growsurf.md`._
 
 ## Hotmart
 
@@ -2066,6 +2152,48 @@ _No findings document was supplied at `docs/findings/kwanko.md`._
 ### Findings
 
 _No findings document was supplied at `docs/findings/kwanko-advertiser.md`._
+
+## LeadDyno
+
+### Quick facts
+
+- **Slug**: `leaddyno`
+- **Auth model**: custom
+- **Base URL**: https://api.leaddyno.com
+- **Environment variables**: `LEADDYNO_API_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://app.theneo.io/leaddyno/leaddyno-rest-api
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).
+- Authentication is a private key passed as the `key` query parameter (auth_model: custom), not a bearer or basic header. The key grants full account access; keep it secret.
+- advertiser + single-brand: one private key scopes one LeadDyno (merchant) account. Bind your single brand in brands.json manually.
+- Transactions are derived from GET /v1/purchases. Purchases carry purchase_amount and a cancelled flag but no per-purchase commission or currency; commission and currency live on the separate per-affiliate /commissions resource, so listTransactions reports commission as the commission_amount_override when present and currency falls back to a configured default. TODO(verify) against a live account.
+- Amount unit is assumed to be major units (e.g. 49.0 = 49.00), not minor units / cents, per the documented purchase examples. TODO(verify).
+- listClicks is unsupported: LeadDyno tracks visitors and leads, not raw click records, via this API.
+- generateTrackingLink is unsupported: affiliate links belong to individual affiliates (affiliate_url); the merchant API does not mint per-destination links.
+- Pagination is page-based, 100 records per page, sorted oldest-first. Pagination is capped at MAX_PAGES with a warning rather than a silent truncation.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/leaddyno.md`._
 
 ## Lomadee
 
@@ -2834,6 +2962,48 @@ Credentials needed: `PARTNERIZE_APPLICATION_KEY` + `PARTNERIZE_USER_API_KEY`.
 4. Promote `claim_status` from `experimental` to `partial` once the core
    operations (listBrands, listTransactions, listMediaPartners,
    getProgrammePerformance) are confirmed against a live account.
+
+## Partnero
+
+### Quick facts
+
+- **Slug**: `partnero`
+- **Auth model**: bearer
+- **Base URL**: https://api.partnero.com
+- **Environment variables**: `PARTNERO_API_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://developers.partnero.com/reference/general.html
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).
+- transaction / reward / partner field names and the amount unit (assumed major currency units, per the PHP SDK example setAmount(99.99) and the is_currency / amount_units fields) have not been confirmed against a live account; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).
+- advertiser + single-brand: one API token scopes one Partnero programme (the token is generated per programme). Bind your single brand in brands.json manually.
+- listProgrammes / getProgramme return a single synthetic programme: Partnero has no /programs list endpoint, so the programme is modelled from the configured token and the supplied brand context.
+- listClicks is unsupported: Partnero exposes no raw click records via this API.
+- generateTrackingLink is unsupported: referral links belong to an individual partner; the merchant API does not mint per-destination links.
+- getProgrammePerformance is computed client-side from /transactions grouped by (partner, day). Clicks are not available from transactions and are reported as 0.
+- Commission per transaction is read from the transaction reward(s); a transaction with no reward contributes 0 commission.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/partnero.md`._
 
 ## PartnerStack
 
@@ -4220,4 +4390,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-05 12:41 UTC._
+_Last regenerated 2026-06-05 19:40 UTC._

@@ -288,18 +288,22 @@ the brand-side has a more complex auth model and we skipped it.
 | Eduzz | 10 min | no | 6 / 7 | no clicks |
 | Everflow | 10 min | yes (~1 days) | 7 / 7 | see notes |
 | Everflow (Advertiser) | 10 min | no | 7 / 7 | no clicks |
+| FirstPromoter | 5 min | no | 6 / 7 | no clicks |
 | FlexOffers | 10 min | no | 6 / 7 | no clicks |
+| GrowSurf | 10 min | no | 6 / 7 | no clicks |
 | Hotmart | 10 min | no | 6 / 7 | no clicks |
 | Impact | 6 min | no | 7 / 7 | upstream variability |
 | Impact (advertiser) | 8 min | no | 7 / 7 | see notes |
 | Indoleads | 5 min | no | 6 / 7 | no clicks |
 | Kwanko | 10 min | no | 6 / 7 | no clicks |
 | Kwanko (advertiser) | 10 min | no | 6 / 7 | no clicks |
+| LeadDyno | 5 min | no | 6 / 7 | no clicks |
 | Lomadee | 15 min | no | 6 / 7 | no clicks |
 | Monetizze | 5 min | no | 6 / 7 | no clicks |
 | mrge | 10 min | no | 6 / 7 | no clicks |
 | Partnerize | 10 min | no | 7 / 7 | no clicks |
 | Partnerize (Advertiser) | 5 min | no | 6 / 7 | no clicks |
+| Partnero | 5 min | no | 6 / 7 | no clicks |
 | PartnerStack | 5 min | no | 6 / 7 | no clicks |
 | PartnerStack (advertiser) | 6 min | no | 7 / 7 | no clicks |
 | Rakuten Advertising | 12 min | yes (~5 days) | 6 / 7 | clicks gated |
@@ -556,6 +560,10 @@ click for credentials, and common stumbling blocks:
 - [ValueCommerce (advertiser)](./docs/networks/value-commerce-advertiser.md) — report-API key pair; multi-brand; read-only; experimental, built from public docs.
 - [Webgains (advertiser)](./docs/networks/webgains-advertiser.md) — API key + account ID; multi-brand; read-only; experimental, built from public docs.
 - [Rewardful](./docs/networks/rewardful.md) — API Secret (HTTP Basic); single-brand; Stripe-native SaaS; experimental, built from public docs.
+- [FirstPromoter](./docs/networks/firstpromoter.md) — API key + account ID (Bearer); single-brand; SaaS-referral; experimental, built from public docs.
+- [Partnero](./docs/networks/partnero.md) — API token (Bearer); single-brand; SaaS-referral; experimental, built from public docs.
+- [GrowSurf](./docs/networks/growsurf.md) — API key + campaign ID (Bearer); single-brand; referral-credit SaaS; experimental, built from public docs.
+- [LeadDyno](./docs/networks/leaddyno.md) — private key (query param); single-brand; SaaS-referral; experimental, built from public docs.
 
 ## For the curious (or technical)
 

@@ -1,0 +1,25 @@
+{
+  "slug": "growsurf",
+  "name": "GrowSurf",
+  "base_url": "https://api.growsurf.com",
+  "auth_model": "bearer",
+  "env_vars": ["GROWSURF_API_KEY", "GROWSURF_CAMPAIGN_ID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).",
+    "GrowSurf is referral-credit oriented, not classic CPS. The API exposes no monetary commission per referral event, so each participant with referral credit is mapped to one Transaction whose amount/commission is the referral COUNT (not money) and whose currency is the sentinel \"CREDIT\". Reward fulfilment (coupons, credit, gift cards) is configured per campaign and not returned per event.",
+    "advertiser + single-brand: one API key + campaign id pair scopes one GrowSurf programme. Bind your single brand in brands.json manually.",
+    "listClicks is unsupported: GrowSurf exposes impression counts on participants, not raw click records.",
+    "generateTrackingLink is unsupported: a participant share URL (e.g. shareUrl) is minted per participant, not derivable from a destination URL via the merchant API.",
+    "The participants list wrapper key and the campaign reward field names have not been confirmed against a live account; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).",
+    "Participant list pagination is cursor-based (nextId / more); wide pulls are capped at MAX_PAGES with a warning rather than a silent truncation."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "single-brand",
+  "docs_url": "https://docs.growsurf.com/developer-tools/rest-api"
+}
