@@ -1,0 +1,23 @@
+{
+  "slug": "partnerstack",
+  "name": "PartnerStack",
+  "base_url": "https://api.partnerstack.com",
+  "auth_model": "bearer",
+  "env_vars": ["PARTNERSTACK_API_KEY"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Click-level data is not exposed via the PartnerStack Partner API; listClicks is unsupported.",
+    "generateTrackingLink is unsupported: PartnerStack issues partner links itself (listed via /links); there is no documented per-destination deep-link construction.",
+    "Reward amounts are assumed to be minor units (cents) and divided by 100; the unit is TODO(verify) against a live account.",
+    "partnership / reward field names are read defensively and have not been confirmed against a live partner account; verbatim payloads are preserved on rawNetworkData.",
+    "getProgramme filters the /partnerships list client-side; the Partner API has no documented single-partnership GET."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://docs.partnerstack.com/docs/partner-api"
+}

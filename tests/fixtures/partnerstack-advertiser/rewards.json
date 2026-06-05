@@ -1,0 +1,32 @@
+{
+  "data": [
+    {
+      "key": "vrwd_1",
+      "status": "pending",
+      "amount": 3000,
+      "currency": "USD",
+      "created_at": 1714000000000,
+      "partner": { "key": "ptn_1", "email": "alpha@example.com", "name": "Alpha Affiliates", "status": "active" },
+      "transaction": { "amount": 30000, "currency": "USD" }
+    },
+    {
+      "key": "vrwd_2",
+      "status": "approved",
+      "amount": 1500,
+      "currency": "USD",
+      "created_at": 1714050000000,
+      "approved_at": 1714600000000,
+      "partner": { "key": "ptn_1", "email": "alpha@example.com", "name": "Alpha Affiliates", "status": "active" }
+    },
+    {
+      "key": "vrwd_3",
+      "status": "declined",
+      "amount": 500,
+      "currency": "USD",
+      "created_at": 1714100000000,
+      "partner": { "key": "ptn_2", "email": "beta@example.com", "name": "Beta Bloggers", "status": "active" }
+    }
+  ],
+  "message": "OK",
+  "status": "200"
+}

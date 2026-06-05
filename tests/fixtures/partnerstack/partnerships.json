@@ -1,0 +1,20 @@
+{
+  "data": [
+    {
+      "key": "ps_partnership_1",
+      "status": "active",
+      "created_at": 1714000000000,
+      "joined_at": 1714000500000,
+      "group": { "name": "Acme SaaS", "slug": "acme-saas", "key": "grp_acme" },
+      "partner": { "email": "partner@example.com", "name": "Example Partner" }
+    },
+    {
+      "key": "ps_partnership_2",
+      "status": "pending",
+      "created_at": 1715000000000,
+      "group": { "name": "Beta Tools", "slug": "beta-tools", "key": "grp_beta" }
+    }
+  ],
+  "message": "OK",
+  "status": "200"
+}

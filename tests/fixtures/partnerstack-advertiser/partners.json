@@ -1,0 +1,21 @@
+{
+  "data": [
+    {
+      "key": "ptn_1",
+      "email": "alpha@example.com",
+      "name": "Alpha Affiliates",
+      "status": "active",
+      "created_at": 1710000000000
+    },
+    {
+      "key": "ptn_2",
+      "email": "beta@example.com",
+      "first_name": "Beta",
+      "last_name": "Bloggers",
+      "status": "pending",
+      "created_at": 1711000000000
+    }
+  ],
+  "message": "OK",
+  "status": "200"
+}

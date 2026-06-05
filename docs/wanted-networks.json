@@ -50,13 +50,6 @@
       "issue": null
     },
     {
-      "name": "PartnerStack",
-      "slug": "partnerstack",
-      "side": "both",
-      "note": "B2B SaaS partner standard. Separate Vendor + Partner APIs, both publicly documented at docs.partnerstack.com.",
-      "issue": null
-    },
-    {
       "name": "Tolt",
       "slug": "tolt",
       "side": "advertiser",
