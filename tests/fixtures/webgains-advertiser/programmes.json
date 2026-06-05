@@ -1,0 +1,18 @@
+{
+  "programs": [
+    {
+      "id": "PRG-5001",
+      "name": "Acme Outdoors UK",
+      "status": "active",
+      "currency": "gbp",
+      "url": "https://acme-outdoors.example.co.uk"
+    },
+    {
+      "id": "PRG-5002",
+      "name": "Acme Outdoors DE",
+      "status": "paused",
+      "currency": "eur",
+      "apiEnabled": false
+    }
+  ]
+}
