@@ -303,6 +303,7 @@ the brand-side has a more complex auth model and we skipped it.
 | PartnerStack | 5 min | no | 6 / 7 | no clicks |
 | PartnerStack (advertiser) | 6 min | no | 7 / 7 | no clicks |
 | Rakuten Advertising | 12 min | yes (~5 days) | 6 / 7 | clicks gated |
+| Rewardful | 5 min | no | 6 / 7 | no clicks |
 | Skimlinks | 10 min | no | 6 / 7 | no clicks |
 | Sovrn Commerce | 10 min | no | 6 / 7 | no clicks |
 | Tradedoubler | 15 min | no | 6 / 7 | clicks gated |
@@ -376,7 +377,6 @@ pile onto) a tracking issue before you start.
 | ShopMy | publisher | US creator network. OAuth-based creator/brand API, public docs at docs.shopmy.us. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20ShopMy) |
 | Levanta | publisher + advertiser | Amazon-focused creator platform. /partners /products /reports endpoints public (knowledge.levanta.io/creator-api). | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Levanta) |
 | Tolt | advertiser | SaaS-focused affiliate platform. Bearer-auth REST, public docs at docs.tolt.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Tolt) |
-| Rewardful | advertiser | Stripe-native SaaS affiliate tool. Public REST docs at developers.rewardful.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Rewardful) |
 | Refersion | advertiser | Shopify-heavy affiliate platform. Full public docs at refersion.dev. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Refersion) |
 | Tapfiliate | advertiser | Mid-market multi-platform. v1.6 X-Api-Key REST, public docs at tapfiliate.com/docs/rest. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Tapfiliate) |
 | Howl (Narrativ) | publisher | Independent creator / journalist link network. API key + REST documented at docs.narrativ.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Howl%20(Narrativ)) |
@@ -524,6 +524,7 @@ click for credentials, and common stumbling blocks:
 - [Kwanko (advertiser)](./docs/networks/kwanko-advertiser.md) — API token; multi-brand; read-only; experimental, built from public docs.
 - [ValueCommerce (advertiser)](./docs/networks/value-commerce-advertiser.md) — report-API key pair; multi-brand; read-only; experimental, built from public docs.
 - [Webgains (advertiser)](./docs/networks/webgains-advertiser.md) — API key + account ID; multi-brand; read-only; experimental, built from public docs.
+- [Rewardful](./docs/networks/rewardful.md) — API Secret (HTTP Basic); single-brand; Stripe-native SaaS; experimental, built from public docs.
 
 ## For the curious (or technical)
 

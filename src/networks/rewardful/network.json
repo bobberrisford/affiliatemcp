@@ -1,0 +1,24 @@
+{
+  "slug": "rewardful",
+  "name": "Rewardful",
+  "base_url": "https://api.getrewardful.com",
+  "auth_model": "basic",
+  "env_vars": ["REWARDFUL_API_SECRET"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "commission / affiliate / campaign field names and the amount unit (assumed minor units / cents) have not been confirmed against a live account; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).",
+    "advertiser + single-brand: one API Secret scopes one Rewardful (merchant) account. Bind your single brand in brands.json manually.",
+    "listClicks is unsupported: Rewardful exposes referral visitors, not raw click records, via this API.",
+    "generateTrackingLink is unsupported: affiliate links belong to individual affiliates; the merchant API does not mint per-destination links.",
+    "getProgrammePerformance is computed client-side from /commissions grouped by (affiliate, day). Clicks are not available from /commissions and are reported as 0.",
+    "Rate limit is 45 requests / 30s; wide pulls are paginated and may approach it. Pagination is capped at MAX_PAGES with a warning rather than a silent truncation."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "single-brand",
+  "docs_url": "https://developers.rewardful.com/rest-api/overview"
+}

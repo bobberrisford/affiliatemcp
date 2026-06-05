@@ -57,13 +57,6 @@
       "issue": null
     },
     {
-      "name": "Rewardful",
-      "slug": "rewardful",
-      "side": "advertiser",
-      "note": "Stripe-native SaaS affiliate tool. Public REST docs at developers.rewardful.com.",
-      "issue": null
-    },
-    {
       "name": "Refersion",
       "slug": "refersion",
       "side": "advertiser",

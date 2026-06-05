@@ -65,6 +65,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | PartnerStack | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | PartnerStack (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Rakuten Advertising | 12 | yes (~5 days) | 6 / 7 | 3 | partial | 0.1.0 | 2026-05-21 |
+| Rewardful | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Skimlinks | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 | Sovrn Commerce | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-05-28 |
 | Tradedoubler | 15 | no | 6 / 7 | 6 | experimental | 0.1.1 | 2026-05-28 |
@@ -3132,6 +3133,46 @@ returned `TrackingLink` so the link's construction is fully auditable.
    the cache is cold. Currently sequential; saves ~200ms per cold session.
    Not a v0.1 blocker.
 
+## Rewardful
+
+### Quick facts
+
+- **Slug**: `rewardful`
+- **Auth model**: basic
+- **Base URL**: https://api.getrewardful.com
+- **Environment variables**: `REWARDFUL_API_SECRET`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://developers.rewardful.com/rest-api/overview
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- commission / affiliate / campaign field names and the amount unit (assumed minor units / cents) have not been confirmed against a live account; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).
+- advertiser + single-brand: one API Secret scopes one Rewardful (merchant) account. Bind your single brand in brands.json manually.
+- listClicks is unsupported: Rewardful exposes referral visitors, not raw click records, via this API.
+- generateTrackingLink is unsupported: affiliate links belong to individual affiliates; the merchant API does not mint per-destination links.
+- getProgrammePerformance is computed client-side from /commissions grouped by (affiliate, day). Clicks are not available from /commissions and are reported as 0.
+- Rate limit is 45 requests / 30s; wide pulls are paginated and may approach it. Pagination is capped at MAX_PAGES with a warning rather than a silent truncation.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/rewardful.md`._
+
 ## Skimlinks
 
 ### Quick facts
@@ -4179,4 +4220,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-05 12:32 UTC._
+_Last regenerated 2026-06-05 12:41 UTC._
