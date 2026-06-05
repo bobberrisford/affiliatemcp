@@ -48,6 +48,7 @@ import './partnerize-advertiser/adapter.js';
 import './partnerstack/adapter.js';
 import './partnerstack-advertiser/adapter.js';
 import './rakuten/adapter.js';
+import './rewardful/adapter.js';
 import './skimlinks/adapter.js';
 import './sovrn-commerce/adapter.js';
 import './tradedoubler/adapter.js';
