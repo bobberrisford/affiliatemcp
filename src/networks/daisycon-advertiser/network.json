@@ -1,0 +1,31 @@
+{
+  "slug": "daisycon-advertiser",
+  "name": "Daisycon (advertiser)",
+  "base_url": "https://services.daisycon.com",
+  "auth_model": "oauth2",
+  "env_vars": [
+    "DAISYCON_ADVERTISER_CLIENT_ID",
+    "DAISYCON_ADVERTISER_CLIENT_SECRET",
+    "DAISYCON_ADVERTISER_REFRESH_TOKEN"
+  ],
+  "setup_time_estimate_minutes": 15,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Read-only at v0.1. The HTTP client refuses any non-GET method client-side; pair this with an OAuth scope limited to reading advertiser, campaign and user-profile data for defence in depth.",
+    "Daisycon uses OAuth2 with an interactive authorization_code + PKCE consent; the adapter then uses the refresh_token grant for non-interactive token exchange. The user must complete the one-time authorisation to obtain DAISYCON_ADVERTISER_REFRESH_TOKEN.",
+    "getProgrammePerformance is derived from /advertisers/{advertiserId}/transactions grouped by media (publisher) client-side; Daisycon's pre-aggregated statistics resource is publisher-scoped only, so the per-publisher rollup is computed from transaction rows rather than a dedicated advertiser-statistics endpoint. `// TODO(verify)` against a live advertiser account.",
+    "listProgrammes is derived from the distinct programs present on the advertiser's transactions over the queried window; Daisycon does not document an advertiser-scoped programmes enumeration endpoint. `// TODO(verify)`.",
+    "listMediaPartners (the publisher roster) throws NotImplementedError: Daisycon does not document an advertiser-scoped publisher-roster endpoint; publishers surface via getProgrammePerformance instead.",
+    "OAuth2 access tokens are short-lived; the adapter caches the token in memory and re-fetches on expiry. The refresh token may expire and then requires re-authorisation.",
+    "Transactions are multi-currency: the currency is read per row from the upstream payload.",
+    "The exact advertiser transactions query parameter set and per-publisher grouping behaviour are confirmed only via secondary sources (DataVirtuality reference, aiwha-dev/DaisyconApi RestClient, Strackr); live account verification required."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "multi-brand",
+  "docs_url": "https://developers.daisycon.com/"
+}

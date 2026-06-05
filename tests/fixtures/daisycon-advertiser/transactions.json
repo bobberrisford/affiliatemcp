@@ -1,0 +1,57 @@
+[
+  {
+    "affiliatemarketing_id": 90001,
+    "advertiser_id": 5001,
+    "program_id": 7001,
+    "program_name": "Acme Widgets Programme",
+    "media_id": 8001,
+    "media_name": "DealsBlog",
+    "status": "open",
+    "currency_code": "EUR",
+    "amount": "120.00",
+    "commission": "9.60",
+    "date": "2026-05-25 10:15:00"
+  },
+  {
+    "affiliatemarketing_id": 90002,
+    "advertiser_id": 5001,
+    "program_id": 7001,
+    "program_name": "Acme Widgets Programme",
+    "media_id": 8001,
+    "media_name": "DealsBlog",
+    "status": "approved",
+    "currency_code": "EUR",
+    "amount": "250.00",
+    "commission": "20.00",
+    "date": "2026-05-25 14:40:00",
+    "date_approved": "2026-05-30 09:00:00"
+  },
+  {
+    "affiliatemarketing_id": 90003,
+    "advertiser_id": 5001,
+    "program_id": 7001,
+    "program_name": "Acme Widgets Programme",
+    "media_id": 8002,
+    "media_name": "CouponWorld",
+    "status": "disapproved",
+    "currency_code": "GBP",
+    "amount": "40.00",
+    "commission": "3.20",
+    "date": "2026-05-26 08:00:00",
+    "disapproved_reason": "Order cancelled by the customer"
+  },
+  {
+    "affiliatemarketing_id": 90004,
+    "advertiser_id": 5001,
+    "program_id": 7002,
+    "program_name": "Acme Accessories Programme",
+    "media_id": 8002,
+    "media_name": "CouponWorld",
+    "status": "paid",
+    "currency_code": "EUR",
+    "amount": "100.00",
+    "commission": "8.00",
+    "date": "2024-01-15 12:00:00",
+    "date_approved": "2024-02-01 12:00:00"
+  }
+]
