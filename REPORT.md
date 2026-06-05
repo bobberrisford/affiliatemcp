@@ -62,6 +62,8 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | mrge | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 | Partnerize | 10 | no | 7 / 7 | 4 | experimental | 0.1.0 | 2026-05-28 |
 | Partnerize (Advertiser) | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
+| PartnerStack | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
+| PartnerStack (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Rakuten Advertising | 12 | yes (~5 days) | 6 / 7 | 3 | partial | 0.1.0 | 2026-05-21 |
 | Skimlinks | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 | Sovrn Commerce | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-05-28 |
@@ -2832,6 +2834,85 @@ Credentials needed: `PARTNERIZE_APPLICATION_KEY` + `PARTNERIZE_USER_API_KEY`.
    operations (listBrands, listTransactions, listMediaPartners,
    getProgrammePerformance) are confirmed against a live account.
 
+## PartnerStack
+
+### Quick facts
+
+- **Slug**: `partnerstack`
+- **Auth model**: bearer
+- **Base URL**: https://api.partnerstack.com
+- **Environment variables**: `PARTNERSTACK_API_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://docs.partnerstack.com/docs/partner-api
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Click-level data is not exposed via the PartnerStack Partner API; listClicks is unsupported.
+- generateTrackingLink is unsupported: PartnerStack issues partner links itself (listed via /links); there is no documented per-destination deep-link construction.
+- Reward amounts are assumed to be minor units (cents) and divided by 100; the unit is TODO(verify) against a live account.
+- partnership / reward field names are read defensively and have not been confirmed against a live partner account; verbatim payloads are preserved on rawNetworkData.
+- getProgramme filters the /partnerships list client-side; the Partner API has no documented single-partnership GET.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/partnerstack.md`._
+
+## PartnerStack (advertiser)
+
+### Quick facts
+
+- **Slug**: `partnerstack-advertiser`
+- **Auth model**: basic
+- **Base URL**: https://api.partnerstack.com
+- **Environment variables**: `PARTNERSTACK_PUBLIC_KEY`, `PARTNERSTACK_SECRET_KEY`
+- **Setup time estimate**: 6 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://docs.partnerstack.com/reference
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Vendor API auth (public/secret Basic key pair) and reward/partner field names have not been confirmed against a live vendor account; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).
+- advertiser + single-brand: one Vendor API key pair scopes one vendor account. There is no multi-brand enumeration and no listBrands(); bind your single brand in brands.json manually.
+- listProgrammes is synthetic: the Vendor API has no advertiser-programmes list, so the adapter returns one Programme for the bound vendor account.
+- getProgrammePerformance is computed client-side from /rewards grouped by (partner, day). Clicks are not available from /rewards and are reported as 0.
+- getProgramme, listClicks and generateTrackingLink are not implemented on the vendor side.
+- Reward amounts are assumed to be minor units (cents) and divided by 100; the unit is TODO(verify).
+
+### Findings
+
+_No findings document was supplied at `docs/findings/partnerstack-advertiser.md`._
+
 ## Rakuten Advertising
 
 ### Quick facts
@@ -4098,4 +4179,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-05 05:30 UTC._
+_Last regenerated 2026-06-05 12:32 UTC._

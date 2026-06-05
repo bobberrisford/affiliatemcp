@@ -300,6 +300,8 @@ the brand-side has a more complex auth model and we skipped it.
 | mrge | 10 min | no | 6 / 7 | no clicks |
 | Partnerize | 10 min | no | 7 / 7 | no clicks |
 | Partnerize (Advertiser) | 5 min | no | 6 / 7 | no clicks |
+| PartnerStack | 5 min | no | 6 / 7 | no clicks |
+| PartnerStack (advertiser) | 6 min | no | 7 / 7 | no clicks |
 | Rakuten Advertising | 12 min | yes (~5 days) | 6 / 7 | clicks gated |
 | Skimlinks | 10 min | no | 6 / 7 | no clicks |
 | Sovrn Commerce | 10 min | no | 6 / 7 | no clicks |
@@ -373,7 +375,6 @@ pile onto) a tracking issue before you start.
 | TUNE (HasOffers) | publisher + advertiser | Long-running CPA platform. Public REST docs at developers.tune.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20TUNE%20(HasOffers)) |
 | ShopMy | publisher | US creator network. OAuth-based creator/brand API, public docs at docs.shopmy.us. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20ShopMy) |
 | Levanta | publisher + advertiser | Amazon-focused creator platform. /partners /products /reports endpoints public (knowledge.levanta.io/creator-api). | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Levanta) |
-| PartnerStack | publisher + advertiser | B2B SaaS partner standard. Separate Vendor + Partner APIs, both publicly documented at docs.partnerstack.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20PartnerStack) |
 | Tolt | advertiser | SaaS-focused affiliate platform. Bearer-auth REST, public docs at docs.tolt.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Tolt) |
 | Rewardful | advertiser | Stripe-native SaaS affiliate tool. Public REST docs at developers.rewardful.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Rewardful) |
 | Refersion | advertiser | Shopify-heavy affiliate platform. Full public docs at refersion.dev. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Refersion) |
@@ -485,6 +486,7 @@ click for credentials, and common stumbling blocks:
 - [Impact](./docs/networks/impact.md) — Account SID + Auth Token.
 - [mrge](./docs/networks/mrge.md) — API key + secret + site ID; experimental, built from public docs.
 - [Partnerize](./docs/networks/partnerize.md) — application key + user API key; experimental, built from public docs.
+- [PartnerStack](./docs/networks/partnerstack.md) — Partner API key; experimental, built from public docs.
 - [Rakuten Advertising](./docs/networks/rakuten.md) — OAuth client + SID; approval required.
 - [Skimlinks](./docs/networks/skimlinks.md) — OAuth client ID + secret + publisher ID + domain ID; experimental, built from public docs.
 - [Sovrn Commerce](./docs/networks/sovrn-commerce.md) — API key + secret key; experimental, built from public docs.
@@ -513,6 +515,7 @@ click for credentials, and common stumbling blocks:
 - [Everflow (advertiser)](./docs/networks/everflow-advertiser.md) — API key (admin-issued); multi-brand; experimental, built from public docs.
 - [Impact (advertiser)](./docs/networks/impact-advertiser.md) — Account SID + Auth Token; agency or brand-direct; read-only.
 - [Partnerize (advertiser)](./docs/networks/partnerize-advertiser.md) — application key + user API key; multi-brand; experimental, built from public docs.
+- [PartnerStack (advertiser)](./docs/networks/partnerstack-advertiser.md) — public + secret key pair (Vendor API); single-brand; experimental, built from public docs.
 - [Tradedoubler (advertiser)](./docs/networks/tradedoubler-advertiser.md) — reports token + organisation ID; multi-brand; experimental, built from public docs.
 - [Admitad (advertiser)](./docs/networks/admitad-advertiser.md) — OAuth2 client ID + secret + advertiser ID; multi-brand; read-only; experimental, built from public docs.
 - [Adtraction (advertiser)](./docs/networks/adtraction-advertiser.md) — API token; multi-brand; read-only (POST-read allowlist); experimental, built from public docs.

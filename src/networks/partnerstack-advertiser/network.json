@@ -1,0 +1,24 @@
+{
+  "slug": "partnerstack-advertiser",
+  "name": "PartnerStack (advertiser)",
+  "base_url": "https://api.partnerstack.com",
+  "auth_model": "basic",
+  "env_vars": ["PARTNERSTACK_PUBLIC_KEY", "PARTNERSTACK_SECRET_KEY"],
+  "setup_time_estimate_minutes": 6,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Vendor API auth (public/secret Basic key pair) and reward/partner field names have not been confirmed against a live vendor account; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).",
+    "advertiser + single-brand: one Vendor API key pair scopes one vendor account. There is no multi-brand enumeration and no listBrands(); bind your single brand in brands.json manually.",
+    "listProgrammes is synthetic: the Vendor API has no advertiser-programmes list, so the adapter returns one Programme for the bound vendor account.",
+    "getProgrammePerformance is computed client-side from /rewards grouped by (partner, day). Clicks are not available from /rewards and are reported as 0.",
+    "getProgramme, listClicks and generateTrackingLink are not implemented on the vendor side.",
+    "Reward amounts are assumed to be minor units (cents) and divided by 100; the unit is TODO(verify)."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "single-brand",
+  "docs_url": "https://docs.partnerstack.com/reference"
+}

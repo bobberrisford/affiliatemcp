@@ -1,0 +1,42 @@
+{
+  "data": [
+    {
+      "key": "rwd_1",
+      "status": "pending",
+      "amount": 5000,
+      "currency": "USD",
+      "created_at": 1714000000000,
+      "group": { "name": "Acme SaaS", "slug": "acme-saas", "key": "grp_acme" },
+      "transaction": { "amount": 50000, "currency": "USD" }
+    },
+    {
+      "key": "rwd_2",
+      "status": "approved",
+      "amount": 2500,
+      "currency": "USD",
+      "created_at": 1714100000000,
+      "approved_at": 1714600000000,
+      "group": { "name": "Acme SaaS", "slug": "acme-saas", "key": "grp_acme" }
+    },
+    {
+      "key": "rwd_3",
+      "status": "paid",
+      "amount": 1000,
+      "currency": "USD",
+      "created_at": 1713000000000,
+      "approved_at": 1713500000000,
+      "paid_at": 1714000000000,
+      "group": { "name": "Beta Tools", "slug": "beta-tools", "key": "grp_beta" }
+    },
+    {
+      "key": "rwd_4",
+      "status": "declined",
+      "amount": 750,
+      "currency": "USD",
+      "created_at": 1714200000000,
+      "group": { "name": "Acme SaaS", "slug": "acme-saas", "key": "grp_acme" }
+    }
+  ],
+  "message": "OK",
+  "status": "200"
+}
