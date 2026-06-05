@@ -1,0 +1,24 @@
+{
+  "slug": "webgains-advertiser",
+  "name": "Webgains (advertiser)",
+  "base_url": "https://platform.webgains.io",
+  "auth_model": "bearer",
+  "env_vars": ["WEBGAINS_ADVERTISER_API_KEY", "WEBGAINS_ADVERTISER_ACCOUNT_ID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Read-only at v0.1. The HTTP client refuses any non-GET method; pair this with a read-only Webgains token where the dashboard offers one for defence in depth.",
+    "The exact REST base URL could not be confirmed: the Webgains documentation host (docs.webgains.dev) returned HTTP 403 to automated fetch. The base URL is taken as https://platform.webgains.io and the endpoint paths (/advertisers/{id}/programs, /advertisers/{id}/transactions) are assumed; both require live-account confirmation.",
+    "Webgains transaction and programme field names are read defensively across several plausible names; the exact response schema was not confirmable against the documentation host.",
+    "`getProgrammePerformance` derives a per-publisher rollup from the Get Transaction Report endpoint (which documents a 1-year maximum date range per call); the adapter chunks longer windows into one-year segments. Whether the report can be requested pre-grouped by publisher server-side could not be confirmed, so the adapter groups client-side.",
+    "`listBrands` enumerates the advertiser's own programmes/campaigns (the unit a Webgains advertiser PAT addresses); there is no separate agency-passthrough tier confirmed for advertisers."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "multi-brand",
+  "docs_url": "https://docs.webgains.dev/"
+}

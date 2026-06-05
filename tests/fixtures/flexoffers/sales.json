@@ -1,0 +1,61 @@
+{
+  "totalCount": 4,
+  "sales": [
+    {
+      "saleId": "FO-90001",
+      "advertiserId": "5001",
+      "advertiserName": "Example Outdoors Inc",
+      "status": "pending",
+      "saleAmount": "120.00",
+      "commission": "9.60",
+      "currency": "USD",
+      "clickDate": "2026-04-10T11:00:00Z",
+      "saleDate": "2026-04-10T11:20:00Z",
+      "postedDate": null,
+      "paidDate": null,
+      "adjustmentType": null
+    },
+    {
+      "saleId": "FO-90002",
+      "advertiserId": "5001",
+      "advertiserName": "Example Outdoors Inc",
+      "status": "approved",
+      "saleAmount": "240.50",
+      "commission": "19.24",
+      "currency": "USD",
+      "clickDate": "2024-02-01T09:00:00Z",
+      "saleDate": "2024-02-01T09:30:00Z",
+      "postedDate": "2024-02-05T12:00:00Z",
+      "paidDate": null,
+      "adjustmentType": null
+    },
+    {
+      "saleId": "FO-90003",
+      "advertiserId": "5002",
+      "advertiserName": "Test Gadgets LLC",
+      "status": "canceled",
+      "saleAmount": "60.00",
+      "commission": "4.50",
+      "currency": "USD",
+      "clickDate": "2025-08-12T14:00:00Z",
+      "saleDate": "2025-08-12T14:25:00Z",
+      "postedDate": "2025-08-18T08:00:00Z",
+      "paidDate": null,
+      "adjustmentType": "Customer cancelled the order"
+    },
+    {
+      "saleId": "FO-90004",
+      "advertiserId": "5002",
+      "advertiserName": "Test Gadgets LLC",
+      "status": "paid",
+      "saleAmount": "85.00",
+      "commission": "6.80",
+      "currency": "USD",
+      "clickDate": "2024-09-01T09:00:00Z",
+      "saleDate": "2024-09-01T09:30:00Z",
+      "postedDate": "2024-09-06T10:00:00Z",
+      "paidDate": "2024-10-01T00:00:00Z",
+      "adjustmentType": null
+    }
+  ]
+}

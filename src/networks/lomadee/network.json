@@ -1,0 +1,31 @@
+{
+  "slug": "lomadee",
+  "name": "Lomadee",
+  "base_url": "https://api.lomadee.com",
+  "auth_model": "custom",
+  "env_vars": [
+    "LOMADEE_APP_TOKEN",
+    "LOMADEE_SOURCE_ID",
+    "LOMADEE_PUBLISHER_ID",
+    "LOMADEE_REPORT_USER",
+    "LOMADEE_REPORT_PASSWORD"
+  ],
+  "setup_time_estimate_minutes": 15,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "The sales-report API (reportTransaction) returns XML whose exact element names are not published; the adapter parses defensively and preserves the verbatim XML on rawNetworkData. Transaction status mapping and date fields require live-account verification.",
+    "The sales-report API covers a maximum window of 90 days from the start date; listTransactions defaults to the most recent 90 days when no window is supplied.",
+    "listProgrammes / getProgramme are derived from the Offers API (offer stores), not a joined-programmes endpoint; programme status is reported as \"available\" because Lomadee does not expose per-publisher join state via this API.",
+    "listClicks is not exposed by the Lomadee publisher API; the operation throws NotImplementedError.",
+    "The report API uses a token minted from the account e-mail and password (LOMADEE_REPORT_USER / LOMADEE_REPORT_PASSWORD), separate from the app-token used by offers and deeplinks.",
+    "Lomadee may take up to 3 days to release API access on a newly created account."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://developer.lomadee.com/"
+}

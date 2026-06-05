@@ -1,0 +1,74 @@
+{
+  "data": [
+    {
+      "id": "30001",
+      "status": "pending",
+      "payout": 6.50,
+      "amount": 65.00,
+      "currency": "USD",
+      "offer_id": "5001",
+      "offer_name": "Example Travel SEA",
+      "click_date": "2026-05-01T10:00:00Z",
+      "conversion_date": "2026-05-01T10:20:00Z",
+      "approved_date": null,
+      "paid_date": null,
+      "decline_reason": null
+    },
+    {
+      "id": "30002",
+      "status": "approved",
+      "payout": 14.00,
+      "amount": 140.00,
+      "currency": "USD",
+      "offer_id": "5001",
+      "offer_name": "Example Travel SEA",
+      "click_date": "2024-01-10T08:30:00Z",
+      "conversion_date": "2024-01-10T08:45:00Z",
+      "approved_date": "2024-01-18T12:00:00Z",
+      "paid_date": null,
+      "decline_reason": null
+    },
+    {
+      "id": "30003",
+      "status": "declined",
+      "payout": 4.25,
+      "amount": 42.50,
+      "currency": "USD",
+      "offer_id": "5002",
+      "offer_name": "Example Electronics APAC",
+      "click_date": "2025-09-05T14:00:00Z",
+      "conversion_date": "2025-09-05T14:20:00Z",
+      "approved_date": "2025-09-12T09:00:00Z",
+      "paid_date": null,
+      "decline_reason": "Order cancelled by the customer"
+    },
+    {
+      "id": "30004",
+      "status": "paid",
+      "payout": 9.00,
+      "amount": 90.00,
+      "currency": "USD",
+      "offer_id": "5002",
+      "offer_name": "Example Electronics APAC",
+      "click_date": "2024-08-01T09:00:00Z",
+      "conversion_date": "2024-08-01T09:30:00Z",
+      "approved_date": "2024-08-06T10:00:00Z",
+      "paid_date": "2024-09-01T00:00:00Z",
+      "decline_reason": null
+    },
+    {
+      "id": "30005",
+      "status": "overaged",
+      "payout": 2.10,
+      "amount": 21.00,
+      "currency": "USD",
+      "offer_id": "5002",
+      "offer_name": "Example Electronics APAC",
+      "click_date": "2025-01-01T09:00:00Z",
+      "conversion_date": "2025-01-01T09:30:00Z",
+      "approved_date": null,
+      "paid_date": null,
+      "decline_reason": null
+    }
+  ]
+}

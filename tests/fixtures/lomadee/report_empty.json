@@ -1,0 +1,4 @@
+{
+  "_comment": "Empty reportTransaction XML body (no sales in the window).",
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<report publisherId=\"654321\"></report>\n"
+}

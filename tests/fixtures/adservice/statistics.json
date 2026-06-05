@@ -1,0 +1,37 @@
+{
+  "statistics": [
+    {
+      "camp_id": "3001",
+      "camp_title": "Nordic Outdoor AB",
+      "stamp": "2026-05-02",
+      "earnings": 42.50,
+      "pending": 7.25,
+      "clicks": 310,
+      "leads": 4,
+      "sale": 850.00,
+      "currency": "SEK"
+    },
+    {
+      "camp_id": "3001",
+      "camp_title": "Nordic Outdoor AB",
+      "stamp": "2025-04-01",
+      "earnings": 18.00,
+      "pending": 0,
+      "clicks": 120,
+      "leads": 2,
+      "sale": 360.00,
+      "currency": "SEK"
+    },
+    {
+      "camp_id": "3002",
+      "camp_title": "Helsinki Home Oy",
+      "stamp": "2026-05-20",
+      "earnings": 0,
+      "pending": 15.80,
+      "clicks": 95,
+      "leads": 1,
+      "sale": 0,
+      "currency": "SEK"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "slug": "webgains",
+  "name": "Webgains",
+  "base_url": "https://platform.webgains.io",
+  "auth_model": "bearer",
+  "env_vars": ["WEBGAINS_API_KEY", "WEBGAINS_PUBLISHER_ID", "WEBGAINS_CAMPAIGN_ID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "The exact REST base URL could not be confirmed: the Webgains documentation host (docs.webgains.dev) and the interactive console (platform.webgains.io/docs) were not retrievable from the build environment. The base URL is taken as https://platform.webgains.io and the endpoint paths are assumed; both require live-account confirmation.",
+    "Webgains transaction field names are read defensively across several plausible names; the exact response schema was not confirmable against the documentation host.",
+    "listClicks is not exposed via the public Webgains publisher Smart Platform API (reporting is transaction-level, not click-level); the operation throws NotImplementedError.",
+    "generateTrackingLink requires WEBGAINS_CAMPAIGN_ID (the publisher campaign/Site ID used as wgcampaignid). The deeplink is constructed deterministically as https://track.webgains.com/click.html?wgcampaignid=...&wgprogramid=...&wgtarget=...",
+    "The Get Transaction Report endpoint documents a maximum date range of 1 year per call; the adapter chunks longer windows into one-year segments."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://docs.webgains.dev/"
+}

@@ -1,0 +1,24 @@
+{
+  "programs": [
+    {
+      "programId": 90001,
+      "programName": "Nordic Outdoor Co.",
+      "programURL": "https://nordicoutdoor.example.com",
+      "currency": "SEK",
+      "market": "SE",
+      "categoryName": "Sports & Outdoors",
+      "programStatus": "active",
+      "active": true
+    },
+    {
+      "programId": 90002,
+      "programName": "Helsinki Home Living",
+      "programURL": "https://hhl.example.fi",
+      "currency": "EUR",
+      "market": "FI",
+      "categoryName": "Home & Garden",
+      "programStatus": "paused",
+      "active": false
+    }
+  ]
+}

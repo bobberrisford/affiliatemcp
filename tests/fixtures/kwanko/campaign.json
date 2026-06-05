@@ -1,0 +1,11 @@
+{
+  "data": {
+    "id": "5001",
+    "name": "Voyages Exemple SARL",
+    "status": "active",
+    "currency": "EUR",
+    "commission_rate": "5% per sale",
+    "categories": ["Travel"],
+    "url": "https://www.voyages-exemple.test/"
+  }
+}

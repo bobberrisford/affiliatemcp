@@ -1,0 +1,10 @@
+{
+  "profile": {
+    "start": 1717459200.0,
+    "token": "test-eduzz-jwt-please-ignore",
+    "token_valid_until": "2026-06-04T12:15:00Z",
+    "finish": 1717459200.4,
+    "process": 0.4
+  },
+  "data": []
+}

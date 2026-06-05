@@ -1,0 +1,26 @@
+{
+  "slug": "hotmart",
+  "name": "Hotmart",
+  "base_url": "https://developers.hotmart.com/payments/api/v1",
+  "auth_model": "oauth2",
+  "env_vars": ["HOTMART_CLIENT_ID", "HOTMART_CLIENT_SECRET", "HOTMART_BASIC_TOKEN"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "listProgrammes / getProgramme are derived from the distinct products seen in Sales History, because Hotmart has no public self-serve endpoint that lists a creator/affiliate's products with commission rates; programmes outside the queried date window are not discoverable and commissionRate is left unset.",
+    "listClicks is not exposed via the public Hotmart payments API; the operation throws NotImplementedError.",
+    "generateTrackingLink is not supported: Hotmart affiliate (hotlink) URLs are issued per affiliation in the dashboard and cannot be deterministically constructed from the public API; the operation throws NotImplementedError.",
+    "When no transaction_status filter is supplied, Hotmart returns only APPROVED and COMPLETE sales; the adapter sends the full documented status set to retrieve every state.",
+    "Sales History is multi-role: a row can credit the account as PRODUCER, COPRODUCER or AFFILIATE. The adapter sums the commission(s) attributed to the authenticated account; the per-role breakdown is preserved in rawNetworkData.",
+    "OAuth2 access tokens have a limited lifetime (Hotmart documents 24 hours); the adapter caches the token in memory and re-fetches on expiry.",
+    "The maximum date window and pagination page size per Sales History call are not fully documented; the adapter paginates via page_token but a live account test is required to confirm there is no server-side window cap."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://developers.hotmart.com/docs/en/"
+}

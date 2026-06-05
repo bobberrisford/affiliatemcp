@@ -1,0 +1,75 @@
+{
+  "total": 5,
+  "transactions": [
+    {
+      "transactionId": "WG10001",
+      "programId": "3001",
+      "programName": "Example Books UK",
+      "status": "open",
+      "value": "55.00",
+      "commission": "5.50",
+      "currency": "GBP",
+      "clickDate": "2026-04-01T10:00:00Z",
+      "transactionDate": "2026-04-01T10:15:00Z",
+      "validationDate": null,
+      "paymentDate": null,
+      "changeReason": null
+    },
+    {
+      "transactionId": "WG10002",
+      "programId": "3001",
+      "programName": "Example Books UK",
+      "status": "confirmed",
+      "value": "127.50",
+      "commission": "12.75",
+      "currency": "GBP",
+      "clickDate": "2024-01-15T08:30:00Z",
+      "transactionDate": "2024-01-15T08:45:00Z",
+      "validationDate": "2024-01-20T12:00:00Z",
+      "paymentDate": null,
+      "changeReason": null
+    },
+    {
+      "transactionId": "WG10003",
+      "programId": "3002",
+      "programName": "Test Electronics EU",
+      "status": "cancelled",
+      "value": "40.00",
+      "commission": "3.20",
+      "currency": "EUR",
+      "clickDate": "2025-09-10T14:00:00Z",
+      "transactionDate": "2025-09-10T14:20:00Z",
+      "validationDate": "2025-09-15T09:00:00Z",
+      "paymentDate": null,
+      "changeReason": "Customer returned the item within 30 days"
+    },
+    {
+      "transactionId": "WG10004",
+      "programId": "3002",
+      "programName": "Test Electronics EU",
+      "status": "paid",
+      "value": "100.00",
+      "commission": "8.00",
+      "currency": "EUR",
+      "clickDate": "2024-09-01T09:00:00Z",
+      "transactionDate": "2024-09-01T09:30:00Z",
+      "validationDate": "2024-09-05T10:00:00Z",
+      "paymentDate": "2024-10-01T00:00:00Z",
+      "changeReason": null
+    },
+    {
+      "transactionId": "WG10005",
+      "programId": "3001",
+      "programName": "Example Books UK",
+      "status": "delayed",
+      "value": "20.00",
+      "commission": "2.00",
+      "currency": "GBP",
+      "clickDate": "2026-03-01T11:00:00Z",
+      "transactionDate": "2026-03-01T11:30:00Z",
+      "validationDate": null,
+      "paymentDate": null,
+      "changeReason": null
+    }
+  ]
+}

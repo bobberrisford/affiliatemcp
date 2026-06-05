@@ -1,0 +1,26 @@
+{
+  "slug": "value-commerce-advertiser",
+  "name": "ValueCommerce (advertiser)",
+  "base_url": "https://api.valuecommerce.com",
+  "auth_model": "custom",
+  "env_vars": ["VALUE_COMMERCE_ADVERTISER_CLIENT_KEY", "VALUE_COMMERCE_ADVERTISER_CLIENT_SECRET"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Read-only at v0.1. The HTTP client refuses any non-GET method client-side; pair this with a report-only API authentication key from the advertiser console for defence in depth.",
+    "The advertiser EC Order Report API returns XML by default; the client parses it with a small built-in parser. The exact XML element names per field are not confirmed from public snippets, so the adapter reads several candidate tag names defensively. BLOCKED(verify): confirm the real element names against a live account.",
+    "getProgrammePerformance and listTransactions are derived from the EC Order Report API (/report/v2/merchant/transaction/), which reports per-order rows carrying the publisher site id (sid). Rows are grouped by publisher client-side. BLOCKED(verify): confirm the site/sid element names and whether a server-side group-by exists on a live account.",
+    "listBrands enumerates the advertiser's own sites/programmes (PIDs) the credential addresses. BLOCKED(verify): the EC Order Report API has no documented self-serve site-directory endpoint, so listBrands derives the addressable sites from the report rows over a recent window; confirm against a live account.",
+    "getProgramme / getEarningsSummary / listClicks / generateTrackingLink are not implemented (NotImplementedError); these are publisher-side or directory operations the advertiser report API does not expose.",
+    "Access tokens are valid for 30 minutes; the adapter caches the token in memory and re-fetches on expiry.",
+    "The EC Order Report API ships v1 and v2 endpoints; the adapter targets v2. BLOCKED(verify): confirm the preferred version against a live account."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "multi-brand",
+  "docs_url": "https://pub-docs.valuecommerce.ne.jp/"
+}

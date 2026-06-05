@@ -1,0 +1,43 @@
+{
+  "programs": [
+    {
+      "programId": 3001,
+      "programName": "Nordic Books AB",
+      "programURL": "https://www.nordicbooks.test/",
+      "currency": "SEK",
+      "market": "SE",
+      "categoryName": "Books & Media",
+      "approvalStatus": "approved",
+      "commission": "5%",
+      "commissionType": "percentage",
+      "trackingURL": "https://track.adtraction.com/t/t?a=1234567890&as=987654321&t=2&tk=1",
+      "feed": 0
+    },
+    {
+      "programId": 3002,
+      "programName": "Suomi Electronics Oy",
+      "programURL": "https://www.suomielectronics.test/",
+      "currency": "EUR",
+      "market": "FI",
+      "categoryName": "Electronics",
+      "approvalStatus": "pending",
+      "commission": "3%",
+      "commissionType": "percentage",
+      "trackingURL": "https://track.adtraction.com/t/t?a=2234567890&as=987654321&t=2&tk=1",
+      "feed": 1
+    },
+    {
+      "programId": 3003,
+      "programName": "Dansk Mode ApS",
+      "programURL": "https://www.danskmode.test/",
+      "currency": "DKK",
+      "market": "DK",
+      "categoryName": "Fashion",
+      "approvalStatus": "rejected",
+      "commission": "8%",
+      "commissionType": "percentage",
+      "trackingURL": null,
+      "feed": 0
+    }
+  ]
+}

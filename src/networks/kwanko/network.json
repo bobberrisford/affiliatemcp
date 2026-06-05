@@ -1,0 +1,23 @@
+{
+  "slug": "kwanko",
+  "name": "Kwanko",
+  "base_url": "https://api.kwanko.com",
+  "auth_model": "bearer",
+  "env_vars": ["KWANKO_API_TOKEN"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Exact endpoint paths, query-parameter names, and JSON field names are taken from public summaries of the Kwanko Web Service API (https://developers.kwanko.com/); the developer reference is not machine-readable, so field mapping is defensive and must be confirmed against a live response.",
+    "listClicks is not exposed at click level: the Kwanko publisher API reports clicks only as an aggregate in the statistics endpoint, so the operation throws NotImplementedError rather than returning fabricated rows.",
+    "generateTrackingLink is not implemented: Kwanko tracking links are issued per campaign and per site from the dashboard and cannot be constructed deterministically from the API token alone; the operation throws NotImplementedError.",
+    "The API token is self-issued in the Kwanko platform (Features and API); it may optionally be IP-restricted in platform settings, which can cause auth failures from a different host."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://developers.kwanko.com/"
+}

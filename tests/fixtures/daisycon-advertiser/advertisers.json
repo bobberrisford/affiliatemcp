@@ -1,0 +1,20 @@
+[
+  {
+    "id": 5001,
+    "name": "Acme Widgets BV",
+    "status": "active",
+    "api_enabled": true
+  },
+  {
+    "id": 5002,
+    "name": "Test Electronics GmbH",
+    "status": "active",
+    "api_enabled": true
+  },
+  {
+    "id": 5003,
+    "name": "Paused Brand Ltd",
+    "status": "paused",
+    "api_enabled": false
+  }
+]

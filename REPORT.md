@@ -1,6 +1,6 @@
 # affiliate-mcp Report — the state of affiliate-network APIs in June 2026
 
-_Date-stamped: 2026-06-02._
+_Date-stamped: 2026-06-05._
 
 This report describes the state of four affiliate-network APIs as observed
 during the construction of the affiliate-mcp MCP server: Awin, CJ Affiliate,
@@ -31,15 +31,34 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 
 | Network | Setup time (min) | Approval | Ops supported | Known limitations | Claim status | Adapter | Last verified |
 | --- | ---: | --- | ---: | ---: | --- | --- | --- |
+| Admitad | 15 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
+| Admitad (advertiser) | 12 | no | 7 / 7 | 5 | experimental | 0.1.0 | 2026-06-04 |
+| Adservice | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Adtraction | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Adtraction (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Afilio | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Awin | 5 | no | 6 / 7 | 1 | partial | 0.1.0 | 2026-05-21 |
 | Awin (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-05-23 |
 | CJ Affiliate | 8 | no | 6 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
 | CJ Affiliate (advertiser) | 8 | no | 7 / 7 | 7 | experimental | 0.1.0 | 2026-05-23 |
+| Commission Factory | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Commission Factory (advertiser) | 7 | no | 7 / 7 | 5 | experimental | 0.1.0 | 2026-06-04 |
+| Coupang Partners | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Daisycon | 15 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
+| Daisycon (advertiser) | 15 | no | 7 / 7 | 9 | experimental | 0.1.0 | 2026-06-04 |
 | eBay Partner Network | 10 | yes (~3 days) | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-21 |
+| Eduzz | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Everflow | 10 | yes (~1 days) | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-28 |
 | Everflow (Advertiser) | 10 | no | 7 / 7 | 6 | experimental | 0.2.0 | 2026-05-28 |
+| FlexOffers | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Hotmart | 10 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-04 |
 | Impact | 6 | no | 7 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
 | Impact (advertiser) | 8 | no | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-23 |
+| Indoleads | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Kwanko | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-04 |
+| Kwanko (advertiser) | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
+| Lomadee | 15 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
+| Monetizze | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | mrge | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 | Partnerize | 10 | no | 7 / 7 | 4 | experimental | 0.1.0 | 2026-05-28 |
 | Partnerize (Advertiser) | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
@@ -48,6 +67,250 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Sovrn Commerce | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-05-28 |
 | Tradedoubler | 15 | no | 6 / 7 | 6 | experimental | 0.1.1 | 2026-05-28 |
 | Tradedoubler (Advertiser) | 10 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
+| ValueCommerce | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
+| ValueCommerce (advertiser) | 10 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-04 |
+| Webgains | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Webgains (advertiser) | 10 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+
+## Admitad
+
+### Quick facts
+
+- **Slug**: `admitad`
+- **Auth model**: oauth2
+- **Base URL**: https://api.admitad.com
+- **Environment variables**: `ADMITAD_CLIENT_ID`, `ADMITAD_CLIENT_SECRET`, `ADMITAD_WEBSITE_ID`
+- **Setup time estimate**: 15 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://developers.admitad.com/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- listClicks is not exposed for publishers via the public Admitad API; the publisher reports surface only aggregated statistics (statistics/actions, statistics/dates), so the operation throws NotImplementedError.
+- listProgrammes / getProgramme are mapped from /advcampaigns/ and require the OAuth scope 'advcampaigns'. Admitad's programme connection status is per-website; the adapter reports the campaign-level status it can read and preserves the raw payload in rawNetworkData.
+- generateTrackingLink calls the Admitad deeplink generator (GET /deeplink/{website_id}/advcampaign/{campaign_id}/?ulp=...), which requires the OAuth scope 'deeplink_generator', a connected ad space, and ADMITAD_WEBSITE_ID. A deeplink can only be generated for a campaign your ad space is connected to; otherwise the API returns an error which surfaces verbatim.
+- Admitad action statuses are normalised: 'pending' -> pending; 'approved' / 'approved_but_stalled' -> approved; 'declined' -> reversed; the separate payment_status flag (1 = paid) maps to paid. Unknown statuses map to 'other' and the raw value is preserved.
+- The statistics/actions and statistics/dates endpoints require the OAuth scope 'statistics'; /me/ requires 'private_data'. The adapter requests all required scopes in a single client_credentials token exchange.
+- OAuth2 access tokens have a limited lifetime; the adapter caches the token in memory and re-fetches on expiry. Cached tokens are lost on process restart.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/admitad.md`._
+
+## Admitad (advertiser)
+
+### Quick facts
+
+- **Slug**: `admitad-advertiser`
+- **Auth model**: oauth2
+- **Base URL**: https://api.admitad.com
+- **Environment variables**: `ADMITAD_ADVERTISER_CLIENT_ID`, `ADMITAD_ADVERTISER_CLIENT_SECRET`, `ADMITAD_ADVERTISER_ID`
+- **Setup time estimate**: 12 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://developers.admitad.com/en/doc/advertiser-api/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Read-only at v0.1. The adapter refuses any non-GET HTTP method client-side; use an API application scoped only for the advertiser reporting endpoints for defence in depth.
+- getProgrammePerformance is derived from the advertiser statistics/actions report grouped by publisher (webmaster/website). Admitad does not expose per-publisher click counts on this report, so clicks is reported as 0; the exact webmaster/website field names carry // BLOCKED(verify) notes until a live advertiser account is available.
+- listBrands / listProgrammes read GET /advertiser/{id}/info/. The advertiser id (ADMITAD_ADVERTISER_ID) is the networkBrandId; advertiser tools take `brand` and resolve via brands.json.
+- OAuth2 access tokens have a limited lifetime; the adapter caches the token in memory and re-fetches on expiry. Cached tokens are lost on process restart.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/admitad-advertiser.md`._
+
+## Adservice
+
+### Quick facts
+
+- **Slug**: `adservice`
+- **Auth model**: custom
+- **Base URL**: https://api.adservice.com/cgi-bin/publisher/API
+- **Environment variables**: `ADSERVICE_UID`, `ADSERVICE_LOGIN_TOKEN`, `ADSERVICE_AFFILIATE_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://publisher.adservice.com/doc/publisher/API/Statistics_pl.html
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Authentication uses a UID and a LoginToken supplied as cookies on every request, obtained via /Account.pl/loginToken; auth_model is "custom". The login exchange shape is BLOCKED(verify) — the documentation host returns HTTP 403 to automated fetches, so the adapter takes UID and LoginToken as configured credentials.
+- The Statistics.pl reporting endpoint returns AGGREGATE statistics grouped by a dimension (campaign, date, etc.), not row-level conversions. listTransactions maps each aggregate group to a summary Transaction (summed commission, pending vs. settled status); it does not return individual sales. Whether a row-level conversion endpoint exists is BLOCKED(verify).
+- listClicks throws NotImplementedError: Statistics.pl exposes aggregate click counts only; no row-level click-event endpoint (per-click timestamp/referrer) is documented in the accessible public API.
+- generateTrackingLink throws NotImplementedError: the deeplink/redirect URL format is not documented in any accessible public source.
+- Exact Statistics.pl / Campaigns.pl response field names and the precise base host (api.adservice.com vs publisher.adservice.com) are inferred from public docs and third-party guides; BLOCKED(verify) against a live account.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/adservice.md`._
+
+## Adtraction
+
+### Quick facts
+
+- **Slug**: `adtraction`
+- **Auth model**: custom
+- **Base URL**: https://api.adtraction.com
+- **Environment variables**: `ADTRACTION_API_TOKEN`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://adtractionv3.docs.apiary.io/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Authentication is a single API access token sent as a `token` query parameter (not a header); auth_model is "custom".
+- listClicks is not exposed via the Adtraction affiliate API; the operation throws NotImplementedError.
+- generateTrackingLink cannot be constructed deterministically from credentials: Adtraction tracking links are programme-specific and are returned by the programmes endpoint per approved programme. The operation throws NotImplementedError; use the trackingURL on the Programme returned by listProgrammes / getProgramme.
+- Exact v3 endpoint paths (/v3/affiliate/transactions/, /v3/affiliate/programs/), the request/response field names, and the API host (api.adtraction.com vs api.adtraction.net) are inferred from public docs and third-party guides; BLOCKED(verify) against a live account.
+- Rate limit is approximately 30 requests/minute (some endpoints 10/minute); heavy date windows may need to be split by the caller.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/adtraction.md`._
+
+## Adtraction (advertiser)
+
+### Quick facts
+
+- **Slug**: `adtraction-advertiser`
+- **Auth model**: custom
+- **Base URL**: https://api.adtraction.com
+- **Environment variables**: `ADTRACTION_ADVERTISER_API_TOKEN`
+- **Setup time estimate**: 6 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://adtractionv3.docs.apiary.io/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Read-only at v0.1. Adtraction reporting reads are POST-with-body by design, so read-only is enforced by an ALLOWLIST of documented data-READ paths (advertiser transactions and advertiser programmes) rather than by refusing POST; any write/mutation endpoint is structurally unreachable through the client.
+- Authentication is a single API access token sent as a `token` query parameter (not a header); auth_model is "custom".
+- Multi-brand: one advertiser token may address several programmes. `listBrands()` enumerates them; brand-scoped tools take `brand` and resolve to a programme id via brands.json.
+- `getProgrammePerformance` is derived from the advertiser transactions endpoint, grouped by affiliate/channel; transactions are per-conversion so clicks read as 0 unless the row carries a click count.
+- Exact v3 advertiser endpoint paths (/v3/advertiser/transactions/, /v3/advertiser/programs/), the request/response field names, and the API host (api.adtraction.com vs api.adtraction.net) are inferred from public docs and the v2 partner pattern; BLOCKED(verify) against a live account (both Apiary docs sites returned HTTP 403 to automated fetch).
+
+### Findings
+
+_No findings document was supplied at `docs/findings/adtraction-advertiser.md`._
+
+## Afilio
+
+### Quick facts
+
+- **Slug**: `afilio`
+- **Auth model**: custom
+- **Base URL**: https://v2.afilio.com.br
+- **Environment variables**: `AFILIO_AFFILIATE_TOKEN`, `AFILIO_AFF_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://v2.afilio.com.br/Manual/manuais-v2.html
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Afilio documentation PDFs are served behind a WAF (HTTP 403 to automated clients), so the exact XML field names, the exact Campaign Description endpoint filename, and the full status vocabulary could not be read verbatim; field readers are defensive and all original data is preserved in rawNetworkData.
+- listClicks is not exposed by any documented Afilio affiliate API; the operation throws NotImplementedError.
+- generateTrackingLink is not implemented: Afilio deeplinks are generated inside the dashboard and no deterministic affiliate-side link format (from a campaign id + Aff ID) is documented; the operation throws NotImplementedError.
+- getProgramme filters the Campaign Description list client-side; Afilio does not document a single-campaign lookup endpoint.
+- Transaction currency defaults to BRL when the API response omits a currency field; the verbatim row is preserved in rawNetworkData.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/afilio.md`._
 
 ## Awin
 
@@ -495,6 +758,209 @@ without re-running the auth check.
 
 _No findings document was supplied at `docs/findings/cj-advertiser.md`._
 
+## Commission Factory
+
+### Quick facts
+
+- **Slug**: `commission-factory`
+- **Auth model**: custom
+- **Base URL**: https://api.commissionfactory.com/V1/
+- **Environment variables**: `COMMISSION_FACTORY_API_KEY`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://dev.commissionfactory.com/V1/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Commission Factory authenticates with a single API key passed as the `apiKey` query parameter (not a bearer header); auth_model is therefore `custom`.
+- listClicks is not exposed via the public Affiliate API; the operation throws NotImplementedError.
+- generateTrackingLink is not a deterministic, destination-only construction: it reads the joined merchant's TrackingUrl (https://t.cfjump.com/0/b/{id}) via GET /Affiliate/Merchants/{id} and appends ?Url={encoded}. It therefore requires the merchant to be joined and reachable; for a merchant the affiliate has not joined it throws a network error.
+- Affiliate API pagination for GET /Affiliate/Transactions is not documented publicly (no page/pageSize parameters were found); the adapter passes the full date window in a single call. A live account test is required to confirm there is no server-side cap on the result set.
+- The deprecated TransactionStatus enumeration is read as a fallback only; the adapter prefers Status2 (TransactionStatus2: Pending, Confirmed, Declined, Void, Paid).
+
+### Findings
+
+_No findings document was supplied at `docs/findings/commission-factory.md`._
+
+## Commission Factory (advertiser)
+
+### Quick facts
+
+- **Slug**: `commission-factory-advertiser`
+- **Auth model**: custom
+- **Base URL**: https://api.commissionfactory.com/V1/
+- **Environment variables**: `COMMISSION_FACTORY_ADVERTISER_API_KEY`, `COMMISSION_FACTORY_ADVERTISER_MERCHANT_ID`
+- **Setup time estimate**: 7 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://dev.commissionfactory.com/V1/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Read-only at v0.1. The adapter refuses any non-GET HTTP method client-side.
+- A merchant API key addresses exactly one merchant; the merchant surface has no "list my accounts" endpoint. `listBrands()` therefore returns a single brand. credential_scope is declared multi-brand for uniformity with the other advertiser adapters.
+- getProgrammePerformance is a client-side per-publisher rollup of GET /Merchant/Transactions grouped by AffiliateId. Clicks are not reported on the merchant transactions surface, so per-row clicks are 0.
+- Pagination parameters for GET /Merchant/Transactions are not documented publicly; the adapter requests the full date window in a single call.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/commission-factory-advertiser.md`._
+
+## Coupang Partners
+
+### Quick facts
+
+- **Slug**: `coupang-partners`
+- **Auth model**: custom
+- **Base URL**: https://api-gateway.coupang.com
+- **Environment variables**: `COUPANG_PARTNERS_ACCESS_KEY`, `COUPANG_PARTNERS_SECRET_KEY`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://partner-developers.coupangcorp.com/hc/ko/categories/360005470572-API-Docs
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Coupang Open API enforces strict rate limits (the affiliate product-search endpoint is documented at roughly 10 calls per hour; the reports endpoint is similarly throttled). Frequent polling returns HTTP 429.
+- listProgrammes / getProgramme throw NotImplementedError: Coupang Partners is a single-merchant network (the publisher promotes Coupang itself) and exposes no programme-listing API. Product search is a catalogue search, not a programme list.
+- listClicks throws NotImplementedError: the commission report exposes only an aggregate daily clickCount, not per-click rows.
+- listTransactions maps the reports/commission endpoint, which returns daily aggregate rows (date, clickCount, orderCount, gmv, commission) rather than individual orders; there is no per-row settlement status, so every transaction is normalised to status "other".
+- generateTrackingLink calls the deeplink API (POST .../v1/deeplink) and is subject to the same rate limits.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/coupang-partners.md`._
+
+## Daisycon
+
+### Quick facts
+
+- **Slug**: `daisycon`
+- **Auth model**: oauth2
+- **Base URL**: https://services.daisycon.com
+- **Environment variables**: `DAISYCON_CLIENT_ID`, `DAISYCON_CLIENT_SECRET`, `DAISYCON_REFRESH_TOKEN`, `DAISYCON_PUBLISHER_ID`
+- **Setup time estimate**: 15 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://developers.daisycon.com/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Daisycon uses OAuth2 with an interactive authorization_code + PKCE consent; the adapter then uses the refresh_token grant for non-interactive token exchange. The user must complete the one-time authorisation to obtain DAISYCON_REFRESH_TOKEN.
+- listClicks is not exposed via the public Daisycon publisher API; the operation throws NotImplementedError.
+- generateTrackingLink throws NotImplementedError: a Daisycon tracking (click) URL is issued per programme/media binding and is not deterministically constructible from credentials alone.
+- OAuth2 access tokens are short-lived; the adapter caches the token in memory and re-fetches on expiry. The refresh token may expire and then requires re-authorisation.
+- The exact /publishers/{id}/programs path and the maximum per_page page size are confirmed only via secondary sources; live account verification required.
+- Transactions are multi-currency: the currency is read per row from the upstream payload.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/daisycon.md`._
+
+## Daisycon (advertiser)
+
+### Quick facts
+
+- **Slug**: `daisycon-advertiser`
+- **Auth model**: oauth2
+- **Base URL**: https://services.daisycon.com
+- **Environment variables**: `DAISYCON_ADVERTISER_CLIENT_ID`, `DAISYCON_ADVERTISER_CLIENT_SECRET`, `DAISYCON_ADVERTISER_REFRESH_TOKEN`
+- **Setup time estimate**: 15 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://developers.daisycon.com/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Read-only at v0.1. The HTTP client refuses any non-GET method client-side; pair this with an OAuth scope limited to reading advertiser, campaign and user-profile data for defence in depth.
+- Daisycon uses OAuth2 with an interactive authorization_code + PKCE consent; the adapter then uses the refresh_token grant for non-interactive token exchange. The user must complete the one-time authorisation to obtain DAISYCON_ADVERTISER_REFRESH_TOKEN.
+- getProgrammePerformance is derived from /advertisers/{advertiserId}/transactions grouped by media (publisher) client-side; Daisycon's pre-aggregated statistics resource is publisher-scoped only, so the per-publisher rollup is computed from transaction rows rather than a dedicated advertiser-statistics endpoint. `// TODO(verify)` against a live advertiser account.
+- listProgrammes is derived from the distinct programs present on the advertiser's transactions over the queried window; Daisycon does not document an advertiser-scoped programmes enumeration endpoint. `// TODO(verify)`.
+- listMediaPartners (the publisher roster) throws NotImplementedError: Daisycon does not document an advertiser-scoped publisher-roster endpoint; publishers surface via getProgrammePerformance instead.
+- OAuth2 access tokens are short-lived; the adapter caches the token in memory and re-fetches on expiry. The refresh token may expire and then requires re-authorisation.
+- Transactions are multi-currency: the currency is read per row from the upstream payload.
+- The exact advertiser transactions query parameter set and per-publisher grouping behaviour are confirmed only via secondary sources (DataVirtuality reference, aiwha-dev/DaisyconApi RestClient, Strackr); live account verification required.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/daisycon-advertiser.md`._
+
 ## eBay Partner Network
 
 ### Quick facts
@@ -706,6 +1172,46 @@ first-click time when nothing tracks.
   `rawNetworkData`. A future iteration could surface it on
   `Programme.categories` or as a separate field once the canonical type
   has somewhere to put it.
+
+## Eduzz
+
+### Quick facts
+
+- **Slug**: `eduzz`
+- **Auth model**: custom
+- **Base URL**: https://api2.eduzz.com
+- **Environment variables**: `EDUZZ_EMAIL`, `EDUZZ_PUBLIC_KEY`, `EDUZZ_API_KEY`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://developers.eduzz.com/docs/api
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Authentication uses the Eduzz legacy api2 token-exchange (email + PublicKey + APIKey -> short-lived JWT, sent as the `token` header). The token is cached in memory and re-fetched on expiry (~15 minutes).
+- The sales listing route (GET /sale/get_sale_list) and its date_start/date_end window are documented on https://api2.eduzz.com/, but the exact query-parameter and response field names could not be confirmed against the live reference (developers.eduzz.com returns HTTP 403 to automated fetches). Fields are read defensively and the verbatim payload is preserved in rawNetworkData; a live account test is required before promotion.
+- listClicks is not exposed by the Eduzz API; the operation throws NotImplementedError.
+- generateTrackingLink is not implemented: Eduzz affiliate links are generated per product inside the panel and there is no documented self-serve link-construction API; the operation throws NotImplementedError.
+- Eduzz operates in Brazil; amounts are typically denominated in BRL. The currency is read from the payload where present and defaults to BRL otherwise.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/eduzz.md`._
 
 ## Everflow
 
@@ -1097,6 +1603,88 @@ documentation, though live-account verification is still required before product
 Original: 2026-05-28  
 Hardening pass: 2026-05-28
 
+## FlexOffers
+
+### Quick facts
+
+- **Slug**: `flexoffers`
+- **Auth model**: custom
+- **Base URL**: https://api.flexoffers.com
+- **Environment variables**: `FLEXOFFERS_API_KEY`, `FLEXOFFERS_ACCOUNT_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://www.flexoffers.com/publishers/web-service-api/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- listProgrammes / getProgramme are not implemented: the publisher-side advertiser/programme listing endpoint shape is not documented well enough publicly to map joined-programme status reliably; both operations throw NotImplementedError until verified against a live account.
+- listClicks is not exposed as a click-level endpoint via the public FlexOffers Web Service API (only aggregated click counts appear in sales reports); the operation throws NotImplementedError.
+- generateTrackingLink builds a FlexLinks redirect URL (track.flexlinkspro.com) deterministically from FLEXOFFERS_ACCOUNT_ID and the advertiser id passed as programmeId; the exact redirect parameter names are taken from public link examples and require live verification.
+- The API key header name (apiKey) and the /allsales pagination parameter are taken from public integration write-ups, not a confirmed live response.
+- Per-row currency is read from each sales row; FlexOffers is a US aggregator and most rows clear in USD, but the adapter never hardcodes currency.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/flexoffers.md`._
+
+## Hotmart
+
+### Quick facts
+
+- **Slug**: `hotmart`
+- **Auth model**: oauth2
+- **Base URL**: https://developers.hotmart.com/payments/api/v1
+- **Environment variables**: `HOTMART_CLIENT_ID`, `HOTMART_CLIENT_SECRET`, `HOTMART_BASIC_TOKEN`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://developers.hotmart.com/docs/en/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- listProgrammes / getProgramme are derived from the distinct products seen in Sales History, because Hotmart has no public self-serve endpoint that lists a creator/affiliate's products with commission rates; programmes outside the queried date window are not discoverable and commissionRate is left unset.
+- listClicks is not exposed via the public Hotmart payments API; the operation throws NotImplementedError.
+- generateTrackingLink is not supported: Hotmart affiliate (hotlink) URLs are issued per affiliation in the dashboard and cannot be deterministically constructed from the public API; the operation throws NotImplementedError.
+- When no transaction_status filter is supplied, Hotmart returns only APPROVED and COMPLETE sales; the adapter sends the full documented status set to retrieve every state.
+- Sales History is multi-role: a row can credit the account as PRODUCER, COPRODUCER or AFFILIATE. The adapter sums the commission(s) attributed to the authenticated account; the per-role breakdown is preserved in rawNetworkData.
+- OAuth2 access tokens have a limited lifetime (Hotmart documents 24 hours); the adapter caches the token in memory and re-fetches on expiry.
+- The maximum date window and pagination page size per Sales History call are not fully documented; the adapter paginates via page_token but a live account test is required to confirm there is no server-side window cap.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/hotmart.md`._
+
 ## Impact
 
 ### Quick facts
@@ -1355,6 +1943,207 @@ returning a half-formed link.
 ### Findings
 
 _No findings document was supplied at `docs/findings/impact-advertiser.md`._
+
+## Indoleads
+
+### Quick facts
+
+- **Slug**: `indoleads`
+- **Auth model**: bearer
+- **Base URL**: https://app.indoleads.com/api
+- **Environment variables**: `INDOLEADS_API_TOKEN`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://indoleads.atlassian.net/wiki/spaces/PUB/pages/53476781/API
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- The exact conversions-report endpoint path and its response field names could not be confirmed from the public documentation snippets (the full Confluence API page is access-gated); the adapter targets GET /api/conversions and reads field names defensively. BLOCKED(verify): confirm the path and payload shape against a live account.
+- listClicks is not exposed via the public Indoleads publisher API; the operation throws NotImplementedError.
+- getProgramme has no single-offer endpoint documented publicly; it is derived by filtering the GET /api/offers listing client-side.
+- The Indoleads API token can be supplied either as an Authorization: Bearer header or as a ?token= GET parameter; this adapter uses the Authorization header.
+- Maximum date window per conversions-report call is not publicly documented; a live account test is required to confirm no server-side cap exists.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/indoleads.md`._
+
+## Kwanko
+
+### Quick facts
+
+- **Slug**: `kwanko`
+- **Auth model**: bearer
+- **Base URL**: https://api.kwanko.com
+- **Environment variables**: `KWANKO_API_TOKEN`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://developers.kwanko.com/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Exact endpoint paths, query-parameter names, and JSON field names are taken from public summaries of the Kwanko Web Service API (https://developers.kwanko.com/); the developer reference is not machine-readable, so field mapping is defensive and must be confirmed against a live response.
+- listClicks is not exposed at click level: the Kwanko publisher API reports clicks only as an aggregate in the statistics endpoint, so the operation throws NotImplementedError rather than returning fabricated rows.
+- generateTrackingLink is not implemented: Kwanko tracking links are issued per campaign and per site from the dashboard and cannot be constructed deterministically from the API token alone; the operation throws NotImplementedError.
+- The API token is self-issued in the Kwanko platform (Features and API); it may optionally be IP-restricted in platform settings, which can cause auth failures from a different host.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/kwanko.md`._
+
+## Kwanko (advertiser)
+
+### Quick facts
+
+- **Slug**: `kwanko-advertiser`
+- **Auth model**: bearer
+- **Base URL**: https://api.kwanko.com
+- **Environment variables**: `KWANKO_ADVERTISER_API_TOKEN`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://developers.kwanko.com/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Read-only at v0.1. The HTTP client refuses any non-GET method client-side; pair this with a read-only Kwanko API token for defence in depth.
+- Exact endpoint paths, query-parameter names, and JSON field names are taken from public summaries of the Kwanko advertiser API (https://developers.kwanko.com/ and https://helpdesk-advertiser.kwanko.com/); the developer reference is not machine-readable (403 to automated fetch), so field mapping is defensive and must be confirmed against a live response.
+- getProgrammePerformance is built from the advertiser statistics endpoint grouped by website (publisher); the grouping parameter name is taken from public summaries and is BLOCKED(verify) until confirmed against a live response.
+- listBrands enumerates the advertiser campaigns the token addresses; the Kwanko advertiser API has no documented account-enumeration endpoint, so each addressable campaign is returned as a brand. BLOCKED(verify) against a live account.
+- generateTrackingLink, getProgramme, getEarningsSummary, and listClicks are not implemented: these are publisher-side or unsupported on the advertiser surface and throw NotImplementedError rather than returning fabricated data.
+- The API token is self-issued in the Kwanko platform (Features and API); it may optionally be IP-restricted in platform settings, which can cause auth failures from a different host.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/kwanko-advertiser.md`._
+
+## Lomadee
+
+### Quick facts
+
+- **Slug**: `lomadee`
+- **Auth model**: custom
+- **Base URL**: https://api.lomadee.com
+- **Environment variables**: `LOMADEE_APP_TOKEN`, `LOMADEE_SOURCE_ID`, `LOMADEE_PUBLISHER_ID`, `LOMADEE_REPORT_USER`, `LOMADEE_REPORT_PASSWORD`
+- **Setup time estimate**: 15 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://developer.lomadee.com/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- The sales-report API (reportTransaction) returns XML whose exact element names are not published; the adapter parses defensively and preserves the verbatim XML on rawNetworkData. Transaction status mapping and date fields require live-account verification.
+- The sales-report API covers a maximum window of 90 days from the start date; listTransactions defaults to the most recent 90 days when no window is supplied.
+- listProgrammes / getProgramme are derived from the Offers API (offer stores), not a joined-programmes endpoint; programme status is reported as "available" because Lomadee does not expose per-publisher join state via this API.
+- listClicks is not exposed by the Lomadee publisher API; the operation throws NotImplementedError.
+- The report API uses a token minted from the account e-mail and password (LOMADEE_REPORT_USER / LOMADEE_REPORT_PASSWORD), separate from the app-token used by offers and deeplinks.
+- Lomadee may take up to 3 days to release API access on a newly created account.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/lomadee.md`._
+
+## Monetizze
+
+### Quick facts
+
+- **Slug**: `monetizze`
+- **Auth model**: custom
+- **Base URL**: https://api.monetizze.com.br/2.1
+- **Environment variables**: `MONETIZZE_API_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://api.monetizze.com.br/2.1/apidoc/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- listProgrammes / getProgramme: no public product-listing endpoint path or response shape could be confirmed; both operations throw NotImplementedError rather than calling an unconfirmed endpoint.
+- listClicks: the Monetizze API does not expose click-level data; the operation throws NotImplementedError.
+- generateTrackingLink: Monetizze affiliate links are generated inside the panel, not via a documented deterministic public endpoint; the operation throws NotImplementedError.
+- listTransactions advanced-filter query parameter names (date window, status) are unconfirmed against the live interactive docs; the adapter sends dataInicio/dataFim and also filters client-side as a safeguard.
+- Authentication uses a two-step token exchange (x_consumer_key header then a token header); the token-response field name and token lifetime are unconfirmed, so the adapter reads the token field defensively and uses a conservative cache TTL.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/monetizze.md`._
 
 ## mrge
 
@@ -3131,6 +3920,169 @@ handles both d.m.Y and d.m.y (two-digit year) in responses.
    account types.
    Credential needed: any live account with a suspended programme.
 
+## ValueCommerce
+
+### Quick facts
+
+- **Slug**: `value-commerce`
+- **Auth model**: custom
+- **Base URL**: https://api.valuecommerce.com
+- **Environment variables**: `VALUE_COMMERCE_CLIENT_KEY`, `VALUE_COMMERCE_CLIENT_SECRET`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://pub-docs.valuecommerce.ne.jp/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- The affiliate Order Report API returns XML by default; the client parses it with a small built-in parser. The exact XML element names per transaction field are not confirmed from public docs snippets, so the adapter reads several candidate tag names defensively and requires live verification.
+- listProgrammes / getProgramme are not supported: ValueCommerce exposes no self-serve affiliate programme/merchant directory through the public report API; both throw NotImplementedError.
+- listClicks is not exposed via the public affiliate Order Report API; the operation throws NotImplementedError.
+- generateTrackingLink is not supported: ValueCommerce deeplinks (MyLink) are produced in the console and are not derivable from the report API credentials; the operation throws NotImplementedError.
+- Access tokens are valid for 30 minutes; the adapter caches the token in memory and re-fetches on expiry.
+- The report API ships v1/v2/v3 endpoints; the adapter targets v2 and requires live verification of the preferred version.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/value-commerce.md`._
+
+## ValueCommerce (advertiser)
+
+### Quick facts
+
+- **Slug**: `value-commerce-advertiser`
+- **Auth model**: custom
+- **Base URL**: https://api.valuecommerce.com
+- **Environment variables**: `VALUE_COMMERCE_ADVERTISER_CLIENT_KEY`, `VALUE_COMMERCE_ADVERTISER_CLIENT_SECRET`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://pub-docs.valuecommerce.ne.jp/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Read-only at v0.1. The HTTP client refuses any non-GET method client-side; pair this with a report-only API authentication key from the advertiser console for defence in depth.
+- The advertiser EC Order Report API returns XML by default; the client parses it with a small built-in parser. The exact XML element names per field are not confirmed from public snippets, so the adapter reads several candidate tag names defensively. BLOCKED(verify): confirm the real element names against a live account.
+- getProgrammePerformance and listTransactions are derived from the EC Order Report API (/report/v2/merchant/transaction/), which reports per-order rows carrying the publisher site id (sid). Rows are grouped by publisher client-side. BLOCKED(verify): confirm the site/sid element names and whether a server-side group-by exists on a live account.
+- listBrands enumerates the advertiser's own sites/programmes (PIDs) the credential addresses. BLOCKED(verify): the EC Order Report API has no documented self-serve site-directory endpoint, so listBrands derives the addressable sites from the report rows over a recent window; confirm against a live account.
+- getProgramme / getEarningsSummary / listClicks / generateTrackingLink are not implemented (NotImplementedError); these are publisher-side or directory operations the advertiser report API does not expose.
+- Access tokens are valid for 30 minutes; the adapter caches the token in memory and re-fetches on expiry.
+- The EC Order Report API ships v1 and v2 endpoints; the adapter targets v2. BLOCKED(verify): confirm the preferred version against a live account.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/value-commerce-advertiser.md`._
+
+## Webgains
+
+### Quick facts
+
+- **Slug**: `webgains`
+- **Auth model**: bearer
+- **Base URL**: https://platform.webgains.io
+- **Environment variables**: `WEBGAINS_API_KEY`, `WEBGAINS_PUBLISHER_ID`, `WEBGAINS_CAMPAIGN_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://docs.webgains.dev/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- The exact REST base URL could not be confirmed: the Webgains documentation host (docs.webgains.dev) and the interactive console (platform.webgains.io/docs) were not retrievable from the build environment. The base URL is taken as https://platform.webgains.io and the endpoint paths are assumed; both require live-account confirmation.
+- Webgains transaction field names are read defensively across several plausible names; the exact response schema was not confirmable against the documentation host.
+- listClicks is not exposed via the public Webgains publisher Smart Platform API (reporting is transaction-level, not click-level); the operation throws NotImplementedError.
+- generateTrackingLink requires WEBGAINS_CAMPAIGN_ID (the publisher campaign/Site ID used as wgcampaignid). The deeplink is constructed deterministically as https://track.webgains.com/click.html?wgcampaignid=...&wgprogramid=...&wgtarget=...
+- The Get Transaction Report endpoint documents a maximum date range of 1 year per call; the adapter chunks longer windows into one-year segments.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/webgains.md`._
+
+## Webgains (advertiser)
+
+### Quick facts
+
+- **Slug**: `webgains-advertiser`
+- **Auth model**: bearer
+- **Base URL**: https://platform.webgains.io
+- **Environment variables**: `WEBGAINS_ADVERTISER_API_KEY`, `WEBGAINS_ADVERTISER_ACCOUNT_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-04
+- **Documentation**: https://docs.webgains.dev/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Read-only at v0.1. The HTTP client refuses any non-GET method; pair this with a read-only Webgains token where the dashboard offers one for defence in depth.
+- The exact REST base URL could not be confirmed: the Webgains documentation host (docs.webgains.dev) returned HTTP 403 to automated fetch. The base URL is taken as https://platform.webgains.io and the endpoint paths (/advertisers/{id}/programs, /advertisers/{id}/transactions) are assumed; both require live-account confirmation.
+- Webgains transaction and programme field names are read defensively across several plausible names; the exact response schema was not confirmable against the documentation host.
+- `getProgrammePerformance` derives a per-publisher rollup from the Get Transaction Report endpoint (which documents a 1-year maximum date range per call); the adapter chunks longer windows into one-year segments. Whether the report can be requested pre-grouped by publisher server-side could not be confirmed, so the adapter groups client-side.
+- `listBrands` enumerates the advertiser's own programmes/campaigns (the unit a Webgains advertiser PAT addresses); there is no separate agency-passthrough tier confirmed for advertisers.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/webgains-advertiser.md`._
+
 ## How to reproduce
 
 From a fresh checkout:
@@ -3146,4 +4098,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-02 11:51 UTC._
+_Last regenerated 2026-06-05 05:30 UTC._

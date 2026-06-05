@@ -1,0 +1,27 @@
+{
+  "rCode": "0",
+  "rMessage": "",
+  "data": [
+    {
+      "date": "2024-01-15",
+      "clickCount": 1200,
+      "orderCount": 8,
+      "gmv": 540000,
+      "commission": 16200
+    },
+    {
+      "date": "2026-06-01",
+      "clickCount": 340,
+      "orderCount": 3,
+      "gmv": 129000,
+      "commission": "3870"
+    },
+    {
+      "date": "20260603",
+      "clickCount": 90,
+      "orderCount": 0,
+      "gmv": 0,
+      "commission": 0
+    }
+  ]
+}

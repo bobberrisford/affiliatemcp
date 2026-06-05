@@ -1,0 +1,24 @@
+{
+  "slug": "monetizze",
+  "name": "Monetizze",
+  "base_url": "https://api.monetizze.com.br/2.1",
+  "auth_model": "custom",
+  "env_vars": ["MONETIZZE_API_KEY"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "listProgrammes / getProgramme: no public product-listing endpoint path or response shape could be confirmed; both operations throw NotImplementedError rather than calling an unconfirmed endpoint.",
+    "listClicks: the Monetizze API does not expose click-level data; the operation throws NotImplementedError.",
+    "generateTrackingLink: Monetizze affiliate links are generated inside the panel, not via a documented deterministic public endpoint; the operation throws NotImplementedError.",
+    "listTransactions advanced-filter query parameter names (date window, status) are unconfirmed against the live interactive docs; the adapter sends dataInicio/dataFim and also filters client-side as a safeguard.",
+    "Authentication uses a two-step token exchange (x_consumer_key header then a token header); the token-response field name and token lifetime are unconfirmed, so the adapter reads the token field defensively and uses a conservative cache TTL."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://api.monetizze.com.br/2.1/apidoc/"
+}

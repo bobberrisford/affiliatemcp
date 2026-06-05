@@ -1,0 +1,11 @@
+{
+  "Id": "5001",
+  "Name": "Example Outdoor Co",
+  "AvatarUrl": "https://cdn.example.test/outdoor.png",
+  "CommissionType": "Percentage",
+  "CommissionRate": 5.0,
+  "Status": "Joined",
+  "TrackingUrl": "https://t.cfjump.com/0/t/5001",
+  "TargetUrl": "https://www.exampleoutdoor.test/",
+  "CurrencyCode": "AUD"
+}

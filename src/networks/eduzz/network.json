@@ -1,0 +1,24 @@
+{
+  "slug": "eduzz",
+  "name": "Eduzz",
+  "base_url": "https://api2.eduzz.com",
+  "auth_model": "custom",
+  "env_vars": ["EDUZZ_EMAIL", "EDUZZ_PUBLIC_KEY", "EDUZZ_API_KEY"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Authentication uses the Eduzz legacy api2 token-exchange (email + PublicKey + APIKey -> short-lived JWT, sent as the `token` header). The token is cached in memory and re-fetched on expiry (~15 minutes).",
+    "The sales listing route (GET /sale/get_sale_list) and its date_start/date_end window are documented on https://api2.eduzz.com/, but the exact query-parameter and response field names could not be confirmed against the live reference (developers.eduzz.com returns HTTP 403 to automated fetches). Fields are read defensively and the verbatim payload is preserved in rawNetworkData; a live account test is required before promotion.",
+    "listClicks is not exposed by the Eduzz API; the operation throws NotImplementedError.",
+    "generateTrackingLink is not implemented: Eduzz affiliate links are generated per product inside the panel and there is no documented self-serve link-construction API; the operation throws NotImplementedError.",
+    "Eduzz operates in Brazil; amounts are typically denominated in BRL. The currency is read from the payload where present and defaults to BRL otherwise."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://developers.eduzz.com/docs/api"
+}

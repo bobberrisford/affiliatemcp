@@ -1,0 +1,10 @@
+{
+  "id": 3001,
+  "name": "Example Books Ltd",
+  "status": "active",
+  "connection_status": "active",
+  "currency": "EUR",
+  "site_url": "https://www.examplebooks.test",
+  "max_payment": "8.00%",
+  "categories": [{ "name": "Books" }, { "name": "Media" }]
+}

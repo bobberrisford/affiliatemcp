@@ -1,0 +1,25 @@
+{
+  "results": [
+    {
+      "campaign_id": 6,
+      "campaign_name": "Acme Widgets DE",
+      "campaign_code": "acme-widgets-de",
+      "currency": "eur",
+      "status": "active",
+      "site_url": "https://acme-widgets.example"
+    },
+    {
+      "campaign_id": 7,
+      "campaign_name": "Acme Widgets UK",
+      "campaign_code": "acme-widgets-uk",
+      "currency": "gbp",
+      "status": "active",
+      "site_url": "https://acme-widgets.example/uk"
+    }
+  ],
+  "_meta": {
+    "count": 2,
+    "limit": 20,
+    "offset": 0
+  }
+}

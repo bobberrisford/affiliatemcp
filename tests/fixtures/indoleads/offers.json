@@ -1,0 +1,40 @@
+{
+  "data": [
+    {
+      "id": "5001",
+      "name": "Example Travel SEA",
+      "status": "allow",
+      "currency": "USD",
+      "payout": 10,
+      "payout_type": "percent",
+      "commission": "10% of sale",
+      "categories": ["Travel", "Hotels"],
+      "geo": ["MY", "SG", "ID"],
+      "preview_url": "https://www.exampletravel.test/",
+      "tracking_link": "https://app.indoleads.com/go/5001"
+    },
+    {
+      "id": "5002",
+      "name": "Example Electronics APAC",
+      "status": "need approval",
+      "currency": "USD",
+      "payout": 8.5,
+      "payout_type": "fixed",
+      "commission": "$8.50 per sale",
+      "category": "Electronics",
+      "countries": ["TH", "VN", "PH"],
+      "url": "https://www.exampleelectronics.test/",
+      "tracking_link": "https://app.indoleads.com/go/5002?aff=1"
+    },
+    {
+      "id": "5003",
+      "name": "Example Fashion Global",
+      "status": "paused",
+      "currency": "EUR",
+      "commission": "Tiered, up to 12%",
+      "categories": ["Fashion"],
+      "geo": "GLOBAL",
+      "tracking_link": "https://app.indoleads.com/go/5003"
+    }
+  ]
+}

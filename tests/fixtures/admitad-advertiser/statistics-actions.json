@@ -1,0 +1,77 @@
+{
+  "results": [
+    {
+      "action_id": "A-1001",
+      "advcampaign_id": 6,
+      "advcampaign_name": "Acme Widgets DE",
+      "status": "approved",
+      "payment": "12.50",
+      "cart": "125.00",
+      "currency": "EUR",
+      "click_date": "2026-05-01 10:00:00",
+      "action_date": "2026-05-01 10:05:00",
+      "closing_date": "2026-05-10 09:00:00",
+      "payment_status": 0,
+      "webmaster_id": 555,
+      "website_id": 9001,
+      "website_name": "BestDeals.example",
+      "site_of_webmaster": "bestdeals.example"
+    },
+    {
+      "action_id": "A-1002",
+      "advcampaign_id": 6,
+      "advcampaign_name": "Acme Widgets DE",
+      "status": "approved",
+      "payment": "4.00",
+      "cart": "40.00",
+      "currency": "EUR",
+      "click_date": "2026-05-02 11:00:00",
+      "action_date": "2026-05-01 12:00:00",
+      "closing_date": "2026-05-12 09:00:00",
+      "payment_status": 0,
+      "webmaster_id": 555,
+      "website_id": 9001,
+      "website_name": "BestDeals.example",
+      "site_of_webmaster": "bestdeals.example"
+    },
+    {
+      "action_id": "A-1003",
+      "advcampaign_id": 6,
+      "advcampaign_name": "Acme Widgets DE",
+      "status": "pending",
+      "payment": "8.00",
+      "cart": "80.00",
+      "currency": "EUR",
+      "click_date": "2026-05-03 09:00:00",
+      "action_date": "2026-05-03 09:30:00",
+      "payment_status": 0,
+      "webmaster_id": 777,
+      "website_id": 9002,
+      "website_name": "CouponHub.example",
+      "site_of_webmaster": "couponhub.example"
+    },
+    {
+      "action_id": "A-1004",
+      "advcampaign_id": 6,
+      "advcampaign_name": "Acme Widgets DE",
+      "status": "declined",
+      "payment": "0.00",
+      "cart": "60.00",
+      "currency": "EUR",
+      "click_date": "2026-05-04 14:00:00",
+      "action_date": "2026-05-04 14:20:00",
+      "closing_date": "2026-05-14 09:00:00",
+      "payment_status": 0,
+      "comment": "Order cancelled by customer",
+      "webmaster_id": 777,
+      "website_id": 9002,
+      "website_name": "CouponHub.example",
+      "site_of_webmaster": "couponhub.example"
+    }
+  ],
+  "_meta": {
+    "count": 4,
+    "limit": 500,
+    "offset": 0
+  }
+}

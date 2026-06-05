@@ -1,0 +1,20 @@
+{
+  "Items": [
+    {
+      "Id": 4101,
+      "Name": "Winter Sale 20% off",
+      "Status": "Active",
+      "StartDate": "2026-05-01T00:00:00",
+      "EndDate": "2026-06-30T23:59:59",
+      "LandingPageUrl": "https://www.samplebrand.example/winter-sale"
+    },
+    {
+      "Id": 4102,
+      "Name": "Free shipping over $50",
+      "Status": "Expired",
+      "StartDate": "2026-03-01T00:00:00",
+      "EndDate": "2026-04-30T23:59:59",
+      "LandingPageUrl": "https://www.samplebrand.example/free-shipping"
+    }
+  ]
+}

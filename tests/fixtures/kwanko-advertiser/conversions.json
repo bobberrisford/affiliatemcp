@@ -1,0 +1,48 @@
+{
+  "data": [
+    {
+      "id": "CV-5001",
+      "campaign_id": "CAMP-1001",
+      "campaign_name": "Acme Widgets FR",
+      "status": "validated",
+      "amount": "120.00",
+      "commission": "12.00",
+      "currency": "EUR",
+      "click_date": "2026-05-02T09:14:00Z",
+      "conversion_date": "2026-05-02T11:40:00Z",
+      "validation_date": "2026-05-09T08:00:00Z",
+      "site_id": "SITE-77",
+      "site_name": "BestDeals.fr",
+      "publisher_id": "SITE-77"
+    },
+    {
+      "id": "CV-5002",
+      "campaign_id": "CAMP-1001",
+      "campaign_name": "Acme Widgets FR",
+      "status": "pending",
+      "amount": "45.50",
+      "commission": "4.55",
+      "currency": "EUR",
+      "click_date": "2026-05-18T16:02:00Z",
+      "conversion_date": "2026-05-18T16:30:00Z",
+      "site_id": "SITE-88",
+      "site_name": "CouponHero.fr",
+      "publisher_id": "SITE-88"
+    },
+    {
+      "id": "CV-5003",
+      "campaign_id": "CAMP-1001",
+      "campaign_name": "Acme Widgets FR",
+      "status": "refused",
+      "amount": "210.00",
+      "commission": "0.00",
+      "currency": "EUR",
+      "click_date": "2026-05-20T10:00:00Z",
+      "conversion_date": "2026-05-20T10:25:00Z",
+      "refusal_reason": "Order cancelled by the customer within the cooling-off period",
+      "site_id": "SITE-77",
+      "site_name": "BestDeals.fr",
+      "publisher_id": "SITE-77"
+    }
+  ]
+}

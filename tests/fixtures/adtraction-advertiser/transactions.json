@@ -1,0 +1,59 @@
+{
+  "transactions": [
+    {
+      "transactionId": "TX-1001",
+      "transactionStatus": 1,
+      "programId": 90001,
+      "programName": "Nordic Outdoor Co.",
+      "channelId": 5501,
+      "channelName": "TrailGuide Blog",
+      "orderValue": "1200.00",
+      "commissionValue": "120.00",
+      "currency": "SEK",
+      "transactionTime": "2026-05-03T11:20:00",
+      "clickTime": "2026-05-03T10:55:00",
+      "validated": "2026-05-10T09:00:00"
+    },
+    {
+      "transactionId": "TX-1002",
+      "transactionStatus": 1,
+      "programId": 90001,
+      "programName": "Nordic Outdoor Co.",
+      "channelId": 5501,
+      "channelName": "TrailGuide Blog",
+      "orderValue": "800.00",
+      "commissionValue": "80.00",
+      "currency": "SEK",
+      "transactionTime": "2026-05-03T16:42:00",
+      "clickTime": "2026-05-03T16:30:00",
+      "validated": "2026-05-11T09:00:00"
+    },
+    {
+      "transactionId": "TX-1003",
+      "transactionStatus": 2,
+      "programId": 90001,
+      "programName": "Nordic Outdoor Co.",
+      "channelId": 5502,
+      "channelName": "CashbackNordic",
+      "orderValue": "450.00",
+      "commissionValue": "45.00",
+      "currency": "SEK",
+      "transactionTime": "2026-05-04T08:15:00",
+      "clickTime": "2026-05-04T08:01:00"
+    },
+    {
+      "transactionId": "TX-1004",
+      "transactionStatus": 5,
+      "programId": 90001,
+      "programName": "Nordic Outdoor Co.",
+      "channelId": 5502,
+      "channelName": "CashbackNordic",
+      "orderValue": "999.00",
+      "commissionValue": "99.90",
+      "currency": "SEK",
+      "transactionTime": "2026-05-05T13:00:00",
+      "clickTime": "2026-05-05T12:40:00",
+      "rejectionReason": "Order cancelled by customer"
+    }
+  ]
+}

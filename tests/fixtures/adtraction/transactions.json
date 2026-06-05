@@ -1,0 +1,60 @@
+{
+  "transactions": [
+    {
+      "transactionId": "TX-90001",
+      "transactionStatus": 2,
+      "programId": 3001,
+      "programName": "Nordic Books AB",
+      "orderValue": 550.00,
+      "commissionValue": 27.50,
+      "currency": "SEK",
+      "clickTime": "2026-04-01T10:00:00Z",
+      "transactionTime": "2026-04-01T10:15:00Z",
+      "validated": null,
+      "paid": null,
+      "rejectionReason": null
+    },
+    {
+      "transactionId": "TX-90002",
+      "transactionStatus": 1,
+      "programId": 3001,
+      "programName": "Nordic Books AB",
+      "orderValue": 1275.00,
+      "commissionValue": 63.75,
+      "currency": "SEK",
+      "clickTime": "2024-01-15T08:30:00Z",
+      "transactionTime": "2024-01-15T08:45:00Z",
+      "validated": "2024-01-20T12:00:00Z",
+      "paid": null,
+      "rejectionReason": null
+    },
+    {
+      "transactionId": "TX-90003",
+      "transactionStatus": 5,
+      "programId": 3002,
+      "programName": "Suomi Electronics Oy",
+      "orderValue": 89.90,
+      "commissionValue": 4.50,
+      "currency": "EUR",
+      "clickTime": "2025-09-10T14:00:00Z",
+      "transactionTime": "2025-09-10T14:20:00Z",
+      "validated": "2025-09-15T09:00:00Z",
+      "paid": null,
+      "rejectionReason": "Order cancelled by the customer"
+    },
+    {
+      "transactionId": "TX-90004",
+      "transactionStatus": "paid",
+      "programId": 3002,
+      "programName": "Suomi Electronics Oy",
+      "orderValue": 120.00,
+      "commissionValue": 8.00,
+      "currency": "EUR",
+      "clickTime": "2024-09-01T09:00:00Z",
+      "transactionTime": "2024-09-01T09:30:00Z",
+      "validated": "2024-09-05T10:00:00Z",
+      "paid": "2024-10-01T00:00:00Z",
+      "rejectionReason": null
+    }
+  ]
+}

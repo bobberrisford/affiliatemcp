@@ -1,0 +1,31 @@
+{
+  "programs": [
+    {
+      "programId": "3001",
+      "programName": "Example Books UK",
+      "status": "active",
+      "currency": "GBP",
+      "commission": "10%",
+      "category": "Books & Media",
+      "url": "https://www.examplebooks.test/"
+    },
+    {
+      "programId": "3002",
+      "programName": "Test Electronics EU",
+      "status": "active",
+      "currency": "EUR",
+      "commission": "8%",
+      "category": "Electronics",
+      "url": "https://www.testelectronics.test/"
+    },
+    {
+      "programId": "3003",
+      "programName": "Pending Fashion Co",
+      "status": "pending",
+      "currency": "GBP",
+      "commission": "12%",
+      "category": "Fashion",
+      "url": "https://www.pendingfashion.test/"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "slug": "commission-factory",
+  "name": "Commission Factory",
+  "base_url": "https://api.commissionfactory.com/V1/",
+  "auth_model": "custom",
+  "env_vars": ["COMMISSION_FACTORY_API_KEY"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Commission Factory authenticates with a single API key passed as the `apiKey` query parameter (not a bearer header); auth_model is therefore `custom`.",
+    "listClicks is not exposed via the public Affiliate API; the operation throws NotImplementedError.",
+    "generateTrackingLink is not a deterministic, destination-only construction: it reads the joined merchant's TrackingUrl (https://t.cfjump.com/0/b/{id}) via GET /Affiliate/Merchants/{id} and appends ?Url={encoded}. It therefore requires the merchant to be joined and reachable; for a merchant the affiliate has not joined it throws a network error.",
+    "Affiliate API pagination for GET /Affiliate/Transactions is not documented publicly (no page/pageSize parameters were found); the adapter passes the full date window in a single call. A live account test is required to confirm there is no server-side cap on the result set.",
+    "The deprecated TransactionStatus enumeration is read as a fallback only; the adapter prefers Status2 (TransactionStatus2: Pending, Confirmed, Declined, Void, Paid)."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://dev.commissionfactory.com/V1/"
+}

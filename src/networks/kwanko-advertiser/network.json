@@ -1,0 +1,25 @@
+{
+  "slug": "kwanko-advertiser",
+  "name": "Kwanko (advertiser)",
+  "base_url": "https://api.kwanko.com",
+  "auth_model": "bearer",
+  "env_vars": ["KWANKO_ADVERTISER_API_TOKEN"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Read-only at v0.1. The HTTP client refuses any non-GET method client-side; pair this with a read-only Kwanko API token for defence in depth.",
+    "Exact endpoint paths, query-parameter names, and JSON field names are taken from public summaries of the Kwanko advertiser API (https://developers.kwanko.com/ and https://helpdesk-advertiser.kwanko.com/); the developer reference is not machine-readable (403 to automated fetch), so field mapping is defensive and must be confirmed against a live response.",
+    "getProgrammePerformance is built from the advertiser statistics endpoint grouped by website (publisher); the grouping parameter name is taken from public summaries and is BLOCKED(verify) until confirmed against a live response.",
+    "listBrands enumerates the advertiser campaigns the token addresses; the Kwanko advertiser API has no documented account-enumeration endpoint, so each addressable campaign is returned as a brand. BLOCKED(verify) against a live account.",
+    "generateTrackingLink, getProgramme, getEarningsSummary, and listClicks are not implemented: these are publisher-side or unsupported on the advertiser surface and throw NotImplementedError rather than returning fabricated data.",
+    "The API token is self-issued in the Kwanko platform (Features and API); it may optionally be IP-restricted in platform settings, which can cause auth failures from a different host."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "multi-brand",
+  "docs_url": "https://developers.kwanko.com/"
+}

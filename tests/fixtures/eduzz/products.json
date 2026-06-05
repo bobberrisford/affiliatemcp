@@ -1,0 +1,41 @@
+{
+  "profile": {
+    "start": 1717459200.0,
+    "token": "test-eduzz-jwt-please-ignore",
+    "token_valid_until": "2026-06-04T12:15:00Z",
+    "finish": 1717459200.3,
+    "process": 0.3
+  },
+  "data": [
+    {
+      "content_id": "3001",
+      "title": "Curso de Marketing Digital",
+      "status": "active",
+      "price": 297.0,
+      "currency": "BRL",
+      "commission": "30%",
+      "category": "Marketing",
+      "url": "https://sun.eduzz.com/3001"
+    },
+    {
+      "content_id": "3002",
+      "title": "Ebook Financas Pessoais",
+      "status": "active",
+      "price": 47.0,
+      "currency": "BRL",
+      "commission": "30%",
+      "category": "Financas",
+      "url": "https://sun.eduzz.com/3002"
+    },
+    {
+      "content_id": "3003",
+      "title": "Mentoria Encerrada",
+      "status": "paused",
+      "price": 1997.0,
+      "currency": "BRL",
+      "commission": "40%",
+      "category": "Mentoria",
+      "url": "https://sun.eduzz.com/3003"
+    }
+  ]
+}

@@ -1,45 +1,10 @@
 {
   "wanted": [
     {
-      "name": "Commission Factory",
-      "slug": "commission-factory",
-      "side": "both",
-      "note": "APAC's largest network (owned by Awin Group but separate API). Public REST docs at dev.commissionfactory.com.",
-      "issue": null
-    },
-    {
-      "name": "Webgains",
-      "slug": "webgains",
-      "side": "publisher",
-      "note": "UK-headquartered. Smart Platform API publicly documented on Stoplight (docs.webgains.dev).",
-      "issue": null
-    },
-    {
-      "name": "FlexOffers",
-      "slug": "flexoffers",
-      "side": "publisher",
-      "note": "US aggregator. Sales / Reporting / Payments APIs are public (api.flexoffers.com).",
-      "issue": null
-    },
-    {
-      "name": "Daisycon",
-      "slug": "daisycon",
-      "side": "publisher",
-      "note": "NL/BE performance network. OAuth2 since 2023, public docs at developers.daisycon.com.",
-      "issue": null
-    },
-    {
       "name": "TradeTracker",
       "slug": "tradetracker",
       "side": "publisher",
       "note": "Global, NL-headquartered. SOAP-based but functional; affiliate.tradetracker.com/webService.",
-      "issue": null
-    },
-    {
-      "name": "Adtraction",
-      "slug": "adtraction",
-      "side": "publisher",
-      "note": "Nordic network. v2/v3 REST docs public at apidocs.adtraction.net.",
       "issue": null
     },
     {
@@ -68,13 +33,6 @@
       "slug": "tune",
       "side": "both",
       "note": "Long-running CPA platform. Public REST docs at developers.tune.com.",
-      "issue": null
-    },
-    {
-      "name": "Admitad",
-      "slug": "admitad",
-      "side": "publisher",
-      "note": "Global network, strong in CEE/EU. OAuth2 reporting API public at developers.admitad.com.",
       "issue": null
     },
     {

@@ -1,0 +1,78 @@
+{
+  "items": [
+    {
+      "purchase": {
+        "transaction": "HP10000001",
+        "order_date": 1775037600000,
+        "approved_date": null,
+        "status": "WAITING_PAYMENT",
+        "price": { "value": 55.0, "currency_value": "BRL" },
+        "payment": { "type": "BILLET" },
+        "commission_as": "AFFILIATE"
+      },
+      "product": { "id": 2001, "name": "Curso de Marketing Digital" },
+      "buyer": { "name": "Test Buyer One", "email": "buyer1@example.test" },
+      "producer": { "name": "Example Producer", "ucode": "PRODUCER0001" },
+      "commissions": [
+        { "source": "AFFILIATE", "value": 5.5, "currency_code": "BRL" }
+      ]
+    },
+    {
+      "purchase": {
+        "transaction": "HP10000002",
+        "order_date": 1705307400000,
+        "approved_date": 1705752000000,
+        "status": "APPROVED",
+        "price": { "value": 127.5, "currency_value": "BRL" },
+        "payment": { "type": "CREDIT_CARD" },
+        "commission_as": "AFFILIATE"
+      },
+      "product": { "id": 2001, "name": "Curso de Marketing Digital" },
+      "buyer": { "name": "Test Buyer Two", "email": "buyer2@example.test" },
+      "producer": { "name": "Example Producer", "ucode": "PRODUCER0001" },
+      "commissions": [
+        { "source": "AFFILIATE", "value": 12.75, "currency_code": "BRL" }
+      ]
+    },
+    {
+      "purchase": {
+        "transaction": "HP10000003",
+        "order_date": 1757512800000,
+        "approved_date": 1757926800000,
+        "status": "REFUNDED",
+        "price": { "value": 32.0, "currency_value": "BRL" },
+        "payment": { "type": "PIX" },
+        "commission_as": "PRODUCER"
+      },
+      "product": { "id": 2002, "name": "E-book de Produtividade" },
+      "buyer": { "name": "Test Buyer Three", "email": "buyer3@example.test" },
+      "producer": { "name": "Example Producer", "ucode": "PRODUCER0001" },
+      "commissions": [
+        { "source": "PRODUCER", "value": 3.2, "currency_code": "BRL" }
+      ]
+    },
+    {
+      "purchase": {
+        "transaction": "HP10000004",
+        "order_date": 1725181200000,
+        "approved_date": 1725530400000,
+        "status": "COMPLETE",
+        "price": { "value": 80.0, "currency_value": "BRL" },
+        "payment": { "type": "CREDIT_CARD" },
+        "commission_as": "PRODUCER"
+      },
+      "product": { "id": 2002, "name": "E-book de Produtividade" },
+      "buyer": { "name": "Test Buyer Four", "email": "buyer4@example.test" },
+      "producer": { "name": "Example Producer", "ucode": "PRODUCER0001" },
+      "commissions": [
+        { "source": "PRODUCER", "value": 8.0, "currency_code": "BRL" }
+      ]
+    }
+  ],
+  "page_info": {
+    "total_results": 4,
+    "next_page_token": null,
+    "prev_page_token": null,
+    "results_per_page": 100
+  }
+}
