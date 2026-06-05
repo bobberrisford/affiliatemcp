@@ -83,6 +83,55 @@
       "side": "publisher",
       "note": "APAC's growing network. Public REST docs.",
       "issue": null
+    },
+    {
+      "name": "ShareASale",
+      "slug": "shareasale",
+      "side": "both",
+      "note": "Major US network (Awin-owned but a separate account + API). Self-serve Reporting API keyed by Affiliate ID + Token + Secret Key, generated in Tools > API Reporting (account.shareasale.com/a-apimanager.cfm). On wecantrack; not the same surface as the existing Awin adapter.",
+      "issue": null
+    },
+    {
+      "name": "Pepperjam (Ascend by Partnerize)",
+      "slug": "pepperjam",
+      "side": "both",
+      "note": "US network, now branded Ascend by Partnerize but a distinct API from the existing Partnerize adapter. REST at api.pepperjamnetwork.com; API key self-issued in Resources > API Keys (ascend.pepperjam.com/affiliate/api/). Docs: ascendpartner.zendesk.com API Overview.",
+      "issue": null
+    },
+    {
+      "name": "AvantLink",
+      "slug": "avantlink",
+      "side": "both",
+      "note": "US/outdoor-niche network. Self-serve REST API; publisher modules include Affiliate Report, Transaction Inquiry, Product Search (support.avantlink.com API Module docs).",
+      "issue": null
+    },
+    {
+      "name": "Digistore24",
+      "slug": "digistore24",
+      "side": "both",
+      "note": "German digital-products giant. Full self-serve developer portal (dev.digistore24.com) + Swagger; API key created in-dashboard. Affiliate + vendor sales data.",
+      "issue": null
+    },
+    {
+      "name": "Belboon",
+      "slug": "belboon",
+      "side": "both",
+      "note": "DACH performance network. wecantrack pulls conversions via the Belboon API on a schedule; confirm self-serve key issuance + endpoint before building.",
+      "issue": null
+    },
+    {
+      "name": "financeAds",
+      "slug": "financeads",
+      "side": "publisher",
+      "note": "DACH finance-vertical network. API integration offered via wecantrack; verify public self-serve API docs before building.",
+      "issue": null
+    },
+    {
+      "name": "Yieldkit",
+      "slug": "yieldkit",
+      "side": "publisher",
+      "note": "Link-monetisation network (Skimlinks/Sovrn competitor; now owns Digidip). wecantrack connects via the Yieldkit API and matches commissions per session; verify self-serve API docs.",
+      "issue": null
     }
   ]
 }
