@@ -1,0 +1,27 @@
+{
+  "slug": "admitad-advertiser",
+  "name": "Admitad (advertiser)",
+  "base_url": "https://api.admitad.com",
+  "auth_model": "oauth2",
+  "env_vars": [
+    "ADMITAD_ADVERTISER_CLIENT_ID",
+    "ADMITAD_ADVERTISER_CLIENT_SECRET",
+    "ADMITAD_ADVERTISER_ID"
+  ],
+  "setup_time_estimate_minutes": 12,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Read-only at v0.1. The adapter refuses any non-GET HTTP method client-side; use an API application scoped only for the advertiser reporting endpoints for defence in depth.",
+    "getProgrammePerformance is derived from the advertiser statistics/actions report grouped by publisher (webmaster/website). Admitad does not expose per-publisher click counts on this report, so clicks is reported as 0; the exact webmaster/website field names carry // BLOCKED(verify) notes until a live advertiser account is available.",
+    "listBrands / listProgrammes read GET /advertiser/{id}/info/. The advertiser id (ADMITAD_ADVERTISER_ID) is the networkBrandId; advertiser tools take `brand` and resolve via brands.json.",
+    "OAuth2 access tokens have a limited lifetime; the adapter caches the token in memory and re-fetches on expiry. Cached tokens are lost on process restart."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "multi-brand",
+  "docs_url": "https://developers.admitad.com/en/doc/advertiser-api/"
+}
