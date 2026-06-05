@@ -1,0 +1,4 @@
+{
+  "_comment": "Fake ValueCommerce advertiser EC Order Report API XML response with no rows. No real credentials or account data.",
+  "xml": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Result>\n  <Transactions>\n  </Transactions>\n</Result>\n"
+}
