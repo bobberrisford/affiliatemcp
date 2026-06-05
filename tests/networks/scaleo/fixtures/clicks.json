@@ -1,0 +1,19 @@
+{
+  "data": [
+    {
+      "click_id": "ck-0001",
+      "offer_id": 1001,
+      "click_date": "2026-01-03 11:00:00",
+      "referer": "https://blog.example.com/review",
+      "landing_url": "https://www.atolls-bookshop.example.com/products"
+    },
+    {
+      "click_id": "ck-0002",
+      "offer_id": 1002,
+      "click_date": "2026-01-04 16:30:00",
+      "referer": "https://blog.example.com/travel",
+      "landing_url": "https://www.reef-travel.example.com/deals"
+    }
+  ],
+  "meta": { "total": 2, "page": 1, "perPage": 1000 }
+}

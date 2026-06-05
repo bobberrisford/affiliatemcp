@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "id": "camp-1",
+      "name": "Default Campaign",
+      "currencyId": "USD",
+      "url": "https://example.com",
+      "commission": 25,
+      "commissionType": "flat"
+    },
+    {
+      "id": "camp-2",
+      "name": "Premium Campaign",
+      "currencyId": "USD"
+    }
+  ],
+  "total": 2
+}

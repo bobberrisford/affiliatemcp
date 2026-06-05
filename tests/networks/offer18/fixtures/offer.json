@@ -1,0 +1,22 @@
+{
+  "status": 200,
+  "page": 1,
+  "results": 100,
+  "total": 1,
+  "data": [
+    {
+      "offerid": 1001,
+      "name": "Atolls Bookshop",
+      "logo": "https://cdn.example.com/logos/1001.png",
+      "status": "active",
+      "category": "Ecommerce, Books",
+      "currency": "GBP",
+      "price": 5.0,
+      "model": "CPA",
+      "date_start": "2026-01-01",
+      "date_end": "2026-12-31",
+      "preview_url": "https://www.atolls-bookshop.example.com/",
+      "authorized": 1
+    }
+  ]
+}

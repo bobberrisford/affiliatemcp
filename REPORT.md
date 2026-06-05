@@ -36,9 +36,11 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Adservice | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Adtraction | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Adtraction (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Affise | 10 | no | 7 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | Afilio | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Awin | 5 | no | 6 / 7 | 1 | partial | 0.1.0 | 2026-05-21 |
 | Awin (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-05-23 |
+| CAKE | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | CJ Affiliate | 8 | no | 6 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
 | CJ Affiliate (advertiser) | 8 | no | 7 / 7 | 7 | experimental | 0.1.0 | 2026-05-23 |
 | Commission Factory | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
@@ -63,13 +65,17 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Lomadee | 15 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
 | Monetizze | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | mrge | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
+| NetRefer | 15 | yes (~5 days) | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-05 |
+| Offer18 | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | Partnerize | 10 | no | 7 / 7 | 4 | experimental | 0.1.0 | 2026-05-28 |
 | Partnerize (Advertiser) | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 | Partnero | 5 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-05 |
 | PartnerStack | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | PartnerStack (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
+| Post Affiliate Pro | 5 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-05 |
 | Rakuten Advertising | 12 | yes (~5 days) | 6 / 7 | 3 | partial | 0.1.0 | 2026-05-21 |
 | Rewardful | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
+| Scaleo | 10 | yes (~1 days) | 7 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | Skimlinks | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 | Sovrn Commerce | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-05-28 |
 | Tradedoubler | 15 | no | 6 / 7 | 6 | experimental | 0.1.1 | 2026-05-28 |
@@ -278,6 +284,44 @@ _No findings document was supplied at `docs/findings/adtraction.md`._
 ### Findings
 
 _No findings document was supplied at `docs/findings/adtraction-advertiser.md`._
+
+## Affise
+
+### Quick facts
+
+- **Slug**: `affise`
+- **Auth model**: custom
+- **Base URL**: https://api.affise.com
+- **Environment variables**: `AFFISE_BASE_URL`, `AFFISE_API_KEY`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://api.affise.com/docs3.1/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).
+- The API base URL is per-tenant: each network runs its own Affise instance, so the base is the network's tracking domain supplied via AFFISE_BASE_URL — there is no single shared host. The base_url above is a representative placeholder only.
+- Amounts are assumed to be in major currency units (not minor units / cents); confirm against a live account before promoting beyond experimental.
+- No raw click-level affiliate endpoint is exposed by the partner API; listClicks is not implemented.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/affise.md`._
 
 ## Afilio
 
@@ -518,6 +562,45 @@ back to an API call only when the network mints a per-link tracking ID.
 ### Findings
 
 _No findings document was supplied at `docs/findings/awin-advertiser.md`._
+
+## CAKE
+
+### Quick facts
+
+- **Slug**: `cake`
+- **Auth model**: custom
+- **Base URL**: https://your-instance.cakemarketing.com
+- **Environment variables**: `CAKE_BASE_URL`, `CAKE_API_KEY`, `CAKE_AFFILIATE_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://support.getcake.com/support/solutions/folders/5000173061
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live CAKE instance.
+- The API base is the per-instance CAKE host, supplied via CAKE_BASE_URL — not a fixed value.
+- Conversion amounts are assumed to be major currency units (e.g. dollars, not cents).
+- Click-level data is not exposed via the documented CAKE affiliate reporting API; listClicks is unsupported.
+- Tracking links are assigned server-side per creative; generateTrackingLink is unsupported (no documented deterministic construction).
+
+### Findings
+
+_No findings document was supplied at `docs/findings/cake.md`._
 
 ## CJ Affiliate
 
@@ -2542,6 +2625,87 @@ To promote from `experimental` to `partial`:
 5. Update `last_verified` in `network.json` and `lastVerified` in adapter.ts.
 6. Update this document with confirmed shapes and field names.
 
+## NetRefer
+
+### Quick facts
+
+- **Slug**: `netrefer`
+- **Auth model**: oauth2
+- **Base URL**: https://asr.operator.netrefer.com
+- **Environment variables**: `NETREFER_BASE_URL`, `NETREFER_CLIENT_ID`, `NETREFER_CLIENT_SECRET`, `NETREFER_USERNAME`, `NETREFER_PASSWORD`
+- **Setup time estimate**: 15 minutes
+- **Approval required**: yes (~5 days)
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://developer.netrefer.com/Affiliate-api/ASR
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: the adapter has not been validated against a live NetRefer ASR operator account; endpoint paths and field names follow the public ASR 1.0 docs and may need adjustment.
+- The ASR base URL is per-operator: there is no single fixed host. base_url here is a placeholder; the real host is supplied via the NETREFER_BASE_URL credential and validated as a URL.
+- Amount unit is assumed to be major currency units (decimal); the public ASR docs do not state the unit. Verbatim values are preserved on rawNetworkData for reconciliation.
+- NetRefer is an iGaming affiliate-platform engine: ASR rows report iGaming metrics (registrations, deposits, CPA, RevShare). Sale amount is mapped from deposits and commission from CPA + RevShare; this differs from a classic retail-affiliate transaction.
+- listProgrammes and getProgramme are synthesised from the brands present in the Daily Activity Report — ASR exposes no programme/brand catalogue endpoint.
+- Click-level data (listClicks) is not exposed: ASR reports clicks only as a per-day aggregate, so listClicks throws NotImplementedError.
+- Tracking-link generation (generateTrackingLink) is not part of the read-only ASR affiliate surface and throws NotImplementedError.
+- listPublishers and listPublisherSectors are scaffolded for v0.2 and throw NotImplementedError.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/netrefer.md`._
+
+## Offer18
+
+### Quick facts
+
+- **Slug**: `offer18`
+- **Auth model**: custom
+- **Base URL**: https://api.offer18.com
+- **Environment variables**: `OFFER18_BASE_URL`, `OFFER18_API_KEY`, `OFFER18_SECRET_KEY`, `OFFER18_MID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://knowledgebase.offer18.com/affiliate/affiliate-apis
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Offer18 is a tenant network engine: there is no fixed base URL. The real base is the per-tenant instance host supplied via OFFER18_BASE_URL.
+- Amount unit assumed to be major currency units (e.g. 5.00 = five units of the reported currency); not confirmed against a live tenant.
+- Click-level data is not exposed as a distinct affiliate endpoint; listClicks is unsupported.
+- Tracking links are not deterministically constructible from the affiliate API; generateTrackingLink is unsupported.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/offer18.md`._
+
 ## Partnerize
 
 ### Quick facts
@@ -3084,6 +3248,48 @@ _No findings document was supplied at `docs/findings/partnerstack.md`._
 
 _No findings document was supplied at `docs/findings/partnerstack-advertiser.md`._
 
+## Post Affiliate Pro
+
+### Quick facts
+
+- **Slug**: `post-affiliate-pro`
+- **Auth model**: bearer
+- **Base URL**: https://demo.postaffiliatepro.com/api/v3
+- **Environment variables**: `POST_AFFILIATE_PRO_BASE_URL`, `POST_AFFILIATE_PRO_API_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://support.qualityunit.com/868880-API-v3-documentation-overview
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: built against the documented Post Affiliate Pro API v3 contract but not verified against a live account.
+- Per-tenant base URL: Post Affiliate Pro is hosted per account, so the API base is the per-account subdomain supplied via POST_AFFILIATE_PRO_BASE_URL (e.g. https://acme.postaffiliatepro.com/api/v3). The base_url here is a placeholder demo host.
+- transaction / affiliate / campaign field names and the amount unit (assumed MAJOR currency units, not minor units / cents) have not been confirmed against a live account; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).
+- advertiser + single-brand: one API key + base URL scopes one Post Affiliate Pro account. Bind your single brand in brands.json manually.
+- listClicks is unsupported: API v3 exposes no raw click record list to the merchant via this surface.
+- generateTrackingLink is unsupported: affiliate links belong to individual affiliates; the merchant API does not mint per-destination links.
+- getProgrammePerformance is computed client-side from /transactions grouped by (affiliate, day). Clicks are not available from /transactions and are reported as 0.
+- Pagination is offset/limit and capped at MAX_PAGES with a warning rather than a silent truncation.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/post-affiliate-pro.md`._
+
 ## Rakuten Advertising
 
 ### Quick facts
@@ -3342,6 +3548,45 @@ returned `TrackingLink` so the link's construction is fully auditable.
 ### Findings
 
 _No findings document was supplied at `docs/findings/rewardful.md`._
+
+## Scaleo
+
+### Quick facts
+
+- **Slug**: `scaleo`
+- **Auth model**: custom
+- **Base URL**: https://api.scaleo.io
+- **Environment variables**: `SCALEO_BASE_URL`, `SCALEO_API_KEY`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: yes (~1 days)
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://developers.scaleo.io/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- The base_url above is a placeholder. Scaleo has no shared API host: the real base is the network's own per-tenant tracking URL, supplied via SCALEO_BASE_URL (e.g. https://yournetwork.scaletrk.com).
+- Monetary amounts are assumed to be major currency units in the reported currency; confirm against a live tenant.
+- Affiliate API access is enabled per user by the platform administrator, not self-service.
+- generateTrackingLink is not implemented: Scaleo click links require the affiliate id, which is not among the configured credentials.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/scaleo.md`._
 
 ## Skimlinks
 
@@ -4390,4 +4635,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-05 19:40 UTC._
+_Last regenerated 2026-06-05 19:59 UTC._

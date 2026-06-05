@@ -1,0 +1,33 @@
+{
+  "slug": "netrefer",
+  "name": "NetRefer",
+  "base_url": "https://asr.operator.netrefer.com",
+  "auth_model": "oauth2",
+  "env_vars": [
+    "NETREFER_BASE_URL",
+    "NETREFER_CLIENT_ID",
+    "NETREFER_CLIENT_SECRET",
+    "NETREFER_USERNAME",
+    "NETREFER_PASSWORD"
+  ],
+  "setup_time_estimate_minutes": 15,
+  "setup_requires_approval": true,
+  "setup_approval_days_typical": 5,
+  "known_limitations": [
+    "Experimental: the adapter has not been validated against a live NetRefer ASR operator account; endpoint paths and field names follow the public ASR 1.0 docs and may need adjustment.",
+    "The ASR base URL is per-operator: there is no single fixed host. base_url here is a placeholder; the real host is supplied via the NETREFER_BASE_URL credential and validated as a URL.",
+    "Amount unit is assumed to be major currency units (decimal); the public ASR docs do not state the unit. Verbatim values are preserved on rawNetworkData for reconciliation.",
+    "NetRefer is an iGaming affiliate-platform engine: ASR rows report iGaming metrics (registrations, deposits, CPA, RevShare). Sale amount is mapped from deposits and commission from CPA + RevShare; this differs from a classic retail-affiliate transaction.",
+    "listProgrammes and getProgramme are synthesised from the brands present in the Daily Activity Report — ASR exposes no programme/brand catalogue endpoint.",
+    "Click-level data (listClicks) is not exposed: ASR reports clicks only as a per-day aggregate, so listClicks throws NotImplementedError.",
+    "Tracking-link generation (generateTrackingLink) is not part of the read-only ASR affiliate surface and throws NotImplementedError.",
+    "listPublishers and listPublisherSectors are scaffolded for v0.2 and throw NotImplementedError."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://developer.netrefer.com/Affiliate-api/ASR"
+}

@@ -1,0 +1,14 @@
+{
+  "data": {
+    "id": 1001,
+    "name": "Atolls Bookshop",
+    "approval_status": "approved",
+    "status": "active",
+    "currency": "GBP",
+    "payout": 5.5,
+    "payout_type": "CPA",
+    "categories": [{ "name": "Retail" }, "Books"],
+    "preview_url": "https://www.atolls-bookshop.example.com",
+    "tracking_link": "https://sandbox.scaletrk.com/click?o=1001&a=42"
+  }
+}

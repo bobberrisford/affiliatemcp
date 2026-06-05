@@ -274,9 +274,11 @@ the brand-side has a more complex auth model and we skipped it.
 | Adservice | 10 min | no | 6 / 7 | no clicks |
 | Adtraction | 5 min | no | 6 / 7 | no clicks |
 | Adtraction (advertiser) | 6 min | no | 7 / 7 | see notes |
+| Affise | 10 min | no | 7 / 7 | no clicks |
 | Afilio | 10 min | no | 6 / 7 | no clicks |
 | Awin | 5 min | no | 6 / 7 | no clicks |
 | Awin (advertiser) | 6 min | no | 7 / 7 | see notes |
+| CAKE | 10 min | no | 6 / 7 | no clicks |
 | CJ Affiliate | 8 min | no | 6 / 7 | no clicks |
 | CJ Affiliate (advertiser) | 8 min | no | 7 / 7 | pagination quirks |
 | Commission Factory | 10 min | no | 6 / 7 | clicks gated |
@@ -301,13 +303,17 @@ the brand-side has a more complex auth model and we skipped it.
 | Lomadee | 15 min | no | 6 / 7 | no clicks |
 | Monetizze | 5 min | no | 6 / 7 | no clicks |
 | mrge | 10 min | no | 6 / 7 | no clicks |
+| NetRefer | 15 min | yes (~5 days) | 6 / 7 | no clicks |
+| Offer18 | 10 min | no | 6 / 7 | no clicks |
 | Partnerize | 10 min | no | 7 / 7 | no clicks |
 | Partnerize (Advertiser) | 5 min | no | 6 / 7 | no clicks |
 | Partnero | 5 min | no | 6 / 7 | no clicks |
 | PartnerStack | 5 min | no | 6 / 7 | no clicks |
 | PartnerStack (advertiser) | 6 min | no | 7 / 7 | no clicks |
+| Post Affiliate Pro | 5 min | no | 6 / 7 | no clicks |
 | Rakuten Advertising | 12 min | yes (~5 days) | 6 / 7 | clicks gated |
 | Rewardful | 5 min | no | 6 / 7 | no clicks |
+| Scaleo | 10 min | yes (~1 days) | 7 / 7 | see notes |
 | Skimlinks | 10 min | no | 6 / 7 | no clicks |
 | Sovrn Commerce | 10 min | no | 6 / 7 | no clicks |
 | Tradedoubler | 15 min | no | 6 / 7 | clicks gated |
@@ -542,6 +548,11 @@ click for credentials, and common stumbling blocks:
 - [Monetizze](./docs/networks/monetizze.md) — API key; experimental, built from public docs.
 - [ValueCommerce](./docs/networks/value-commerce.md) — report-API key pair; experimental, built from public docs.
 - [Webgains](./docs/networks/webgains.md) — API key + publisher ID + campaign ID; experimental, built from public docs.
+- [Affise](./docs/networks/affise.md) — per-tenant base URL + API-Key header; tenant CPA engine; experimental, built from public docs.
+- [Scaleo](./docs/networks/scaleo.md) — per-tenant base URL + API key (query param); tenant engine; experimental, built from public docs.
+- [Offer18](./docs/networks/offer18.md) — per-tenant base URL + key/aid/mid (query params); tenant engine; experimental, built from public docs.
+- [CAKE](./docs/networks/cake.md) — per-instance base URL + API key + affiliate ID (XML API); experimental, built from public docs.
+- [NetRefer](./docs/networks/netrefer.md) — per-operator base URL + OAuth2 (Azure AD); iGaming ASR reporting; experimental, built from public docs.
 
 **Brand / advertiser side:**
 
@@ -564,6 +575,7 @@ click for credentials, and common stumbling blocks:
 - [Partnero](./docs/networks/partnero.md) — API token (Bearer); single-brand; SaaS-referral; experimental, built from public docs.
 - [GrowSurf](./docs/networks/growsurf.md) — API key + campaign ID (Bearer); single-brand; referral-credit SaaS; experimental, built from public docs.
 - [LeadDyno](./docs/networks/leaddyno.md) — private key (query param); single-brand; SaaS-referral; experimental, built from public docs.
+- [Post Affiliate Pro](./docs/networks/post-affiliate-pro.md) — per-tenant base URL + API key (Bearer); single-brand; SaaS engine; experimental, built from public docs.
 
 ## For the curious (or technical)
 

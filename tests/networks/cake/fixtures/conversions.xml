@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<conversion_report_response xmlns="http://cakemarketing.com/api/5/">
+  <success>true</success>
+  <row_count>3</row_count>
+  <conversions>
+    <conversion>
+      <conversion_id>c-1001</conversion_id>
+      <conversion_date>01/15/2026 10:00:00</conversion_date>
+      <click_date>01/15/2026 09:30:00</click_date>
+      <offer_id>1001</offer_id>
+      <offer_name>Atolls Bookshop</offer_name>
+      <affiliate_id>12345</affiliate_id>
+      <disposition>Approved</disposition>
+      <disposition_name>Approved</disposition_name>
+      <paid>false</paid>
+      <price>5.00</price>
+      <received>40.00</received>
+      <currency>USD</currency>
+    </conversion>
+    <conversion>
+      <conversion_id>c-1002</conversion_id>
+      <conversion_date>04/20/2026 14:00:00</conversion_date>
+      <click_date>04/20/2026 13:00:00</click_date>
+      <offer_id>1002</offer_id>
+      <offer_name>Atolls Travel</offer_name>
+      <affiliate_id>12345</affiliate_id>
+      <disposition>Pending</disposition>
+      <disposition_name>Pending Review</disposition_name>
+      <paid>false</paid>
+      <price>5.00</price>
+      <received>50.00</received>
+      <currency>USD</currency>
+    </conversion>
+    <conversion>
+      <conversion_id>c-1003</conversion_id>
+      <conversion_date>04/22/2026 11:00:00</conversion_date>
+      <click_date>04/22/2026 10:00:00</click_date>
+      <offer_id>1001</offer_id>
+      <offer_name>Atolls Bookshop</offer_name>
+      <affiliate_id>12345</affiliate_id>
+      <disposition>Rejected</disposition>
+      <disposition_name>Duplicate conversion — transaction already recorded for this order</disposition_name>
+      <paid>false</paid>
+      <price>0.00</price>
+      <received>0.00</received>
+      <currency>USD</currency>
+    </conversion>
+  </conversions>
+</conversion_report_response>

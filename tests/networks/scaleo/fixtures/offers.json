@@ -1,0 +1,39 @@
+{
+  "data": [
+    {
+      "id": 1001,
+      "name": "Atolls Bookshop",
+      "approval_status": "approved",
+      "status": "active",
+      "currency": "GBP",
+      "payout": 5.5,
+      "payout_type": "CPA",
+      "categories": [{ "name": "Retail" }, "Books"],
+      "preview_url": "https://www.atolls-bookshop.example.com",
+      "tracking_link": "https://sandbox.scaletrk.com/click?o=1001&a=42"
+    },
+    {
+      "id": 1002,
+      "name": "Reef Travel Club",
+      "approval_status": "pending",
+      "status": "active",
+      "currency": "EUR",
+      "payout": 12,
+      "payout_type": "RevShare",
+      "categories": ["Travel"],
+      "preview_url": "https://www.reef-travel.example.com"
+    },
+    {
+      "id": 1003,
+      "name": "Lagoon Lending",
+      "approval_status": "rejected",
+      "status": "active",
+      "currency": "USD",
+      "payout": 0,
+      "payout_type": "CPL",
+      "categories": ["Finance"],
+      "preview_url": "https://www.lagoon-lending.example.com"
+    }
+  ],
+  "meta": { "total": 3, "page": 1, "perPage": 100 }
+}

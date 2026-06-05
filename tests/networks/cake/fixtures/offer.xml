@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<get_campaign_response xmlns="http://cakemarketing.com/api/2/">
+  <success>true</success>
+  <offer>
+    <offer_id>1001</offer_id>
+    <offer_name>Atolls Bookshop</offer_name>
+    <offer_status>approved</offer_status>
+    <payout>$6.00</payout>
+    <price_format>CPA</price_format>
+    <currency>USD</currency>
+    <preview_link>https://www.atolls-bookshop.example.com</preview_link>
+    <category>Retail</category>
+    <vertical_name>Books</vertical_name>
+  </offer>
+</get_campaign_response>
