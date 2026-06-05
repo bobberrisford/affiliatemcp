@@ -270,16 +270,20 @@ the brand-side has a more complex auth model and we skipped it.
 | Network | Setup time | Approval required | Supported ops | Notes |
 | --- | ---: | --- | ---: | --- |
 | Admitad | 15 min | no | 6 / 7 | clicks gated |
+| Admitad (advertiser) | 12 min | no | 7 / 7 | see notes |
 | Adservice | 10 min | no | 6 / 7 | no clicks |
 | Adtraction | 5 min | no | 6 / 7 | no clicks |
+| Adtraction (advertiser) | 6 min | no | 7 / 7 | see notes |
 | Afilio | 10 min | no | 6 / 7 | no clicks |
 | Awin | 5 min | no | 6 / 7 | no clicks |
 | Awin (advertiser) | 6 min | no | 7 / 7 | see notes |
 | CJ Affiliate | 8 min | no | 6 / 7 | no clicks |
 | CJ Affiliate (advertiser) | 8 min | no | 7 / 7 | pagination quirks |
 | Commission Factory | 10 min | no | 6 / 7 | clicks gated |
+| Commission Factory (advertiser) | 7 min | no | 7 / 7 | pagination quirks |
 | Coupang Partners | 10 min | no | 6 / 7 | no clicks |
 | Daisycon | 15 min | no | 6 / 7 | no clicks |
+| Daisycon (advertiser) | 15 min | no | 7 / 7 | see notes |
 | eBay Partner Network | 10 min | yes (~3 days) | 7 / 7 | see notes |
 | Eduzz | 10 min | no | 6 / 7 | no clicks |
 | Everflow | 10 min | yes (~1 days) | 7 / 7 | see notes |
@@ -290,6 +294,7 @@ the brand-side has a more complex auth model and we skipped it.
 | Impact (advertiser) | 8 min | no | 7 / 7 | see notes |
 | Indoleads | 5 min | no | 6 / 7 | no clicks |
 | Kwanko | 10 min | no | 6 / 7 | no clicks |
+| Kwanko (advertiser) | 10 min | no | 6 / 7 | no clicks |
 | Lomadee | 15 min | no | 6 / 7 | no clicks |
 | Monetizze | 5 min | no | 6 / 7 | no clicks |
 | mrge | 10 min | no | 6 / 7 | no clicks |
@@ -301,7 +306,9 @@ the brand-side has a more complex auth model and we skipped it.
 | Tradedoubler | 15 min | no | 6 / 7 | clicks gated |
 | Tradedoubler (Advertiser) | 10 min | no | 7 / 7 | no clicks |
 | ValueCommerce | 10 min | no | 6 / 7 | no clicks |
+| ValueCommerce (advertiser) | 10 min | no | 6 / 7 | no clicks |
 | Webgains | 10 min | no | 6 / 7 | no clicks |
+| Webgains (advertiser) | 10 min | no | 7 / 7 | see notes |
 <!-- AFFILIATE_MCP_NETWORK_TABLE_END -->
 
 A few networks make you wait for approval (eBay, Rakuten) before they
@@ -507,6 +514,13 @@ click for credentials, and common stumbling blocks:
 - [Impact (advertiser)](./docs/networks/impact-advertiser.md) — Account SID + Auth Token; agency or brand-direct; read-only.
 - [Partnerize (advertiser)](./docs/networks/partnerize-advertiser.md) — application key + user API key; multi-brand; experimental, built from public docs.
 - [Tradedoubler (advertiser)](./docs/networks/tradedoubler-advertiser.md) — reports token + organisation ID; multi-brand; experimental, built from public docs.
+- [Admitad (advertiser)](./docs/networks/admitad-advertiser.md) — OAuth2 client ID + secret + advertiser ID; multi-brand; read-only; experimental, built from public docs.
+- [Adtraction (advertiser)](./docs/networks/adtraction-advertiser.md) — API token; multi-brand; read-only (POST-read allowlist); experimental, built from public docs.
+- [Commission Factory (advertiser)](./docs/networks/commission-factory-advertiser.md) — API key; read-only; experimental, built from public docs.
+- [Daisycon (advertiser)](./docs/networks/daisycon-advertiser.md) — OAuth2 client ID + secret + refresh token; multi-brand; read-only; experimental, built from public docs.
+- [Kwanko (advertiser)](./docs/networks/kwanko-advertiser.md) — API token; multi-brand; read-only; experimental, built from public docs.
+- [ValueCommerce (advertiser)](./docs/networks/value-commerce-advertiser.md) — report-API key pair; multi-brand; read-only; experimental, built from public docs.
+- [Webgains (advertiser)](./docs/networks/webgains-advertiser.md) — API key + account ID; multi-brand; read-only; experimental, built from public docs.
 
 ## For the curious (or technical)
 

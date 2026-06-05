@@ -15,16 +15,20 @@
  */
 
 import './admitad/adapter.js';
+import './admitad-advertiser/adapter.js';
 import './adservice/adapter.js';
 import './adtraction/adapter.js';
+import './adtraction-advertiser/adapter.js';
 import './afilio/adapter.js';
 import './awin/adapter.js';
 import './awin-advertiser/adapter.js';
 import './cj/adapter.js';
 import './cj-advertiser/adapter.js';
 import './commission-factory/adapter.js';
+import './commission-factory-advertiser/adapter.js';
 import './coupang-partners/adapter.js';
 import './daisycon/adapter.js';
+import './daisycon-advertiser/adapter.js';
 import './ebay/adapter.js';
 import './eduzz/adapter.js';
 import './everflow/adapter.js';
@@ -35,6 +39,7 @@ import './impact/adapter.js';
 import './impact-advertiser/adapter.js';
 import './indoleads/adapter.js';
 import './kwanko/adapter.js';
+import './kwanko-advertiser/adapter.js';
 import './lomadee/adapter.js';
 import './monetizze/adapter.js';
 import './mrge/adapter.js';
@@ -46,4 +51,6 @@ import './sovrn-commerce/adapter.js';
 import './tradedoubler/adapter.js';
 import './tradedoubler-advertiser/adapter.js';
 import './value-commerce/adapter.js';
+import './value-commerce-advertiser/adapter.js';
 import './webgains/adapter.js';
+import './webgains-advertiser/adapter.js';
