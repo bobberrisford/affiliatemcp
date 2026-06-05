@@ -1,0 +1,28 @@
+{
+  "data": [
+    {
+      "id": "CAMP-1001",
+      "name": "Acme Widgets FR",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://acme-widgets.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-1002",
+      "name": "Acme Widgets ES",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://acme-widgets.example/es",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-1003",
+      "name": "Acme Widgets Legacy",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://acme-widgets.example/legacy",
+      "api_enabled": false
+    }
+  ]
+}
