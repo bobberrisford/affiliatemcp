@@ -1,0 +1,24 @@
+{
+  "slug": "adtraction-advertiser",
+  "name": "Adtraction (advertiser)",
+  "base_url": "https://api.adtraction.com",
+  "auth_model": "custom",
+  "env_vars": ["ADTRACTION_ADVERTISER_API_TOKEN"],
+  "setup_time_estimate_minutes": 6,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Read-only at v0.1. Adtraction reporting reads are POST-with-body by design, so read-only is enforced by an ALLOWLIST of documented data-READ paths (advertiser transactions and advertiser programmes) rather than by refusing POST; any write/mutation endpoint is structurally unreachable through the client.",
+    "Authentication is a single API access token sent as a `token` query parameter (not a header); auth_model is \"custom\".",
+    "Multi-brand: one advertiser token may address several programmes. `listBrands()` enumerates them; brand-scoped tools take `brand` and resolve to a programme id via brands.json.",
+    "`getProgrammePerformance` is derived from the advertiser transactions endpoint, grouped by affiliate/channel; transactions are per-conversion so clicks read as 0 unless the row carries a click count.",
+    "Exact v3 advertiser endpoint paths (/v3/advertiser/transactions/, /v3/advertiser/programs/), the request/response field names, and the API host (api.adtraction.com vs api.adtraction.net) are inferred from public docs and the v2 partner pattern; BLOCKED(verify) against a live account (both Apiary docs sites returned HTTP 403 to automated fetch)."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-04",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "multi-brand",
+  "docs_url": "https://adtractionv3.docs.apiary.io/"
+}
