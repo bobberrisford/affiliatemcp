@@ -1,0 +1,55 @@
+{
+  "transactions": [
+    {
+      "transactionId": 50001,
+      "programId": 1001,
+      "programName": "Atolls Bücher",
+      "type": "sale",
+      "status": "bestätigt",
+      "amount": "120,00",
+      "commission": "8,40",
+      "currency": "EUR",
+      "clickDate": "2024-12-20T10:00:00Z",
+      "transactionDate": "2024-12-22T14:30:00Z",
+      "confirmationDate": "2025-01-05T09:00:00Z"
+    },
+    {
+      "transactionId": 50002,
+      "programId": 1002,
+      "programName": "Coral Coast Reisen",
+      "type": "lead",
+      "status": "offen",
+      "amount": "0,00",
+      "commission": "3,50",
+      "currency": "EUR",
+      "clickDate": "2026-05-10T08:00:00Z",
+      "transactionDate": "2026-05-10T08:05:00Z"
+    },
+    {
+      "transactionId": 50003,
+      "programId": 1003,
+      "programName": "Riff Technik",
+      "type": "sale",
+      "status": "storniert",
+      "amount": "59,99",
+      "commission": "4,50",
+      "currency": "EUR",
+      "transactionDate": "2025-08-01T12:00:00Z",
+      "confirmationDate": "2025-08-15T12:00:00Z",
+      "cancellationReason": "Kunde hat die Ware innerhalb von 14 Tagen zurückgegeben"
+    },
+    {
+      "transactionId": 50004,
+      "programId": 1001,
+      "programName": "Atolls Bücher",
+      "type": "sale",
+      "status": "ausgezahlt",
+      "amount": "200,00",
+      "commission": "14,00",
+      "currency": "EUR",
+      "transactionDate": "2024-09-01T12:00:00Z",
+      "confirmationDate": "2024-09-20T12:00:00Z",
+      "paymentDate": "2024-10-15T12:00:00Z"
+    }
+  ]
+}

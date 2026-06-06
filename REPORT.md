@@ -33,6 +33,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | --- | ---: | --- | ---: | ---: | --- | --- | --- |
 | 2Performant | 5 | no | 6 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | AccessTrade | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
+| Adcell | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Addrevenue | 5 | no | 7 / 7 | 2 | experimental | 0.1.0 | 2026-06-05 |
 | Admitad | 15 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
 | Admitad (advertiser) | 12 | no | 7 / 7 | 5 | experimental | 0.1.0 | 2026-06-04 |
@@ -44,9 +45,11 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Affiliate Future | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Affise | 10 | no | 7 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | Afilio | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Amazon Creators | 10 | yes (~1 days) | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | AvantLink | 10 | no | 6 / 7 | 3 | experimental | 0.1.0 | 2026-06-05 |
 | Awin | 5 | no | 6 / 7 | 1 | partial | 0.1.0 | 2026-05-21 |
 | Awin (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-05-23 |
+| Belboon | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | CAKE | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | CJ Affiliate | 8 | no | 6 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
 | CJ Affiliate (advertiser) | 8 | no | 7 / 7 | 7 | experimental | 0.1.0 | 2026-05-23 |
@@ -64,6 +67,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | eHUB | 5 | no | 7 / 7 | 3 | experimental | 0.1.0 | 2026-06-05 |
 | Everflow | 10 | yes (~1 days) | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-28 |
 | Everflow (Advertiser) | 10 | no | 7 / 7 | 6 | experimental | 0.2.0 | 2026-05-28 |
+| financeAds | 10 | yes (~2 days) | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | FirstPromoter | 5 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-05 |
 | FlexOffers | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Flipkart Affiliate | 10 | no | 6 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
@@ -105,6 +109,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Tolt | 5 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-05 |
 | Tradedoubler | 15 | no | 6 / 7 | 6 | experimental | 0.1.1 | 2026-05-28 |
 | Tradedoubler (Advertiser) | 10 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
+| TradeTracker | 10 | no | 7 / 7 | 3 | experimental | 0.1.0 | 2026-06-05 |
 | Travelpayouts | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | TUNE | 10 | no | 7 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | ValueCommerce | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
@@ -190,6 +195,46 @@ _No findings document was supplied at `docs/findings/2performant.md`._
 ### Findings
 
 _No findings document was supplied at `docs/findings/accesstrade.md`._
+
+## Adcell
+
+### Quick facts
+
+- **Slug**: `adcell`
+- **Auth model**: custom
+- **Base URL**: https://api.adcell.com
+- **Environment variables**: `ADCELL_API_TOKEN`, `ADCELL_AFFILIATE_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://strackr.com/docs/adcell
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public, third-party sources; not yet verified against a live account.
+- Adcell's publisher API is dashboard-gated; endpoint paths, field names, and the auth header scheme are reconstructed and need live verification.
+- Amounts are assumed to be EUR (Adcell is a DACH network); the assumption is unverified and the raw payload retains the source value.
+- Click-level data is not exposed via a documented publisher endpoint; listClicks is unsupported.
+- No documented deterministic deep-link scheme or publisher link API; generateTrackingLink is unsupported.
+- Distinct from the mrge adapter: Adcell is now under the mrge holding group but is integrated here as a standalone network with its own API and credentials.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/adcell.md`._
 
 ## Addrevenue
 
@@ -622,6 +667,46 @@ _No findings document was supplied at `docs/findings/affise.md`._
 
 _No findings document was supplied at `docs/findings/afilio.md`._
 
+## Amazon Creators
+
+### Quick facts
+
+- **Slug**: `amazon-creators`
+- **Auth model**: custom
+- **Base URL**: https://creatorsapi.amazon
+- **Environment variables**: `AMAZON_CREATORS_CLIENT_ID`, `AMAZON_CREATORS_CLIENT_SECRET`, `AMAZON_PARTNER_TAG`, `AMAZON_MARKETPLACE`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: yes (~1 days)
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://affiliate-program.amazon.com/creatorsapi/docs
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: this adapter has not been validated against a live Amazon Creators API account; the exact API shape needs live verification.
+- The Amazon Creators API is a product-catalog API only (getItems / searchItems); it exposes no earnings, transactions, commissions or clicks endpoint. Affiliate performance data is available only in the Associates Central dashboard and its CSV report exports.
+- listTransactions, getEarningsSummary and listClicks are unsupported because the Creators API has no reporting surface.
+- Programmes are synthesised: Amazon is a single programme per (marketplace, partner tag), so listProgrammes/getProgramme return one synthetic programme rather than a queryable catalogue.
+- Amount unit is assumed to be the marketplace major currency unit (e.g. USD/GBP), not minor units; this is unverified and moot at v0.1 because no monetary data is returned by the supported operations.
+- Successor to the Product Advertising API (PA-API 5.0), which deprecates 30 April 2026 and retires 15 May 2026; the auth model (OAuth2 client-credentials, scope creatorsapi::default) and catalog host (creatorsapi.amazon) are reconstructed from public sources and need confirmation against a live account.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/amazon-creators.md`._
+
 ## AvantLink
 
 ### Quick facts
@@ -858,6 +943,45 @@ back to an API call only when the network mints a per-link tracking ID.
 ### Findings
 
 _No findings document was supplied at `docs/findings/awin-advertiser.md`._
+
+## Belboon
+
+### Quick facts
+
+- **Slug**: `belboon`
+- **Auth model**: custom
+- **Base URL**: https://export.net.belboon.com
+- **Environment variables**: `BELBOON_MAGIC_KEY`, `BELBOON_USER_ID`, `BELBOON_EXPORT_HOST`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://faq.belboon.com/en/knowledge-base/tag/api/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).
+- Adapter built from public API documentation; not yet verified against a live account.
+- Belboon exposes only aggregated daily stats, not click-level events, via the publisher export API; listClicks is unsupported.
+- Monetary amounts are assumed to be major currency units (e.g. euros), as the export interface does not document a minor-unit encoding; verify against a live account.
+- The export API serves CSV/XLS/XML (no JSON), and the exact export column names are dashboard-gated and unverified; transformers read candidate column names defensively and preserve the raw row.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/belboon.md`._
 
 ## CAKE
 
@@ -2179,6 +2303,45 @@ documentation, though live-account verification is still required before product
 
 Original: 2026-05-28  
 Hardening pass: 2026-05-28
+
+## financeAds
+
+### Quick facts
+
+- **Slug**: `financeads`
+- **Auth model**: custom
+- **Base URL**: https://www.financeads.net
+- **Environment variables**: `FINANCEADS_API_KEY`, `FINANCEADS_USER_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: yes (~2 days)
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://strackr.com/docs/financeads
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public documentation; not yet verified against a live financeAds account.
+- The financeAds API shape (endpoint paths, parameter names, JSON vs XML/CSV response) is partly dashboard-gated and needs live verification.
+- Amounts are assumed to be in EUR; financeAds is a DACH finance-vertical network and the per-row currency field is not yet confirmed.
+- Click-level data is not exposed via the financeAds publisher API; listClicks is unsupported.
+- API access may require the publisher to request the "Leads & Sales API" from financeAds support before reporting calls succeed.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/financeads.md`._
 
 ## FirstPromoter
 
@@ -5455,6 +5618,43 @@ handles both d.m.Y and d.m.y (two-digit year) in responses.
    account types.
    Credential needed: any live account with a suspended programme.
 
+## TradeTracker
+
+### Quick facts
+
+- **Slug**: `tradetracker`
+- **Auth model**: custom
+- **Base URL**: https://ws.tradetracker.com
+- **Environment variables**: `TRADETRACKER_CUSTOMER_ID`, `TRADETRACKER_PASSPHRASE`, `TRADETRACKER_SITE_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://affiliate.tradetracker.com/webService/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).
+- The TradeTracker affiliate API is SOAP-only: requests and responses are hand-built XML envelopes parsed without an XML dependency, and authentication opens a server session whose cookie is cached and re-established on expiry.
+- Monetary fields (commission, orderAmount) are assumed to be major currency units (e.g. euros, not cents) in the campaign currency; this has not been confirmed against a live account.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/tradetracker.md`._
+
 ## Travelpayouts
 
 ### Quick facts
@@ -5747,4 +5947,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-06 10:25 UTC._
+_Last regenerated 2026-06-06 16:09 UTC._

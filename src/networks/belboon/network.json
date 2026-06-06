@@ -1,0 +1,23 @@
+{
+  "slug": "belboon",
+  "name": "Belboon",
+  "base_url": "https://export.net.belboon.com",
+  "auth_model": "custom",
+  "env_vars": ["BELBOON_MAGIC_KEY", "BELBOON_USER_ID", "BELBOON_EXPORT_HOST"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).",
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Belboon exposes only aggregated daily stats, not click-level events, via the publisher export API; listClicks is unsupported.",
+    "Monetary amounts are assumed to be major currency units (e.g. euros), as the export interface does not document a minor-unit encoding; verify against a live account.",
+    "The export API serves CSV/XLS/XML (no JSON), and the exact export column names are dashboard-gated and unverified; transformers read candidate column names defensively and preserve the raw row."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://faq.belboon.com/en/knowledge-base/tag/api/"
+}

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope
+    xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:ns1="https://ws.tradetracker.com/soap/affiliate">
+  <SOAP-ENV:Body>
+    <ns1:getAffiliateSitesResponse>
+      <return SOAP-ENC:arrayType="ns1:AffiliateSite[1]"
+              xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/">
+        <affiliateSite>
+          <ID>654321</ID>
+          <name>Atolls Reviews</name>
+          <URL>https://reviews.atolls.example.com</URL>
+          <type>
+            <ID>1</ID>
+            <name>Content site</name>
+          </type>
+        </affiliateSite>
+      </return>
+    </ns1:getAffiliateSitesResponse>
+  </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

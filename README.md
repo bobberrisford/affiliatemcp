@@ -271,6 +271,7 @@ the brand-side has a more complex auth model and we skipped it.
 | --- | ---: | --- | ---: | --- |
 | 2Performant | 5 min | no | 6 / 7 | no clicks |
 | AccessTrade | 10 min | no | 6 / 7 | no clicks |
+| Adcell | 10 min | no | 6 / 7 | no clicks |
 | Addrevenue | 5 min | no | 7 / 7 | pagination quirks |
 | Admitad | 15 min | no | 6 / 7 | clicks gated |
 | Admitad (advertiser) | 12 min | no | 7 / 7 | see notes |
@@ -282,9 +283,11 @@ the brand-side has a more complex auth model and we skipped it.
 | Affiliate Future | 5 min | no | 6 / 7 | no clicks |
 | Affise | 10 min | no | 7 / 7 | no clicks |
 | Afilio | 10 min | no | 6 / 7 | no clicks |
+| Amazon Creators | 10 min | yes (~1 days) | 6 / 7 | no clicks |
 | AvantLink | 10 min | no | 6 / 7 | no clicks |
 | Awin | 5 min | no | 6 / 7 | no clicks |
 | Awin (advertiser) | 6 min | no | 7 / 7 | see notes |
+| Belboon | 10 min | no | 6 / 7 | no clicks |
 | CAKE | 10 min | no | 6 / 7 | no clicks |
 | CJ Affiliate | 8 min | no | 6 / 7 | no clicks |
 | CJ Affiliate (advertiser) | 8 min | no | 7 / 7 | pagination quirks |
@@ -302,6 +305,7 @@ the brand-side has a more complex auth model and we skipped it.
 | eHUB | 5 min | no | 7 / 7 | see notes |
 | Everflow | 10 min | yes (~1 days) | 7 / 7 | see notes |
 | Everflow (Advertiser) | 10 min | no | 7 / 7 | no clicks |
+| financeAds | 10 min | yes (~2 days) | 6 / 7 | no clicks |
 | FirstPromoter | 5 min | no | 6 / 7 | no clicks |
 | FlexOffers | 10 min | no | 6 / 7 | no clicks |
 | Flipkart Affiliate | 10 min | no | 6 / 7 | no clicks |
@@ -343,6 +347,7 @@ the brand-side has a more complex auth model and we skipped it.
 | Tolt | 5 min | no | 6 / 7 | no clicks |
 | Tradedoubler | 15 min | no | 6 / 7 | clicks gated |
 | Tradedoubler (Advertiser) | 10 min | no | 7 / 7 | no clicks |
+| TradeTracker | 10 min | no | 7 / 7 | see notes |
 | Travelpayouts | 5 min | no | 6 / 7 | no clicks |
 | TUNE | 10 min | no | 7 / 7 | no clicks |
 | ValueCommerce | 10 min | no | 6 / 7 | no clicks |
@@ -407,11 +412,6 @@ pile onto) a tracking issue before you start.
 <!-- AFFILIATE_MCP_WANTED_TABLE_START -->
 | Network | Side wanted | Notes | Tracking issue |
 | --- | --- | --- | --- |
-| TradeTracker | publisher | Global, NL-headquartered. SOAP-based but functional; affiliate.tradetracker.com/webService. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20TradeTracker) |
-| Adcell | publisher | DACH network (now under mrge holding). API exists for publishers but docs are dashboard-gated — expect reverse-engineering. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Adcell) |
-| Amazon Creators API | publisher | Successor to PA-API (which deprecates 15 May 2026). Docs at affiliate-program.amazon.com/creatorsapi/docs. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Amazon%20Creators%20API) |
-| Belboon | publisher + advertiser | DACH performance network. wecantrack pulls conversions via the Belboon API on a schedule; confirm self-serve key issuance + endpoint before building. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Belboon) |
-| financeAds | publisher | DACH finance-vertical network. API integration offered via wecantrack; verify public self-serve API docs before building. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20financeAds) |
 <!-- AFFILIATE_MCP_WANTED_TABLE_END -->
 
 ## Awin reference implementation
@@ -557,6 +557,11 @@ click for credentials, and common stumbling blocks:
 - [ClickBank](./docs/networks/clickbank.md) — DEV:CLERK key header + nickname; digital products; experimental, built from public docs.
 - [TUNE](./docs/networks/tune.md) — NetworkId + api_key (per-tenant host); HasOffers engine; experimental, built from public docs.
 - [Involve Asia](./docs/networks/involve-asia.md) — key + secret (token exchange); APAC; experimental, built from public docs.
+- [TradeTracker](./docs/networks/tradetracker.md) — customer ID + passphrase + site ID (SOAP session); NL/EU; experimental, built from public docs.
+- [Amazon Creators](./docs/networks/amazon-creators.md) — API key + partner tag; single programme per marketplace; experimental, built from public docs.
+- [Belboon](./docs/networks/belboon.md) — magic key + user ID (CSV export); DACH; experimental, built from public docs.
+- [financeAds](./docs/networks/financeads.md) — API key + publisher ID; DACH finance; experimental, built from public docs.
+- [Adcell](./docs/networks/adcell.md) — API key + affiliate ID; DACH; experimental, built from public docs.
 - [ShopMy](./docs/networks/shopmy.md) — Brand Partner token; US creator network; experimental, built from public docs.
 - [Levanta](./docs/networks/levanta.md) — Bearer token; Amazon creator platform; experimental, built from public docs.
 - [Howl](./docs/networks/howl.md) — NRTV-API-KEY header + publisher ID; creator link network; smart-link minting; experimental, built from public docs.

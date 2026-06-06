@@ -1,0 +1,6 @@
+conversion_id;advertiser_id;advertiser_name;status;amount;commission;currency;conversion_date;click_date;confirmation_date;rejection_reason
+9001;1001;Atolls Bookshop;confirmed;1.234,56;98,76;EUR;15.01.2026 10:30:00;10.01.2026 09:00:00;20.01.2026 12:00:00;
+9002;1001;Atolls Bookshop;open;49,99;4,00;EUR;01.03.2026 14:00:00;28.02.2026 18:00:00;;
+9003;1002;Atolls Garden;rejected;200,00;0,00;EUR;05.02.2026 08:15:00;01.02.2026 07:00:00;10.02.2026 09:00:00;Customer cancelled the order
+9004;1003;Atolls Travel;cancelled;500,00;25,00;EUR;20.12.2025 16:45:00;18.12.2025 12:00:00;28.12.2025 10:00:00;Booking refunded
+9005;1002;Atolls Garden;confirmed;75,50;6,04;EUR;28.03.2026 11:11:11;27.03.2026 20:00:00;02.04.2026 09:00:00;

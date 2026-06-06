@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope
+    xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:ns1="https://ws.tradetracker.com/soap/affiliate">
+  <SOAP-ENV:Body>
+    <ns1:getCampaignsResponse>
+      <return SOAP-ENC:arrayType="ns1:Campaign[3]"
+              xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/">
+        <campaign>
+          <ID>1001</ID>
+          <name>Atolls Bookshop</name>
+          <URL>https://bookshop.atolls.example.com</URL>
+          <info>
+            <assignmentStatus>accepted</assignmentStatus>
+            <category>
+              <ID>10</ID>
+              <name>Books &amp; Media</name>
+            </category>
+            <commission>
+              <saleCommissionFixed>0.00</saleCommissionFixed>
+              <saleCommissionVariable>8.50</saleCommissionVariable>
+              <leadCommission>0.00</leadCommission>
+              <clickCommission>0.00</clickCommission>
+            </commission>
+          </info>
+        </campaign>
+        <campaign>
+          <ID>1002</ID>
+          <name>Atolls Travel</name>
+          <URL>https://travel.atolls.example.com</URL>
+          <info>
+            <assignmentStatus>pending</assignmentStatus>
+            <category>
+              <ID>20</ID>
+              <name>Travel</name>
+            </category>
+            <commission>
+              <saleCommissionFixed>5.00</saleCommissionFixed>
+              <saleCommissionVariable>0.00</saleCommissionVariable>
+              <leadCommission>0.00</leadCommission>
+              <clickCommission>0.00</clickCommission>
+            </commission>
+          </info>
+        </campaign>
+        <campaign>
+          <ID>1003</ID>
+          <name>Atolls Electronics</name>
+          <URL>https://electronics.atolls.example.com</URL>
+          <info>
+            <assignmentStatus>notsignedup</assignmentStatus>
+            <category>
+              <ID>30</ID>
+              <name>Electronics</name>
+            </category>
+            <commission>
+              <saleCommissionFixed>0.00</saleCommissionFixed>
+              <saleCommissionVariable>0.00</saleCommissionVariable>
+              <leadCommission>2.00</leadCommission>
+              <clickCommission>0.00</clickCommission>
+            </commission>
+          </info>
+        </campaign>
+      </return>
+    </ns1:getCampaignsResponse>
+  </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
