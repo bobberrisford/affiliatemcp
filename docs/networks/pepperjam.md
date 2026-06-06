@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with Pepperjam / Ascend (estimated 5 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Apepperjam%22)
+
 This guide walks you through the single credential affiliate-mcp needs in order
 to talk to your Pepperjam publisher account. Pepperjam is now operated as
 *Ascend by Partnerize*; you will sign in at the Ascend console. You will end up

@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with Post Affiliate Pro (estimated 5 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Apost-affiliate-pro%22)
+
 This guide walks you through the credentials affiliate-mcp needs in order to
 talk to your Post Affiliate Pro account. Post Affiliate Pro is a self-hosted
 or hosted affiliate platform run by the merchant (the advertiser side), so this

@@ -1,5 +1,7 @@
 # PartnerStack (advertiser side)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Apartnerstack%22)
+
 Setup guide for the `partnerstack-advertiser` adapter, which integrates with the
 PartnerStack **Vendor API** — the view a brand has of its own partner programme:
 the partners promoting it, the transactions they generate, and the rewards

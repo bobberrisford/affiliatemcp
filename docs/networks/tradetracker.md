@@ -1,5 +1,7 @@
 # TradeTracker adapter
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Atradetracker%22)
+
 > Template setup doc. Copy to `docs/networks/tradetracker.md` and replace
 > `TradeTracker` throughout. Fill every section before submitting a PR.
 > Reference: `docs/networks/awin.md`.

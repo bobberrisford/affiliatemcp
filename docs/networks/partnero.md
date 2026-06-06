@@ -1,5 +1,7 @@
 # Partnero (advertiser side)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Apartnero%22)
+
 Setup guide for the `partnero` adapter. Partnero is a SaaS referral and
 affiliate platform, so this is a merchant/advertiser integration: the view a
 brand has of its own programme — the partners promoting it, the customers they

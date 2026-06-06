@@ -1,5 +1,7 @@
 # Adtraction (advertiser)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Aadtraction%22)
+
 Brand-side (advertiser) adapter for [Adtraction](https://adtraction.com/), a
 Nordic affiliate network. This adapter reads an advertiser's programmes and
 transactions and rolls transactions up into per-affiliate performance. It is

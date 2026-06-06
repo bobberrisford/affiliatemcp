@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with Offer18 (estimated 10 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Aoffer18%22)
+
 This guide walks you through the credentials affiliate-mcp needs in order to
 talk to your Offer18 affiliate account. You will end up with four values written
 to `~/.affiliate-mcp/.env`: `OFFER18_BASE_URL`, `OFFER18_API_KEY`,

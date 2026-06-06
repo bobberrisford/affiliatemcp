@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with Digistore24 (estimated 5 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Adigistore24%22)
+
 This guide walks you through the single credential affiliate-mcp needs to talk
 to your Digistore24 account as an affiliate. You will end up with one value
 written to `~/.affiliate-mcp/.env`: `DIGISTORE24_API_KEY`.
