@@ -1,0 +1,53 @@
+{
+  "api_version": "1.0",
+  "result": "success",
+  "data": {
+    "transaction_list": [
+      {
+        "id": "TX-1001",
+        "transaction_type": "pay",
+        "amount": "49.00",
+        "transaction_amount": "49.00",
+        "amount_affiliate": "24.50",
+        "currency": "EUR",
+        "created_at": "2026-05-20 10:15:00",
+        "product_id": "555111",
+        "product_name": "Advanced Funnels Course",
+        "campaignkey": "newsletter"
+      },
+      {
+        "id": "TX-1002",
+        "transaction_type": "refund",
+        "amount": "49.00",
+        "transaction_amount": "-49.00",
+        "amount_affiliate": "-24.50",
+        "currency": "EUR",
+        "created_at": "2026-03-01 08:00:00",
+        "product_id": "555111",
+        "product_name": "Advanced Funnels Course"
+      },
+      {
+        "id": "TX-1003",
+        "transaction_type": "chargeback",
+        "amount": "120.00",
+        "transaction_amount": "-120.00",
+        "amount_affiliate": "-60.00",
+        "currency": "EUR",
+        "created_at": "2025-01-10 12:00:00",
+        "product_id": "777222",
+        "product_name": "Trading Masterclass"
+      },
+      {
+        "id": "TX-1004",
+        "transaction_type": "pay",
+        "amount": "29.00",
+        "transaction_amount": "29.00",
+        "amount_affiliate": "14.50",
+        "currency": "EUR",
+        "created_at": "2024-06-15 09:30:00",
+        "product_id": "777222",
+        "product_name": "Trading Masterclass"
+      }
+    ]
+  }
+}

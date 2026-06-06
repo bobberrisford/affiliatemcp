@@ -1,0 +1,56 @@
+{
+  "status": "success",
+  "message": "Conversions retrieved.",
+  "data": {
+    "page": 1,
+    "limit": 100,
+    "count": 4,
+    "nextPage": null,
+    "data": [
+      {
+        "conversion_id": "CV-9001",
+        "offer_id": 7001,
+        "offer_name": "Shopee Malaysia",
+        "sale_amount": "120.50",
+        "payout": "9.64",
+        "currency": "MYR",
+        "conversion_status": "approved",
+        "datetime_conversion": "2026-01-10T08:30:00Z",
+        "datetime_validated": "2026-01-20T08:30:00Z"
+      },
+      {
+        "conversion_id": "CV-9002",
+        "offer_id": 7001,
+        "offer_name": "Shopee Malaysia",
+        "sale_amount": "45.00",
+        "payout": "3.60",
+        "currency": "MYR",
+        "conversion_status": "pending",
+        "datetime_conversion": "2026-05-01T11:00:00Z"
+      },
+      {
+        "conversion_id": "CV-9003",
+        "offer_id": 7002,
+        "offer_name": "Lazada Singapore",
+        "sale_amount": "200.00",
+        "payout": "10.00",
+        "currency": "SGD",
+        "conversion_status": "rejected",
+        "rejected_reason": "Order cancelled by customer",
+        "datetime_conversion": "2026-04-15T09:00:00Z",
+        "datetime_validated": "2026-04-25T09:00:00Z"
+      },
+      {
+        "conversion_id": "CV-9004",
+        "offer_id": 7003,
+        "offer_name": "Tokopedia",
+        "sale_amount": "75.25",
+        "payout": "6.00",
+        "currency": "IDR",
+        "conversion_status": "paid",
+        "datetime_conversion": "2026-02-01T10:00:00Z",
+        "datetime_validated": "2026-02-15T10:00:00Z"
+      }
+    ]
+  }
+}

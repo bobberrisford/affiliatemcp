@@ -1,0 +1,13 @@
+{
+  "request": { "Target": "Affiliate_Offer", "Method": "generateTrackingLink", "Version": "3", "Format": "json" },
+  "response": {
+    "status": 1,
+    "httpStatus": 200,
+    "errorMessage": null,
+    "errors": [],
+    "data": {
+      "click_url": "https://atollsnet.api.hasoffers.com/aff_c?offer_id=1001&aff_id=55&url=https%3A%2F%2Fwww.atolls-bookshop.example.com%2Fproducts",
+      "impression_url": "https://atollsnet.api.hasoffers.com/aff_i?offer_id=1001&aff_id=55"
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "status": "success",
+  "message": "Offers retrieved.",
+  "data": {
+    "page": 1,
+    "limit": 100,
+    "count": 3,
+    "nextPage": null,
+    "data": [
+      {
+        "offer_id": 7001,
+        "offer_name": "Shopee Malaysia",
+        "status": "active",
+        "currency": "MYR",
+        "commission": "Up to 8%",
+        "categories": ["Marketplace", "Electronics"],
+        "offer_url": "https://shopee.com.my"
+      },
+      {
+        "offer_id": 7002,
+        "offer_name": "Lazada Singapore",
+        "status": "paused",
+        "currency": "SGD",
+        "commission_rate": "5% flat",
+        "category": "Marketplace",
+        "preview_url": "https://www.lazada.sg"
+      },
+      {
+        "offer_id": 7003,
+        "offer_name": "Tokopedia",
+        "status": "active",
+        "currency": "IDR",
+        "categories": ["Marketplace"],
+        "offer_url": "https://www.tokopedia.com"
+      }
+    ]
+  }
+}

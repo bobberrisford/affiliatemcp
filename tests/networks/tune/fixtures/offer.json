@@ -1,0 +1,30 @@
+{
+  "request": { "Target": "Affiliate_Offer", "Method": "findAll", "Version": "3", "Format": "json" },
+  "response": {
+    "status": 1,
+    "httpStatus": 200,
+    "errorMessage": null,
+    "errors": [],
+    "data": {
+      "page": 1,
+      "current": 1,
+      "count": 1,
+      "pageCount": 1,
+      "data": {
+        "1001": {
+          "Offer": {
+            "id": "1001",
+            "name": "Atolls Bookshop",
+            "status": "active",
+            "approval_status": "approved",
+            "currency": "GBP",
+            "default_payout": "5.00",
+            "payout_type": "cpa_flat",
+            "preview_url": "https://www.atolls-bookshop.example.com",
+            "offer_url": "https://www.atolls-bookshop.example.com"
+          }
+        }
+      }
+    }
+  }
+}

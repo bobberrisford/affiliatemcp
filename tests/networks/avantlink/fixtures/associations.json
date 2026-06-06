@@ -1,0 +1,28 @@
+{
+  "merchants": [
+    {
+      "merchant_id": "10060",
+      "merchant_name": "Backcountry Outfitters",
+      "association_status": "Active",
+      "commission": "8% of sale",
+      "category": "Outdoor Gear",
+      "website": "https://www.example-backcountry.test"
+    },
+    {
+      "merchant_id": "10061",
+      "merchant_name": "Trailhead Footwear",
+      "association_status": "Pending",
+      "commission": "10% of sale",
+      "category": "Footwear",
+      "website": "https://www.example-trailhead.test"
+    },
+    {
+      "merchant_id": "10062",
+      "merchant_name": "Summit Cycles",
+      "association_status": "Declined",
+      "commission": "5% of sale",
+      "category": "Cycling",
+      "website": "https://www.example-summit.test"
+    }
+  ]
+}

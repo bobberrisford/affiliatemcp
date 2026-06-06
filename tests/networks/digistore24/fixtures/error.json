@@ -1,0 +1,5 @@
+{
+  "api_version": "1.0",
+  "result": "error",
+  "message": "The API key is invalid or has been revoked."
+}

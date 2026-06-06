@@ -1,0 +1,23 @@
+{
+  "slug": "pepperjam",
+  "name": "Pepperjam",
+  "base_url": "https://api.pepperjamnetwork.com",
+  "auth_model": "custom",
+  "env_vars": ["PEPPERJAM_API_KEY"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Experimental: not yet validated against a live Pepperjam (Ascend) publisher account.",
+    "Transaction amounts are assumed to be major currency units in USD; the report does not return a per-row currency code.",
+    "Distinct from the Partnerize adapter: Ascend is Partnerize-owned but this REST API is unrelated to the Partnerize Reporting API.",
+    "Click-level data is not exposed via the public Pepperjam publisher API; listClicks is unsupported.",
+    "Tracking-link construction is not documented as a deterministic scheme on the publisher API; generateTrackingLink is unsupported."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://ascendpartner.zendesk.com/hc/en-gb/articles/13501008650909-API-Overview"
+}

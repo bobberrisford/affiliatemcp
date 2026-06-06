@@ -1,0 +1,22 @@
+{
+  "slug": "tune",
+  "name": "TUNE",
+  "base_url": "https://api.hasoffers.com",
+  "auth_model": "custom",
+  "env_vars": ["TUNE_NETWORK_ID", "TUNE_API_KEY"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).",
+    "The API base URL is per-tenant: TUNE (HasOffers) is a CPA platform engine and each network runs its own instance, so one adapter serves any HasOffers-powered network via its NetworkId (the host is https://{network_id}.api.hasoffers.com); there is no single shared host.",
+    "Amounts (Stat.payout) are assumed to be in major currency units (not minor units / cents); confirm against a live account before promoting beyond experimental.",
+    "Click-level data is not exposed via the affiliate API; listClicks is not implemented."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://developers.tune.com/affiliate/"
+}

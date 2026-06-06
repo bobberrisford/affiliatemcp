@@ -15,24 +15,10 @@
       "issue": null
     },
     {
-      "name": "ClickBank",
-      "slug": "clickbank",
-      "side": "publisher",
-      "note": "Digital products giant. Analytics + Order APIs are public; no dev key required since 2023.",
-      "issue": null
-    },
-    {
       "name": "Amazon Creators API",
       "slug": "amazon-creators",
       "side": "publisher",
       "note": "Successor to PA-API (which deprecates 15 May 2026). Docs at affiliate-program.amazon.com/creatorsapi/docs.",
-      "issue": null
-    },
-    {
-      "name": "TUNE (HasOffers)",
-      "slug": "tune",
-      "side": "both",
-      "note": "Long-running CPA platform. Public REST docs at developers.tune.com.",
       "issue": null
     },
     {
@@ -75,41 +61,6 @@
       "slug": "howl",
       "side": "publisher",
       "note": "Independent creator / journalist link network. API key + REST documented at docs.narrativ.com.",
-      "issue": null
-    },
-    {
-      "name": "Involve Asia",
-      "slug": "involve-asia",
-      "side": "publisher",
-      "note": "APAC's growing network. Public REST docs.",
-      "issue": null
-    },
-    {
-      "name": "ShareASale",
-      "slug": "shareasale",
-      "side": "both",
-      "note": "Major US network (Awin-owned but a separate account + API). Self-serve Reporting API keyed by Affiliate ID + Token + Secret Key, generated in Tools > API Reporting (account.shareasale.com/a-apimanager.cfm). On wecantrack; not the same surface as the existing Awin adapter.",
-      "issue": null
-    },
-    {
-      "name": "Pepperjam (Ascend by Partnerize)",
-      "slug": "pepperjam",
-      "side": "both",
-      "note": "US network, now branded Ascend by Partnerize but a distinct API from the existing Partnerize adapter. REST at api.pepperjamnetwork.com; API key self-issued in Resources > API Keys (ascend.pepperjam.com/affiliate/api/). Docs: ascendpartner.zendesk.com API Overview.",
-      "issue": null
-    },
-    {
-      "name": "AvantLink",
-      "slug": "avantlink",
-      "side": "both",
-      "note": "US/outdoor-niche network. Self-serve REST API; publisher modules include Affiliate Report, Transaction Inquiry, Product Search (support.avantlink.com API Module docs).",
-      "issue": null
-    },
-    {
-      "name": "Digistore24",
-      "slug": "digistore24",
-      "side": "both",
-      "note": "German digital-products giant. Full self-serve developer portal (dev.digistore24.com) + Swagger; API key created in-dashboard. Affiliate + vendor sales data.",
       "issue": null
     },
     {

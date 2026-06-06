@@ -1,0 +1,49 @@
+{
+  "transactions": [
+    {
+      "order_id": "AL-1001",
+      "merchant_id": "10060",
+      "merchant_name": "Backcountry Outfitters",
+      "transaction_status": "Confirmed",
+      "sale_amount": "120.00",
+      "commission": "9.60",
+      "currency": "USD",
+      "transaction_date": "2024-01-15",
+      "click_date": "2024-01-14"
+    },
+    {
+      "order_id": "AL-1002",
+      "merchant_id": "10061",
+      "merchant_name": "Trailhead Footwear",
+      "transaction_status": "Open",
+      "sale_amount": "80.00",
+      "commission": "8.00",
+      "currency": "USD",
+      "transaction_date": "2026-05-20",
+      "click_date": "2026-05-19"
+    },
+    {
+      "order_id": "AL-1003",
+      "merchant_id": "10062",
+      "merchant_name": "Summit Cycles",
+      "transaction_status": "Reversed",
+      "sale_amount": "200.00",
+      "commission": "10.00",
+      "currency": "USD",
+      "transaction_date": "2025-08-10",
+      "click_date": "2025-08-09",
+      "reversal_reason": "Customer returned the item within 30 days"
+    },
+    {
+      "order_id": "AL-1004",
+      "merchant_id": "10060",
+      "merchant_name": "Backcountry Outfitters",
+      "transaction_status": "Paid",
+      "sale_amount": "60.00",
+      "commission": "4.80",
+      "currency": "USD",
+      "transaction_date": "2024-09-01",
+      "click_date": "2024-08-31"
+    }
+  ]
+}

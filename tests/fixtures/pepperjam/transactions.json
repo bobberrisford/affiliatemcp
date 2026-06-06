@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "status": { "code": 200, "message": "OK" },
+    "pagination": { "total_results": 4, "total_pages": 1 },
+    "requests": { "current": 1, "maximum": 1000 }
+  },
+  "data": [
+    {
+      "transaction_id": "900001",
+      "order_id": "ORD-900001",
+      "program_id": "1001",
+      "program_name": "Atolls Bookshop",
+      "sale_amount": "120.00",
+      "commission": "9.60",
+      "status": "locked",
+      "sale_date": "2024-09-15 10:00:00"
+    },
+    {
+      "transaction_id": "900002",
+      "order_id": "ORD-900002",
+      "program_id": "1002",
+      "program_name": "Atolls Outdoors",
+      "sale_amount": "50.00",
+      "commission": "2.50",
+      "status": "pending",
+      "sale_date": "2025-12-01 14:30:00"
+    },
+    {
+      "transaction_id": "900003",
+      "order_id": "ORD-900003",
+      "program_id": "1001",
+      "program_name": "Atolls Bookshop",
+      "sale_amount": "30.00",
+      "commission": "2.40",
+      "status": "declined",
+      "sale_date": "2024-01-10 08:15:00"
+    },
+    {
+      "transaction_id": "900004",
+      "order_id": "ORD-900004",
+      "program_id": "1003",
+      "program_name": "Atolls Electronics",
+      "sale_amount": "400.00",
+      "commission": "12.00",
+      "status": "paid",
+      "sale_date": "2024-08-20 19:45:00"
+    }
+  ]
+}

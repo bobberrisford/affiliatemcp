@@ -282,17 +282,20 @@ the brand-side has a more complex auth model and we skipped it.
 | Affiliate Future | 5 min | no | 6 / 7 | no clicks |
 | Affise | 10 min | no | 7 / 7 | no clicks |
 | Afilio | 10 min | no | 6 / 7 | no clicks |
+| AvantLink | 10 min | no | 6 / 7 | no clicks |
 | Awin | 5 min | no | 6 / 7 | no clicks |
 | Awin (advertiser) | 6 min | no | 7 / 7 | see notes |
 | CAKE | 10 min | no | 6 / 7 | no clicks |
 | CJ Affiliate | 8 min | no | 6 / 7 | no clicks |
 | CJ Affiliate (advertiser) | 8 min | no | 7 / 7 | pagination quirks |
+| ClickBank | 10 min | no | 6 / 7 | no clicks |
 | Commission Factory | 10 min | no | 6 / 7 | clicks gated |
 | Commission Factory (advertiser) | 7 min | no | 7 / 7 | pagination quirks |
 | Connexity | 10 min | no | 6 / 7 | no clicks |
 | Coupang Partners | 10 min | no | 6 / 7 | no clicks |
 | Daisycon | 15 min | no | 6 / 7 | no clicks |
 | Daisycon (advertiser) | 15 min | no | 7 / 7 | see notes |
+| Digistore24 | 5 min | no | 6 / 7 | no clicks |
 | eBay Partner Network | 10 min | yes (~3 days) | 7 / 7 | see notes |
 | Eduzz | 10 min | no | 6 / 7 | no clicks |
 | Effiliation | 5 min | no | 6 / 7 | no clicks |
@@ -307,6 +310,7 @@ the brand-side has a more complex auth model and we skipped it.
 | Impact | 6 min | no | 7 / 7 | upstream variability |
 | Impact (advertiser) | 8 min | no | 7 / 7 | see notes |
 | Indoleads | 5 min | no | 6 / 7 | no clicks |
+| Involve Asia | 5 min | no | 6 / 7 | no clicks |
 | Kwanko | 10 min | no | 6 / 7 | no clicks |
 | Kwanko (advertiser) | 10 min | no | 6 / 7 | no clicks |
 | LeadDyno | 5 min | no | 6 / 7 | no clicks |
@@ -322,16 +326,19 @@ the brand-side has a more complex auth model and we skipped it.
 | Partnero | 5 min | no | 6 / 7 | no clicks |
 | PartnerStack | 5 min | no | 6 / 7 | no clicks |
 | PartnerStack (advertiser) | 6 min | no | 7 / 7 | no clicks |
+| Pepperjam | 5 min | no | 6 / 7 | no clicks |
 | Post Affiliate Pro | 5 min | no | 6 / 7 | no clicks |
 | Profitshare | 5 min | no | 6 / 7 | no clicks |
 | Rakuten Advertising | 12 min | yes (~5 days) | 6 / 7 | clicks gated |
 | Rewardful | 5 min | no | 6 / 7 | no clicks |
 | Scaleo | 10 min | yes (~1 days) | 7 / 7 | see notes |
+| ShareASale | 10 min | no | 6 / 7 | no clicks |
 | Skimlinks | 10 min | no | 6 / 7 | no clicks |
 | Sovrn Commerce | 10 min | no | 6 / 7 | no clicks |
 | Tradedoubler | 15 min | no | 6 / 7 | clicks gated |
 | Tradedoubler (Advertiser) | 10 min | no | 7 / 7 | no clicks |
 | Travelpayouts | 5 min | no | 6 / 7 | no clicks |
+| TUNE | 10 min | no | 7 / 7 | no clicks |
 | ValueCommerce | 10 min | no | 6 / 7 | no clicks |
 | ValueCommerce (advertiser) | 10 min | no | 6 / 7 | no clicks |
 | Webgains | 10 min | no | 6 / 7 | no clicks |
@@ -395,20 +402,13 @@ pile onto) a tracking issue before you start.
 | --- | --- | --- | --- |
 | TradeTracker | publisher | Global, NL-headquartered. SOAP-based but functional; affiliate.tradetracker.com/webService. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20TradeTracker) |
 | Adcell | publisher | DACH network (now under mrge holding). API exists for publishers but docs are dashboard-gated — expect reverse-engineering. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Adcell) |
-| ClickBank | publisher | Digital products giant. Analytics + Order APIs are public; no dev key required since 2023. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20ClickBank) |
 | Amazon Creators API | publisher | Successor to PA-API (which deprecates 15 May 2026). Docs at affiliate-program.amazon.com/creatorsapi/docs. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Amazon%20Creators%20API) |
-| TUNE (HasOffers) | publisher + advertiser | Long-running CPA platform. Public REST docs at developers.tune.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20TUNE%20(HasOffers)) |
 | ShopMy | publisher | US creator network. OAuth-based creator/brand API, public docs at docs.shopmy.us. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20ShopMy) |
 | Levanta | publisher + advertiser | Amazon-focused creator platform. /partners /products /reports endpoints public (knowledge.levanta.io/creator-api). | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Levanta) |
 | Tolt | advertiser | SaaS-focused affiliate platform. Bearer-auth REST, public docs at docs.tolt.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Tolt) |
 | Refersion | advertiser | Shopify-heavy affiliate platform. Full public docs at refersion.dev. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Refersion) |
 | Tapfiliate | advertiser | Mid-market multi-platform. v1.6 X-Api-Key REST, public docs at tapfiliate.com/docs/rest. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Tapfiliate) |
 | Howl (Narrativ) | publisher | Independent creator / journalist link network. API key + REST documented at docs.narrativ.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Howl%20(Narrativ)) |
-| Involve Asia | publisher | APAC's growing network. Public REST docs. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Involve%20Asia) |
-| ShareASale | publisher + advertiser | Major US network (Awin-owned but a separate account + API). Self-serve Reporting API keyed by Affiliate ID + Token + Secret Key, generated in Tools > API Reporting (account.shareasale.com/a-apimanager.cfm). On wecantrack; not the same surface as the existing Awin adapter. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20ShareASale) |
-| Pepperjam (Ascend by Partnerize) | publisher + advertiser | US network, now branded Ascend by Partnerize but a distinct API from the existing Partnerize adapter. REST at api.pepperjamnetwork.com; API key self-issued in Resources > API Keys (ascend.pepperjam.com/affiliate/api/). Docs: ascendpartner.zendesk.com API Overview. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Pepperjam%20(Ascend%20by%20Partnerize)) |
-| AvantLink | publisher + advertiser | US/outdoor-niche network. Self-serve REST API; publisher modules include Affiliate Report, Transaction Inquiry, Product Search (support.avantlink.com API Module docs). | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20AvantLink) |
-| Digistore24 | publisher + advertiser | German digital-products giant. Full self-serve developer portal (dev.digistore24.com) + Swagger; API key created in-dashboard. Affiliate + vendor sales data. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Digistore24) |
 | Belboon | publisher + advertiser | DACH performance network. wecantrack pulls conversions via the Belboon API on a schedule; confirm self-serve key issuance + endpoint before building. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Belboon) |
 | financeAds | publisher | DACH finance-vertical network. API integration offered via wecantrack; verify public self-serve API docs before building. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20financeAds) |
 | Yieldkit | publisher | Link-monetisation network (Skimlinks/Sovrn competitor; now owns Digidip). wecantrack connects via the Yieldkit API and matches commissions per session; verify self-serve API docs. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Yieldkit) |
@@ -550,6 +550,13 @@ click for credentials, and common stumbling blocks:
 - [Flipkart Affiliate](./docs/networks/flipkart.md) — affiliate ID + token headers; India; experimental, built from public docs.
 - [Adrecord](./docs/networks/adrecord.md) — APIKEY header; Nordic; experimental, built from public docs.
 - [Addrevenue](./docs/networks/addrevenue.md) — Bearer token + channel ID; Nordic; experimental, built from public docs.
+- [ShareASale](./docs/networks/shareasale.md) — affiliate ID + token + secret (signed); US; experimental, built from public docs.
+- [Pepperjam](./docs/networks/pepperjam.md) — apiKey query param; US (Ascend, distinct from Partnerize); experimental, built from public docs.
+- [AvantLink](./docs/networks/avantlink.md) — affiliate ID + auth key + website ID (query params); US/outdoor; experimental, built from public docs.
+- [Digistore24](./docs/networks/digistore24.md) — X-DS-API-KEY header; DE digital products; experimental, built from public docs.
+- [ClickBank](./docs/networks/clickbank.md) — DEV:CLERK key header + nickname; digital products; experimental, built from public docs.
+- [TUNE](./docs/networks/tune.md) — NetworkId + api_key (per-tenant host); HasOffers engine; experimental, built from public docs.
+- [Involve Asia](./docs/networks/involve-asia.md) — key + secret (token exchange); APAC; experimental, built from public docs.
 - [eHUB](./docs/networks/ehub.md) — apiKey query param + publisher ID; CZ/CEE; clicks supported; experimental, built from public docs.
 - [LinkConnector](./docs/networks/linkconnector.md) — API key (query param); US; experimental, built from public docs.
 - [Connexity](./docs/networks/connexity.md) — publisher ID + API key; US CPC-commerce (distinct from Skimlinks); experimental, built from public docs.

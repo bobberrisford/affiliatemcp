@@ -44,17 +44,20 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Affiliate Future | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Affise | 10 | no | 7 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | Afilio | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| AvantLink | 10 | no | 6 / 7 | 3 | experimental | 0.1.0 | 2026-06-05 |
 | Awin | 5 | no | 6 / 7 | 1 | partial | 0.1.0 | 2026-05-21 |
 | Awin (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-05-23 |
 | CAKE | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | CJ Affiliate | 8 | no | 6 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
 | CJ Affiliate (advertiser) | 8 | no | 7 / 7 | 7 | experimental | 0.1.0 | 2026-05-23 |
+| ClickBank | 10 | no | 6 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | Commission Factory | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Commission Factory (advertiser) | 7 | no | 7 / 7 | 5 | experimental | 0.1.0 | 2026-06-04 |
 | Connexity | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | Coupang Partners | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Daisycon | 15 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
 | Daisycon (advertiser) | 15 | no | 7 / 7 | 9 | experimental | 0.1.0 | 2026-06-04 |
+| Digistore24 | 5 | no | 6 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | eBay Partner Network | 10 | yes (~3 days) | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-21 |
 | Eduzz | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Effiliation | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
@@ -69,6 +72,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Impact | 6 | no | 7 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
 | Impact (advertiser) | 8 | no | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-23 |
 | Indoleads | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Involve Asia | 5 | no | 6 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | Kwanko | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-04 |
 | Kwanko (advertiser) | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
 | LeadDyno | 5 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-05 |
@@ -84,16 +88,19 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Partnero | 5 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-05 |
 | PartnerStack | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | PartnerStack (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
+| Pepperjam | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | Post Affiliate Pro | 5 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-05 |
 | Profitshare | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | Rakuten Advertising | 12 | yes (~5 days) | 6 / 7 | 3 | partial | 0.1.0 | 2026-05-21 |
 | Rewardful | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Scaleo | 10 | yes (~1 days) | 7 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
+| ShareASale | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | Skimlinks | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 | Sovrn Commerce | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-05-28 |
 | Tradedoubler | 15 | no | 6 / 7 | 6 | experimental | 0.1.1 | 2026-05-28 |
 | Tradedoubler (Advertiser) | 10 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 | Travelpayouts | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
+| TUNE | 10 | no | 7 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | ValueCommerce | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
 | ValueCommerce (advertiser) | 10 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-04 |
 | Webgains | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
@@ -608,6 +615,43 @@ _No findings document was supplied at `docs/findings/affise.md`._
 
 _No findings document was supplied at `docs/findings/afilio.md`._
 
+## AvantLink
+
+### Quick facts
+
+- **Slug**: `avantlink`
+- **Auth model**: custom
+- **Base URL**: https://classic.avantlink.com/api.php
+- **Environment variables**: `AVANTLINK_AFFILIATE_ID`, `AVANTLINK_API_KEY`, `AVANTLINK_WEBSITE_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://support.avantlink.com/hc/en-us/sections/200985665-API-Module-Documentation
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live AvantLink account.
+- Monetary amounts are assumed to be decimal currency units (e.g. 12.50), not minor units (cents); confirm against a live account.
+- Click-level data is not exposed as a stable per-click feed via the affiliate API; listClicks is unsupported.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/avantlink.md`._
+
 ## Awin
 
 ### Quick facts
@@ -1093,6 +1137,44 @@ without re-running the auth check.
 
 _No findings document was supplied at `docs/findings/cj-advertiser.md`._
 
+## ClickBank
+
+### Quick facts
+
+- **Slug**: `clickbank`
+- **Auth model**: custom
+- **Base URL**: https://api.clickbank.com
+- **Environment variables**: `CLICKBANK_DEV_KEY`, `CLICKBANK_CLERK_KEY`, `CLICKBANK_NICKNAME`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://support.clickbank.com/en/articles/10535397-clickbank-api-specifications
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live ClickBank account.
+- Amount unit assumption: order amounts (totalAccountAmount) are treated as major currency units (whole dollars/pounds, not cents); verify against a live account before relying on the figures.
+- ClickBank is a single marketplace with no per-merchant join lifecycle exposed to the publisher API; programmes are synthesised from the affiliate's own order history (one programme per promoted vendor).
+- Click-level data is not exposed via the ClickBank publisher API; listClicks is unsupported.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/clickbank.md`._
+
 ## Commission Factory
 
 ### Quick facts
@@ -1334,6 +1416,44 @@ _No findings document was supplied at `docs/findings/daisycon.md`._
 ### Findings
 
 _No findings document was supplied at `docs/findings/daisycon-advertiser.md`._
+
+## Digistore24
+
+### Quick facts
+
+- **Slug**: `digistore24`
+- **Auth model**: custom
+- **Base URL**: https://www.digistore24.com
+- **Environment variables**: `DIGISTORE24_API_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://dev.digistore24.com/hc/en-us
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live Digistore24 account.
+- Monetary amounts are assumed to be major currency units (e.g. 49.00 EUR), not minor units/cents; this matches the documented examples but is unconfirmed against a live account.
+- Digistore24 has no per-merchant programme concept; listProgrammes/getProgramme return a single synthetic programme representing the platform, and transactions key off it.
+- Click-level data is not exposed via the public Digistore24 API; listClicks is unsupported.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/digistore24.md`._
 
 ## eBay Partner Network
 
@@ -2554,6 +2674,44 @@ _No findings document was supplied at `docs/findings/impact-advertiser.md`._
 
 _No findings document was supplied at `docs/findings/indoleads.md`._
 
+## Involve Asia
+
+### Quick facts
+
+- **Slug**: `involve-asia`
+- **Auth model**: custom
+- **Base URL**: https://api.involve.asia/api
+- **Environment variables**: `INVOLVE_ASIA_API_KEY`, `INVOLVE_ASIA_API_SECRET`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://involve.asia/partners/api-overview/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: the adapter has not been validated against a live Involve Asia publisher account; endpoint shapes and field names are modelled on the public API documentation and may differ in production.
+- Amount-unit assumption: sale_amount and payout are read as major currency units (e.g. "12.34" → 12.34) in the conversion currency, not minor units. Verify against your own conversions; the raw payload is preserved on rawNetworkData.
+- Authentication uses an API key + secret exchanged for a bearer token that expires roughly every 2 hours; the adapter caches and refreshes the token (proactively and on a 401) so callers do not handle the exchange.
+- Click-level data is not exposed via the public Involve Asia publisher API; listClicks is unsupported.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/involve-asia.md`._
+
 ## Kwanko
 
 ### Quick facts
@@ -3723,6 +3881,45 @@ _No findings document was supplied at `docs/findings/partnerstack.md`._
 
 _No findings document was supplied at `docs/findings/partnerstack-advertiser.md`._
 
+## Pepperjam
+
+### Quick facts
+
+- **Slug**: `pepperjam`
+- **Auth model**: custom
+- **Base URL**: https://api.pepperjamnetwork.com
+- **Environment variables**: `PEPPERJAM_API_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://ascendpartner.zendesk.com/hc/en-gb/articles/13501008650909-API-Overview
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: not yet validated against a live Pepperjam (Ascend) publisher account.
+- Transaction amounts are assumed to be major currency units in USD; the report does not return a per-row currency code.
+- Distinct from the Partnerize adapter: Ascend is Partnerize-owned but this REST API is unrelated to the Partnerize Reporting API.
+- Click-level data is not exposed via the public Pepperjam publisher API; listClicks is unsupported.
+- Tracking-link construction is not documented as a deterministic scheme on the publisher API; generateTrackingLink is unsupported.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/pepperjam.md`._
+
 ## Post Affiliate Pro
 
 ### Quick facts
@@ -4101,6 +4298,45 @@ _No findings document was supplied at `docs/findings/rewardful.md`._
 ### Findings
 
 _No findings document was supplied at `docs/findings/scaleo.md`._
+
+## ShareASale
+
+### Quick facts
+
+- **Slug**: `shareasale`
+- **Auth model**: custom
+- **Base URL**: https://api.shareasale.com
+- **Environment variables**: `SHAREASALE_AFFILIATE_ID`, `SHAREASALE_API_TOKEN`, `SHAREASALE_API_SECRET`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://account.shareasale.com/a-apimanager.cfm
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).
+- Commission amounts are assumed to be major-currency units (USD) as returned by the API; the unit is not authoritatively documented and is preserved verbatim on rawNetworkData.
+- Requests are HMAC-SHA256 signed (x-ShareASale-Authentication) over a token:date:action:secret string; a clock skewed from GMT will produce signature failures.
+- ShareASale is Awin-owned but runs on a separate account and a separate API; this adapter is standalone and does not reuse the Awin adapter.
+- Click-level data is not exposed via the public affiliate API; listClicks is unsupported.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/shareasale.md`._
 
 ## Skimlinks
 
@@ -5010,6 +5246,44 @@ handles both d.m.Y and d.m.y (two-digit year) in responses.
 
 _No findings document was supplied at `docs/findings/travelpayouts.md`._
 
+## TUNE
+
+### Quick facts
+
+- **Slug**: `tune`
+- **Auth model**: custom
+- **Base URL**: https://api.hasoffers.com
+- **Environment variables**: `TUNE_NETWORK_ID`, `TUNE_API_KEY`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://developers.tune.com/affiliate/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).
+- The API base URL is per-tenant: TUNE (HasOffers) is a CPA platform engine and each network runs its own instance, so one adapter serves any HasOffers-powered network via its NetworkId (the host is https://{network_id}.api.hasoffers.com); there is no single shared host.
+- Amounts (Stat.payout) are assumed to be in major currency units (not minor units / cents); confirm against a live account before promoting beyond experimental.
+- Click-level data is not exposed via the affiliate API; listClicks is not implemented.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/tune.md`._
+
 ## ValueCommerce
 
 ### Quick facts
@@ -5188,4 +5462,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-06 05:10 UTC._
+_Last regenerated 2026-06-06 10:08 UTC._

@@ -1,0 +1,7 @@
+{
+  "status": "success",
+  "message": "Successfully authenticated.",
+  "data": {
+    "token": "fake-involve-asia-token-AAA111"
+  }
+}
