@@ -307,6 +307,7 @@ the brand-side has a more complex auth model and we skipped it.
 | Flipkart Affiliate | 10 min | no | 6 / 7 | no clicks |
 | GrowSurf | 10 min | no | 6 / 7 | no clicks |
 | Hotmart | 10 min | no | 6 / 7 | no clicks |
+| Howl | 5 min | no | 6 / 7 | clicks gated |
 | Impact | 6 min | no | 7 / 7 | upstream variability |
 | Impact (advertiser) | 8 min | no | 7 / 7 | see notes |
 | Indoleads | 5 min | no | 6 / 7 | no clicks |
@@ -314,6 +315,7 @@ the brand-side has a more complex auth model and we skipped it.
 | Kwanko | 10 min | no | 6 / 7 | no clicks |
 | Kwanko (advertiser) | 10 min | no | 6 / 7 | no clicks |
 | LeadDyno | 5 min | no | 6 / 7 | no clicks |
+| Levanta | 5 min | no | 6 / 7 | no clicks |
 | LinkConnector | 5 min | no | 6 / 7 | no clicks |
 | Lomadee | 15 min | no | 6 / 7 | no clicks |
 | Monetizze | 5 min | no | 6 / 7 | no clicks |
@@ -330,11 +332,15 @@ the brand-side has a more complex auth model and we skipped it.
 | Post Affiliate Pro | 5 min | no | 6 / 7 | no clicks |
 | Profitshare | 5 min | no | 6 / 7 | no clicks |
 | Rakuten Advertising | 12 min | yes (~5 days) | 6 / 7 | clicks gated |
+| Refersion | 5 min | no | 6 / 7 | no clicks |
 | Rewardful | 5 min | no | 6 / 7 | no clicks |
 | Scaleo | 10 min | yes (~1 days) | 7 / 7 | see notes |
 | ShareASale | 10 min | no | 6 / 7 | no clicks |
+| ShopMy | 10 min | no | 6 / 7 | no clicks |
 | Skimlinks | 10 min | no | 6 / 7 | no clicks |
 | Sovrn Commerce | 10 min | no | 6 / 7 | no clicks |
+| Tapfiliate | 5 min | no | 6 / 7 | no clicks |
+| Tolt | 5 min | no | 6 / 7 | no clicks |
 | Tradedoubler | 15 min | no | 6 / 7 | clicks gated |
 | Tradedoubler (Advertiser) | 10 min | no | 7 / 7 | no clicks |
 | Travelpayouts | 5 min | no | 6 / 7 | no clicks |
@@ -343,6 +349,7 @@ the brand-side has a more complex auth model and we skipped it.
 | ValueCommerce (advertiser) | 10 min | no | 6 / 7 | no clicks |
 | Webgains | 10 min | no | 6 / 7 | no clicks |
 | Webgains (advertiser) | 10 min | no | 7 / 7 | see notes |
+| Yieldkit | 5 min | no | 7 / 7 | see notes |
 <!-- AFFILIATE_MCP_NETWORK_TABLE_END -->
 
 A few networks make you wait for approval (eBay, Rakuten) before they
@@ -403,15 +410,8 @@ pile onto) a tracking issue before you start.
 | TradeTracker | publisher | Global, NL-headquartered. SOAP-based but functional; affiliate.tradetracker.com/webService. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20TradeTracker) |
 | Adcell | publisher | DACH network (now under mrge holding). API exists for publishers but docs are dashboard-gated — expect reverse-engineering. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Adcell) |
 | Amazon Creators API | publisher | Successor to PA-API (which deprecates 15 May 2026). Docs at affiliate-program.amazon.com/creatorsapi/docs. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Amazon%20Creators%20API) |
-| ShopMy | publisher | US creator network. OAuth-based creator/brand API, public docs at docs.shopmy.us. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20ShopMy) |
-| Levanta | publisher + advertiser | Amazon-focused creator platform. /partners /products /reports endpoints public (knowledge.levanta.io/creator-api). | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Levanta) |
-| Tolt | advertiser | SaaS-focused affiliate platform. Bearer-auth REST, public docs at docs.tolt.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Tolt) |
-| Refersion | advertiser | Shopify-heavy affiliate platform. Full public docs at refersion.dev. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Refersion) |
-| Tapfiliate | advertiser | Mid-market multi-platform. v1.6 X-Api-Key REST, public docs at tapfiliate.com/docs/rest. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Tapfiliate) |
-| Howl (Narrativ) | publisher | Independent creator / journalist link network. API key + REST documented at docs.narrativ.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Howl%20(Narrativ)) |
 | Belboon | publisher + advertiser | DACH performance network. wecantrack pulls conversions via the Belboon API on a schedule; confirm self-serve key issuance + endpoint before building. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Belboon) |
 | financeAds | publisher | DACH finance-vertical network. API integration offered via wecantrack; verify public self-serve API docs before building. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20financeAds) |
-| Yieldkit | publisher | Link-monetisation network (Skimlinks/Sovrn competitor; now owns Digidip). wecantrack connects via the Yieldkit API and matches commissions per session; verify self-serve API docs. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Yieldkit) |
 <!-- AFFILIATE_MCP_WANTED_TABLE_END -->
 
 ## Awin reference implementation
@@ -557,6 +557,10 @@ click for credentials, and common stumbling blocks:
 - [ClickBank](./docs/networks/clickbank.md) — DEV:CLERK key header + nickname; digital products; experimental, built from public docs.
 - [TUNE](./docs/networks/tune.md) — NetworkId + api_key (per-tenant host); HasOffers engine; experimental, built from public docs.
 - [Involve Asia](./docs/networks/involve-asia.md) — key + secret (token exchange); APAC; experimental, built from public docs.
+- [ShopMy](./docs/networks/shopmy.md) — Brand Partner token; US creator network; experimental, built from public docs.
+- [Levanta](./docs/networks/levanta.md) — Bearer token; Amazon creator platform; experimental, built from public docs.
+- [Howl](./docs/networks/howl.md) — NRTV-API-KEY header + publisher ID; creator link network; smart-link minting; experimental, built from public docs.
+- [Yieldkit](./docs/networks/yieldkit.md) — api_key + secret (query params); link monetisation; clicks supported; experimental, built from public docs.
 - [eHUB](./docs/networks/ehub.md) — apiKey query param + publisher ID; CZ/CEE; clicks supported; experimental, built from public docs.
 - [LinkConnector](./docs/networks/linkconnector.md) — API key (query param); US; experimental, built from public docs.
 - [Connexity](./docs/networks/connexity.md) — publisher ID + API key; US CPC-commerce (distinct from Skimlinks); experimental, built from public docs.
@@ -587,6 +591,9 @@ click for credentials, and common stumbling blocks:
 - [GrowSurf](./docs/networks/growsurf.md) — API key + campaign ID (Bearer); single-brand; referral-credit SaaS; experimental, built from public docs.
 - [LeadDyno](./docs/networks/leaddyno.md) — private key (query param); single-brand; SaaS-referral; experimental, built from public docs.
 - [Post Affiliate Pro](./docs/networks/post-affiliate-pro.md) — per-tenant base URL + API key (Bearer); single-brand; SaaS engine; experimental, built from public docs.
+- [Tolt](./docs/networks/tolt.md) — Bearer key; single-brand; SaaS-referral; experimental, built from public docs.
+- [Refersion](./docs/networks/refersion.md) — public + secret key headers; single-brand; Shopify-heavy SaaS; experimental, built from public docs.
+- [Tapfiliate](./docs/networks/tapfiliate.md) — X-Api-Key header; single-brand; SaaS-referral; experimental, built from public docs.
 
 ## For the curious (or technical)
 

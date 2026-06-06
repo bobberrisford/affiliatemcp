@@ -69,6 +69,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Flipkart Affiliate | 10 | no | 6 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | GrowSurf | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-05 |
 | Hotmart | 10 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-04 |
+| Howl | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Impact | 6 | no | 7 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
 | Impact (advertiser) | 8 | no | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-23 |
 | Indoleads | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
@@ -76,6 +77,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Kwanko | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-04 |
 | Kwanko (advertiser) | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
 | LeadDyno | 5 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-05 |
+| Levanta | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | LinkConnector | 5 | no | 6 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | Lomadee | 15 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
 | Monetizze | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
@@ -92,11 +94,15 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Post Affiliate Pro | 5 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-05 |
 | Profitshare | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | Rakuten Advertising | 12 | yes (~5 days) | 6 / 7 | 3 | partial | 0.1.0 | 2026-05-21 |
+| Refersion | 5 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-05 |
 | Rewardful | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Scaleo | 10 | yes (~1 days) | 7 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | ShareASale | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
+| ShopMy | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | Skimlinks | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 | Sovrn Commerce | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-05-28 |
+| Tapfiliate | 5 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-05 |
+| Tolt | 5 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-05 |
 | Tradedoubler | 15 | no | 6 / 7 | 6 | experimental | 0.1.1 | 2026-05-28 |
 | Tradedoubler (Advertiser) | 10 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 | Travelpayouts | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
@@ -105,6 +111,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | ValueCommerce (advertiser) | 10 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-04 |
 | Webgains | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Webgains (advertiser) | 10 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Yieldkit | 5 | no | 7 / 7 | 3 | experimental | 0.1.0 | 2026-06-05 |
 
 ## 2Performant
 
@@ -2375,6 +2382,46 @@ _No findings document was supplied at `docs/findings/growsurf.md`._
 
 _No findings document was supplied at `docs/findings/hotmart.md`._
 
+## Howl
+
+### Quick facts
+
+- **Slug**: `howl`
+- **Auth model**: custom
+- **Base URL**: https://api.narrativ.com
+- **Environment variables**: `HOWL_API_KEY`, `HOWL_PUBLISHER_ID`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://docs.narrativ.com/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: implemented against the published Howl (Narrativ) API documentation and not yet verified against a live publisher account.
+- Monetary amounts are assumed to be in USD major units (e.g. dollars); the statistics endpoint exposes no currency field, so this is an assumption pending live verification.
+- Howl has no live per-order transactions endpoint; listTransactions returns daily per-(article, merchant) aggregates from the statistics endpoint. Individual orders are only available via the scheduled Publisher Report CSV files (Clicks/Orders/Returns).
+- Howl has no live merchant/programme catalogue endpoint for a publisher key; listProgrammes returns only the merchants the publisher has driven activity to in the requested window.
+- Howl does not expose a transaction approval/payment lifecycle via the statistics API, so transaction status cannot be normalised to pending/approved/paid; rows are reported as approved when earnings are present, otherwise other.
+- Click-level data is not exposed via a queryable endpoint (only the scheduled Clicks report file); listClicks is unsupported.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/howl.md`._
+
 ## Impact
 
 ### Quick facts
@@ -2833,6 +2880,45 @@ _No findings document was supplied at `docs/findings/kwanko-advertiser.md`._
 ### Findings
 
 _No findings document was supplied at `docs/findings/leaddyno.md`._
+
+## Levanta
+
+### Quick facts
+
+- **Slug**: `levanta`
+- **Auth model**: bearer
+- **Base URL**: https://api.levanta.io
+- **Environment variables**: `LEVANTA_API_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://knowledge.levanta.io/creator-api
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation only; not yet verified against a live Levanta account.
+- Amount unit is assumed to be major currency units (e.g. dollars, not cents) and currency defaults to USD; the public docs do not state the unit for the /reports sales and commissions fields.
+- Programmes are modelled from /partners brand partnerships: each active partnership is surfaced as a joined programme. Levanta has no programme-join lifecycle, so statuses other than 'joined' are not reported.
+- Click-level data is not exposed: /reports returns aggregate click counts per link/source, not individual click events, so listClicks is unsupported.
+- generateTrackingLink is unsupported: Levanta links are created server-side via /links by ASIN/source pair, not deterministically constructible from a destination URL.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/levanta.md`._
 
 ## LinkConnector
 
@@ -4220,6 +4306,47 @@ returned `TrackingLink` so the link's construction is fully auditable.
    the cache is cold. Currently sequential; saves ~200ms per cold session.
    Not a v0.1 blocker.
 
+## Refersion
+
+### Quick facts
+
+- **Slug**: `refersion`
+- **Auth model**: custom
+- **Base URL**: https://api.refersion.com
+- **Environment variables**: `REFERSION_API_KEY`, `REFERSION_SECRET_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://www.refersion.dev/reference/welcome-to-refersion
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: built against the documented Refersion REST v2 contract but not verified against a live account. conversion / affiliate / offer field names have not been confirmed; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).
+- Amount unit is assumed to be major currency units (whole units, not minor units / cents); if Refersion reports minor units the figures will be off by 100x. TODO(verify).
+- advertiser + single-brand: one API key pair scopes one Refersion merchant account. Bind your single brand in brands.json manually.
+- listClicks is unsupported: Refersion exposes click-level data only via its separate GraphQL API, not this REST surface.
+- generateTrackingLink is unsupported: referral links belong to individual affiliates; the merchant API does not mint per-destination links.
+- getProgrammePerformance is computed client-side from /conversions grouped by (affiliate, day). Clicks are not available from /conversions and are reported as 0.
+- List endpoints are paginated; wide pulls are capped at MAX_PAGES with a warning rather than a silent truncation.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/refersion.md`._
+
 ## Rewardful
 
 ### Quick facts
@@ -4337,6 +4464,45 @@ _No findings document was supplied at `docs/findings/scaleo.md`._
 ### Findings
 
 _No findings document was supplied at `docs/findings/shareasale.md`._
+
+## ShopMy
+
+### Quick facts
+
+- **Slug**: `shopmy`
+- **Auth model**: custom
+- **Base URL**: https://api.shopmy.us
+- **Environment variables**: `SHOPMY_API_TOKEN`, `SHOPMY_BRAND_NAME`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://docs.shopmy.us/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: not yet validated against a live ShopMy brand partner account; the auth header, order-report field names, and status mapping are unconfirmed assumptions.
+- Order and commission amounts are assumed to be reported in integer cents and divided by 100; confirm the unit against a real account before relying on totals.
+- Click-level data is not exposed via the Brand Partner API; listClicks is unsupported.
+- Tracking-link creation requires the OAuth write_links developer API and an authenticated ShopMy user, not the single-brand partner token; generateTrackingLink is unsupported.
+- A brand partner token addresses one brand, so listProgrammes returns that single brand rather than a merchant catalogue.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/shopmy.md`._
 
 ## Skimlinks
 
@@ -4711,6 +4877,88 @@ The following cannot be resolved without live credentials:
 ## Recommended next step
 
 Once credentials are available, run `verifyAuth()` and inspect the raw `merchants` and `transactions` responses. Compare field names and nesting to the `SovrnMerchantRaw` and `SovrnTransactionRaw` interfaces in `adapter.ts`. If everything matches, bump `claim_status` from `experimental` to `partial` and update `last_verified`.
+
+## Tapfiliate
+
+### Quick facts
+
+- **Slug**: `tapfiliate`
+- **Auth model**: custom
+- **Base URL**: https://api.tapfiliate.com
+- **Environment variables**: `TAPFILIATE_API_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://tapfiliate.com/docs/rest/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- experimental: conversion / commission / affiliate / programme field names have not been confirmed against a live account; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).
+- amount unit: Tapfiliate documents amounts as decimal major units (e.g. "amount": 100.0), so this adapter passes amounts through verbatim and does not divide by 100. TODO(verify) against a live account.
+- advertiser + single-brand: one API key scopes one Tapfiliate account. Bind your single brand in brands.json manually.
+- listClicks is unsupported: Tapfiliate exposes a POST clicks endpoint that records a click, but no documented list-clicks endpoint on the merchant API.
+- generateTrackingLink is unsupported: tracking links belong to individual affiliates; the merchant API does not mint per-destination links.
+- getProgrammePerformance is computed client-side from /conversions grouped by (affiliate, day). Clicks are not available from /conversions and are reported as 0.
+- Pagination is 1-based via ?page= (the next-page link is in the Link header) and is capped at MAX_PAGES with a warning rather than a silent truncation.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/tapfiliate.md`._
+
+## Tolt
+
+### Quick facts
+
+- **Slug**: `tolt`
+- **Auth model**: bearer
+- **Base URL**: https://api.tolt.com
+- **Environment variables**: `TOLT_API_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://docs.tolt.com/introduction
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).
+- commission / partner / program field names and the amount unit (assumed minor units / cents, divided by 100) have not been confirmed against a live account; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).
+- advertiser + single-brand: one API key scopes one Tolt organisation (one merchant programme). Bind your single brand in brands.json manually.
+- listClicks is unsupported: Tolt commissions carry no raw click records via this API.
+- generateTrackingLink is unsupported: referral links belong to individual partners; the merchant API does not mint per-destination links.
+- getProgrammePerformance is computed client-side from /commissions grouped by (partner, day). Clicks are not available from /commissions and are reported as 0.
+- Pagination is cursor-based (starting_after + has_more) and capped at MAX_PAGES with a warning rather than a silent truncation.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/tolt.md`._
 
 ## Tradedoubler
 
@@ -5447,6 +5695,43 @@ _No findings document was supplied at `docs/findings/webgains.md`._
 
 _No findings document was supplied at `docs/findings/webgains-advertiser.md`._
 
+## Yieldkit
+
+### Quick facts
+
+- **Slug**: `yieldkit`
+- **Auth model**: custom
+- **Base URL**: https://api.yieldkit.com
+- **Environment variables**: `YIELDKIT_API_KEY`, `YIELDKIT_API_SECRET`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://public.yieldkit.com/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter is experimental: the API shapes were mapped from public documentation and have not been validated against a live Yieldkit publisher account.
+- Commission and sale amounts are assumed to be in major currency units (e.g. euros, not cents); revisit this assumption if a live account reports minor units.
+- Yieldkit does not expose a distinct paid state on commissions; transactions are reported as pending, approved, or reversed only.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/yieldkit.md`._
+
 ## How to reproduce
 
 From a fresh checkout:
@@ -5462,4 +5747,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-06 10:08 UTC._
+_Last regenerated 2026-06-06 10:25 UTC._

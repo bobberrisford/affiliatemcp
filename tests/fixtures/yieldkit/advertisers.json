@@ -1,0 +1,29 @@
+{
+  "advertisers": [
+    {
+      "id": 1001,
+      "name": "Atolls Bookshop",
+      "status": "active",
+      "category": "Books & Media",
+      "currency": "EUR",
+      "url": "https://www.atolls-bookshop.example.com",
+      "tracking": "https://r.srvtrck.com/v1/redirect?advertiser=1001",
+      "commission": "5%"
+    },
+    {
+      "id": 1002,
+      "name": "Atolls Outdoors",
+      "status": "paused",
+      "categories": ["Sports", "Outdoor"],
+      "currency": "GBP",
+      "url": "https://www.atolls-outdoors.example.com",
+      "payout": "3.50"
+    },
+    {
+      "id": 1003,
+      "name": "Atolls Tech",
+      "currency": "EUR",
+      "url": "https://www.atolls-tech.example.com"
+    }
+  ]
+}

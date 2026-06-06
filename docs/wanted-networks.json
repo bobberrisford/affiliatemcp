@@ -22,48 +22,6 @@
       "issue": null
     },
     {
-      "name": "ShopMy",
-      "slug": "shopmy",
-      "side": "publisher",
-      "note": "US creator network. OAuth-based creator/brand API, public docs at docs.shopmy.us.",
-      "issue": null
-    },
-    {
-      "name": "Levanta",
-      "slug": "levanta",
-      "side": "both",
-      "note": "Amazon-focused creator platform. /partners /products /reports endpoints public (knowledge.levanta.io/creator-api).",
-      "issue": null
-    },
-    {
-      "name": "Tolt",
-      "slug": "tolt",
-      "side": "advertiser",
-      "note": "SaaS-focused affiliate platform. Bearer-auth REST, public docs at docs.tolt.com.",
-      "issue": null
-    },
-    {
-      "name": "Refersion",
-      "slug": "refersion",
-      "side": "advertiser",
-      "note": "Shopify-heavy affiliate platform. Full public docs at refersion.dev.",
-      "issue": null
-    },
-    {
-      "name": "Tapfiliate",
-      "slug": "tapfiliate",
-      "side": "advertiser",
-      "note": "Mid-market multi-platform. v1.6 X-Api-Key REST, public docs at tapfiliate.com/docs/rest.",
-      "issue": null
-    },
-    {
-      "name": "Howl (Narrativ)",
-      "slug": "howl",
-      "side": "publisher",
-      "note": "Independent creator / journalist link network. API key + REST documented at docs.narrativ.com.",
-      "issue": null
-    },
-    {
       "name": "Belboon",
       "slug": "belboon",
       "side": "both",
@@ -75,13 +33,6 @@
       "slug": "financeads",
       "side": "publisher",
       "note": "DACH finance-vertical network. API integration offered via wecantrack; verify public self-serve API docs before building.",
-      "issue": null
-    },
-    {
-      "name": "Yieldkit",
-      "slug": "yieldkit",
-      "side": "publisher",
-      "note": "Link-monetisation network (Skimlinks/Sovrn competitor; now owns Digidip). wecantrack connects via the Yieldkit API and matches commissions per session; verify self-serve API docs.",
       "issue": null
     }
   ]

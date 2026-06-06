@@ -1,0 +1,17 @@
+[
+  {
+    "id": "prog-default",
+    "title": "Default Programme",
+    "currency": "USD",
+    "url": "https://example.com",
+    "commission": 30,
+    "commission_type": "percentage"
+  },
+  {
+    "id": "prog-fixed",
+    "title": "Fixed Bounty Programme",
+    "currency": "USD",
+    "commission": 25,
+    "commission_type": "fixed"
+  }
+]

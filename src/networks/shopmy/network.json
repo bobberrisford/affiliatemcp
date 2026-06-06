@@ -1,0 +1,23 @@
+{
+  "slug": "shopmy",
+  "name": "ShopMy",
+  "base_url": "https://api.shopmy.us",
+  "auth_model": "custom",
+  "env_vars": ["SHOPMY_API_TOKEN", "SHOPMY_BRAND_NAME"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Experimental: not yet validated against a live ShopMy brand partner account; the auth header, order-report field names, and status mapping are unconfirmed assumptions.",
+    "Order and commission amounts are assumed to be reported in integer cents and divided by 100; confirm the unit against a real account before relying on totals.",
+    "Click-level data is not exposed via the Brand Partner API; listClicks is unsupported.",
+    "Tracking-link creation requires the OAuth write_links developer API and an authenticated ShopMy user, not the single-brand partner token; generateTrackingLink is unsupported.",
+    "A brand partner token addresses one brand, so listProgrammes returns that single brand rather than a merchant catalogue."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://docs.shopmy.us/"
+}

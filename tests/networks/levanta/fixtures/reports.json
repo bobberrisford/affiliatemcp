@@ -1,0 +1,43 @@
+{
+  "reports": [
+    {
+      "brandId": "1001",
+      "brandName": "Atolls Coffee Co",
+      "asin": "B0AAAA0001",
+      "source": "newsletter",
+      "date": "2026-05-01",
+      "clicks": 120,
+      "addToCarts": 14,
+      "conversions": 6,
+      "sales": 240.5,
+      "commissions": 19.24,
+      "currency": "USD"
+    },
+    {
+      "brandId": "1002",
+      "brandName": "Berrisford Outdoors",
+      "asin": "B0BBBB0002",
+      "source": "youtube",
+      "date": "2026-01-10",
+      "clicks": 80,
+      "addToCarts": 5,
+      "conversions": 2,
+      "sales": 99.0,
+      "commissions": 7.92,
+      "currency": "USD"
+    },
+    {
+      "brandId": "1001",
+      "brandName": "Atolls Coffee Co",
+      "asin": "B0AAAA0003",
+      "source": "blog",
+      "date": "2026-05-20",
+      "clicks": 40,
+      "addToCarts": 3,
+      "conversions": 0,
+      "sales": 0,
+      "commissions": 0,
+      "currency": "USD"
+    }
+  ]
+}

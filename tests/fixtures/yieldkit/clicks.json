@@ -1,0 +1,20 @@
+{
+  "clicks": [
+    {
+      "id": "k-001",
+      "advertiser_id": 1001,
+      "click_date": "2026-05-01T10:00:00Z",
+      "referrer": "https://blog.example.com/best-books",
+      "url": "https://www.atolls-bookshop.example.com/p/123",
+      "yk_tag": "campaign-a"
+    },
+    {
+      "id": "k-002",
+      "advertiser_id": 1002,
+      "click_date": "2026-05-02T12:30:00Z",
+      "source": "https://blog.example.com/gear",
+      "target": "https://www.atolls-outdoors.example.com/p/456",
+      "yk_tag": "campaign-b"
+    }
+  ]
+}

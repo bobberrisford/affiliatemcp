@@ -1,0 +1,22 @@
+{
+  "page": 1,
+  "per_page": 100,
+  "count": 2,
+  "total_pages": 1,
+  "results": [
+    {
+      "id": 1001,
+      "first_name": "Alpha",
+      "last_name": "Reviewer",
+      "email": "alpha@example.com",
+      "status": "active",
+      "created": "2024-01-01 00:00:00"
+    },
+    {
+      "id": 1002,
+      "email": "beta@example.com",
+      "status": "pending",
+      "created": "2024-02-01 00:00:00"
+    }
+  ]
+}
