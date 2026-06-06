@@ -238,7 +238,7 @@ function toNumber(...values: Array<unknown>): number {
     if (typeof v === 'number' && !Number.isNaN(v)) return v;
     if (typeof v === 'string' && v.trim() !== '') {
       // Strip currency symbols / thousands separators before parsing.
-      const n = Number(v.replace(/[^0-9.\-]/g, ''));
+      const n = Number(v.replace(/[^0-9.-]/g, ''));
       if (!Number.isNaN(n)) return n;
     }
   }

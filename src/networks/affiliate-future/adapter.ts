@@ -214,7 +214,7 @@ interface AFTransactionRaw {
 function num(...vals: Array<number | string | undefined>): number {
   for (const v of vals) {
     if (v === undefined || v === null) continue;
-    const n = typeof v === 'number' ? v : Number(String(v).replace(/[^0-9.\-]/g, ''));
+    const n = typeof v === 'number' ? v : Number(String(v).replace(/[^0-9.-]/g, ''));
     if (!Number.isNaN(n)) return n;
   }
   return 0;

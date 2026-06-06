@@ -232,7 +232,7 @@ function parseAmount(value: string | undefined): number {
     s = s.replace(/,/g, '.');
   }
   // Strip any remaining non-numeric characters (currency symbols, spaces).
-  s = s.replace(/[^0-9.\-]/g, '');
+  s = s.replace(/[^0-9.-]/g, '');
   const n = Number.parseFloat(s);
   return Number.isFinite(n) ? n : 0;
 }

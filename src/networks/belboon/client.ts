@@ -228,7 +228,7 @@ export function parseCsv(text: string): BelboonRow[] {
  * doubled `""` escapes. The delimiter is sniffed from the first line.
  */
 function tokeniseCsv(text: string): string[][] {
-  const normalised = text.replace(/^﻿/, ''); // strip BOM
+  const normalised = text.replace(/^\uFEFF/, ''); // strip BOM
   const firstLineEnd = normalised.search(/\r?\n/);
   const firstLine = firstLineEnd === -1 ? normalised : normalised.slice(0, firstLineEnd);
   const delimiter = sniffDelimiter(firstLine);

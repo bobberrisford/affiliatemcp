@@ -260,7 +260,7 @@ function toAmount(v: number | string | undefined): number {
   if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
   if (typeof v === 'string') {
     // eHUB may format with a comma decimal separator in some locales.
-    const n = Number(v.replace(',', '.').replace(/[^0-9.\-]/g, ''));
+    const n = Number(v.replace(',', '.').replace(/[^0-9.-]/g, ''));
     return Number.isFinite(n) ? n : 0;
   }
   return 0;

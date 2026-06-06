@@ -279,7 +279,7 @@ function toNumber(v: number | string | undefined): number {
   if (typeof v === 'string') {
     // Strip currency symbols and thousands separators; ShareASale amounts are
     // typically plain decimals but we tolerate "$1,234.56" defensively.
-    const cleaned = v.replace(/[^0-9.\-]/g, '');
+    const cleaned = v.replace(/[^0-9.-]/g, '');
     const n = Number(cleaned);
     return Number.isFinite(n) ? n : 0;
   }
