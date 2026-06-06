@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1001,
+    "name": "Nordic Bookshop",
+    "status": "active",
+    "currency": "SEK",
+    "category": "Books",
+    "url": "https://www.nordic-bookshop.example.se"
+  },
+  {
+    "id": 1002,
+    "name": "Fjäll Outdoor",
+    "status": "pending",
+    "currency": "SEK",
+    "category": "Sport",
+    "url": "https://www.fjall-outdoor.example.se"
+  },
+  {
+    "id": 1003,
+    "name": "Helsinki Travel",
+    "status": "available",
+    "currency": "EUR",
+    "category": "Travel",
+    "url": "https://www.helsinki-travel.example.fi"
+  }
+]

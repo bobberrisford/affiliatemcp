@@ -1,0 +1,52 @@
+{
+  "actions": [
+    {
+      "action_id": 1001,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "420.00",
+      "profit": "21.00",
+      "description": "Aviasales flight booking",
+      "booked_at": "2024-09-01T10:00:00Z",
+      "updated_at": "2024-10-15T08:00:00Z"
+    },
+    {
+      "action_id": 1002,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "180.50",
+      "profit": "9.03",
+      "description": "Aviasales flight booking",
+      "booked_at": "2025-12-20T14:30:00Z",
+      "updated_at": "2025-12-21T09:00:00Z"
+    },
+    {
+      "action_id": 1003,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "640.00",
+      "profit": "32.00",
+      "description": "Hotellook hotel booking returned by guest",
+      "booked_at": "2025-08-10T12:00:00Z",
+      "updated_at": "2025-08-25T12:00:00Z"
+    },
+    {
+      "action_id": 1004,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "95.00",
+      "profit": "7.60",
+      "description": "Hotellook hotel booking",
+      "booked_at": "2024-01-05T00:00:00Z",
+      "updated_at": "2024-02-20T00:00:00Z"
+    }
+  ],
+  "total_price": "1335.50",
+  "total_profit": "69.63",
+  "available_campaigns": [
+    { "campaign_id": 100, "name": "Aviasales" },
+    { "campaign_id": 200, "name": "Hotellook" }
+  ],
+  "count": 4,
+  "currency": "usd"
+}

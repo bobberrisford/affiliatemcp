@@ -14,11 +14,15 @@
  * entry consumes the registry. This file's job is to BE the list.
  */
 
+import './accesstrade/adapter.js';
+import './addrevenue/adapter.js';
 import './admitad/adapter.js';
 import './admitad-advertiser/adapter.js';
+import './adrecord/adapter.js';
 import './adservice/adapter.js';
 import './adtraction/adapter.js';
 import './adtraction-advertiser/adapter.js';
+import './affilae/adapter.js';
 import './affise/adapter.js';
 import './afilio/adapter.js';
 import './awin/adapter.js';
@@ -37,6 +41,7 @@ import './everflow/adapter.js';
 import './everflow-advertiser/adapter.js';
 import './firstpromoter/adapter.js';
 import './flexoffers/adapter.js';
+import './flipkart/adapter.js';
 import './growsurf/adapter.js';
 import './hotmart/adapter.js';
 import './impact/adapter.js';
@@ -50,6 +55,7 @@ import './monetizze/adapter.js';
 import './mrge/adapter.js';
 import './netrefer/adapter.js';
 import './offer18/adapter.js';
+import './optimise-media/adapter.js';
 import './partnerize/adapter.js';
 import './partnerize-advertiser/adapter.js';
 import './partnero/adapter.js';
@@ -63,6 +69,7 @@ import './skimlinks/adapter.js';
 import './sovrn-commerce/adapter.js';
 import './tradedoubler/adapter.js';
 import './tradedoubler-advertiser/adapter.js';
+import './travelpayouts/adapter.js';
 import './value-commerce/adapter.js';
 import './value-commerce-advertiser/adapter.js';
 import './webgains/adapter.js';

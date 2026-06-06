@@ -134,97 +134,6 @@
       "issue": null
     },
     {
-      "name": "Affise",
-      "slug": "affise",
-      "side": "both",
-      "note": "Multiplier — CPA tenant engine. One parameterised adapter covers every Affise-powered network: base URL = per-tenant tracking domain, plus a per-user API-Key header (Settings > Security). Docs api.affise.com/docs3.1.",
-      "issue": null
-    },
-    {
-      "name": "Scaleo",
-      "slug": "scaleo",
-      "side": "both",
-      "note": "Multiplier — tenant engine. Per-tenant tracking URL + API key; admin enables API per role. Public docs developers.scaleo.io.",
-      "issue": null
-    },
-    {
-      "name": "Offer18",
-      "slug": "offer18",
-      "side": "both",
-      "note": "Multiplier — tenant network engine. Self-serve affiliate API key + secret + mid (Account > Security). Docs knowledgebase.offer18.com/affiliate/affiliate-apis.",
-      "issue": null
-    },
-    {
-      "name": "CAKE",
-      "slug": "cake",
-      "side": "both",
-      "note": "Multiplier — per-instance base URL + key. OpenAPI-documented (~20 reporting APIs) at developer.cake.net/apis; key issued in-instance.",
-      "issue": null
-    },
-    {
-      "name": "Post Affiliate Pro",
-      "slug": "post-affiliate-pro",
-      "side": "advertiser",
-      "note": "Multiplier — SaaS, per-account subdomain {acct}.postaffiliatepro.com/api/v3. Self-serve bearer key (Config > Tools > Integration); Swagger RESTful CRUD on affiliates/transactions/reports.",
-      "issue": null
-    },
-    {
-      "name": "NetRefer",
-      "slug": "netrefer",
-      "side": "both",
-      "note": "iGaming multiplier with a public dev portal (developer.netrefer.com): OAuth2, ASR (Affiliate Standard Reporting) REST/OpenAPI + operator GraphQL. Per-operator tenant.",
-      "issue": null
-    },
-    {
-      "name": "Affilae",
-      "slug": "affilae",
-      "side": "both",
-      "note": "FR network, cleanest net-new modern REST. Bearer token from the API Tokens menu; publisher + advertiser endpoints, amounts in cents. Docs rest.affilae.com/reference. Cross-confirmed by two research passes.",
-      "issue": null
-    },
-    {
-      "name": "Optimise Media",
-      "slug": "optimise-media",
-      "side": "both",
-      "note": "UK/IN/APAC network. Public REST; apikey header via a self-serve Service Account in the Insights Dashboard. Campaigns, conversions (with basket items), product feeds. Docs docs.optimisemedia.com/api.",
-      "issue": null
-    },
-    {
-      "name": "AccessTrade",
-      "slug": "accesstrade",
-      "side": "publisher",
-      "note": "Large SE-Asia/Japan network. Authorization: Token <access_key> (key from publisher profile). Campaigns, conversion reports, creatives, datafeed, payments. Docs support.accesstrade.global/api.",
-      "issue": null
-    },
-    {
-      "name": "Travelpayouts",
-      "slug": "travelpayouts",
-      "side": "publisher",
-      "note": "Global travel vertical. Self-serve X-Access-Token (Profile > API token); booking/conversion statistics + balance/payment APIs. Docs travelpayouts.github.io/slate.",
-      "issue": null
-    },
-    {
-      "name": "Flipkart Affiliate",
-      "slug": "flipkart",
-      "side": "publisher",
-      "note": "India. Public docs affiliate.flipkart.com/api-docs; self-gen API token + tracking ID headers; product feed, offer, order/report APIs. Caveat: Flipkart periodically pauses new affiliate signups — verify the programme is open.",
-      "issue": null
-    },
-    {
-      "name": "Adrecord",
-      "slug": "adrecord",
-      "side": "both",
-      "note": "Nordic (SE). Self-serve private API key (APIKEY header); separate affiliate + advertiser docs (api.v2.adrecord.com/docs). Programs, channels, statistics; 30 req/30s.",
-      "issue": null
-    },
-    {
-      "name": "Addrevenue",
-      "slug": "addrevenue",
-      "side": "both",
-      "note": "Nordic (SE). OAuth2 lifetime token (Tools > API Tokens); transactions, clicks, payments, invoices across 900+ advertisers. Docs addrevenue.io/en/developers.",
-      "issue": null
-    },
-    {
       "name": "eHUB",
       "slug": "ehub",
       "side": "both",
@@ -271,34 +180,6 @@
       "slug": "profitshare",
       "side": "both",
       "note": "Romania. Self-serve API key + API user, HMAC-signed requests. Advertisers, campaigns, products, commissions, cashback. Docs doc.profitshare.com; reference impl on GitHub.",
-      "issue": null
-    },
-    {
-      "name": "FirstPromoter",
-      "slug": "firstpromoter",
-      "side": "advertiser",
-      "note": "SaaS-referral (same cohort as the existing Rewardful/Tolt/Refersion adapters). Self-serve bearer key + ACCOUNT-ID header (Settings > Integrations); promoters, leads, commissions, payouts. Single host api.firstpromoter.com. Docs docs.firstpromoter.com.",
-      "issue": null
-    },
-    {
-      "name": "Partnero",
-      "slug": "partnero",
-      "side": "advertiser",
-      "note": "SaaS-referral. Per-program bearer token (Program > Integration > API). Customers, partners, transactions, rewards/payouts; official PHP SDK. Docs developers.partnero.com.",
-      "issue": null
-    },
-    {
-      "name": "GrowSurf",
-      "slug": "growsurf",
-      "side": "advertiser",
-      "note": "SaaS-referral. Self-serve bearer key; ~24 endpoints (participants, trigger referrals, program/participant data) + webhooks. Docs docs.growsurf.com.",
-      "issue": null
-    },
-    {
-      "name": "LeadDyno",
-      "slug": "leaddyno",
-      "side": "advertiser",
-      "note": "SaaS-referral. Self-serve private key (Profile); affiliates CRUD/approve/reject, purchases CRUD/list. REST + JS API. Docs app.theneo.io/leaddyno.",
       "issue": null
     }
   ]

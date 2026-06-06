@@ -1,0 +1,24 @@
+{
+  "slug": "accesstrade",
+  "name": "AccessTrade",
+  "base_url": "https://gurkha.accesstrade.global",
+  "auth_model": "custom",
+  "env_vars": ["ACCESSTRADE_ACCESS_KEY", "ACCESSTRADE_SITE_ID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Reward/amount unit is assumed to be a major-unit decimal in the account currency; the documentation does not state the unit. Verify against a live account.",
+    "The conversion report is rate-limited to 1 request / 5 minutes and capped at a 7-day window; wider ranges are chunked into 7-day slices automatically.",
+    "Click-level data is not exposed via the publisher API; listClicks is unsupported.",
+    "Tracking links are produced in the AccessTrade dashboard, not via a documented deterministic scheme; generateTrackingLink is unsupported.",
+    "The API base URL differs by country; non-default countries must set ACCESSTRADE_BASE_URL."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://support.accesstrade.global/api/report-apis.html"
+}

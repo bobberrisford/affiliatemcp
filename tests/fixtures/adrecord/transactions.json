@@ -1,0 +1,56 @@
+[
+  {
+    "id": 752749,
+    "date": "2026-05-10T01:09:45+02:00",
+    "status": "Approved",
+    "orderValue": 100,
+    "commission": 10,
+    "currency": "SEK",
+    "commissionName": "Standard sale",
+    "channel": { "id": 55, "name": "My blog" },
+    "program": { "id": 1001, "name": "Nordic Bookshop" },
+    "changes": [
+      { "type": "status", "date": "2026-05-12T09:00:00+02:00", "from": "Pending", "to": "Approved" }
+    ]
+  },
+  {
+    "id": 752750,
+    "date": "2026-05-15T14:22:10+02:00",
+    "status": "Pending",
+    "orderValue": 250,
+    "commission": 25,
+    "currency": "SEK",
+    "commissionName": "Standard sale",
+    "channel": { "id": 55, "name": "My blog" },
+    "program": { "id": 1002, "name": "Fjäll Outdoor" },
+    "changes": []
+  },
+  {
+    "id": 752751,
+    "date": "2026-01-02T11:00:00+01:00",
+    "status": "Rejected",
+    "orderValue": 500,
+    "commission": 50,
+    "currency": "SEK",
+    "commissionName": "Standard sale",
+    "channel": { "id": 56, "name": "Newsletter" },
+    "program": { "id": 1001, "name": "Nordic Bookshop" },
+    "changes": [
+      { "type": "status", "date": "2026-01-20T11:00:00+01:00", "from": "Pending", "to": "Rejected" }
+    ]
+  },
+  {
+    "id": 752752,
+    "date": "2026-04-01T08:30:00+02:00",
+    "status": "Paid to affiliate",
+    "orderValue": 800,
+    "commission": 80,
+    "currency": "SEK",
+    "commissionName": "Standard sale",
+    "channel": { "id": 55, "name": "My blog" },
+    "program": { "id": 1003, "name": "Helsinki Travel" },
+    "changes": [
+      { "type": "status", "date": "2026-04-10T08:30:00+02:00", "from": "Approved", "to": "Paid to affiliate" }
+    ]
+  }
+]

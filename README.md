@@ -269,11 +269,15 @@ the brand-side has a more complex auth model and we skipped it.
 <!-- AFFILIATE_MCP_NETWORK_TABLE_START -->
 | Network | Setup time | Approval required | Supported ops | Notes |
 | --- | ---: | --- | ---: | --- |
+| AccessTrade | 10 min | no | 6 / 7 | no clicks |
+| Addrevenue | 5 min | no | 7 / 7 | pagination quirks |
 | Admitad | 15 min | no | 6 / 7 | clicks gated |
 | Admitad (advertiser) | 12 min | no | 7 / 7 | see notes |
+| Adrecord | 5 min | no | 6 / 7 | no clicks |
 | Adservice | 10 min | no | 6 / 7 | no clicks |
 | Adtraction | 5 min | no | 6 / 7 | no clicks |
 | Adtraction (advertiser) | 6 min | no | 7 / 7 | see notes |
+| Affilae | 5 min | no | 6 / 7 | no clicks |
 | Affise | 10 min | no | 7 / 7 | no clicks |
 | Afilio | 10 min | no | 6 / 7 | no clicks |
 | Awin | 5 min | no | 6 / 7 | no clicks |
@@ -292,6 +296,7 @@ the brand-side has a more complex auth model and we skipped it.
 | Everflow (Advertiser) | 10 min | no | 7 / 7 | no clicks |
 | FirstPromoter | 5 min | no | 6 / 7 | no clicks |
 | FlexOffers | 10 min | no | 6 / 7 | no clicks |
+| Flipkart Affiliate | 10 min | no | 6 / 7 | no clicks |
 | GrowSurf | 10 min | no | 6 / 7 | no clicks |
 | Hotmart | 10 min | no | 6 / 7 | no clicks |
 | Impact | 6 min | no | 7 / 7 | upstream variability |
@@ -305,6 +310,7 @@ the brand-side has a more complex auth model and we skipped it.
 | mrge | 10 min | no | 6 / 7 | no clicks |
 | NetRefer | 15 min | yes (~5 days) | 6 / 7 | no clicks |
 | Offer18 | 10 min | no | 6 / 7 | no clicks |
+| Optimise Media | 10 min | no | 6 / 7 | no clicks |
 | Partnerize | 10 min | no | 7 / 7 | no clicks |
 | Partnerize (Advertiser) | 5 min | no | 6 / 7 | no clicks |
 | Partnero | 5 min | no | 6 / 7 | no clicks |
@@ -318,6 +324,7 @@ the brand-side has a more complex auth model and we skipped it.
 | Sovrn Commerce | 10 min | no | 6 / 7 | no clicks |
 | Tradedoubler | 15 min | no | 6 / 7 | clicks gated |
 | Tradedoubler (Advertiser) | 10 min | no | 7 / 7 | no clicks |
+| Travelpayouts | 5 min | no | 6 / 7 | no clicks |
 | ValueCommerce | 10 min | no | 6 / 7 | no clicks |
 | ValueCommerce (advertiser) | 10 min | no | 6 / 7 | no clicks |
 | Webgains | 10 min | no | 6 / 7 | no clicks |
@@ -398,19 +405,6 @@ pile onto) a tracking issue before you start.
 | Belboon | publisher + advertiser | DACH performance network. wecantrack pulls conversions via the Belboon API on a schedule; confirm self-serve key issuance + endpoint before building. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Belboon) |
 | financeAds | publisher | DACH finance-vertical network. API integration offered via wecantrack; verify public self-serve API docs before building. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20financeAds) |
 | Yieldkit | publisher | Link-monetisation network (Skimlinks/Sovrn competitor; now owns Digidip). wecantrack connects via the Yieldkit API and matches commissions per session; verify self-serve API docs. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Yieldkit) |
-| Affise | publisher + advertiser | Multiplier — CPA tenant engine. One parameterised adapter covers every Affise-powered network: base URL = per-tenant tracking domain, plus a per-user API-Key header (Settings > Security). Docs api.affise.com/docs3.1. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Affise) |
-| Scaleo | publisher + advertiser | Multiplier — tenant engine. Per-tenant tracking URL + API key; admin enables API per role. Public docs developers.scaleo.io. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Scaleo) |
-| Offer18 | publisher + advertiser | Multiplier — tenant network engine. Self-serve affiliate API key + secret + mid (Account > Security). Docs knowledgebase.offer18.com/affiliate/affiliate-apis. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Offer18) |
-| CAKE | publisher + advertiser | Multiplier — per-instance base URL + key. OpenAPI-documented (~20 reporting APIs) at developer.cake.net/apis; key issued in-instance. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20CAKE) |
-| Post Affiliate Pro | advertiser | Multiplier — SaaS, per-account subdomain {acct}.postaffiliatepro.com/api/v3. Self-serve bearer key (Config > Tools > Integration); Swagger RESTful CRUD on affiliates/transactions/reports. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Post%20Affiliate%20Pro) |
-| NetRefer | publisher + advertiser | iGaming multiplier with a public dev portal (developer.netrefer.com): OAuth2, ASR (Affiliate Standard Reporting) REST/OpenAPI + operator GraphQL. Per-operator tenant. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20NetRefer) |
-| Affilae | publisher + advertiser | FR network, cleanest net-new modern REST. Bearer token from the API Tokens menu; publisher + advertiser endpoints, amounts in cents. Docs rest.affilae.com/reference. Cross-confirmed by two research passes. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Affilae) |
-| Optimise Media | publisher + advertiser | UK/IN/APAC network. Public REST; apikey header via a self-serve Service Account in the Insights Dashboard. Campaigns, conversions (with basket items), product feeds. Docs docs.optimisemedia.com/api. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Optimise%20Media) |
-| AccessTrade | publisher | Large SE-Asia/Japan network. Authorization: Token <access_key> (key from publisher profile). Campaigns, conversion reports, creatives, datafeed, payments. Docs support.accesstrade.global/api. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20AccessTrade) |
-| Travelpayouts | publisher | Global travel vertical. Self-serve X-Access-Token (Profile > API token); booking/conversion statistics + balance/payment APIs. Docs travelpayouts.github.io/slate. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Travelpayouts) |
-| Flipkart Affiliate | publisher | India. Public docs affiliate.flipkart.com/api-docs; self-gen API token + tracking ID headers; product feed, offer, order/report APIs. Caveat: Flipkart periodically pauses new affiliate signups — verify the programme is open. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Flipkart%20Affiliate) |
-| Adrecord | publisher + advertiser | Nordic (SE). Self-serve private API key (APIKEY header); separate affiliate + advertiser docs (api.v2.adrecord.com/docs). Programs, channels, statistics; 30 req/30s. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Adrecord) |
-| Addrevenue | publisher + advertiser | Nordic (SE). OAuth2 lifetime token (Tools > API Tokens); transactions, clicks, payments, invoices across 900+ advertisers. Docs addrevenue.io/en/developers. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Addrevenue) |
 | eHUB | publisher + advertiser | CZ/CEE. Apiary v3 docs (ehub.docs.apiary.io — NOT docs.ehub.com, which is an unrelated logistics firm). API key; programs, transactions with rich filters, coupons, clicks. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20eHUB) |
 | LinkConnector | publisher | US network (~700 advertisers). Self-serve API key (Tools > API); HTTP POST function API for promotion feed, transaction + delta reports, affiliate links. CSV/JSON/XML. Docs linkconnector.com/help_api.htm. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20LinkConnector) |
 | Connexity (ShopYourLikes) | publisher | US CPC-commerce network, distinct from the existing Skimlinks adapter. Publisher ID + API key from the publisher portal; deep-link, reporting, merchant-match, catalog APIs. Docs pubresources.connexity.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Connexity%20(ShopYourLikes)) |
@@ -418,10 +412,6 @@ pile onto) a tracking issue before you start.
 | Effiliation (Effinity) | publisher + advertiser | Established FR network. API key from Tools > API; programmes, transactions, links/feeds refreshed ~every 2h. Docs apiv2.effiliation.com/apiv2/doc. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Effiliation%20(Effinity)) |
 | 2Performant | publisher + advertiser | Romania. Self-serve but auth is credential/session-based (email+password -> session), not a static key — handle that quirk. RESTful JSON; programs, commissions, links. Docs doc.2performant.com; official PHP wrapper exists. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%202Performant) |
 | Profitshare | publisher + advertiser | Romania. Self-serve API key + API user, HMAC-signed requests. Advertisers, campaigns, products, commissions, cashback. Docs doc.profitshare.com; reference impl on GitHub. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Profitshare) |
-| FirstPromoter | advertiser | SaaS-referral (same cohort as the existing Rewardful/Tolt/Refersion adapters). Self-serve bearer key + ACCOUNT-ID header (Settings > Integrations); promoters, leads, commissions, payouts. Single host api.firstpromoter.com. Docs docs.firstpromoter.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20FirstPromoter) |
-| Partnero | advertiser | SaaS-referral. Per-program bearer token (Program > Integration > API). Customers, partners, transactions, rewards/payouts; official PHP SDK. Docs developers.partnero.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Partnero) |
-| GrowSurf | advertiser | SaaS-referral. Self-serve bearer key; ~24 endpoints (participants, trigger referrals, program/participant data) + webhooks. Docs docs.growsurf.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20GrowSurf) |
-| LeadDyno | advertiser | SaaS-referral. Self-serve private key (Profile); affiliates CRUD/approve/reject, purchases CRUD/list. REST + JS API. Docs app.theneo.io/leaddyno. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20LeadDyno) |
 <!-- AFFILIATE_MCP_WANTED_TABLE_END -->
 
 ## Awin reference implementation
@@ -553,6 +543,13 @@ click for credentials, and common stumbling blocks:
 - [Offer18](./docs/networks/offer18.md) — per-tenant base URL + key/aid/mid (query params); tenant engine; experimental, built from public docs.
 - [CAKE](./docs/networks/cake.md) — per-instance base URL + API key + affiliate ID (XML API); experimental, built from public docs.
 - [NetRefer](./docs/networks/netrefer.md) — per-operator base URL + OAuth2 (Azure AD); iGaming ASR reporting; experimental, built from public docs.
+- [Affilae](./docs/networks/affilae.md) — Bearer token; single-brand; FR network; experimental, built from public docs.
+- [Optimise Media](./docs/networks/optimise-media.md) — apikey header (Service Account); UK/IN/APAC; experimental, built from public docs.
+- [AccessTrade](./docs/networks/accesstrade.md) — Token header + site ID; SE-Asia/Japan, per-country base URL; experimental, built from public docs.
+- [Travelpayouts](./docs/networks/travelpayouts.md) — X-Access-Token; global travel; experimental, built from public docs.
+- [Flipkart Affiliate](./docs/networks/flipkart.md) — affiliate ID + token headers; India; experimental, built from public docs.
+- [Adrecord](./docs/networks/adrecord.md) — APIKEY header; Nordic; experimental, built from public docs.
+- [Addrevenue](./docs/networks/addrevenue.md) — Bearer token + channel ID; Nordic; experimental, built from public docs.
 
 **Brand / advertiser side:**
 

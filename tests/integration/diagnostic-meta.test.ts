@@ -140,7 +140,7 @@ describe('runDiagnostic meta-tool (PRD §15.3)', () => {
   it('returns one capabilities entry per registered adapter', async () => {
     mockUniversalSuccess();
     const adapters = getAdapters();
-    expect(adapters.length, 'expected all fifty-three adapters registered').toBe(53);
+    expect(adapters.length, 'expected all sixty adapters registered').toBe(60);
 
     const result = await runDiagnostic();
 

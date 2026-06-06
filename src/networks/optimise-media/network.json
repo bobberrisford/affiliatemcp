@@ -1,0 +1,23 @@
+{
+  "slug": "optimise-media",
+  "name": "Optimise Media",
+  "base_url": "https://api.optimisemedia.com",
+  "auth_model": "custom",
+  "env_vars": ["OPTIMISE_MEDIA_API_TOKEN"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Experimental: field mappings follow the documented OMG Network API but have not been confirmed against a live Service Account.",
+    "Amounts are assumed to be in major currency units (e.g. pounds), not minor units (pence). Verify against a live account; raw payloads are preserved on rawNetworkData.",
+    "Click-level data is not exposed via the OMG Network API; listClicks is unsupported.",
+    "Tracking-link construction is not documented for the OMG Network API; generateTrackingLink is unsupported.",
+    "Product feeds are documented for the network but are not modelled by this adapter."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://docs.optimisemedia.com/api/"
+}

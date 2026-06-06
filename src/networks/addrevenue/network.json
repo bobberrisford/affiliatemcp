@@ -1,0 +1,20 @@
+{
+  "slug": "addrevenue",
+  "name": "Addrevenue",
+  "base_url": "https://addrevenue.io/api/v2",
+  "auth_model": "bearer",
+  "env_vars": ["ADDREVENUE_API_TOKEN", "ADDREVENUE_CHANNEL_ID"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Experimental: Addrevenue API response shapes (field names, pagination, amount unit) are inferred from the public developer reference and have not been validated against a live account; transformers read defensively and preserve the raw payload on rawNetworkData.",
+    "Amount unit is assumed to be the major currency unit (e.g. SEK, not öre) with a per-row currency field; this has not been confirmed against a live account."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://addrevenue.io/en/developers"
+}

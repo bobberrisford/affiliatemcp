@@ -1,6 +1,6 @@
 # affiliate-mcp Report — the state of affiliate-network APIs in June 2026
 
-_Date-stamped: 2026-06-05._
+_Date-stamped: 2026-06-06._
 
 This report describes the state of four affiliate-network APIs as observed
 during the construction of the affiliate-mcp MCP server: Awin, CJ Affiliate,
@@ -31,11 +31,15 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 
 | Network | Setup time (min) | Approval | Ops supported | Known limitations | Claim status | Adapter | Last verified |
 | --- | ---: | --- | ---: | ---: | --- | --- | --- |
+| AccessTrade | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
+| Addrevenue | 5 | no | 7 / 7 | 2 | experimental | 0.1.0 | 2026-06-05 |
 | Admitad | 15 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
 | Admitad (advertiser) | 12 | no | 7 / 7 | 5 | experimental | 0.1.0 | 2026-06-04 |
+| Adrecord | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | Adservice | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Adtraction | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Adtraction (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Affilae | 5 | no | 6 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | Affise | 10 | no | 7 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | Afilio | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Awin | 5 | no | 6 / 7 | 1 | partial | 0.1.0 | 2026-05-21 |
@@ -54,6 +58,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Everflow (Advertiser) | 10 | no | 7 / 7 | 6 | experimental | 0.2.0 | 2026-05-28 |
 | FirstPromoter | 5 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-05 |
 | FlexOffers | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Flipkart Affiliate | 10 | no | 6 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | GrowSurf | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-05 |
 | Hotmart | 10 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-04 |
 | Impact | 6 | no | 7 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
@@ -67,6 +72,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | mrge | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 | NetRefer | 15 | yes (~5 days) | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-05 |
 | Offer18 | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
+| Optimise Media | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | Partnerize | 10 | no | 7 / 7 | 4 | experimental | 0.1.0 | 2026-05-28 |
 | Partnerize (Advertiser) | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 | Partnero | 5 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-05 |
@@ -80,10 +86,87 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Sovrn Commerce | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-05-28 |
 | Tradedoubler | 15 | no | 6 / 7 | 6 | experimental | 0.1.1 | 2026-05-28 |
 | Tradedoubler (Advertiser) | 10 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
+| Travelpayouts | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | ValueCommerce | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
 | ValueCommerce (advertiser) | 10 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-04 |
 | Webgains | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Webgains (advertiser) | 10 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+
+## AccessTrade
+
+### Quick facts
+
+- **Slug**: `accesstrade`
+- **Auth model**: custom
+- **Base URL**: https://gurkha.accesstrade.global
+- **Environment variables**: `ACCESSTRADE_ACCESS_KEY`, `ACCESSTRADE_SITE_ID`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://support.accesstrade.global/api/report-apis.html
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Reward/amount unit is assumed to be a major-unit decimal in the account currency; the documentation does not state the unit. Verify against a live account.
+- The conversion report is rate-limited to 1 request / 5 minutes and capped at a 7-day window; wider ranges are chunked into 7-day slices automatically.
+- Click-level data is not exposed via the publisher API; listClicks is unsupported.
+- Tracking links are produced in the AccessTrade dashboard, not via a documented deterministic scheme; generateTrackingLink is unsupported.
+- The API base URL differs by country; non-default countries must set ACCESSTRADE_BASE_URL.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/accesstrade.md`._
+
+## Addrevenue
+
+### Quick facts
+
+- **Slug**: `addrevenue`
+- **Auth model**: bearer
+- **Base URL**: https://addrevenue.io/api/v2
+- **Environment variables**: `ADDREVENUE_API_TOKEN`, `ADDREVENUE_CHANNEL_ID`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://addrevenue.io/en/developers
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: Addrevenue API response shapes (field names, pagination, amount unit) are inferred from the public developer reference and have not been validated against a live account; transformers read defensively and preserve the raw payload on rawNetworkData.
+- Amount unit is assumed to be the major currency unit (e.g. SEK, not öre) with a per-row currency field; this has not been confirmed against a live account.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/addrevenue.md`._
 
 ## Admitad
 
@@ -164,6 +247,45 @@ _No findings document was supplied at `docs/findings/admitad.md`._
 ### Findings
 
 _No findings document was supplied at `docs/findings/admitad-advertiser.md`._
+
+## Adrecord
+
+### Quick facts
+
+- **Slug**: `adrecord`
+- **Auth model**: custom
+- **Base URL**: https://api.v2.adrecord.com
+- **Environment variables**: `ADRECORD_API_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://api.v2.adrecord.com/docs/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live Adrecord account.
+- Click-level data is not exposed as a list endpoint by the public Adrecord affiliate API; listClicks is unsupported.
+- Tracking-link construction is not publicly documented for deterministic assembly; generateTrackingLink is unsupported.
+- Transaction amounts are assumed to be in major currency units (e.g. SEK, not öre); not yet confirmed against a live account.
+- Adrecord throttles the affiliate API at roughly 30 requests per 30 seconds; wide date ranges are chunked to stay within the limit.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/adrecord.md`._
 
 ## Adservice
 
@@ -284,6 +406,44 @@ _No findings document was supplied at `docs/findings/adtraction.md`._
 ### Findings
 
 _No findings document was supplied at `docs/findings/adtraction-advertiser.md`._
+
+## Affilae
+
+### Quick facts
+
+- **Slug**: `affilae`
+- **Auth model**: bearer
+- **Base URL**: https://rest.affilae.com
+- **Environment variables**: `AFFILAE_API_TOKEN`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://rest.affilae.com/reference
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).
+- Monetary amounts are returned by Affilae in cents and converted to major units; the verbatim cents value is preserved on rawNetworkData.
+- Click-level data is not exposed via the documented publisher API; listClicks is unsupported.
+- Tracking-link minting requires an API call whose exact contract is not publicly documented; generateTrackingLink is unsupported pending live verification.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/affilae.md`._
 
 ## Affise
 
@@ -1774,6 +1934,44 @@ _No findings document was supplied at `docs/findings/firstpromoter.md`._
 
 _No findings document was supplied at `docs/findings/flexoffers.md`._
 
+## Flipkart Affiliate
+
+### Quick facts
+
+- **Slug**: `flipkart`
+- **Auth model**: custom
+- **Base URL**: https://affiliate-api.flipkart.net
+- **Environment variables**: `FLIPKART_AFFILIATE_ID`, `FLIPKART_AFFILIATE_TOKEN`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://affiliate.flipkart.com/api-docs/af_overview.html
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: the adapter has not been validated against a live Flipkart affiliate account.
+- Order/commission amounts are assumed to be in Indian Rupees (INR) as whole-rupee decimal values; the orders report does not document the minor-unit convention, so amounts are surfaced verbatim from the `amount` field without rescaling.
+- Flipkart periodically pauses new affiliate signups, so the programme may be closed to new applicants when you attempt to register.
+- Click-level data is not exposed via the public affiliate API; listClicks is unsupported.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/flipkart.md`._
+
 ## GrowSurf
 
 ### Quick facts
@@ -2705,6 +2903,45 @@ _No findings document was supplied at `docs/findings/netrefer.md`._
 ### Findings
 
 _No findings document was supplied at `docs/findings/offer18.md`._
+
+## Optimise Media
+
+### Quick facts
+
+- **Slug**: `optimise-media`
+- **Auth model**: custom
+- **Base URL**: https://api.optimisemedia.com
+- **Environment variables**: `OPTIMISE_MEDIA_API_TOKEN`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://docs.optimisemedia.com/api/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: field mappings follow the documented OMG Network API but have not been confirmed against a live Service Account.
+- Amounts are assumed to be in major currency units (e.g. pounds), not minor units (pence). Verify against a live account; raw payloads are preserved on rawNetworkData.
+- Click-level data is not exposed via the OMG Network API; listClicks is unsupported.
+- Tracking-link construction is not documented for the OMG Network API; generateTrackingLink is unsupported.
+- Product feeds are documented for the network but are not modelled by this adapter.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/optimise-media.md`._
 
 ## Partnerize
 
@@ -4457,6 +4694,45 @@ handles both d.m.Y and d.m.y (two-digit year) in responses.
    account types.
    Credential needed: any live account with a suspended programme.
 
+## Travelpayouts
+
+### Quick facts
+
+- **Slug**: `travelpayouts`
+- **Auth model**: custom
+- **Base URL**: https://api.travelpayouts.com
+- **Environment variables**: `TRAVELPAYOUTS_ACCESS_TOKEN`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://support.travelpayouts.com/hc/en-us/articles/360019864079-API-of-affiliate-programs-booking-statistics
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: implemented from public documentation and not yet validated against a live Travelpayouts account.
+- Amounts (price, profit) are assumed to be whole units of the selected currency, matching the balance response (e.g. "1794.34"); not minor units.
+- Programmes are synthesised from the connected travel brands (campaign ids) that appear in the balance-actions response; Travelpayouts exposes no publisher programme-catalogue endpoint, so commission rates and not-yet-joined programmes are unavailable.
+- Click-level data is not exposed per booking; the statistics API reports only aggregated click/redirect counts, so listClicks is unsupported.
+- Tracking links are created in the dashboard with a partner marker; Travelpayouts publishes no deterministic deep-link URL formula, so generateTrackingLink is unsupported.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/travelpayouts.md`._
+
 ## ValueCommerce
 
 ### Quick facts
@@ -4635,4 +4911,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-05 19:59 UTC._
+_Last regenerated 2026-06-06 04:53 UTC._

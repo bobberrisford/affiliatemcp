@@ -1,0 +1,22 @@
+{
+  "slug": "affilae",
+  "name": "Affilae",
+  "base_url": "https://rest.affilae.com",
+  "auth_model": "bearer",
+  "env_vars": ["AFFILAE_API_TOKEN"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).",
+    "Monetary amounts are returned by Affilae in cents and converted to major units; the verbatim cents value is preserved on rawNetworkData.",
+    "Click-level data is not exposed via the documented publisher API; listClicks is unsupported.",
+    "Tracking-link minting requires an API call whose exact contract is not publicly documented; generateTrackingLink is unsupported pending live verification."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://rest.affilae.com/reference"
+}

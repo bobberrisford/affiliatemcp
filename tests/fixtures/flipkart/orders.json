@@ -1,0 +1,70 @@
+{
+  "orderList": [
+    {
+      "affiliateOrderItemId": "FAOI-0001",
+      "productId": "MOBFXXXXEXAMPLE1",
+      "title": "Example Smartphone 128GB",
+      "category": "mobiles",
+      "quantity": 1,
+      "price": 18999,
+      "status": "approved",
+      "orderDate": "2026-01-04",
+      "commissionRate": 4.0,
+      "sales": { "amount": 18999, "currency": "INR" },
+      "tentativeCommission": { "amount": 759.96, "currency": "INR" },
+      "affExtParam1": "campaign-a",
+      "affExtParam2": "",
+      "salesChannel": "web",
+      "customerType": "existing"
+    },
+    {
+      "affiliateOrderItemId": "FAOI-0002",
+      "productId": "ACCFXXXXEXAMPLE2",
+      "title": "Example Wireless Earbuds",
+      "category": "audio",
+      "quantity": 2,
+      "price": 1499,
+      "status": "pending",
+      "orderDate": "2026-05-20",
+      "commissionRate": 6.0,
+      "sales": { "amount": 2998, "currency": "INR" },
+      "tentativeCommission": { "amount": 179.88, "currency": "INR" },
+      "salesChannel": "app",
+      "customerType": "new"
+    },
+    {
+      "affiliateOrderItemId": "FAOI-0003",
+      "productId": "BOKFXXXXEXAMPLE3",
+      "title": "Example Hardback Book",
+      "category": "books",
+      "quantity": 1,
+      "price": 499,
+      "status": "cancelled",
+      "orderDate": "2026-02-15",
+      "commissionRate": 8.0,
+      "sales": { "amount": 499, "currency": "INR" },
+      "tentativeCommission": { "amount": 39.92, "currency": "INR" },
+      "salesChannel": "web",
+      "customerType": "existing"
+    },
+    {
+      "affiliateOrderItemId": "FAOI-0004",
+      "productId": "HOMFXXXXEXAMPLE4",
+      "title": "Example Kitchen Mixer",
+      "category": "home",
+      "quantity": 1,
+      "price": 3499,
+      "status": "tentative",
+      "orderDate": "2026-05-25",
+      "commissionRate": 5.0,
+      "sales": { "amount": 3499, "currency": "INR" },
+      "tentativeCommission": { "amount": 174.95, "currency": "INR" },
+      "salesChannel": "web",
+      "customerType": "new"
+    }
+  ],
+  "first": "/affiliate/report/orders/detail/json?offset=0",
+  "last": "/affiliate/report/orders/detail/json?offset=0",
+  "previous": null,
+  "next": null
+}
