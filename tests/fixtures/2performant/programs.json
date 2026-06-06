@@ -1,0 +1,31 @@
+{
+  "programs": [
+    {
+      "id": 555,
+      "slug": "atolls-bookshop-ro",
+      "name": "Atolls Bookshop RO",
+      "unique_code": "abc123",
+      "status": "active",
+      "currency": "RON",
+      "main_url": "https://bookshop.example.ro",
+      "category": { "name": "Books" },
+      "default_sale_commission_rate": "8.0",
+      "default_sale_commission_type": "percent",
+      "affrequest": { "status": "accepted" }
+    },
+    {
+      "id": 777,
+      "slug": "atolls-electronics-ro",
+      "name": "Atolls Electronics RO",
+      "unique_code": "def456",
+      "status": "active",
+      "currency": "RON",
+      "main_url": "https://electronics.example.ro",
+      "category": { "name": "Electronics" },
+      "default_sale_commission_rate": "3.5",
+      "default_sale_commission_type": "percent",
+      "affrequest": { "status": "pending" }
+    }
+  ],
+  "metadata": { "totalpages": 1, "total": 2, "currentpage": 1, "perpage": 100 }
+}

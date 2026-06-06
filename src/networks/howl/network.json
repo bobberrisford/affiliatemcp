@@ -1,0 +1,24 @@
+{
+  "slug": "howl",
+  "name": "Howl",
+  "base_url": "https://api.narrativ.com",
+  "auth_model": "custom",
+  "env_vars": ["HOWL_API_KEY", "HOWL_PUBLISHER_ID"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Experimental: implemented against the published Howl (Narrativ) API documentation and not yet verified against a live publisher account.",
+    "Monetary amounts are assumed to be in USD major units (e.g. dollars); the statistics endpoint exposes no currency field, so this is an assumption pending live verification.",
+    "Howl has no live per-order transactions endpoint; listTransactions returns daily per-(article, merchant) aggregates from the statistics endpoint. Individual orders are only available via the scheduled Publisher Report CSV files (Clicks/Orders/Returns).",
+    "Howl has no live merchant/programme catalogue endpoint for a publisher key; listProgrammes returns only the merchants the publisher has driven activity to in the requested window.",
+    "Howl does not expose a transaction approval/payment lifecycle via the statistics API, so transaction status cannot be normalised to pending/approved/paid; rows are reported as approved when earnings are present, otherwise other.",
+    "Click-level data is not exposed via a queryable endpoint (only the scheduled Clicks report file); listClicks is unsupported."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://docs.narrativ.com/"
+}

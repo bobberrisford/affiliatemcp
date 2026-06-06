@@ -1,0 +1,21 @@
+{
+  "slug": "tradetracker",
+  "name": "TradeTracker",
+  "base_url": "https://ws.tradetracker.com",
+  "auth_model": "custom",
+  "env_vars": ["TRADETRACKER_CUSTOMER_ID", "TRADETRACKER_PASSPHRASE", "TRADETRACKER_SITE_ID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).",
+    "The TradeTracker affiliate API is SOAP-only: requests and responses are hand-built XML envelopes parsed without an XML dependency, and authentication opens a server session whose cookie is cached and re-established on expiry.",
+    "Monetary fields (commission, orderAmount) are assumed to be major currency units (e.g. euros, not cents) in the campaign currency; this has not been confirmed against a live account."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://affiliate.tradetracker.com/webService/"
+}

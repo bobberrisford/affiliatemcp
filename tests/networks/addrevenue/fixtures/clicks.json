@@ -1,0 +1,21 @@
+{
+  "results": [
+    {
+      "id": 9001,
+      "advertiserId": 1001,
+      "channelId": 123456,
+      "clickDate": "2026-05-01T10:15:00Z",
+      "referrer": "https://www.atolls-blog.example.se/review",
+      "destinationUrl": "https://www.atolls-bookshop.example.se/product/42",
+      "clickRef": "blog-review"
+    },
+    {
+      "id": 9002,
+      "advertiserId": 1002,
+      "channelId": 123456,
+      "clickDate": "2026-05-02T14:00:00Z",
+      "referrer": "https://www.atolls-blog.example.se/gear",
+      "targetUrl": "https://www.nordic-outdoors.example.se/tents"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "slug": "effiliation",
+  "name": "Effiliation",
+  "base_url": "https://apiv2.effiliation.com",
+  "auth_model": "custom",
+  "env_vars": ["EFFILIATION_API_KEY"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Click-level data is not exposed via the publisher API; listClicks is unsupported.",
+    "Tracking-link (deeplink) construction is not deterministically documented for the publisher; generateTrackingLink is unsupported.",
+    "Transaction amounts are assumed to be major currency units (e.g. 12.50 = EUR 12.50) in EUR; not yet confirmed against a live account.",
+    "Transaction data is refreshed roughly every two hours upstream, so very recent conversions may be missing."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://apiv2.effiliation.com/apiv2/doc/home.htm"
+}

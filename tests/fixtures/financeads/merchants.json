@@ -1,0 +1,37 @@
+{
+  "programs": [
+    {
+      "program_id": 1001,
+      "program_name": "Atolls Bank Current Account",
+      "partnership": "active",
+      "currency": "EUR",
+      "commission": "45.00 EUR per account",
+      "category": "Banking",
+      "url": "https://www.atolls-bank.example.com"
+    },
+    {
+      "program_id": 1002,
+      "program_name": "Atolls Insurance Cover",
+      "partnership": "pending",
+      "currency": "EUR",
+      "provision": "30,00",
+      "kategorie": "Insurance",
+      "website": "https://www.atolls-insurance.example.com"
+    },
+    {
+      "program_id": 1003,
+      "program_name": "Atolls Tax Advisor",
+      "partnership": "rejected",
+      "currency": "EUR",
+      "category": "Tax",
+      "url": "https://www.atolls-tax.example.com"
+    },
+    {
+      "program_id": 1004,
+      "programmname": "Atolls Mortgage Finder",
+      "status": "offen",
+      "currency": "EUR",
+      "category": "Real estate"
+    }
+  ]
+}

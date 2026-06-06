@@ -1,0 +1,7 @@
+advertiser_program_id;advertiser_name;partnership_status;currency;category;advertiser_url;commission
+1001;Atolls Bookshop;active;EUR;Books;https://books.example.com;5%
+1002;Atolls Garden Centre;pending;EUR;Home & Garden;https://garden.example.com;up to 8%
+1003;Atolls Electronics;rejected;EUR;Electronics;https://electronics.example.com;2.5%
+1004;Atolls Travel;open;GBP;Travel;https://travel.example.com;
+1005;Atolls Outlet;paused;EUR;Fashion;https://outlet.example.com;10%
+1006;Atolls Mystery Shop;weird-state;EUR;Misc;https://mystery.example.com;

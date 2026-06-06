@@ -1,0 +1,59 @@
+{
+  "request": { "Target": "Affiliate_Report", "Method": "getConversions", "Version": "3", "Format": "json" },
+  "response": {
+    "status": 1,
+    "httpStatus": 200,
+    "errorMessage": null,
+    "errors": [],
+    "data": {
+      "page": 1,
+      "current": 3,
+      "count": 3,
+      "pageCount": 1,
+      "data": {
+        "0": {
+          "Stat": {
+            "id": "9001",
+            "offer_id": "1001",
+            "affiliate_id": "55",
+            "payout": "6.50",
+            "sale_amount": "9.00",
+            "currency": "GBP",
+            "status": "approved",
+            "datetime": "2026-01-15 10:00:00",
+            "note": ""
+          },
+          "Offer": { "id": "1001", "name": "Atolls Bookshop" }
+        },
+        "1": {
+          "Stat": {
+            "id": "9002",
+            "offer_id": "1001",
+            "affiliate_id": "55",
+            "payout": "6.50",
+            "sale_amount": "9.00",
+            "currency": "GBP",
+            "status": "pending",
+            "datetime": "2026-03-01 12:30:00",
+            "note": ""
+          },
+          "Offer": { "id": "1001", "name": "Atolls Bookshop" }
+        },
+        "2": {
+          "Stat": {
+            "id": "9003",
+            "offer_id": "1002",
+            "affiliate_id": "55",
+            "payout": "10.00",
+            "sale_amount": "0.00",
+            "currency": "GBP",
+            "status": "rejected",
+            "datetime": "2026-04-10 08:15:00",
+            "note": "Duplicate conversion"
+          },
+          "Offer": { "id": "1002", "name": "Atolls Gadgets" }
+        }
+      }
+    }
+  }
+}

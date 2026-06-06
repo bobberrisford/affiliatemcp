@@ -51,9 +51,9 @@ import type {
   TrackingLink,
   Transaction,
   TransactionQuery,
-} from '../../src/shared/types.js';
-import { NotImplementedError } from '../../src/shared/types.js';
-import { DEFAULT_RESILIENCE } from '../../src/shared/resilience.js';
+} from '../../shared/types.js';
+import { NotImplementedError } from '../../shared/types.js';
+import { DEFAULT_RESILIENCE } from '../../shared/resilience.js';
 
 // TODO: replace with the real slug. Must match the directory name under
 // `src/networks/` and the `slug` field in `network.json`.

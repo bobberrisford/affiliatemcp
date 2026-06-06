@@ -1,0 +1,20 @@
+{
+  "merchantMatches": [
+    {
+      "merchantId": 100123,
+      "merchantName": "Wayfair",
+      "merchantUrl": "https://www.wayfair.com",
+      "deeplinkEcpc": 0.42,
+      "deeplinkUrl": "https://rd.bizrate.com/pi/abc?afId=725846",
+      "searchCategoryId": 55,
+      "productSearchUrl": "https://catalog.bizrate.com/services/catalog/v1/us/product?merchantId=100123"
+    },
+    {
+      "merchantName": "Walmart",
+      "merchantId": "100124",
+      "merchantUrl": "https://www.walmart.com",
+      "deeplinkEcpc": 0.18,
+      "deeplinkUrl": "https://rd.bizrate.com/pi/def?afId=725846"
+    }
+  ]
+}

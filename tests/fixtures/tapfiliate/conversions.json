@@ -1,0 +1,36 @@
+[
+  {
+    "id": "conv-pending",
+    "created_at": "2024-04-01T09:00:00+00:00",
+    "amount": 500.0,
+    "program": { "id": "prog-default", "title": "Default Programme", "currency": "USD" },
+    "affiliate": { "id": "aff-1", "firstname": "Alpha", "lastname": "Reviewer" },
+    "commissions": [{ "id": "com-1", "amount": 50.0, "approved": null, "kind": "regular" }]
+  },
+  {
+    "id": "conv-approved",
+    "created_at": "2024-04-02T10:00:00+00:00",
+    "amount": 250.0,
+    "program": { "id": "prog-default", "title": "Default Programme", "currency": "USD" },
+    "affiliate": { "id": "aff-1", "firstname": "Alpha", "lastname": "Reviewer" },
+    "commissions": [{ "id": "com-2", "amount": 25.0, "approved": true, "kind": "regular" }]
+  },
+  {
+    "id": "conv-paid",
+    "created_at": "2024-04-03T11:00:00+00:00",
+    "amount": 100.0,
+    "program": { "id": "prog-default", "title": "Default Programme", "currency": "USD" },
+    "affiliate": { "id": "aff-2", "firstname": "Beta" },
+    "commissions": [
+      { "id": "com-3", "amount": 10.0, "approved": true, "kind": "regular", "payout": { "id": "pay-1" } }
+    ]
+  },
+  {
+    "id": "conv-reversed",
+    "created_at": "2024-04-04T12:00:00+00:00",
+    "amount": 75.0,
+    "program": { "id": "prog-default", "title": "Default Programme", "currency": "USD" },
+    "affiliate": { "id": "aff-2", "firstname": "Beta" },
+    "commissions": [{ "id": "com-4", "amount": 7.5, "approved": false, "kind": "regular" }]
+  }
+]

@@ -1,0 +1,24 @@
+{
+  "page": 1,
+  "per_page": 100,
+  "count": 2,
+  "total_pages": 1,
+  "results": [
+    {
+      "id": 5001,
+      "name": "Default Offer",
+      "url": "https://acme.example.com",
+      "currency": "USD",
+      "type": "PERCENT_OF_SALE",
+      "amount": 30
+    },
+    {
+      "id": 5002,
+      "name": "Black Friday Offer",
+      "url": "https://acme.example.com/bf",
+      "currency": "USD",
+      "type": "FLAT_RATE",
+      "amount": 25
+    }
+  ]
+}

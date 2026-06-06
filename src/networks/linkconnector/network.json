@@ -1,0 +1,22 @@
+{
+  "slug": "linkconnector",
+  "name": "LinkConnector",
+  "base_url": "https://www.linkconnector.com",
+  "auth_model": "custom",
+  "env_vars": ["LINKCONNECTOR_API_KEY"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Experimental: not yet validated against a live LinkConnector account; JSON field names are inferred from the public documentation and read defensively.",
+    "Amounts are assumed to be in major currency units (US dollars); LinkConnector is a US network. The unit has not been confirmed against a live account.",
+    "Click-level data is not exposed via the public LinkConnector publisher API; listClicks is unsupported.",
+    "Tracking links are issued by LinkConnector per merchant (via the promotions feed), not constructed deterministically from a destination URL; generateTrackingLink is unsupported."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://www.linkconnector.com/help_api.htm"
+}

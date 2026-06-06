@@ -1,0 +1,64 @@
+{
+  "orderData": [
+    {
+      "receipt": "ABC10001",
+      "transactionType": "SALE",
+      "transactionTime": "2024-09-01T10:30:00Z",
+      "totalAccountAmount": 24.5,
+      "totalOrderAmount": 49.0,
+      "vendor": "reefvendor",
+      "affiliate": "myacct",
+      "role": "AFFILIATE",
+      "currency": "USD",
+      "lineItems": [{ "productTitle": "Reef Diving Course", "itemNo": "1", "accountAmount": 24.5 }]
+    },
+    {
+      "receipt": "ABC10002",
+      "transactionType": "BILL",
+      "transactionTime": "2025-12-20T18:05:00Z",
+      "totalAccountAmount": 12.0,
+      "totalOrderAmount": 24.0,
+      "vendor": "reefvendor",
+      "affiliate": "myacct",
+      "role": "AFFILIATE",
+      "currency": "USD",
+      "lineItems": [{ "productTitle": "Reef Diving Course", "itemNo": "1", "accountAmount": 12.0 }]
+    },
+    {
+      "receipt": "ABC10003",
+      "transactionType": "RFND",
+      "transactionTime": "2025-08-01T09:30:00Z",
+      "totalAccountAmount": -30.0,
+      "totalOrderAmount": -60.0,
+      "vendor": "atollsbooks",
+      "affiliate": "myacct",
+      "role": "AFFILIATE",
+      "currency": "USD",
+      "lineItems": [{ "productTitle": "Atolls Reading Guide", "itemNo": "1", "accountAmount": -30.0 }]
+    },
+    {
+      "receipt": "ABC10004",
+      "transactionType": "CGBK",
+      "transactionTime": "2025-07-15T14:00:00Z",
+      "totalAccountAmount": -18.0,
+      "totalOrderAmount": -36.0,
+      "vendor": "atollsbooks",
+      "affiliate": "myacct",
+      "role": "AFFILIATE",
+      "currency": "USD",
+      "lineItems": [{ "productTitle": "Atolls Reading Guide", "itemNo": "1", "accountAmount": -18.0 }]
+    },
+    {
+      "receipt": "ABC10005",
+      "transactionType": "SALE",
+      "transactionTime": "2024-01-05T12:30:00Z",
+      "totalAccountAmount": 40.0,
+      "totalOrderAmount": 80.0,
+      "vendor": "atollsbooks",
+      "affiliate": "myacct",
+      "role": "AFFILIATE",
+      "currency": "USD",
+      "lineItems": [{ "productTitle": "Atolls Reading Guide", "itemNo": "1", "accountAmount": 40.0 }]
+    }
+  ]
+}

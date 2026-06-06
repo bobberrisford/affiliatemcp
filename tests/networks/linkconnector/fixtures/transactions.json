@@ -1,0 +1,49 @@
+{
+  "Transactions": [
+    {
+      "TransactionId": "LC-1001",
+      "MerchantId": "5001",
+      "MerchantName": "Atolls Bookshop",
+      "OrderAmount": "120.00",
+      "Commission": "12.00",
+      "Currency": "USD",
+      "Status": "Approved",
+      "TransactionDate": "2026-05-01",
+      "FundedDate": "2026-05-20"
+    },
+    {
+      "TransactionId": "LC-1002",
+      "MerchantId": "5002",
+      "MerchantName": "Atolls Coffee",
+      "OrderAmount": "45.50",
+      "Commission": "4.55",
+      "Currency": "USD",
+      "Status": "Pending",
+      "TransactionDate": "2026-05-15"
+    },
+    {
+      "TransactionId": "LC-1003",
+      "MerchantId": "5001",
+      "MerchantName": "Atolls Bookshop",
+      "OrderAmount": "$80.00",
+      "Commission": "$8.00",
+      "Currency": "USD",
+      "Status": "Invalid",
+      "InvalidReason": "Customer returned the item within 30 days",
+      "TransactionDate": "2026-03-02",
+      "FundedDate": "2026-03-10"
+    },
+    {
+      "TransactionId": "LC-1004",
+      "MerchantId": "5003",
+      "MerchantName": "Atolls Outdoors",
+      "OrderAmount": "300.00",
+      "Commission": "30.00",
+      "Currency": "USD",
+      "Status": "Paid",
+      "TransactionDate": "2025-01-05",
+      "FundedDate": "2025-01-25",
+      "PaidDate": "2025-02-15"
+    }
+  ]
+}

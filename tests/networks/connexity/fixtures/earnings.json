@@ -1,0 +1,10 @@
+{
+  "publisherId": 725846,
+  "entriesCount": 3,
+  "earnings": [
+    { "date": "2026-01-01", "redirects": 100, "estimatedEarnings": 150.0, "cpc": 0.5 },
+    { "date": "2026-05-01", "redirects": 120, "estimatedEarnings": 180.0, "cpc": 0.55 },
+    { "date": "2026-06-01", "redirects": 60, "estimatedEarnings": 33.0, "cpc": 0.55 }
+  ],
+  "totals": { "cpcRedirects": 280, "cpaRedirects": 0, "earnings": 363.0 }
+}

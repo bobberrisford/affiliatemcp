@@ -1,0 +1,59 @@
+[
+  {
+    "id": 225,
+    "created_at": "2024-04-01T10:00:00Z",
+    "updated_at": "2024-04-01T10:00:00Z",
+    "cancelled": false,
+    "purchase_code": "c92e8c80-f45a-4cb6-8949-674f56d792d7",
+    "note": null,
+    "purchase_amount": 100.0,
+    "commission_amount_override": 30.0,
+    "cancellation": null,
+    "lead": { "id": 14361, "email": "customer1@test.com" },
+    "affiliate": {
+      "id": 101,
+      "email": "alpha@example.com",
+      "first_name": "Alpha",
+      "last_name": "Reviewer"
+    },
+    "plan": { "id": 7, "code": "basic" }
+  },
+  {
+    "id": 226,
+    "created_at": "2024-04-02T11:00:00Z",
+    "updated_at": "2024-04-02T11:00:00Z",
+    "cancelled": false,
+    "purchase_code": "a1b2c3d4-0000-4111-8111-000000000001",
+    "note": null,
+    "purchase_amount": 50.0,
+    "commission_amount_override": 15.0,
+    "cancellation": null,
+    "lead": { "id": 14362, "email": "customer2@test.com" },
+    "affiliate": {
+      "id": 101,
+      "email": "alpha@example.com",
+      "first_name": "Alpha",
+      "last_name": "Reviewer"
+    },
+    "plan": { "id": 7, "code": "basic" }
+  },
+  {
+    "id": 227,
+    "created_at": "2024-04-03T12:00:00Z",
+    "updated_at": "2024-05-15T16:40:16Z",
+    "cancelled": true,
+    "purchase_code": "a1b2c3d4-0000-4111-8111-000000000002",
+    "note": "refunded",
+    "purchase_amount": 80.0,
+    "commission_amount_override": 24.0,
+    "cancellation": { "id": 4 },
+    "lead": { "id": 14363, "email": "customer3@test.com" },
+    "affiliate": {
+      "id": 102,
+      "email": "beta@example.com",
+      "first_name": null,
+      "last_name": null
+    },
+    "plan": { "id": 7, "code": "basic" }
+  }
+]

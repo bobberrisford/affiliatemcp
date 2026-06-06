@@ -1,0 +1,23 @@
+{
+  "slug": "shareasale",
+  "name": "ShareASale",
+  "base_url": "https://api.shareasale.com",
+  "auth_model": "custom",
+  "env_vars": ["SHAREASALE_AFFILIATE_ID", "SHAREASALE_API_TOKEN", "SHAREASALE_API_SECRET"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).",
+    "Commission amounts are assumed to be major-currency units (USD) as returned by the API; the unit is not authoritatively documented and is preserved verbatim on rawNetworkData.",
+    "Requests are HMAC-SHA256 signed (x-ShareASale-Authentication) over a token:date:action:secret string; a clock skewed from GMT will produce signature failures.",
+    "ShareASale is Awin-owned but runs on a separate account and a separate API; this adapter is standalone and does not reuse the Awin adapter.",
+    "Click-level data is not exposed via the public affiliate API; listClicks is unsupported."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://account.shareasale.com/a-apimanager.cfm"
+}

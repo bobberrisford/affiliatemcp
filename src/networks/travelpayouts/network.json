@@ -1,0 +1,23 @@
+{
+  "slug": "travelpayouts",
+  "name": "Travelpayouts",
+  "base_url": "https://api.travelpayouts.com",
+  "auth_model": "custom",
+  "env_vars": ["TRAVELPAYOUTS_ACCESS_TOKEN"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Experimental: implemented from public documentation and not yet validated against a live Travelpayouts account.",
+    "Amounts (price, profit) are assumed to be whole units of the selected currency, matching the balance response (e.g. \"1794.34\"); not minor units.",
+    "Programmes are synthesised from the connected travel brands (campaign ids) that appear in the balance-actions response; Travelpayouts exposes no publisher programme-catalogue endpoint, so commission rates and not-yet-joined programmes are unavailable.",
+    "Click-level data is not exposed per booking; the statistics API reports only aggregated click/redirect counts, so listClicks is unsupported.",
+    "Tracking links are created in the dashboard with a partner marker; Travelpayouts publishes no deterministic deep-link URL formula, so generateTrackingLink is unsupported."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://support.travelpayouts.com/hc/en-us/articles/360019864079-API-of-affiliate-programs-booking-statistics"
+}

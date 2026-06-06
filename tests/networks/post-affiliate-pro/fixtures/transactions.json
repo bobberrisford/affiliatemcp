@@ -1,0 +1,59 @@
+{
+  "data": [
+    {
+      "id": "txn-1",
+      "type": "S",
+      "rstatus": "P",
+      "totalCost": 500,
+      "commission": 50,
+      "currencyId": "USD",
+      "dateInserted": "2024-04-01 10:00:00",
+      "campaignId": "camp-1",
+      "campaignName": "Default Campaign",
+      "affiliateId": "aff-1",
+      "affiliateUsername": "alpha"
+    },
+    {
+      "id": "txn-2",
+      "type": "S",
+      "rstatus": "A",
+      "totalCost": 250,
+      "commission": 25,
+      "currencyId": "USD",
+      "dateInserted": "2024-04-02 11:00:00",
+      "dateApproved": "2024-04-05 09:00:00",
+      "campaignId": "camp-1",
+      "campaignName": "Default Campaign",
+      "affiliateId": "aff-1",
+      "affiliateUsername": "alpha"
+    },
+    {
+      "id": "txn-3",
+      "type": "U",
+      "rstatus": "A",
+      "totalCost": 100,
+      "commission": 10,
+      "currencyId": "USD",
+      "dateInserted": "2024-04-03 12:00:00",
+      "datePaid": "2024-04-20 09:00:00",
+      "campaignId": "camp-2",
+      "campaignName": "Premium Campaign",
+      "affiliateId": "aff-2",
+      "affiliateUsername": "beta"
+    },
+    {
+      "id": "txn-4",
+      "type": "R",
+      "rstatus": "A",
+      "totalCost": 75,
+      "commission": 7.5,
+      "currencyId": "USD",
+      "dateInserted": "2024-04-04 13:00:00",
+      "campaignId": "camp-1",
+      "campaignName": "Default Campaign",
+      "affiliateId": "aff-1",
+      "affiliateUsername": "alpha"
+    }
+  ],
+  "total": 4
+}

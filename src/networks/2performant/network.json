@@ -1,0 +1,22 @@
+{
+  "slug": "2performant",
+  "name": "2Performant",
+  "base_url": "https://api.2performant.com",
+  "auth_model": "custom",
+  "env_vars": ["TWOPERFORMANT_EMAIL", "TWOPERFORMANT_PASSWORD"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation and the 2Performant PHP reference wrapper; not yet verified against a live 2Performant account.",
+    "Click-level data is not exposed as a list endpoint by the public 2Performant affiliate API; listClicks is unsupported.",
+    "Commission amounts are assumed to be in major currency units (e.g. RON / EUR, not bani / cents); not yet confirmed against a live account.",
+    "2Performant uses credential/session authentication (email + password sign-in returning rotating access-token / client / uid headers), not a static API key. The session is cached in memory and re-established on a 401; cached sessions are lost on process restart and credentials must be updated here if the account password changes."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://doc.2performant.com/"
+}

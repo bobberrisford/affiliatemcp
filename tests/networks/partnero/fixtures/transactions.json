@@ -1,0 +1,64 @@
+{
+  "data": [
+    {
+      "key": "txn_0001",
+      "action": "sale",
+      "amount": 100.0,
+      "amount_units": "USD",
+      "is_currency": true,
+      "credit": false,
+      "created_at": "2024-04-01T10:00:00Z",
+      "partner": { "key": "partner-alpha", "name": "Alpha Reviewer", "email": "alpha@example.com", "status": "active" },
+      "customer": { "key": "cust-1", "name": "Buyer One", "email": "buyer1@example.com" },
+      "rewards": [
+        { "key": "rwd_0001", "action": "sale", "status": "pending", "amount": 10.0, "amount_units": "USD", "is_currency": true, "credit": true, "created_at": "2024-04-01T10:00:01Z" }
+      ]
+    },
+    {
+      "key": "txn_0002",
+      "action": "sale",
+      "amount": 250.0,
+      "amount_units": "USD",
+      "is_currency": true,
+      "credit": false,
+      "created_at": "2024-04-02T10:00:00Z",
+      "partner": { "key": "partner-alpha", "name": "Alpha Reviewer", "email": "alpha@example.com", "status": "active" },
+      "customer": { "key": "cust-2", "name": "Buyer Two", "email": "buyer2@example.com" },
+      "rewards": [
+        { "key": "rwd_0002", "action": "sale", "status": "approved", "amount": 25.0, "amount_units": "USD", "is_currency": true, "credit": true, "created_at": "2024-04-02T10:00:01Z" }
+      ]
+    },
+    {
+      "key": "txn_0003",
+      "action": "sale",
+      "amount": 80.0,
+      "amount_units": "USD",
+      "is_currency": true,
+      "credit": false,
+      "created_at": "2024-03-15T10:00:00Z",
+      "partner": { "key": "partner-beta", "name": "", "email": "beta@example.com", "status": "active" },
+      "customer": { "key": "cust-3", "name": "Buyer Three", "email": "buyer3@example.com" },
+      "rewards": [
+        { "key": "rwd_0003", "action": "sale", "status": "paid", "amount": 8.0, "amount_units": "USD", "is_currency": true, "credit": true, "created_at": "2024-03-20T10:00:00Z" }
+      ]
+    },
+    {
+      "key": "txn_0004",
+      "action": "sale",
+      "amount": 60.0,
+      "amount_units": "USD",
+      "is_currency": true,
+      "credit": false,
+      "created_at": "2024-04-03T10:00:00Z",
+      "partner": { "key": "partner-beta", "name": "", "email": "beta@example.com", "status": "active" },
+      "customer": { "key": "cust-4", "name": "Buyer Four", "email": "buyer4@example.com" },
+      "rewards": [
+        { "key": "rwd_0004", "action": "sale", "status": "rejected", "amount": 6.0, "amount_units": "USD", "is_currency": true, "credit": true, "created_at": "2024-04-03T10:00:01Z" }
+      ]
+    }
+  ],
+  "current_page": 1,
+  "last_page": 1,
+  "per_page": 100,
+  "total": 4
+}

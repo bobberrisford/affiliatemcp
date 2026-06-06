@@ -1,0 +1,29 @@
+[
+  {
+    "id": 5001,
+    "nom": "Atolls Bookshop",
+    "statut": "valide",
+    "devise": "EUR",
+    "commission": "5%",
+    "categorie": "Books",
+    "url": "https://www.atolls-bookshop.example.com"
+  },
+  {
+    "id": 5002,
+    "nom": "Atolls Travel",
+    "statut": "en attente",
+    "devise": "EUR",
+    "commission": "fixed 8.00 EUR per lead",
+    "categorie": "Travel",
+    "url": "https://www.atolls-travel.example.com"
+  },
+  {
+    "id": 5003,
+    "nom": "Atolls Electronics",
+    "statut": "refuse",
+    "devise": "EUR",
+    "commission": "2%",
+    "categorie": "Electronics",
+    "url": "https://www.atolls-electronics.example.com"
+  }
+]

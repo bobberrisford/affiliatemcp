@@ -1,0 +1,23 @@
+{
+  "slug": "levanta",
+  "name": "Levanta",
+  "base_url": "https://api.levanta.io",
+  "auth_model": "bearer",
+  "env_vars": ["LEVANTA_API_KEY"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation only; not yet verified against a live Levanta account.",
+    "Amount unit is assumed to be major currency units (e.g. dollars, not cents) and currency defaults to USD; the public docs do not state the unit for the /reports sales and commissions fields.",
+    "Programmes are modelled from /partners brand partnerships: each active partnership is surfaced as a joined programme. Levanta has no programme-join lifecycle, so statuses other than 'joined' are not reported.",
+    "Click-level data is not exposed: /reports returns aggregate click counts per link/source, not individual click events, so listClicks is unsupported.",
+    "generateTrackingLink is unsupported: Levanta links are created server-side via /links by ASIN/source pair, not deterministically constructible from a destination URL."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://knowledge.levanta.io/creator-api"
+}

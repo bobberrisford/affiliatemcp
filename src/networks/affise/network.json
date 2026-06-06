@@ -1,0 +1,22 @@
+{
+  "slug": "affise",
+  "name": "Affise",
+  "base_url": "https://api.affise.com",
+  "auth_model": "custom",
+  "env_vars": ["AFFISE_BASE_URL", "AFFISE_API_KEY"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).",
+    "The API base URL is per-tenant: each network runs its own Affise instance, so the base is the network's tracking domain supplied via AFFISE_BASE_URL — there is no single shared host. The base_url above is a representative placeholder only.",
+    "Amounts are assumed to be in major currency units (not minor units / cents); confirm against a live account before promoting beyond experimental.",
+    "No raw click-level affiliate endpoint is exposed by the partner API; listClicks is not implemented."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://api.affise.com/docs3.1/"
+}

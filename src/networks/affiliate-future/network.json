@@ -1,0 +1,24 @@
+{
+  "slug": "affiliate-future",
+  "name": "Affiliate Future",
+  "base_url": "https://api.affiliatefuture.com",
+  "auth_model": "custom",
+  "env_vars": ["AFFILIATE_FUTURE_API_KEY", "AFFILIATE_FUTURE_PASSWORD"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Experimental: the adapter has not been validated against a live Affiliate Future publisher account; the JSON response shapes are inferred from public documentation.",
+    "Amount unit assumption: SaleValue and SaleCommission are treated as major currency units (e.g. pounds, not pence); the public documentation does not state the unit.",
+    "Transaction pulls are limited to one day per call; listTransactions chunks the requested window into 1-day slices and loops, so wide ranges make many sequential calls.",
+    "Dated WCF (.svc) endpoints: the publisher API is served from PublisherService.svc and the JSON variant is requested via the Accept header.",
+    "Click-level data is not exposed via the Affiliate Future publisher API; listClicks is unsupported.",
+    "generateTrackingLink also needs AFFILIATE_FUTURE_AFFILIATE_ID (your numeric affiliate ID); it is not part of the core credential set and is read only when building a link."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://affiliatefuture.freshdesk.com/support/solutions/articles/79000032665-what-are-the-apis-for-publishers-"
+}

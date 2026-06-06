@@ -1,0 +1,62 @@
+{
+  "participants": [
+    {
+      "id": "f8g9nl",
+      "firstName": "Gavin",
+      "lastName": "Belson",
+      "email": "gavin@hooli.com",
+      "shareUrl": "https://piedpiper.com?grsf=f8g9nl",
+      "referralCount": 2,
+      "monthlyReferralCount": 2,
+      "rank": 1,
+      "isWinner": true,
+      "referralSource": "PARTICIPANT",
+      "referralStatus": "CREDIT_AWARDED",
+      "createdAt": 1552404738928
+    },
+    {
+      "id": "i9g2bh",
+      "firstName": "Dinesh",
+      "lastName": "Chugtai",
+      "email": "dinesh@piedpiper.com",
+      "shareUrl": "https://piedpiper.com?grsf=i9g2bh",
+      "referralCount": 1,
+      "monthlyReferralCount": 1,
+      "rank": 2,
+      "isWinner": false,
+      "referralSource": "PARTICIPANT",
+      "referralStatus": "CREDIT_EARNED",
+      "createdAt": 1554404738928
+    },
+    {
+      "id": "xua4sq",
+      "firstName": "Bertram",
+      "lastName": "Gilfoyle",
+      "email": "gilfoyle@piedpiper.com",
+      "shareUrl": "https://piedpiper.com?grsf=xua4sq",
+      "referralCount": 3,
+      "monthlyReferralCount": 0,
+      "rank": 3,
+      "isWinner": false,
+      "referralSource": "PARTICIPANT",
+      "referralStatus": "FRAUD",
+      "createdAt": 1556404738928
+    },
+    {
+      "id": "zzz000",
+      "firstName": "Jared",
+      "lastName": "Dunn",
+      "email": "jared@piedpiper.com",
+      "shareUrl": "https://piedpiper.com?grsf=zzz000",
+      "referralCount": 0,
+      "monthlyReferralCount": 0,
+      "rank": 9999,
+      "isWinner": false,
+      "referralSource": "DIRECT",
+      "referralStatus": "NONE",
+      "createdAt": 1558404738928
+    }
+  ],
+  "nextId": null,
+  "more": false
+}

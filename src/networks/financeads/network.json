@@ -1,0 +1,24 @@
+{
+  "slug": "financeads",
+  "name": "financeAds",
+  "base_url": "https://www.financeads.net",
+  "auth_model": "custom",
+  "env_vars": ["FINANCEADS_API_KEY", "FINANCEADS_USER_ID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": true,
+  "setup_approval_days_typical": 2,
+  "known_limitations": [
+    "Adapter built from public documentation; not yet verified against a live financeAds account.",
+    "The financeAds API shape (endpoint paths, parameter names, JSON vs XML/CSV response) is partly dashboard-gated and needs live verification.",
+    "Amounts are assumed to be in EUR; financeAds is a DACH finance-vertical network and the per-row currency field is not yet confirmed.",
+    "Click-level data is not exposed via the financeAds publisher API; listClicks is unsupported.",
+    "API access may require the publisher to request the \"Leads & Sales API\" from financeAds support before reporting calls succeed."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://strackr.com/docs/financeads"
+}

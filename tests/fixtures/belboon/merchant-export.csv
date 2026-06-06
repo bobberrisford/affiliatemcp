@@ -1,0 +1,5 @@
+advertiser_id;advertiser_name;partnership_status;currency;category;advertiser_url;commission
+1001;Atolls Bookshop;active;EUR;Books;https://books.example.com;up to 8%
+1002;Atolls Garden;pending;EUR;Home & Garden;https://garden.example.com;5%
+1003;Atolls Travel;rejected;EUR;Travel;https://travel.example.com;flat 12 EUR
+1004;Atolls Outlet;open;EUR;Fashion;https://outlet.example.com;3%

@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "status": { "code": 200, "message": "OK" },
+    "pagination": { "total_results": 3, "total_pages": 1 },
+    "requests": { "current": 1, "maximum": 1000 }
+  },
+  "data": [
+    {
+      "id": "1001",
+      "name": "Atolls Bookshop",
+      "status": "joined",
+      "website": "https://www.atolls-bookshop.example.com",
+      "commission": "8% of sale",
+      "category": [{ "id": "5", "name": "Books" }]
+    },
+    {
+      "id": "1002",
+      "name": "Atolls Outdoors",
+      "status": "pending",
+      "website": "https://www.atolls-outdoors.example.com",
+      "commission": "5% of sale",
+      "category": [{ "id": "9", "name": "Sports & Outdoors" }]
+    },
+    {
+      "id": "1003",
+      "name": "Atolls Electronics",
+      "status": "available",
+      "website": "https://www.atolls-electronics.example.com",
+      "commission": "3% of sale",
+      "category": [{ "id": "2", "name": "Electronics" }]
+    }
+  ]
+}

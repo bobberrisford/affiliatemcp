@@ -1,0 +1,56 @@
+{
+  "result": [
+    {
+      "transID": 9000001,
+      "merchantId": 46483,
+      "merchantOrganization": "Atolls Outdoors US",
+      "transactionStatus": "locked",
+      "voided": "false",
+      "paid": "false",
+      "commission": "9.64",
+      "transAmount": "120.50",
+      "currency": "USD",
+      "transDate": "2026-01-10 09:30:00",
+      "lockDate": "2026-01-20 12:00:00"
+    },
+    {
+      "transID": 9000002,
+      "merchantId": 51172,
+      "merchantOrganization": "Example Electronics US",
+      "transactionStatus": "pending",
+      "voided": "false",
+      "paid": "false",
+      "commission": "31.50",
+      "transAmount": "899.99",
+      "currency": "USD",
+      "transDate": "2026-05-30 14:05:00"
+    },
+    {
+      "transID": 9000003,
+      "merchantId": 46483,
+      "merchantOrganization": "Atolls Outdoors US",
+      "transactionStatus": "voided",
+      "voided": "true",
+      "paid": "false",
+      "commission": "3.60",
+      "transAmount": "45.00",
+      "currency": "USD",
+      "transDate": "2026-04-01 08:00:00",
+      "voidReason": "Order returned by customer"
+    },
+    {
+      "transID": 9000004,
+      "merchantId": 51172,
+      "merchantOrganization": "Example Electronics US",
+      "transactionStatus": "locked",
+      "voided": "false",
+      "paid": "true",
+      "commission": "8.75",
+      "transAmount": "250.00",
+      "currency": "USD",
+      "transDate": "2025-12-01 11:00:00",
+      "lockDate": "2025-12-15 09:00:00",
+      "paidDate": "2026-02-01 09:00:00"
+    }
+  ]
+}

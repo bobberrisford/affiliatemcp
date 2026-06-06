@@ -1,0 +1,10 @@
+{
+  "api_version": "1.0",
+  "result": "success",
+  "data": {
+    "id": "987654",
+    "nickname": "atolls_affiliate",
+    "name": "Atolls Test Affiliate",
+    "email": "affiliate@example.com"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "data": [
+    {
+      "conversionId": "cv-001",
+      "campaignId": 1001,
+      "campaignName": "Atolls Bookshop",
+      "status": "Approved",
+      "saleValue": 120.0,
+      "commission": 6.0,
+      "currency": "GBP",
+      "clickDate": "2026-01-10T09:00:00Z",
+      "conversionDate": "2026-01-15T10:00:00Z",
+      "validationDate": "2026-01-20T10:00:00Z",
+      "basketItems": [{ "sku": "BK-1", "qty": 2, "value": 60.0 }]
+    },
+    {
+      "conversionId": "cv-002",
+      "campaignId": 1002,
+      "campaignName": "Atolls Travel",
+      "status": "Pending",
+      "orderValue": 300.0,
+      "commission": 15.0,
+      "currency": "GBP",
+      "clickDate": "2026-04-18T12:00:00Z",
+      "conversionDate": "2026-04-20T12:00:00Z"
+    },
+    {
+      "conversionId": "cv-003",
+      "campaignId": 1001,
+      "campaignName": "Atolls Bookshop",
+      "status": "Rejected",
+      "saleValue": 80.0,
+      "commission": 0.0,
+      "currency": "GBP",
+      "clickDate": "2026-02-01T08:00:00Z",
+      "conversionDate": "2026-02-02T08:00:00Z",
+      "validationDate": "2026-02-10T08:00:00Z",
+      "declineReason": "Customer returned the item within 14 days"
+    }
+  ],
+  "page": 1,
+  "pageSize": 1000,
+  "totalCount": 3
+}

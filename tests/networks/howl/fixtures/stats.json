@@ -1,0 +1,49 @@
+{
+  "pub_id": 12345,
+  "date_from": "2024-01-01",
+  "date_to": "2026-05-21",
+  "stats": [
+    {
+      "advertiser_name": "Atolls Bookshop",
+      "article_name": "Best reads of the year",
+      "article_id": 555,
+      "article_url": "https://example-blog.test/best-reads",
+      "merch_id": 7001,
+      "pub_id": 12345,
+      "event_date": "2024-01-15",
+      "clicks": 120,
+      "impressions": 3400,
+      "advertiser_attributed_sales": 8,
+      "advertiser_attributed_revenue": 240.5,
+      "pub_earnings": 24.05
+    },
+    {
+      "advertiser_name": "Atolls Bookshop",
+      "article_name": "Gift guide",
+      "article_id": 556,
+      "article_url": "https://example-blog.test/gift-guide",
+      "merch_id": 7001,
+      "pub_id": 12345,
+      "event_date": "2025-09-10",
+      "clicks": 40,
+      "impressions": 900,
+      "advertiser_attributed_sales": 2,
+      "advertiser_attributed_revenue": 60.0,
+      "pub_earnings": 6.0
+    },
+    {
+      "advertiser_name": "Reef Outfitters",
+      "article_name": "Diving kit roundup",
+      "article_id": 777,
+      "article_url": "https://example-blog.test/diving-kit",
+      "merch_id": 7002,
+      "pub_id": 12345,
+      "event_date": "2026-05-01",
+      "clicks": 15,
+      "impressions": 300,
+      "advertiser_attributed_sales": 0,
+      "advertiser_attributed_revenue": 0,
+      "pub_earnings": 0
+    }
+  ]
+}

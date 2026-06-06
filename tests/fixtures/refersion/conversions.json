@@ -1,0 +1,55 @@
+{
+  "page": 1,
+  "per_page": 100,
+  "count": 4,
+  "total_pages": 1,
+  "results": [
+    {
+      "id": 9001,
+      "currency": "USD",
+      "total": 500,
+      "commission_total": 50,
+      "status": "pending",
+      "created": "2024-04-01 10:00:00",
+      "offer_id": 5001,
+      "offer_name": "Default Offer",
+      "affiliate": { "id": 1001, "first_name": "Alpha", "last_name": "Reviewer", "email": "alpha@example.com", "status": "active" }
+    },
+    {
+      "id": 9002,
+      "currency": "USD",
+      "total": 250,
+      "commission_total": 25,
+      "status": "approved",
+      "created": "2024-04-02 10:00:00",
+      "approved": "2024-05-02 10:00:00",
+      "offer_id": 5001,
+      "offer_name": "Default Offer",
+      "affiliate": { "id": 1001, "first_name": "Alpha", "last_name": "Reviewer", "email": "alpha@example.com", "status": "active" }
+    },
+    {
+      "id": 9003,
+      "currency": "USD",
+      "total": 100,
+      "commission_total": 10,
+      "status": "paid",
+      "created": "2024-03-15 10:00:00",
+      "approved": "2024-04-15 10:00:00",
+      "paid": "2024-04-20 10:00:00",
+      "offer_id": 5002,
+      "offer_name": "Black Friday Offer",
+      "affiliate": { "id": 1002, "email": "beta@example.com", "status": "active" }
+    },
+    {
+      "id": 9004,
+      "currency": "USD",
+      "total": 75,
+      "commission_total": 7.5,
+      "status": "reversed",
+      "created": "2024-04-03 10:00:00",
+      "offer_id": 5001,
+      "offer_name": "Default Offer",
+      "affiliate": { "id": 1002, "email": "beta@example.com", "status": "active" }
+    }
+  ]
+}

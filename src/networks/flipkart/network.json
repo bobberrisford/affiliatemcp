@@ -1,0 +1,22 @@
+{
+  "slug": "flipkart",
+  "name": "Flipkart Affiliate",
+  "base_url": "https://affiliate-api.flipkart.net",
+  "auth_model": "custom",
+  "env_vars": ["FLIPKART_AFFILIATE_ID", "FLIPKART_AFFILIATE_TOKEN"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Experimental: the adapter has not been validated against a live Flipkart affiliate account.",
+    "Order/commission amounts are assumed to be in Indian Rupees (INR) as whole-rupee decimal values; the orders report does not document the minor-unit convention, so amounts are surfaced verbatim from the `amount` field without rescaling.",
+    "Flipkart periodically pauses new affiliate signups, so the programme may be closed to new applicants when you attempt to register.",
+    "Click-level data is not exposed via the public affiliate API; listClicks is unsupported."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://affiliate.flipkart.com/api-docs/af_overview.html"
+}

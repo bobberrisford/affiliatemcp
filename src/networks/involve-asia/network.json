@@ -1,0 +1,22 @@
+{
+  "slug": "involve-asia",
+  "name": "Involve Asia",
+  "base_url": "https://api.involve.asia/api",
+  "auth_model": "custom",
+  "env_vars": ["INVOLVE_ASIA_API_KEY", "INVOLVE_ASIA_API_SECRET"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Experimental: the adapter has not been validated against a live Involve Asia publisher account; endpoint shapes and field names are modelled on the public API documentation and may differ in production.",
+    "Amount-unit assumption: sale_amount and payout are read as major currency units (e.g. \"12.34\" → 12.34) in the conversion currency, not minor units. Verify against your own conversions; the raw payload is preserved on rawNetworkData.",
+    "Authentication uses an API key + secret exchanged for a bearer token that expires roughly every 2 hours; the adapter caches and refreshes the token (proactively and on a 401) so callers do not handle the exchange.",
+    "Click-level data is not exposed via the public Involve Asia publisher API; listClicks is unsupported."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://involve.asia/partners/api-overview/"
+}

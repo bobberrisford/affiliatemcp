@@ -1,0 +1,57 @@
+{
+  "success": true,
+  "has_more": false,
+  "data": [
+    {
+      "id": "comm_1111111111111111111111111",
+      "currency": "USD",
+      "amount": 5000,
+      "status": "pending",
+      "created_at": "2024-04-01T10:00:00Z",
+      "program_id": "prog_1111111111111111111111111",
+      "partner_id": "part_1111111111111111111111111",
+      "customer_id": "cust_1111111111111111111111111",
+      "program": { "id": "prog_1111111111111111111111111", "name": "Default Programme" },
+      "partner": { "id": "part_1111111111111111111111111", "first_name": "Alpha", "last_name": "Reviewer", "email": "alpha@example.com", "status": "active" }
+    },
+    {
+      "id": "comm_2222222222222222222222222",
+      "currency": "USD",
+      "amount": 2500,
+      "status": "approved",
+      "created_at": "2024-04-02T10:00:00Z",
+      "approved_at": "2024-05-02T10:00:00Z",
+      "program_id": "prog_1111111111111111111111111",
+      "partner_id": "part_1111111111111111111111111",
+      "customer_id": "cust_2222222222222222222222222",
+      "program": { "id": "prog_1111111111111111111111111", "name": "Default Programme" },
+      "partner": { "id": "part_1111111111111111111111111", "first_name": "Alpha", "last_name": "Reviewer", "email": "alpha@example.com", "status": "active" }
+    },
+    {
+      "id": "comm_3333333333333333333333333",
+      "currency": "USD",
+      "amount": 1000,
+      "status": "paid",
+      "created_at": "2024-03-15T10:00:00Z",
+      "approved_at": "2024-04-15T10:00:00Z",
+      "paid_at": "2024-04-20T10:00:00Z",
+      "program_id": "prog_2222222222222222222222222",
+      "partner_id": "part_2222222222222222222222222",
+      "customer_id": "cust_3333333333333333333333333",
+      "program": { "id": "prog_2222222222222222222222222", "name": "Black Friday Programme" },
+      "partner": { "id": "part_2222222222222222222222222", "email": "beta@example.com", "status": "pending" }
+    },
+    {
+      "id": "comm_4444444444444444444444444",
+      "currency": "USD",
+      "amount": 750,
+      "status": "rejected",
+      "created_at": "2024-04-03T10:00:00Z",
+      "program_id": "prog_1111111111111111111111111",
+      "partner_id": "part_2222222222222222222222222",
+      "customer_id": "cust_4444444444444444444444444",
+      "program": { "id": "prog_1111111111111111111111111", "name": "Default Programme" },
+      "partner": { "id": "part_2222222222222222222222222", "email": "beta@example.com", "status": "pending" }
+    }
+  ]
+}

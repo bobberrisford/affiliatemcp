@@ -44,9 +44,9 @@
  *   one). Never throw a bare Error from this file.
  */
 
-// TODO: import { requireCredential } from '../../src/shared/config.js';
-// TODO: import { buildErrorEnvelope } from '../../src/shared/errors.js';
-// TODO: import type { CredentialValidationResult } from '../../src/shared/types.js';
+// TODO: import { requireCredential } from '../../shared/config.js';
+// TODO: import { buildErrorEnvelope } from '../../shared/errors.js';
+// TODO: import type { CredentialValidationResult } from '../../shared/types.js';
 // TODO: export async function verifyAuth(): Promise<...>
 // TODO: export async function validateCredential(field: string, value: string): Promise<CredentialValidationResult>
 // TODO: export function buildAuthHeaders(operation: string): Record<string, string>
