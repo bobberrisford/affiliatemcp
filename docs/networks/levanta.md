@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with Levanta (estimated 5 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Alevanta%22)
+
 This guide walks you through the single credential affiliate-mcp needs in order
 to talk to your Levanta creator account. You will end up with one value written
 to `~/.affiliate-mcp/.env`: `LEVANTA_API_KEY`.

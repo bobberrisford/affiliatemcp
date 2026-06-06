@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with ValueCommerce (advertiser side) (estimated 10 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Avalue-commerce%22)
+
 This guide walks you through the credentials affiliate-mcp needs to read
 your ValueCommerce **advertiser / brand (広告主)** account — i.e. the side
 of ValueCommerce that runs a programme publishers promote, not the

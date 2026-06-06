@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with Admitad (estimated 15 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Aadmitad%22)
+
 This guide walks you through the credentials affiliate-mcp needs to read your
 Admitad publisher account. You will end up with three values written to
 `~/.affiliate-mcp/.env`: `ADMITAD_CLIENT_ID`, `ADMITAD_CLIENT_SECRET`, and

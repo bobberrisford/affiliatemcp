@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with GrowSurf (estimated 10 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Agrowsurf%22)
+
 This guide walks you through the credentials affiliate-mcp needs in order to
 talk to your GrowSurf account. GrowSurf is a referral platform used on the
 merchant (advertiser) side, so this adapter reads your own programme's

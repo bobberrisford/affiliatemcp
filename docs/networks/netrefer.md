@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with NetRefer (estimated 15 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Anetrefer%22)
+
 This guide covers the credentials affiliate-mcp needs to read your NetRefer
 affiliate data through the ASR (Affiliate Standard Reporting) REST API. You
 will end up with five values written to `~/.affiliate-mcp/.env`:

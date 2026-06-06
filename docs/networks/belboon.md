@@ -1,5 +1,7 @@
 # Belboon adapter
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Abelboon%22)
+
 Belboon runs on the Ingenious Technologies platform. The publisher API is the
 "export file" interface: each request authenticates with two values baked into
 the URL and returns a CSV (also XLS/XML) file, not a JSON REST response. This

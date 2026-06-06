@@ -1,5 +1,7 @@
 # Everflow (Advertiser) — Setup Guide
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Aeverflow%22)
+
 This document describes how to connect the Everflow advertiser adapter.
 The adapter integrates with the Everflow Network API on the brand/advertiser side,
 giving you access to affiliate performance data for your programme.

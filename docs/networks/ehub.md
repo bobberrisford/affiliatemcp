@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with eHUB (estimated 5 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Aehub%22)
+
 This guide walks you through the credentials affiliate-mcp needs in order to
 talk to your eHUB publisher account. eHUB is a CZ/CEE affiliate network. You
 will end up with two values written to `~/.affiliate-mcp/.env`: `EHUB_API_KEY`

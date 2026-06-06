@@ -1,5 +1,7 @@
 # Partnerize (Advertiser) — setup guide
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Apartnerize%22)
+
 This adapter integrates with the **Partnerize Brand API** (v3). It acts on behalf
 of a brand (advertiser) account, enumerating campaigns, publishers, conversions, and
 performance analytics. One set of credentials may address multiple campaigns.

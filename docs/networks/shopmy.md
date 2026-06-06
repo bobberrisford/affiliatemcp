@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with ShopMy (estimated 10 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Ashopmy%22)
+
 This guide covers the credentials affiliate-mcp needs to talk to a ShopMy brand
 partner account through ShopMy's Brand Partner API. You will end up with one
 required value written to `~/.affiliate-mcp/.env`: `SHOPMY_API_TOKEN`, plus an

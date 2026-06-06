@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with LeadDyno (advertiser side, estimated 5 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Aleaddyno%22)
+
 Setup guide for the `leaddyno` adapter. LeadDyno is a SaaS affiliate-tracking
 platform used by the merchant, so this is an advertiser integration: the view a
 brand has of its own programme — the affiliates promoting it, the purchases

@@ -1,5 +1,7 @@
 # Flipkart Affiliate adapter
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Aflipkart%22)
+
 Flipkart Affiliate is the publisher-side programme for the Indian Flipkart
 marketplace. This adapter is publisher-side and single-brand: one set of
 credentials addresses one affiliate account, and there is a single merchant

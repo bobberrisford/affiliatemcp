@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with CJ Affiliate (advertiser side) (estimated 8 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Acj%22)
+
 This guide walks you through the credentials affiliate-mcp needs to read
 your CJ Affiliate **brand / advertiser** account — the side of CJ that
 runs programmes other publishers promote, not the publisher side that

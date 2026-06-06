@@ -1,5 +1,7 @@
 # mrge
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Amrge%22)
+
 mrge (formerly Yieldkit/Metapic) is a commerce advertising platform that
 connects publishers with advertisers across affiliate and performance marketing
 campaigns.

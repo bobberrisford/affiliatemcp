@@ -2,6 +2,10 @@
 
 > Integrate your affiliate networks with Claude or Codex.
 
+![release](https://img.shields.io/badge/release-0.6.2-blue) ![networks](https://img.shields.io/badge/networks-72-blue) ![adapters](https://img.shields.io/badge/adapters-86-blue) [![maintained by](https://img.shields.io/badge/maintained%20by-community%20%2F%20networks-orange)](./docs/networks)
+
+> **Network operators:** each adapter is community-built and `experimental` until your team adopts it. Find your network's adoption issue under the [`adopt-a-network`](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3Aadopt-a-network) label to verify and maintain it with live credentials.
+
 Affiliate networks have two sides — and neither has a first-class AI workspace integration.
 
 **Publishers** earn commissions from the programmes they join.

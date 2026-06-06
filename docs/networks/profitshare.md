@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with Profitshare (estimated 5 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Aprofitshare%22)
+
 This guide walks you through the credentials affiliate-mcp needs in order to
 talk to your Profitshare affiliate account. You will end up with two values
 written to `~/.affiliate-mcp/.env`: `PROFITSHARE_API_USER` and

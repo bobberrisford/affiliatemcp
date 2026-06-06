@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with TUNE (estimated 10 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Atune%22)
+
 This guide walks you through the credentials affiliate-mcp needs in order to
 talk to your TUNE (HasOffers) affiliate account. You will end up with two
 values written to `~/.affiliate-mcp/.env`: `TUNE_NETWORK_ID` and `TUNE_API_KEY`.

@@ -1,5 +1,7 @@
 # CAKE (Publisher / Affiliate side)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Acake%22)
+
 **Claim status:** experimental
 **Adapter version:** 0.1.0
 **Last verified:** 2026-06-05

@@ -1,5 +1,7 @@
 # PartnerStack (partner side)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Apartnerstack%22)
+
 Setup guide for the `partnerstack` adapter, which integrates with the
 PartnerStack **Partner API** — the view a partner (publisher) has of their own
 partnerships and the rewards they have earned. If you run a partner programme as
