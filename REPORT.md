@@ -31,6 +31,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 
 | Network | Setup time (min) | Approval | Ops supported | Known limitations | Claim status | Adapter | Last verified |
 | --- | ---: | --- | ---: | ---: | --- | --- | --- |
+| 2Performant | 5 | no | 6 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | AccessTrade | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Addrevenue | 5 | no | 7 / 7 | 2 | experimental | 0.1.0 | 2026-06-05 |
 | Admitad | 15 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
@@ -40,6 +41,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Adtraction | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Adtraction (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Affilae | 5 | no | 6 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
+| Affiliate Future | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Affise | 10 | no | 7 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | Afilio | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Awin | 5 | no | 6 / 7 | 1 | partial | 0.1.0 | 2026-05-21 |
@@ -49,11 +51,14 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | CJ Affiliate (advertiser) | 8 | no | 7 / 7 | 7 | experimental | 0.1.0 | 2026-05-23 |
 | Commission Factory | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Commission Factory (advertiser) | 7 | no | 7 / 7 | 5 | experimental | 0.1.0 | 2026-06-04 |
+| Connexity | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | Coupang Partners | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Daisycon | 15 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
 | Daisycon (advertiser) | 15 | no | 7 / 7 | 9 | experimental | 0.1.0 | 2026-06-04 |
 | eBay Partner Network | 10 | yes (~3 days) | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-21 |
 | Eduzz | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Effiliation | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
+| eHUB | 5 | no | 7 / 7 | 3 | experimental | 0.1.0 | 2026-06-05 |
 | Everflow | 10 | yes (~1 days) | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-28 |
 | Everflow (Advertiser) | 10 | no | 7 / 7 | 6 | experimental | 0.2.0 | 2026-05-28 |
 | FirstPromoter | 5 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-05 |
@@ -67,6 +72,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Kwanko | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-04 |
 | Kwanko (advertiser) | 10 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
 | LeadDyno | 5 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-05 |
+| LinkConnector | 5 | no | 6 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | Lomadee | 15 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
 | Monetizze | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | mrge | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
@@ -79,6 +85,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | PartnerStack | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | PartnerStack (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Post Affiliate Pro | 5 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-05 |
+| Profitshare | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | Rakuten Advertising | 12 | yes (~5 days) | 6 / 7 | 3 | partial | 0.1.0 | 2026-05-21 |
 | Rewardful | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Scaleo | 10 | yes (~1 days) | 7 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
@@ -91,6 +98,44 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | ValueCommerce (advertiser) | 10 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-04 |
 | Webgains | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Webgains (advertiser) | 10 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+
+## 2Performant
+
+### Quick facts
+
+- **Slug**: `2performant`
+- **Auth model**: custom
+- **Base URL**: https://api.2performant.com
+- **Environment variables**: `TWOPERFORMANT_EMAIL`, `TWOPERFORMANT_PASSWORD`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://doc.2performant.com/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation and the 2Performant PHP reference wrapper; not yet verified against a live 2Performant account.
+- Click-level data is not exposed as a list endpoint by the public 2Performant affiliate API; listClicks is unsupported.
+- Commission amounts are assumed to be in major currency units (e.g. RON / EUR, not bani / cents); not yet confirmed against a live account.
+- 2Performant uses credential/session authentication (email + password sign-in returning rotating access-token / client / uid headers), not a static API key. The session is cached in memory and re-established on a 401; cached sessions are lost on process restart and credentials must be updated here if the account password changes.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/2performant.md`._
 
 ## AccessTrade
 
@@ -444,6 +489,46 @@ _No findings document was supplied at `docs/findings/adtraction-advertiser.md`._
 ### Findings
 
 _No findings document was supplied at `docs/findings/affilae.md`._
+
+## Affiliate Future
+
+### Quick facts
+
+- **Slug**: `affiliate-future`
+- **Auth model**: custom
+- **Base URL**: https://api.affiliatefuture.com
+- **Environment variables**: `AFFILIATE_FUTURE_API_KEY`, `AFFILIATE_FUTURE_PASSWORD`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://affiliatefuture.freshdesk.com/support/solutions/articles/79000032665-what-are-the-apis-for-publishers-
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: the adapter has not been validated against a live Affiliate Future publisher account; the JSON response shapes are inferred from public documentation.
+- Amount unit assumption: SaleValue and SaleCommission are treated as major currency units (e.g. pounds, not pence); the public documentation does not state the unit.
+- Transaction pulls are limited to one day per call; listTransactions chunks the requested window into 1-day slices and loops, so wide ranges make many sequential calls.
+- Dated WCF (.svc) endpoints: the publisher API is served from PublisherService.svc and the JSON variant is requested via the Accept header.
+- Click-level data is not exposed via the Affiliate Future publisher API; listClicks is unsupported.
+- generateTrackingLink also needs AFFILIATE_FUTURE_AFFILIATE_ID (your numeric affiliate ID); it is not part of the core credential set and is read only when building a link.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/affiliate-future.md`._
 
 ## Affise
 
@@ -1087,6 +1172,45 @@ _No findings document was supplied at `docs/findings/commission-factory.md`._
 
 _No findings document was supplied at `docs/findings/commission-factory-advertiser.md`._
 
+## Connexity
+
+### Quick facts
+
+- **Slug**: `connexity`
+- **Auth model**: custom
+- **Base URL**: https://publisher-api.connexity.com
+- **Environment variables**: `CONNEXITY_PUBLISHER_ID`, `CONNEXITY_API_KEY`
+- **Setup time estimate**: 10 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://pubresources.connexity.com/hc/en-us/articles/24602346033053-Publisher-API-Reference
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: the adapter has not been validated against a live Connexity publisher account; endpoint shapes are mapped from public documentation.
+- Connexity is a cost-per-click (CPC) network: reporting is daily aggregate, not per-sale. listTransactions surfaces one synthetic transaction per day (redirects, estimated earnings, effective CPC) rather than individual sales, and all rows are reported as approved because CPC earnings carry no pending/reversed sale lifecycle.
+- Amount unit assumed to be major currency units (US dollars) based on the documented decimal earnings figures; not yet confirmed against a live account.
+- Click-level data is not exposed as structured records via the publisher API; the click report is a CSV download rather than per-click rows, so listClicks is unsupported.
+- Distinct from the Skimlinks adapter: Connexity (ShopYourLikes) is a separate network with separate credentials, hosts, and API.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/connexity.md`._
+
 ## Coupang Partners
 
 ### Quick facts
@@ -1462,6 +1586,82 @@ first-click time when nothing tracks.
 ### Findings
 
 _No findings document was supplied at `docs/findings/eduzz.md`._
+
+## Effiliation
+
+### Quick facts
+
+- **Slug**: `effiliation`
+- **Auth model**: custom
+- **Base URL**: https://apiv2.effiliation.com
+- **Environment variables**: `EFFILIATION_API_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://apiv2.effiliation.com/apiv2/doc/home.htm
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter built from public API documentation; not yet verified against a live account.
+- Click-level data is not exposed via the publisher API; listClicks is unsupported.
+- Tracking-link (deeplink) construction is not deterministically documented for the publisher; generateTrackingLink is unsupported.
+- Transaction amounts are assumed to be major currency units (e.g. 12.50 = EUR 12.50) in EUR; not yet confirmed against a live account.
+- Transaction data is refreshed roughly every two hours upstream, so very recent conversions may be missing.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/effiliation.md`._
+
+## eHUB
+
+### Quick facts
+
+- **Slug**: `ehub`
+- **Auth model**: custom
+- **Base URL**: https://api.ehub.cz/v3
+- **Environment variables**: `EHUB_API_KEY`, `EHUB_PUBLISHER_ID`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://ehub.docs.apiary.io/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | yes | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).
+- Monetary amounts (totalCost, commission) are assumed to be major currency units (e.g. CZK), not minor units; revisit if live data is off by 100x.
+- generateTrackingLink treats the supplied programmeId as the eHUB creative/banner id (a_bid) and requires EHUB_PUBLISHER_ID (a_aid).
+
+### Findings
+
+_No findings document was supplied at `docs/findings/ehub.md`._
 
 ## Everflow
 
@@ -2475,6 +2675,44 @@ _No findings document was supplied at `docs/findings/kwanko-advertiser.md`._
 ### Findings
 
 _No findings document was supplied at `docs/findings/leaddyno.md`._
+
+## LinkConnector
+
+### Quick facts
+
+- **Slug**: `linkconnector`
+- **Auth model**: custom
+- **Base URL**: https://www.linkconnector.com
+- **Environment variables**: `LINKCONNECTOR_API_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://www.linkconnector.com/help_api.htm
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: not yet validated against a live LinkConnector account; JSON field names are inferred from the public documentation and read defensively.
+- Amounts are assumed to be in major currency units (US dollars); LinkConnector is a US network. The unit has not been confirmed against a live account.
+- Click-level data is not exposed via the public LinkConnector publisher API; listClicks is unsupported.
+- Tracking links are issued by LinkConnector per merchant (via the promotions feed), not constructed deterministically from a destination URL; generateTrackingLink is unsupported.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/linkconnector.md`._
 
 ## Lomadee
 
@@ -3526,6 +3764,45 @@ _No findings document was supplied at `docs/findings/partnerstack-advertiser.md`
 ### Findings
 
 _No findings document was supplied at `docs/findings/post-affiliate-pro.md`._
+
+## Profitshare
+
+### Quick facts
+
+- **Slug**: `profitshare`
+- **Auth model**: custom
+- **Base URL**: https://api.profitshare.ro
+- **Environment variables**: `PROFITSHARE_API_USER`, `PROFITSHARE_API_KEY`
+- **Setup time estimate**: 5 minutes
+- **Approval required**: no
+- **Claim status**: experimental
+- **Adapter version**: 0.1.0
+- **Last verified**: 2026-06-05
+- **Documentation**: https://doc.profitshare.com/
+
+### Operations
+
+| Operation | Supported | Latency (ms) | Note |
+| --- | --- | ---: | --- |
+| `listProgrammes` | yes | — | — |
+| `getProgramme` | yes | — | — |
+| `listTransactions` | yes | — | — |
+| `getEarningsSummary` | yes | — | — |
+| `listClicks` | no | — | — |
+| `generateTrackingLink` | yes | — | — |
+| `verifyAuth` | yes | — | — |
+
+### Known limitations
+
+- Experimental: the adapter has not been validated against a live Profitshare account; endpoint shapes and field names are inferred from the public reference client and may differ in production.
+- Commission amounts are assumed to be major-currency units (RON) as returned by the API; the unit is not authoritatively documented and is preserved verbatim on rawNetworkData.
+- Requests are HMAC-SHA1 signed (X-PS-Auth) over a canonical method+path+query+user+date string; a clock skewed from GMT will produce signature failures.
+- Click-level data is not exposed via the public affiliate API; listClicks is unsupported.
+- Tracking-link generation requires the affiliate-links endpoint (POST) and is not deterministically constructible; generateTrackingLink is unsupported pending live verification.
+
+### Findings
+
+_No findings document was supplied at `docs/findings/profitshare.md`._
 
 ## Rakuten Advertising
 
@@ -4911,4 +5188,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-06 04:53 UTC._
+_Last regenerated 2026-06-06 05:10 UTC._

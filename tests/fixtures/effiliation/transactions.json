@@ -1,0 +1,40 @@
+{
+  "transactions": [
+    {
+      "id_transaction": "TX-1001",
+      "id_programme": 5001,
+      "programme": "Atolls Bookshop",
+      "etat": "valide",
+      "montant": "120.00",
+      "commission": "6.00",
+      "devise": "EUR",
+      "date_transaction": "15/01/2026 10:00:00",
+      "date_clic": "14/01/2026 18:30:00",
+      "date_validation": "15/01/2026 10:00:00"
+    },
+    {
+      "id_transaction": "TX-1002",
+      "id_programme": 5002,
+      "programme": "Atolls Travel",
+      "etat": "en attente",
+      "montant": "0.00",
+      "commission": "8.00",
+      "devise": "EUR",
+      "date_transaction": "20/04/2026 14:15:00",
+      "date_clic": "20/04/2026 13:00:00"
+    },
+    {
+      "id_transaction": "TX-1003",
+      "id_programme": 5003,
+      "programme": "Atolls Electronics",
+      "etat": "refuse",
+      "montant": "300.00",
+      "commission": "0.00",
+      "devise": "EUR",
+      "date_transaction": "02/02/2026 09:45:00",
+      "date_clic": "02/02/2026 09:30:00",
+      "date_validation": "10/02/2026 11:00:00",
+      "motif": "Commande annulee par le marchand"
+    }
+  ]
+}

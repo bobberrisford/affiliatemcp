@@ -1,0 +1,47 @@
+{
+  "commissions": [
+    {
+      "id": 100001,
+      "amount": "42.50",
+      "currency": "RON",
+      "status": "accepted",
+      "reason": null,
+      "created_at": "2026-05-10T09:00:00+03:00",
+      "program_id": 555,
+      "program": { "id": 555, "name": "Atolls Bookshop RO" },
+      "public_action_data": { "transaction_date": "2026-05-09T18:30:00+03:00", "order_id": "ORD-1" },
+      "public_click_data": { "created_at": "2026-05-09T18:00:00+03:00" }
+    },
+    {
+      "id": 100002,
+      "amount": "12.00",
+      "currency": "RON",
+      "status": "pending",
+      "reason": null,
+      "created_at": "2026-05-15T11:00:00+03:00",
+      "program_id": 555,
+      "program": { "id": 555, "name": "Atolls Bookshop RO" }
+    },
+    {
+      "id": 100003,
+      "amount": "30.00",
+      "currency": "RON",
+      "status": "rejected",
+      "reason": "Customer returned the item within 14 days",
+      "created_at": "2026-04-01T08:00:00+03:00",
+      "program_id": 777,
+      "program": { "id": 777, "name": "Atolls Electronics RO" }
+    },
+    {
+      "id": 100004,
+      "amount": "100.00",
+      "currency": "RON",
+      "status": "paid",
+      "reason": null,
+      "created_at": "2025-01-02T08:00:00+02:00",
+      "program_id": 777,
+      "program": { "id": 777, "name": "Atolls Electronics RO" }
+    }
+  ],
+  "metadata": { "totalpages": 1, "total": 4, "currentpage": 1, "perpage": 100 }
+}

@@ -14,6 +14,7 @@
  * entry consumes the registry. This file's job is to BE the list.
  */
 
+import './2performant/adapter.js';
 import './accesstrade/adapter.js';
 import './addrevenue/adapter.js';
 import './admitad/adapter.js';
@@ -23,6 +24,7 @@ import './adservice/adapter.js';
 import './adtraction/adapter.js';
 import './adtraction-advertiser/adapter.js';
 import './affilae/adapter.js';
+import './affiliate-future/adapter.js';
 import './affise/adapter.js';
 import './afilio/adapter.js';
 import './awin/adapter.js';
@@ -32,11 +34,14 @@ import './cj/adapter.js';
 import './cj-advertiser/adapter.js';
 import './commission-factory/adapter.js';
 import './commission-factory-advertiser/adapter.js';
+import './connexity/adapter.js';
 import './coupang-partners/adapter.js';
 import './daisycon/adapter.js';
 import './daisycon-advertiser/adapter.js';
 import './ebay/adapter.js';
 import './eduzz/adapter.js';
+import './effiliation/adapter.js';
+import './ehub/adapter.js';
 import './everflow/adapter.js';
 import './everflow-advertiser/adapter.js';
 import './firstpromoter/adapter.js';
@@ -50,6 +55,7 @@ import './indoleads/adapter.js';
 import './kwanko/adapter.js';
 import './kwanko-advertiser/adapter.js';
 import './leaddyno/adapter.js';
+import './linkconnector/adapter.js';
 import './lomadee/adapter.js';
 import './monetizze/adapter.js';
 import './mrge/adapter.js';
@@ -62,6 +68,7 @@ import './partnero/adapter.js';
 import './partnerstack/adapter.js';
 import './partnerstack-advertiser/adapter.js';
 import './post-affiliate-pro/adapter.js';
+import './profitshare/adapter.js';
 import './rakuten/adapter.js';
 import './rewardful/adapter.js';
 import './scaleo/adapter.js';

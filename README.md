@@ -269,6 +269,7 @@ the brand-side has a more complex auth model and we skipped it.
 <!-- AFFILIATE_MCP_NETWORK_TABLE_START -->
 | Network | Setup time | Approval required | Supported ops | Notes |
 | --- | ---: | --- | ---: | --- |
+| 2Performant | 5 min | no | 6 / 7 | no clicks |
 | AccessTrade | 10 min | no | 6 / 7 | no clicks |
 | Addrevenue | 5 min | no | 7 / 7 | pagination quirks |
 | Admitad | 15 min | no | 6 / 7 | clicks gated |
@@ -278,6 +279,7 @@ the brand-side has a more complex auth model and we skipped it.
 | Adtraction | 5 min | no | 6 / 7 | no clicks |
 | Adtraction (advertiser) | 6 min | no | 7 / 7 | see notes |
 | Affilae | 5 min | no | 6 / 7 | no clicks |
+| Affiliate Future | 5 min | no | 6 / 7 | no clicks |
 | Affise | 10 min | no | 7 / 7 | no clicks |
 | Afilio | 10 min | no | 6 / 7 | no clicks |
 | Awin | 5 min | no | 6 / 7 | no clicks |
@@ -287,11 +289,14 @@ the brand-side has a more complex auth model and we skipped it.
 | CJ Affiliate (advertiser) | 8 min | no | 7 / 7 | pagination quirks |
 | Commission Factory | 10 min | no | 6 / 7 | clicks gated |
 | Commission Factory (advertiser) | 7 min | no | 7 / 7 | pagination quirks |
+| Connexity | 10 min | no | 6 / 7 | no clicks |
 | Coupang Partners | 10 min | no | 6 / 7 | no clicks |
 | Daisycon | 15 min | no | 6 / 7 | no clicks |
 | Daisycon (advertiser) | 15 min | no | 7 / 7 | see notes |
 | eBay Partner Network | 10 min | yes (~3 days) | 7 / 7 | see notes |
 | Eduzz | 10 min | no | 6 / 7 | no clicks |
+| Effiliation | 5 min | no | 6 / 7 | no clicks |
+| eHUB | 5 min | no | 7 / 7 | see notes |
 | Everflow | 10 min | yes (~1 days) | 7 / 7 | see notes |
 | Everflow (Advertiser) | 10 min | no | 7 / 7 | no clicks |
 | FirstPromoter | 5 min | no | 6 / 7 | no clicks |
@@ -305,6 +310,7 @@ the brand-side has a more complex auth model and we skipped it.
 | Kwanko | 10 min | no | 6 / 7 | no clicks |
 | Kwanko (advertiser) | 10 min | no | 6 / 7 | no clicks |
 | LeadDyno | 5 min | no | 6 / 7 | no clicks |
+| LinkConnector | 5 min | no | 6 / 7 | no clicks |
 | Lomadee | 15 min | no | 6 / 7 | no clicks |
 | Monetizze | 5 min | no | 6 / 7 | no clicks |
 | mrge | 10 min | no | 6 / 7 | no clicks |
@@ -317,6 +323,7 @@ the brand-side has a more complex auth model and we skipped it.
 | PartnerStack | 5 min | no | 6 / 7 | no clicks |
 | PartnerStack (advertiser) | 6 min | no | 7 / 7 | no clicks |
 | Post Affiliate Pro | 5 min | no | 6 / 7 | no clicks |
+| Profitshare | 5 min | no | 6 / 7 | no clicks |
 | Rakuten Advertising | 12 min | yes (~5 days) | 6 / 7 | clicks gated |
 | Rewardful | 5 min | no | 6 / 7 | no clicks |
 | Scaleo | 10 min | yes (~1 days) | 7 / 7 | see notes |
@@ -405,13 +412,6 @@ pile onto) a tracking issue before you start.
 | Belboon | publisher + advertiser | DACH performance network. wecantrack pulls conversions via the Belboon API on a schedule; confirm self-serve key issuance + endpoint before building. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Belboon) |
 | financeAds | publisher | DACH finance-vertical network. API integration offered via wecantrack; verify public self-serve API docs before building. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20financeAds) |
 | Yieldkit | publisher | Link-monetisation network (Skimlinks/Sovrn competitor; now owns Digidip). wecantrack connects via the Yieldkit API and matches commissions per session; verify self-serve API docs. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Yieldkit) |
-| eHUB | publisher + advertiser | CZ/CEE. Apiary v3 docs (ehub.docs.apiary.io — NOT docs.ehub.com, which is an unrelated logistics firm). API key; programs, transactions with rich filters, coupons, clicks. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20eHUB) |
-| LinkConnector | publisher | US network (~700 advertisers). Self-serve API key (Tools > API); HTTP POST function API for promotion feed, transaction + delta reports, affiliate links. CSV/JSON/XML. Docs linkconnector.com/help_api.htm. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20LinkConnector) |
-| Connexity (ShopYourLikes) | publisher | US CPC-commerce network, distinct from the existing Skimlinks adapter. Publisher ID + API key from the publisher portal; deep-link, reporting, merchant-match, catalog APIs. Docs pubresources.connexity.com. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Connexity%20(ShopYourLikes)) |
-| Affiliate Future | publisher | UK network. Self-serve API key + password (Reporting APIs page); merchant list + GetTransactionListbyDate. Caveats: dated .svc endpoints (api.affiliatefuture.com/PublisherService.svc) and a 1-day-per-call pull window. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Affiliate%20Future) |
-| Effiliation (Effinity) | publisher + advertiser | Established FR network. API key from Tools > API; programmes, transactions, links/feeds refreshed ~every 2h. Docs apiv2.effiliation.com/apiv2/doc. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Effiliation%20(Effinity)) |
-| 2Performant | publisher + advertiser | Romania. Self-serve but auth is credential/session-based (email+password -> session), not a static key — handle that quirk. RESTful JSON; programs, commissions, links. Docs doc.2performant.com; official PHP wrapper exists. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%202Performant) |
-| Profitshare | publisher + advertiser | Romania. Self-serve API key + API user, HMAC-signed requests. Advertisers, campaigns, products, commissions, cashback. Docs doc.profitshare.com; reference impl on GitHub. | [open one](https://github.com/bobberrisford/affiliatemcp/issues/new?template=new-network-request.yml&title=Add%20Profitshare) |
 <!-- AFFILIATE_MCP_WANTED_TABLE_END -->
 
 ## Awin reference implementation
@@ -550,6 +550,13 @@ click for credentials, and common stumbling blocks:
 - [Flipkart Affiliate](./docs/networks/flipkart.md) — affiliate ID + token headers; India; experimental, built from public docs.
 - [Adrecord](./docs/networks/adrecord.md) — APIKEY header; Nordic; experimental, built from public docs.
 - [Addrevenue](./docs/networks/addrevenue.md) — Bearer token + channel ID; Nordic; experimental, built from public docs.
+- [eHUB](./docs/networks/ehub.md) — apiKey query param + publisher ID; CZ/CEE; clicks supported; experimental, built from public docs.
+- [LinkConnector](./docs/networks/linkconnector.md) — API key (query param); US; experimental, built from public docs.
+- [Connexity](./docs/networks/connexity.md) — publisher ID + API key; US CPC-commerce (distinct from Skimlinks); experimental, built from public docs.
+- [Affiliate Future](./docs/networks/affiliate-future.md) — API key + password (query params); UK; 1-day pull window; experimental, built from public docs.
+- [Effiliation](./docs/networks/effiliation.md) — API key (query param); FR; experimental, built from public docs.
+- [2Performant](./docs/networks/2performant.md) — email + password (session login); Romania; experimental, built from public docs.
+- [Profitshare](./docs/networks/profitshare.md) — API user + key (HMAC-signed); Romania; experimental, built from public docs.
 
 **Brand / advertiser side:**
 

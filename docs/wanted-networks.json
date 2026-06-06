@@ -132,55 +132,6 @@
       "side": "publisher",
       "note": "Link-monetisation network (Skimlinks/Sovrn competitor; now owns Digidip). wecantrack connects via the Yieldkit API and matches commissions per session; verify self-serve API docs.",
       "issue": null
-    },
-    {
-      "name": "eHUB",
-      "slug": "ehub",
-      "side": "both",
-      "note": "CZ/CEE. Apiary v3 docs (ehub.docs.apiary.io — NOT docs.ehub.com, which is an unrelated logistics firm). API key; programs, transactions with rich filters, coupons, clicks.",
-      "issue": null
-    },
-    {
-      "name": "LinkConnector",
-      "slug": "linkconnector",
-      "side": "publisher",
-      "note": "US network (~700 advertisers). Self-serve API key (Tools > API); HTTP POST function API for promotion feed, transaction + delta reports, affiliate links. CSV/JSON/XML. Docs linkconnector.com/help_api.htm.",
-      "issue": null
-    },
-    {
-      "name": "Connexity (ShopYourLikes)",
-      "slug": "connexity",
-      "side": "publisher",
-      "note": "US CPC-commerce network, distinct from the existing Skimlinks adapter. Publisher ID + API key from the publisher portal; deep-link, reporting, merchant-match, catalog APIs. Docs pubresources.connexity.com.",
-      "issue": null
-    },
-    {
-      "name": "Affiliate Future",
-      "slug": "affiliate-future",
-      "side": "publisher",
-      "note": "UK network. Self-serve API key + password (Reporting APIs page); merchant list + GetTransactionListbyDate. Caveats: dated .svc endpoints (api.affiliatefuture.com/PublisherService.svc) and a 1-day-per-call pull window.",
-      "issue": null
-    },
-    {
-      "name": "Effiliation (Effinity)",
-      "slug": "effiliation",
-      "side": "both",
-      "note": "Established FR network. API key from Tools > API; programmes, transactions, links/feeds refreshed ~every 2h. Docs apiv2.effiliation.com/apiv2/doc.",
-      "issue": null
-    },
-    {
-      "name": "2Performant",
-      "slug": "2performant",
-      "side": "both",
-      "note": "Romania. Self-serve but auth is credential/session-based (email+password -> session), not a static key — handle that quirk. RESTful JSON; programs, commissions, links. Docs doc.2performant.com; official PHP wrapper exists.",
-      "issue": null
-    },
-    {
-      "name": "Profitshare",
-      "slug": "profitshare",
-      "side": "both",
-      "note": "Romania. Self-serve API key + API user, HMAC-signed requests. Advertisers, campaigns, products, commissions, cashback. Docs doc.profitshare.com; reference impl on GitHub.",
-      "issue": null
     }
   ]
 }
