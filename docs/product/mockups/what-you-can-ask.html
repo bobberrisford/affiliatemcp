@@ -47,7 +47,9 @@ a{color:inherit;text-decoration:none}
 .group{margin-bottom:20px}.group h2{font-family:var(--font-display);font-weight:800;font-size:1.5rem;text-transform:lowercase;letter-spacing:-.01em;margin:0 0 14px;display:flex;align-items:center;gap:10px}.group h2::before{content:"";width:22px;height:2px;background:var(--blue)}
 .qgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:30px}@media(max-width:760px){.qgrid{grid-template-columns:1fr}}
 .qcard{border:2px solid var(--ink);border-radius:10px;background:#FAF9F5;overflow:hidden;transition:transform .08s steps(2),box-shadow .08s steps(2)}.qcard:hover{box-shadow:var(--shadow);transform:translate(-2px,-2px)}
-.qcard .u{padding:14px 16px;background:#fff;border-bottom:1px solid #ECEAE0;display:flex;gap:9px;align-items:flex-start;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif}.qcard .u .ast{color:#D97757;font-weight:800;flex:none;font-family:var(--font-mono)}.qcard .u b{font-weight:600;color:#1F1E1D}
+.qcard .u{padding:14px 16px;background:#fff;border-bottom:1px solid #ECEAE0;display:flex;gap:9px;align-items:flex-start;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif}.qcard .u .ast{color:#D97757;font-weight:800;flex:none;font-family:var(--font-mono)}.qcard .u b{font-weight:600;color:#1F1E1D;flex:1}
+.qcard .cp{flex:none;align-self:flex-start;border:1.5px solid var(--line-strong);background:transparent;color:var(--smudge-dk);font-family:var(--font-mono);font-weight:700;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;padding:5px 8px;border-radius:4px;cursor:pointer;transition:background .08s steps(2),color .08s steps(2)}
+.qcard .cp:hover{background:var(--blue);border-color:var(--blue);color:#fff}.qcard .cp.done{background:var(--blue);border-color:var(--blue);color:#fff}
 .qcard .a{padding:13px 16px;font-size:.9rem;color:#4a463f;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif}.qcard .a .lab{font-family:var(--font-mono);font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:#8a8782;display:block;margin-bottom:5px}
 .hidden{display:none}
 </style>
@@ -105,6 +107,21 @@ a{color:inherit;text-decoration:none}
 
 <script>
 document.getElementById("switch").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;this.querySelectorAll("button").forEach(function(x){x.classList.remove("on")});b.classList.add("on");document.querySelectorAll("[data-panel]").forEach(function(p){p.classList.toggle("hidden",p.dataset.panel!==b.dataset.side);});});
+
+// Make each prompt copyable: add a copy button that copies the prompt (quotes stripped)
+document.querySelectorAll(".qcard .u").forEach(function(u){
+  var b=u.querySelector("b"); if(!b) return;
+  var prompt=b.textContent.trim().replace(/^[“"']+|[”"']+$/g,"");
+  var btn=document.createElement("button");
+  btn.className="cp"; btn.type="button"; btn.textContent="copy";
+  btn.setAttribute("aria-label","Copy prompt: "+prompt);
+  btn.addEventListener("click",function(){
+    try{navigator.clipboard.writeText(prompt);}catch(err){}
+    btn.textContent="copied ✓"; btn.classList.add("done");
+    setTimeout(function(){btn.textContent="copy"; btn.classList.remove("done");},1200);
+  });
+  u.appendChild(btn);
+});
 </script>
 </body>
 </html>
