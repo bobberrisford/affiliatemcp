@@ -38,7 +38,15 @@ function mockApi() {
     detectClients: () => wait({ desktop: 'present', desktopConfigPath: '~/Library/Application Support/Claude/claude_desktop_config.json' }),
     listNetworks: () => wait(MOCK_NETWORKS),
     setupSteps: (slug) => wait(MOCK_STEPS[slug] || []),
-    validateField: (_slug, _field, _value) => wait({ ok: true }),
+    validateField: (_slug, _field, value) => {
+      // Preview-only heuristic so the ✓/✗ behaviour is visible in the browser.
+      // A plausible-looking value (>= 8 non-space chars) passes; anything
+      // shorter fails with a clear message. The real check lives in the core.
+      const v = typeof value === 'string' ? value.trim() : '';
+      return wait(v.length >= 8
+        ? { ok: true, message: 'format looks right' }
+        : { ok: false, message: 'that looks too short — copy the full value' }, 300);
+    },
     verifyAuth: (slug, _values) => wait({ ok: true, identity: MOCK_IDENTITY[slug] || 'your account' }, 800),
     discoverBrands: () => wait(MOCK_BRANDS, 500),
     saveEnv: (_entries) => wait({ ok: true }),
@@ -88,9 +96,16 @@ function renderActivate() {
     </div>
   `, true);
   const status = document.getElementById('lic-status');
+  const keyInput = /** @type {HTMLInputElement} */(document.getElementById('key'));
   document.getElementById('buy').onclick = () => api.licence.buy();
-  document.getElementById('activate').onclick = async () => {
-    const key = /** @type {HTMLInputElement} */(document.getElementById('key')).value.trim();
+  // The single activate routine — shared by the button and the deep-link path
+  // so there's exactly one place that verifies + advances. Guards re-entry.
+  let activating = false;
+  async function activate() {
+    if (activating) return;
+    const key = keyInput.value.trim();
+    if (!key) return;
+    activating = true;
     status.innerHTML = `<span class="status"><span class="dot dot-pending"></span> checking…</span>`;
     const res = await api.licence.activate(key);
     if (res && res.ok) {
@@ -98,9 +113,15 @@ function renderActivate() {
       status.innerHTML = `<span class="status"><span class="dot dot-pos"></span> verified offline</span>`;
       setTimeout(() => go('welcome'), 450);
     } else {
+      activating = false;
       status.innerHTML = `<span class="status"><span class="dot dot-neg"></span> ${esc((res && res.error) || 'invalid key')}</span>`;
     }
-  };
+  }
+  document.getElementById('activate').onclick = activate;
+  // A deep link may have delivered a key — either queued before this screen
+  // rendered (cold launch) or while it's already showing (the boot-level
+  // subscriber re-renders us). Prefill + auto-activate it exactly once.
+  if (incomingKey) { keyInput.value = incomingKey; incomingKey = null; activate(); }
 }
 
 function renderWelcome() {
@@ -160,6 +181,7 @@ async function renderCredentials() {
       </div>
       <div class="kv"><span class="pre">${esc(s.field.split('_').pop().toLowerCase().slice(0, 6) || 'key')}</span>
         <input type="${s.type === 'password' ? 'password' : 'text'}" placeholder="${esc(s.example || '')}" autocomplete="off" spellcheck="false" /></div>
+      <div class="verify-row fstatus" data-fstatus="${s.field}"></div>
     </div>`).join('');
   const last = state.credIndex === state.selected.length - 1;
   app.innerHTML = wrap(`
@@ -178,6 +200,47 @@ async function renderCredentials() {
     const url = a.getAttribute('data-url');
     if (window.affiliate) window.open(url, '_blank'); else window.open(url, '_blank');
   }));
+
+  // ---- live per-field validation (✓/✗) -----------------------------------
+  // On blur of a non-empty field, ask the backend whether the value looks
+  // valid and render an inline status using the same status classes the rest
+  // of the screen uses. This is additive to "verify & continue" below; it
+  // never blocks typing. We guard against overlapping/stale calls per field:
+  // a token bumps on each blur so only the newest response renders, and the
+  // same value isn't re-validated twice in a row.
+  /** @type {Record<string, number>} */
+  const fieldTokens = {};
+  /** @type {Record<string, string>} */
+  const lastValidated = {};
+  app.querySelectorAll('.field[data-field]').forEach((f) => {
+    const field = f.getAttribute('data-field');
+    const input = f.querySelector('input');
+    const slot = f.querySelector('[data-fstatus]');
+    if (!field || !input || !slot) return;
+    input.addEventListener('blur', async () => {
+      const value = input.value.trim();
+      if (!value) { slot.innerHTML = ''; lastValidated[field] = ''; return; }
+      if (lastValidated[field] === value) return; // unchanged — keep prior result
+      lastValidated[field] = value;
+      const token = (fieldTokens[field] || 0) + 1;
+      fieldTokens[field] = token;
+      slot.innerHTML = `<span class="status"><span class="dot dot-pending"></span> checking…</span>`;
+      let res;
+      try {
+        res = await api.validateField(slug, field, value);
+      } catch {
+        res = { ok: false, message: 'could not check this value' };
+      }
+      if (fieldTokens[field] !== token) return; // a newer blur superseded this
+      if (res && res.ok) {
+        const msg = res.message ? ` ${esc(res.message)}` : ' looks right';
+        slot.innerHTML = `<span class="status"><span class="dot dot-pos"></span>${msg}</span>`;
+      } else {
+        const msg = (res && (res.message || res.hint)) || 'that doesn’t look right';
+        slot.innerHTML = `<span class="status"><span class="dot dot-neg"></span> ${esc(msg)}</span>`;
+      }
+    });
+  });
   document.getElementById('back').onclick = () => {
     if (state.credIndex === 0) go('networks');
     else { state.credIndex--; go('credentials'); }
@@ -313,6 +376,20 @@ const SCREENS = {
   credentials: renderCredentials, brands: renderBrands, connect: renderConnect, done: renderDone,
 };
 function go(name) { state.screen = name; (SCREENS[name] || renderActivate)(); }
+
+/* ---- deep-link key (affiliate-mcp://activate?key=…) ------------------ */
+// A key can arrive from main before renderActivate runs (cold launch via the
+// link). Stash the latest here; renderActivate consumes + auto-activates it.
+// If it arrives once we're already past the gate (licensed), it's ignored.
+let incomingKey = null;
+api.onIncomingKey?.((key) => {
+  if (state.screen === 'activate') {
+    incomingKey = key;
+    renderActivate(); // re-render so it picks up + auto-activates the key
+  }
+  // else: already licensed / mid-flow — the renderActivate subscriber handles
+  // the on-screen case; anything later is intentionally ignored.
+});
 
 /* boot: skip the gate if already licensed */
 (async () => {

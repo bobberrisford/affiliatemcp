@@ -21,6 +21,9 @@
     "appId": "affiliate-mcp",
     "productName": "affiliate-mcp",
     "afterSign": "build/notarize.js",
+    "protocols": [
+      { "name": "affiliate-mcp", "schemes": ["affiliate-mcp"] }
+    ],
     "files": [
       "main.js",
       "preload.js",

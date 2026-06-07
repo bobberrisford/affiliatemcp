@@ -6,12 +6,38 @@
    crisp monospace of a terminal. Heavy ink, newsprint paper, two electric
    shock accents. Anti-dashboard. DIY. Free & open source.
 
-   Fonts are loaded from Google Fonts (all open-licensed — fitting for an
-   open-source project). The product itself ships no fonts; this type system
-   is established here. See README "VISUAL FOUNDATIONS".
+   Fonts are bundled locally and loaded from `./fonts/` — no network call.
+   The three families are open-licensed (OFL), fitting for an open-source
+   project, and self-hosting keeps the promise that the app talks to nothing
+   but the networks you configured: no Google Fonts CDN phone-home. The woff2
+   files are variable fonts, so a single file per family covers every weight
+   the type scale below uses. See README "VISUAL FOUNDATIONS".
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+/* Bricolage Grotesque — display headings (weights 700, 800). */
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 600 800;
+  font-display: swap;
+  src: url('./fonts/bricolage-grotesque.woff2') format('woff2');
+}
+/* Space Grotesk — body / UI sans (weights 400, 500, 700). */
+@font-face {
+  font-family: 'Space Grotesk';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./fonts/space-grotesk.woff2') format('woff2');
+}
+/* JetBrains Mono — labels, code, status chips (weights 400, 700, 800). */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('./fonts/jetbrains-mono.woff2') format('woff2');
+}
 
 :root {
   /* ---- Core palette ----------------------------------------------------- */

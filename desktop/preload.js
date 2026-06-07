@@ -24,4 +24,11 @@ contextBridge.exposeInMainWorld('affiliate', {
   connectClaude: () => ipcRenderer.invoke('claude:connect'),
   restartClaude: () => ipcRenderer.invoke('claude:restart'),
   quit: () => ipcRenderer.invoke('app:quit'),
+  // Deep-link: main sends a licence key parsed from affiliate-mcp://activate?key=…
+  // Returns an unsubscribe so the renderer can detach the listener if needed.
+  onIncomingKey: (cb) => {
+    const listener = (_e, key) => cb(key);
+    ipcRenderer.on('licence:incoming-key', listener);
+    return () => ipcRenderer.removeListener('licence:incoming-key', listener);
+  },
 });
