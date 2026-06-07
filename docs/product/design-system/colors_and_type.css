@@ -1,0 +1,276 @@
+/* ============================================================================
+   affiliate-mcp — Design System foundations
+   Colors + Type + core brand tokens
+   ----------------------------------------------------------------------------
+   Aesthetic: 2026 punk rock. Photocopy / riso / gig-poster energy meets the
+   crisp monospace of a terminal. Heavy ink, newsprint paper, two electric
+   shock accents. Anti-dashboard. DIY. Free & open source.
+
+   Fonts are loaded from Google Fonts (all open-licensed — fitting for an
+   open-source project). The product itself ships no fonts; this type system
+   is established here. See README "VISUAL FOUNDATIONS".
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+
+:root {
+  /* ---- Core palette ----------------------------------------------------- */
+  --ink:        #0B0B0C;   /* near-black, the punk constant            */
+  --ink-soft:   #16161B;   /* raised surfaces on dark                  */
+  --paper:      #FFFFFF;   /* pure white — the constant surface        */
+  --paper-2:    #F2F3F7;   /* faint cool gray, panels                  */
+  --smudge:     #8B8FA0;   /* cool gray, muted text on white           */
+  --smudge-dk:  #565A6B;   /* deeper muted                             */
+
+  /* ---- Shock accents — RISO BLUE primary, hot pink secondary ----------- */
+  --blue:       #2B2BFF;   /* RISO BLUE — primary accent (white text)   */
+  --blue-deep:  #1B1BB8;   /* riso pressed / borders                    */
+  --blue-bright:#5A78FF;   /* legible riso on dark surfaces / glyphs    */
+  --magenta:    #FF2E88;   /* hot pink — SECONDARY accent, alerts/down  */
+  --riso:       var(--blue);
+  /* legacy aliases: old --acid references now resolve to riso blue       */
+  --acid:       var(--blue-bright);
+  --acid-deep:  var(--blue-deep);
+
+  /* ---- Semantic surfaces ----------------------------------------------- */
+  --bg:            var(--paper);
+  --bg-panel:      var(--paper-2);
+  --bg-invert:     var(--ink);
+  --fg:            var(--ink);
+  --fg-muted:      var(--smudge-dk);
+  --fg-invert:     var(--paper);
+  --fg-invert-mut: #9A9DAC;
+
+  --accent:        var(--blue);
+  --accent-on:     #FFFFFF;        /* text/ink color to sit on the accent */
+  --accent-2:      var(--magenta);
+  --link:          var(--blue);
+
+  /* ---- Status (data: up / down / pending) — no green ------------------- */
+  --pos:        var(--blue);       /* approved / paid / up  = riso blue   */
+  --pos-hi:     var(--blue-bright);
+  --neg:        var(--magenta);    /* reversed / down       = hot pink    */
+  --pending:    #E8A317;           /* pending / waiting     = amber       */
+
+  /* ---- Lines & borders ------------------------------------------------- */
+  --line:        rgba(11,11,12,0.14);
+  --line-strong: rgba(11,11,12,0.85);
+  --line-invert: rgba(255,255,255,0.16);
+  --hair:        1px;
+  --rule:        2px;       /* default punk rule weight                 */
+  --rule-heavy:  4px;
+
+  /* ---- Radii (mostly hard corners; punk = sharp) ----------------------- */
+  --r-0:   0px;
+  --r-xs:  3px;
+  --r-sm:  6px;
+  --r-pill: 999px;
+
+  /* ---- Hard offset shadow (neo-brutalist, NO blur) --------------------- */
+  --shadow:        4px 4px 0 0 var(--ink);
+  --shadow-lg:     6px 6px 0 0 var(--ink);
+  --shadow-acid:   4px 4px 0 0 var(--blue);
+  --shadow-mag:    4px 4px 0 0 var(--magenta);
+  --shadow-soft:   0 2px 0 0 var(--line-strong);
+
+  /* ---- Spacing scale (4px base) ---------------------------------------- */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px; --s-5: 24px;
+  --s-6: 32px; --s-7: 48px; --s-8: 64px; --s-9: 96px; --s-10: 128px;
+
+  /* ---- Type families --------------------------------------------------- */
+  --font-display: 'Bricolage Grotesque', 'Arial Black', system-ui, sans-serif;
+  --font-sans:    'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* ---- Type scale (display-led, poster energy) ------------------------- */
+  --t-mega:  clamp(3.5rem, 10vw, 8rem);    /* hero poster headline   */
+  --t-h1:    clamp(2.5rem, 5.5vw, 4.5rem);
+  --t-h2:    clamp(1.9rem, 3.5vw, 2.75rem);
+  --t-h3:    1.5rem;
+  --t-h4:    1.2rem;
+  --t-body:  1.0625rem;   /* 17px */
+  --t-small: 0.875rem;
+  --t-micro: 0.75rem;
+  --t-mono-lbl: 0.78rem;  /* uppercase mono labels                  */
+
+  --lh-tight: 0.94;
+  --lh-snug:  1.08;
+  --lh-body:  1.55;
+  --tracking-lbl: 0.14em;  /* wide tracking for mono labels          */
+}
+
+/* ============================================================================
+   BASE ELEMENT STYLES — semantic, ready to use
+   ========================================================================== */
+
+.amcp,
+.amcp * { box-sizing: border-box; }
+
+.amcp {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---- Display headings --------------------------------------------------- */
+.amcp h1, .h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--t-h1);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.02em;
+  text-transform: lowercase;
+  margin: 0;
+}
+.amcp h2, .h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--t-h2);
+  line-height: var(--lh-snug);
+  letter-spacing: -0.015em;
+  text-transform: lowercase;
+  margin: 0;
+}
+.amcp h3, .h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--t-h3);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.amcp h4, .h4 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--t-h4);
+  line-height: 1.2;
+  margin: 0;
+}
+
+.mega {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--t-mega);
+  line-height: var(--lh-tight);
+  letter-spacing: -0.03em;
+  text-transform: lowercase;
+  margin: 0;
+}
+
+/* ---- Body --------------------------------------------------------------- */
+.amcp p, .p {
+  font-family: var(--font-sans);
+  font-size: var(--t-body);
+  line-height: var(--lh-body);
+  margin: 0 0 1em;
+  text-wrap: pretty;
+  max-width: 62ch;
+}
+.lead {
+  font-size: 1.3rem;
+  line-height: 1.45;
+  font-weight: 500;
+}
+.small { font-size: var(--t-small); }
+.muted { color: var(--fg-muted); }
+
+/* ---- Mono labels (the connective tissue of the brand) ------------------- */
+.label, .mono-label {
+  font-family: var(--font-mono);
+  font-size: var(--t-mono-lbl);
+  font-weight: 700;
+  letter-spacing: var(--tracking-lbl);
+  text-transform: uppercase;
+}
+.mono { font-family: var(--font-mono); }
+code, .code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: var(--ink);
+  color: var(--blue-bright);
+  padding: 0.12em 0.4em;
+  border-radius: var(--r-xs);
+}
+
+/* ---- Links -------------------------------------------------------------- */
+.amcp a, .link {
+  color: var(--fg);
+  text-decoration: none;
+  background-image: linear-gradient(var(--blue), var(--blue));
+  background-size: 100% 0.16em;
+  background-position: 0 92%;
+  background-repeat: no-repeat;
+  transition: background-size 0.12s ease, color 0.12s ease;
+}
+.amcp a:hover, .link:hover { background-size: 100% 100%; color: var(--paper); }
+
+/* ============================================================================
+   SIGNATURE PUNK UTILITIES
+   ========================================================================== */
+
+/* highlighter swipe behind a word */
+.hl {
+  background: var(--blue);
+  color: var(--paper);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0.02em 0.18em;
+}
+.hl-mag { background: var(--magenta); color: var(--paper); }
+
+/* redacted / black bar */
+.redact { background: var(--ink); color: var(--ink); padding: 0 0.2em; }
+
+/* ink chip / sticker */
+.chip {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  font-family: var(--font-mono); font-weight: 700;
+  font-size: var(--t-mono-lbl); letter-spacing: var(--tracking-lbl);
+  text-transform: uppercase; white-space: nowrap;
+  background: var(--ink); color: var(--paper);
+  padding: 6px 10px; border-radius: var(--r-xs);
+}
+.chip.acid { background: var(--blue); color: var(--paper); }
+.chip.mag  { background: var(--magenta); color: var(--paper); }
+.chip.blue { background: var(--blue); color: var(--paper); }
+
+/* stamp — rotated, outlined, rubber-stamp feel */
+.stamp {
+  display: inline-block;
+  font-family: var(--font-mono); font-weight: 800;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  border: var(--rule) solid currentColor;
+  padding: 4px 10px; border-radius: var(--r-xs);
+  transform: rotate(-6deg);
+}
+
+/* perforated / cut-out border (zine) */
+.cut { border: var(--rule) dashed var(--line-strong); }
+
+/* hard card */
+.card-hard {
+  background: var(--paper);
+  border: var(--rule) solid var(--ink);
+  box-shadow: var(--shadow);
+}
+
+/* halftone + grain helpers (pure CSS, no images) */
+/* Halftone: bolder, clearly-legible dot field (larger dots, more contrast) */
+.halftone {
+  background-image: radial-gradient(var(--ink) 2.4px, transparent 2.7px);
+  background-size: 11px 11px;
+}
+.halftone-soft {
+  background-image: radial-gradient(var(--ink) 1.4px, transparent 1.7px);
+  background-size: 9px 9px;
+}
+.grain::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  opacity: 0.5; mix-blend-mode: multiply;
+  background-image: radial-gradient(rgba(11,11,12,0.18) 0.5px, transparent 0.6px);
+  background-size: 3px 3px;
+}

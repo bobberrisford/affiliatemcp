@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>affiliate-mcp — networks</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+:root{--ink:#0B0B0C;--ink-soft:#16161B;--paper:#FFFFFF;--paper-2:#F2F3F7;--smudge:#8B8FA0;--smudge-dk:#565A6B;--blue:#2B2BFF;--blue-bright:#5A78FF;--magenta:#FF2E88;--acid:var(--blue-bright);--pending:#E8A317;--fg-invert-mut:#9A9DAC;--line:rgba(11,11,12,0.14);--line-strong:rgba(11,11,12,0.85);--line-invert:rgba(255,255,255,0.16);--shadow:4px 4px 0 0 var(--ink);--shadow-lg:6px 6px 0 0 var(--ink);--font-display:'Bricolage Grotesque','Arial Black',system-ui,sans-serif;--font-sans:'Space Grotesk',system-ui,-apple-system,sans-serif;--font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;}
+*,*::before,*::after{box-sizing:border-box}html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-sans);font-size:1.0625rem;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3{margin:0;font-family:var(--font-display);text-transform:lowercase}p{margin:0 0 1em;max-width:64ch}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}.small{font-size:.875rem}.muted{color:var(--smudge-dk)}.lead{font-size:1.22rem;line-height:1.5}
+a{color:inherit;text-decoration:none}
+.chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);font-weight:700;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;background:var(--ink);color:var(--paper);padding:6px 10px;border-radius:3px}
+.chip.acid{background:var(--blue);color:var(--paper)}.chip.mag{background:var(--magenta);color:var(--paper)}
+.sec-label{font-family:var(--font-mono);font-weight:700;font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--smudge-dk);display:flex;align-items:center;gap:10px;margin-bottom:26px}.sec-label::before{content:"";width:26px;height:2px;background:var(--ink)}
+.btn{font-family:var(--font-mono);font-weight:700;font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;padding:11px 17px;border:2px solid var(--ink);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;background:var(--paper);color:var(--ink);text-decoration:none;transition:transform .08s steps(2),box-shadow .08s steps(2)}
+.btn.p{background:var(--blue);color:var(--paper);box-shadow:var(--shadow)}.btn.p:active{transform:translate(4px,4px);box-shadow:0 0 0}
+.btn.d{background:var(--ink);color:var(--paper);box-shadow:4px 4px 0 var(--magenta)}.btn.sm{padding:8px 12px;font-size:.72rem}
+.nav{position:sticky;top:0;z-index:50;background:var(--paper);border-bottom:2px solid var(--ink)}.nav .wrap{display:flex;align-items:center;gap:22px;height:64px}
+.brand{display:flex;align-items:center;gap:10px}.brand svg{width:34px;height:34px;display:block}
+.brand .wm{font-family:var(--font-display);font-weight:800;font-size:1.32rem;letter-spacing:-.03em;line-height:1}.brand .wm .mcp{background:var(--blue);color:var(--paper);padding:0 5px;border-radius:3px}
+.nav .links{display:flex;gap:18px;margin-left:14px}.nav .links a{font-family:var(--font-mono);font-size:.78rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+.nav .links a.on{background:var(--blue);color:var(--paper);padding:0 4px}.nav .links a:hover{background:var(--blue);color:var(--paper)}.nav .right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.phead{padding:60px 0 26px}.phead h1{font-family:var(--font-display);font-weight:800;font-size:clamp(2.6rem,6vw,4.6rem);line-height:.92;letter-spacing:-.03em;text-transform:lowercase}.phead .lead{margin-top:20px;max-width:52ch;color:var(--ink)}.phead .lead b{font-weight:700}
+.foot{background:var(--ink);color:var(--paper);padding:56px 0 38px}.foot .big{font-family:var(--font-display);font-weight:800;font-size:clamp(2.6rem,8vw,6rem);line-height:.86;letter-spacing:-.04em;text-transform:lowercase;margin:0 0 26px}.foot .big .mcp{background:var(--blue);color:var(--paper);padding:0 .1em;border-radius:8px}
+.foot .stamps{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}.foot .rows{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;border-top:1px solid var(--line-invert);padding-top:22px}.foot a{color:var(--paper);font-family:var(--font-mono);font-size:.8rem}.foot a:hover{color:var(--acid)}.foot .cols{display:flex;gap:22px;flex-wrap:wrap}
+@media(max-width:900px){.nav .links{display:none}}
+
+.controls{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:22px}
+.search{flex:1;min-width:240px;display:flex;align-items:center;gap:10px;border:2px solid var(--ink);border-radius:7px;padding:11px 14px;background:var(--paper)}
+.search input{border:0;outline:0;font:inherit;font-size:.95rem;width:100%;background:transparent;color:var(--ink)}.search .pr{font-family:var(--font-mono);color:var(--smudge-dk);font-weight:700}
+.filters{display:flex;gap:8px;flex-wrap:wrap}.filt{font-family:var(--font-mono);font-weight:700;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;padding:8px 13px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);cursor:pointer}.filt.on{background:var(--ink);color:var(--acid)}
+.count{font-family:var(--font-mono);font-size:.74rem;color:var(--smudge-dk);letter-spacing:.05em;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}@media(max-width:860px){.grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:560px){.grid{grid-template-columns:1fr}}
+.ncard{border:2px solid var(--ink);border-radius:8px;padding:16px 17px;background:var(--paper);transition:transform .08s steps(2),box-shadow .08s steps(2);display:flex;flex-direction:column;gap:10px}.ncard:hover{box-shadow:var(--shadow);transform:translate(-2px,-2px)}
+.ncard .nm{font-family:var(--font-display);font-weight:800;font-size:1.18rem;letter-spacing:-.01em;text-transform:lowercase}
+.ncard .meta{font-family:var(--font-mono);font-size:.66rem;letter-spacing:.05em;text-transform:uppercase;color:var(--smudge-dk)}
+.tags{display:flex;gap:7px;flex-wrap:wrap}.t{font-family:var(--font-mono);font-weight:700;font-size:.6rem;letter-spacing:.07em;text-transform:uppercase;padding:4px 7px;border-radius:3px;background:var(--paper-2);color:var(--smudge-dk)}
+.t.both{background:var(--blue);color:var(--paper)}.t.pub{background:var(--ink);color:var(--paper)}.t.stable{border:1.5px solid var(--ink);background:transparent;color:var(--ink)}.t.exp{border:1.5px dashed var(--line-strong);background:transparent;color:var(--smudge-dk)}.t.adopt{background:var(--magenta);color:var(--paper)}
+.none{font-family:var(--font-mono);color:var(--smudge-dk);padding:40px 0}
+</style>
+</head>
+<body data-page="networks">
+
+<nav class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><svg viewBox="0 0 120 120"><rect width="120" height="120" rx="14" fill="#2B2BFF"></rect><polyline points="34,38 58,60 34,82" fill="none" stroke="#fff" stroke-width="13"></polyline><rect x="66" y="68" width="24" height="14" fill="#fff"></rect></svg><span class="wm">affiliate<span class="mcp">mcp</span></span></a>
+  <div class="links"><a href="index.html#how">how it works</a><a class="on" href="networks.html">networks</a><a href="adopt.html">adopt your adapter</a><a href="what-you-can-ask.html">what you can ask</a><a href="mission.html">mission</a></div>
+  <div class="right"><a class="btn d sm" href="https://github.com/bobberrisford/affiliatemcp">★ github</a><a class="btn p sm" href="get-started.html">npx setup ▸</a></div>
+</div></nav>
+
+<header class="phead"><div class="wrap">
+  <div class="sec-label">networks</div>
+  <h1>every network,<br>one conversation.</h1>
+  <p class="lead">Each adapter is open source and <b>community-built</b> until the network adopts it. Publisher side, brand side, or both. <a href="adopt.html" style="border-bottom:2px solid var(--blue)">run a network? adopt yours ▸</a></p>
+</div></header>
+
+<section style="padding:10px 0 70px"><div class="wrap">
+  <div class="controls">
+    <label class="search"><span class="pr">/</span><input id="q" type="search" placeholder="search networks…" autocomplete="off"></label>
+    <div class="filters" id="filters"><button class="filt on" data-f="all">all</button><button class="filt" data-f="pub">publisher only</button><button class="filt" data-f="both">brand side</button><button class="filt" data-f="stable">stable</button><button class="filt" data-f="experimental">experimental</button></div>
+  </div>
+  <div class="count" id="count"></div>
+  <div class="grid" id="grid"></div>
+</div></section>
+
+<footer class="foot"><div class="wrap">
+  <div class="big">affiliate<span class="mcp">mcp</span></div>
+  <div class="stamps"><span class="chip acid">FREE &amp; OPEN</span><span class="chip">MIT LICENCE</span><span class="chip">LOCAL-FIRST</span><span class="chip mag">NO TELEMETRY</span><span class="chip">UK ENGLISH</span></div>
+  <div class="rows"><div class="cols"><a href="get-started.html">get started</a><a href="networks.html">networks</a><a href="adopt.html">adopt your adapter</a><a href="mission.html">manifesto</a><a href="https://github.com/bobberrisford/affiliatemcp">github</a></div>
+  <div style="font-family:var(--font-mono);font-size:.74rem;color:var(--fg-invert-mut)">built from the open-source repo · free · open · yours</div></div>
+</div></footer>
+
+<script>
+var NETWORKS=[["Awin","both","stable","5 min",false],["CJ Affiliate","both","stable","8 min",false],["Impact","both","stable","6 min",false],["eBay Partner Network","pub","stable","10 min",true],["Rakuten Advertising","pub","stable","12 min",true],["Skimlinks","pub","stable","10 min",false],["Partnerize","both","stable","10 min",false],["Tradedoubler","both","stable","8 min",false],["Sovrn Commerce","pub","stable","10 min",false],["Everflow","both","stable","10 min",true],["mrge","pub","stable","10 min",false],["Admitad","both","experimental","15 min",false],["Adtraction","both","experimental","5 min",false],["Commission Factory","both","experimental","10 min",false],["Daisycon","both","experimental","15 min",false],["Kwanko","both","experimental","10 min",false],["PartnerStack","both","experimental","5 min",false],["2Performant","pub","experimental","5 min",false],["AccessTrade","pub","experimental","10 min",false],["Adcell","pub","experimental","10 min",false],["Addrevenue","pub","experimental","5 min",false],["Adrecord","pub","experimental","5 min",false],["Adservice","pub","experimental","10 min",false],["Affilae","pub","experimental","5 min",false],["Affiliate Future","pub","experimental","5 min",false],["Affise","pub","experimental","10 min",false],["Afilio","pub","experimental","10 min",false],["Amazon Creators","pub","experimental","10 min",true],["AvantLink","pub","experimental","10 min",false],["Belboon","pub","experimental","10 min",false],["CAKE","pub","experimental","10 min",false],["ClickBank","pub","experimental","10 min",false],["Connexity","pub","experimental","10 min",false],["Coupang Partners","pub","experimental","10 min",false],["Digistore24","pub","experimental","5 min",false],["Eduzz","pub","experimental","10 min",false],["Effiliation","pub","experimental","5 min",false],["eHUB","pub","experimental","5 min",false],["financeAds","pub","experimental","10 min",true],["FirstPromoter","pub","experimental","5 min",false],["FlexOffers","pub","experimental","10 min",false],["Flipkart Affiliate","pub","experimental","10 min",false],["GrowSurf","pub","experimental","10 min",false],["Hotmart","pub","experimental","10 min",false],["Howl","pub","experimental","5 min",false],["Indoleads","pub","experimental","5 min",false],["Involve Asia","pub","experimental","5 min",false],["LeadDyno","pub","experimental","5 min",false],["Levanta","pub","experimental","5 min",false],["LinkConnector","pub","experimental","5 min",false],["Lomadee","pub","experimental","15 min",false],["Monetizze","pub","experimental","5 min",false],["NetRefer","pub","experimental","15 min",true],["Offer18","pub","experimental","10 min",false],["Optimise Media","pub","experimental","10 min",false],["Partnero","pub","experimental","5 min",false],["Pepperjam","pub","experimental","5 min",false],["Post Affiliate Pro","pub","experimental","5 min",false],["Profitshare","pub","experimental","5 min",false],["Refersion","pub","experimental","5 min",false],["Rewardful","pub","experimental","5 min",false],["Scaleo","pub","experimental","10 min",true],["ShareASale","pub","experimental","10 min",false],["ShopMy","pub","experimental","10 min",false]];
+var q="",filt="all";
+function match(n){if(q&&n[0].toLowerCase().indexOf(q)===-1)return false;if(filt==="all")return true;if(filt==="pub")return n[1]==="pub";if(filt==="both")return n[1]==="both";if(filt==="stable")return n[2]==="stable";if(filt==="experimental")return n[2]==="experimental";return true;}
+function render(){var list=NETWORKS.filter(match);document.getElementById("count").textContent=list.length+" of "+NETWORKS.length+" networks · 0 adopted by their operator · all awaiting adoption";var g=document.getElementById("grid");if(!list.length){g.innerHTML='<div class="none">no networks match "'+q+'".</div>';return;}
+g.innerHTML=list.map(function(n){var side=n[1]==="both"?'<span class="t both">pub + brand</span>':'<span class="t pub">publisher</span>';var mat=n[2]==="stable"?'<span class="t stable">stable</span>':'<span class="t exp">experimental</span>';var meta=n[3]+(n[4]?" · approval needed":" · no approval");return '<div class="ncard"><div class="nm">'+n[0].toLowerCase()+'</div><div class="tags">'+side+mat+'<span class="t adopt">adopt ▸</span></div><div class="meta">'+meta+'</div></div>';}).join("");}
+document.getElementById("q").addEventListener("input",function(e){q=e.target.value.trim().toLowerCase();render();});
+document.getElementById("filters").addEventListener("click",function(e){var b=e.target.closest(".filt");if(!b)return;this.querySelectorAll(".filt").forEach(function(x){x.classList.remove("on")});b.classList.add("on");filt=b.dataset.f;render();});
+render();
+</script>
+</body>
+</html>
