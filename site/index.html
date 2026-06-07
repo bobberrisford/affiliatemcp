@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>affiliate-mcp — automate the drudgery</title>
+<meta name="description" content="Every affiliate network, wired into the agent that already has your inbox, calendar, and strategy. The data and the doing, in one loop. Free, open source, MIT. Bring your own keys.">
+<link rel="icon" href="../.claude/skills/affiliate-mcp-design/assets/mark.svg">
+<link rel="stylesheet" href="../.claude/skills/affiliate-mcp-design/colors_and_type.css">
+<style>
+  html,body{margin:0}
+  body{background:var(--paper);overflow-x:hidden}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+  .nowrap{white-space:nowrap}
+
+  /* ---- nav ---- */
+  .nav{position:sticky;top:0;z-index:50;background:var(--paper);border-bottom:2px solid var(--ink)}
+  .nav .wrap{display:flex;align-items:center;gap:22px;height:64px}
+  .nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+  .nav-brand img{width:34px;height:34px}
+  .nav-brand .wm{font-family:var(--font-display);font-weight:800;font-size:1.32rem;letter-spacing:-0.03em;line-height:1}
+  .nav-brand .wm .mcp{background:var(--blue);color:var(--paper);padding:0 5px;border-radius:3px}
+  .nav .links{display:flex;gap:20px;margin-left:14px}
+  .nav .links a{font-family:var(--font-mono);font-size:0.78rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;background:none;color:var(--ink);text-decoration:none;padding:4px 2px;border-radius:3px}
+  .nav .links a:hover{background:var(--blue);color:var(--paper)}
+  .nav .right{margin-left:auto;display:flex;align-items:center;gap:12px}
+
+  /* ---- buttons ---- */
+  .btn{font-family:var(--font-mono);font-weight:700;font-size:0.82rem;letter-spacing:0.04em;text-transform:uppercase;padding:11px 17px;border:2px solid var(--ink);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;background:var(--paper);color:var(--ink);transition:transform .08s steps(2),box-shadow .08s steps(2);text-decoration:none}
+  .btn.p{background:var(--blue);color:var(--paper);box-shadow:var(--shadow)}
+  .btn.p:hover{box-shadow:var(--shadow-lg)}
+  .btn.p:active{transform:translate(4px,4px);box-shadow:0 0 0}
+  .btn.d{background:var(--ink);color:var(--paper);box-shadow:4px 4px 0 var(--magenta)}
+  .btn.d:active{transform:translate(4px,4px);box-shadow:0 0 0}
+  .btn.sm{padding:8px 12px;font-size:0.72rem}
+  .btn.ghost{background:var(--paper);color:var(--ink);border:2px solid var(--ink)}
+
+  /* ---- hero ---- */
+  .hero{position:relative;padding:64px 0 40px;overflow:hidden}
+  .hero .halftone-bg{position:absolute;inset:0;opacity:0.06;background-image:radial-gradient(var(--ink) 1.2px,transparent 1.4px);background-size:9px 9px;pointer-events:none}
+  .hero-grid{display:grid;grid-template-columns:1.05fr 0.95fr;gap:46px;align-items:center;position:relative}
+  .kicker{display:flex;gap:10px;align-items:center;margin-bottom:22px;flex-wrap:wrap}
+  .hero .h-mega{font-family:var(--font-display);font-weight:800;font-size:clamp(3.2rem,6.4vw,5.6rem);line-height:0.9;letter-spacing:-0.035em;text-transform:lowercase;margin:0}
+  .hero .h-sub{font-size:1.22rem;line-height:1.5;max-width:34ch;margin:22px 0 26px;color:var(--ink)}
+  .hero .h-sub b{font-weight:700}
+  .h-cta{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .h-note{font-family:var(--font-mono);font-size:0.72rem;color:var(--smudge-dk);letter-spacing:0.04em;margin-top:18px}
+  .mac-dl{margin-top:26px;padding-top:22px;border-top:2px solid var(--ink)}
+  .mac-dl-label{font-family:var(--font-mono);font-weight:700;font-size:0.74rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--smudge-dk);margin-bottom:14px}
+  .mac-dl-row{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .mac-dl-note{font-family:var(--font-mono);font-size:0.74rem;line-height:1.6;color:var(--smudge-dk);letter-spacing:0.02em;max-width:42ch;margin:14px 0 0}
+  .mac-dl-note b{color:var(--ink);font-weight:700}
+  .mac-dl-note a{color:var(--blue);text-decoration:none;border-bottom:2px solid var(--blue)}
+  .mac-dl-note a:hover{background:var(--blue);color:var(--paper)}
+
+  /* ---- audience toggle ---- */
+  .seg{display:inline-flex;border:2px solid var(--ink);border-radius:7px;overflow:hidden;font-family:var(--font-mono);font-weight:700;font-size:0.76rem;letter-spacing:0.06em;text-transform:uppercase}
+  .seg button{border:0;background:var(--paper);color:var(--ink);padding:8px 15px;cursor:pointer;font:inherit}
+  .seg button.on{background:var(--ink);color:var(--blue-bright)}
+
+  /* ---- demo terminal ---- */
+  .demo{background:var(--ink);border:2px solid var(--ink);border-radius:10px;box-shadow:6px 6px 0 var(--ink);overflow:hidden}
+  .demo .bar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line-invert)}
+  .demo .bar i{width:11px;height:11px;border-radius:50%;display:block}
+  .demo .bar .t{margin-left:auto;font-family:var(--font-mono);color:var(--fg-invert-mut);font-size:0.66rem;letter-spacing:0.08em;text-transform:uppercase}
+  .demo .body{padding:16px 16px 18px;font-family:var(--font-mono);font-size:0.84rem;color:var(--paper);min-height:268px}
+  .demo .q{color:var(--paper)}
+  .demo .q .pr{color:var(--blue-bright);font-weight:700;margin-right:8px}
+  .demo .ans{margin-top:14px;border-top:1px dashed var(--line-invert);padding-top:14px}
+  .demo .ans .lead{font-family:var(--font-display);font-weight:800;font-size:1.7rem;color:var(--paper);line-height:1;margin-bottom:12px;text-transform:lowercase}
+  .demo .ans .lead .hl{background:var(--blue);color:var(--paper);padding:0 0.1em}
+  .demo .sub{font-family:var(--font-mono);font-size:0.7rem;color:var(--fg-invert-mut);letter-spacing:0.04em;margin-bottom:12px;text-transform:uppercase}
+  .demo table{width:100%;border-collapse:collapse;font-size:0.78rem}
+  .demo td{padding:6px 0;border-bottom:1px dashed var(--line-invert);color:var(--paper)}
+  .demo td.r{text-align:right}
+  .demo .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:1px}
+  .blink{animation:bl 1s steps(2) infinite}
+  @keyframes bl{50%{opacity:0}}
+
+  /* ---- bands ---- */
+  section{position:relative}
+  .band{background:var(--ink);color:var(--paper);padding:70px 0}
+  .band .wm-big{font-family:var(--font-display);font-weight:800;font-size:clamp(2.2rem,5vw,4rem);line-height:0.98;letter-spacing:-0.03em;text-transform:lowercase;text-align:center;margin:0;color:var(--paper)}
+  .band .wm-big .hl{background:var(--blue);color:var(--paper);padding:0 0.08em}
+  .sec-label{font-family:var(--font-mono);font-weight:700;font-size:0.74rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--smudge-dk);display:flex;align-items:center;gap:10px;margin-bottom:26px}
+  .sec-label::before{content:"";width:26px;height:2px;background:var(--ink)}
+
+  /* ---- network wall ---- */
+  .nets{padding:64px 0}
+  .net-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .net{display:flex;align-items:center;justify-content:space-between;gap:8px;border:2px solid var(--ink);border-radius:6px;padding:14px 15px;background:var(--paper);font-family:var(--font-mono);font-weight:700;transition:transform .08s steps(2),box-shadow .08s steps(2);cursor:default}
+  .net:hover{box-shadow:var(--shadow);transform:translate(-2px,-2px)}
+  .net .nm{font-size:0.95rem;color:var(--ink)}
+  .net .tag{font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;padding:3px 6px;border-radius:3px;background:var(--paper-2);color:var(--smudge-dk)}
+  .net .tag.both{background:var(--blue);color:var(--paper)}
+
+  /* ---- dual audience ---- */
+  .dual{padding:70px 0}
+  .dual-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .aud{border:2px solid var(--ink);border-radius:8px;padding:26px;background:var(--paper);box-shadow:var(--shadow)}
+  .aud.brand{background:var(--ink);color:var(--paper);box-shadow:6px 6px 0 var(--magenta)}
+  .aud h3{font-family:var(--font-display);font-weight:800;font-size:2rem;text-transform:lowercase;letter-spacing:-0.02em;margin:10px 0 6px;color:inherit}
+  .aud p{font-family:var(--font-sans);font-size:0.95rem;line-height:1.45;margin:0 0 10px;color:inherit}
+  .aud.brand p{color:var(--fg-invert-mut)}
+  .aud .ask{font-family:var(--font-mono);font-size:0.86rem;padding:11px 13px;border-radius:6px;margin-top:10px;display:flex;gap:9px;align-items:flex-start}
+  .aud .ask .q{color:var(--blue-bright);font-weight:700;flex:none}
+  .aud.pub .ask{background:var(--paper-2);color:var(--ink)}
+  .aud.brand .ask{background:var(--ink-soft);color:var(--paper)}
+  .aud.brand .ask .q{color:var(--magenta)}
+
+  /* ---- install ---- */
+  .install{padding:70px 0}
+  .install h2{font-family:var(--font-display);font-weight:800;font-size:clamp(2.1rem,4.5vw,3.2rem);line-height:0.98;letter-spacing:-0.025em;text-transform:lowercase;margin:0 0 18px;color:var(--ink)}
+  .install h2 .hl{background:var(--blue);color:var(--paper);padding:0 0.08em}
+  .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+  .tab{font-family:var(--font-mono);font-weight:700;font-size:0.74rem;letter-spacing:0.06em;text-transform:uppercase;padding:8px 14px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);cursor:pointer;color:var(--ink)}
+  .tab.on{background:var(--ink);color:var(--blue-bright)}
+  .cmd{display:flex;align-items:center;gap:12px;background:var(--ink);border-radius:8px;padding:15px 17px;font-family:var(--font-mono);font-size:0.92rem;color:var(--paper);border:2px solid var(--ink)}
+  .cmd + .cmd{margin-top:10px}
+  .cmd .pr{color:var(--blue-bright);font-weight:700}
+  .cmd .text{flex:1;overflow-x:auto;white-space:nowrap}
+  .cmd .copy{margin-left:auto;border:1px solid var(--line-invert);background:transparent;color:var(--fg-invert-mut);font-family:var(--font-mono);font-size:0.64rem;letter-spacing:0.08em;text-transform:uppercase;padding:6px 9px;border-radius:4px;cursor:pointer}
+  .cmd .copy:hover{border-color:var(--blue-bright);color:var(--blue-bright)}
+  .cmd .copy.done{border-color:var(--blue-bright);color:var(--blue-bright)}
+  .install .note{font-family:var(--font-mono);font-size:0.82rem;color:var(--smudge-dk);margin-top:16px;letter-spacing:0.01em}
+  .install .note code{font-family:var(--font-mono);background:var(--paper-2);color:var(--ink);padding:1px 5px;border-radius:3px}
+
+  /* ---- footer ---- */
+  .foot{background:var(--ink);color:var(--paper);padding:60px 0 40px}
+  .foot .big{font-family:var(--font-display);font-weight:800;font-size:clamp(3rem,9vw,7rem);line-height:0.86;letter-spacing:-0.04em;text-transform:lowercase;margin:0 0 30px;color:var(--paper)}
+  .foot .big .mcp{background:var(--blue);color:var(--paper);padding:0 0.1em;border-radius:8px}
+  .foot .rows{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;border-top:1px solid var(--line-invert);padding-top:24px}
+  .foot a{color:var(--paper);background:none;font-family:var(--font-mono);font-size:0.8rem;text-decoration:none;letter-spacing:0.04em}
+  .foot a:hover{color:var(--blue-bright)}
+  .foot .stamps{display:flex;gap:10px;flex-wrap:wrap}
+  .foot .meta{font-family:var(--font-mono);font-size:0.74rem;color:var(--fg-invert-mut);letter-spacing:0.04em}
+
+  @media(max-width:900px){
+    .hero-grid,.dual-grid{grid-template-columns:1fr}
+    .net-grid{grid-template-columns:repeat(2,1fr)}
+    .nav .links{display:none}
+  }
+</style>
+</head>
+<body class="amcp">
+
+  <!-- ============== nav ============== -->
+  <nav class="nav">
+    <div class="wrap">
+      <a class="nav-brand" href="/">
+        <img src="../.claude/skills/affiliate-mcp-design/assets/mark.svg" alt="">
+        <span class="wm">affiliate<span class="mcp">mcp</span></span>
+      </a>
+      <div class="links">
+        <a href="#networks">networks</a>
+        <a href="#audience">publishers</a>
+        <a href="#audience">brands</a>
+        <a href="https://github.com/bobberrisford/affiliatemcp#readme">docs</a>
+      </div>
+      <div class="right">
+        <a class="btn d sm" href="https://github.com/bobberrisford/affiliatemcp">★ github</a>
+        <a class="btn p sm" href="#install">npx setup ▸</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============== hero ============== -->
+  <section class="hero">
+    <div class="halftone-bg"></div>
+    <div class="wrap hero-grid">
+      <div>
+        <div class="kicker">
+          <span class="chip acid">FREE &amp; OPEN · MIT</span>
+          <span class="chip">NO TELEMETRY</span>
+          <span class="stamp" style="transform:rotate(-7deg)">v0.5.0</span>
+        </div>
+        <h1 class="h-mega">automate the<br>drudgery.</h1>
+        <p class="h-sub">Every affiliate network, wired into the agent that already has your <b>inbox, calendar, and strategy</b>. The data and the doing, in one loop. <b>Your keys, your machine.</b></p>
+        <div class="kicker" style="margin-bottom:18px">
+          <div class="seg" id="audSeg">
+            <button data-aud="pub" class="on">publisher</button>
+            <button data-aud="brand">brand / agency</button>
+          </div>
+        </div>
+        <div class="h-cta">
+          <a class="btn p" href="#install">npx setup ▸</a>
+          <a class="btn ghost" href="https://github.com/bobberrisford/affiliatemcp/blob/main/docs/product/manifesto.md">read the manifesto</a>
+        </div>
+        <div class="h-note">node 20+ · claude desktop, claude code, codex · 5-min wizard</div>
+
+        <div class="mac-dl">
+          <div class="mac-dl-label">prefer not to touch a terminal?</div>
+          <div class="mac-dl-row">
+            <a class="btn d" href="https://github.com/bobberrisford/affiliatemcp/releases/latest/download/affiliate-mcp-mac.dmg">download for macOS ▸</a>
+          </div>
+          <p class="mac-dl-note">a one-off <b>£39 licence</b> for the signed, notarised setup app. the cli &amp; mcp server stay <a href="#install">free and open</a> — bring your own keys, run it from the terminal, pay nothing.</p>
+        </div>
+      </div>
+
+      <div class="demo" id="demo">
+        <div class="bar">
+          <i style="background:var(--magenta)"></i>
+          <i style="background:var(--pending)"></i>
+          <i style="background:var(--blue)"></i>
+          <span class="t">ai workspace — affiliate</span>
+        </div>
+        <div class="body">
+          <div class="q"><span class="pr">you ▸</span><span id="demoQ"></span><span class="blink">▮</span></div>
+          <div class="ans">
+            <div class="lead" id="demoLead"></div>
+            <div class="sub" id="demoSub"></div>
+            <table><tbody id="demoRows"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== band ============== -->
+  <section class="band">
+    <div class="wrap">
+      <h2 class="wm-big">the data and <span class="hl">the doing.</span><br>one loop. one agent.</h2>
+    </div>
+  </section>
+
+  <!-- ============== network wall ============== -->
+  <section class="nets" id="networks">
+    <div class="wrap">
+      <div class="sec-label">11 networks bundled · adapters are open source</div>
+      <div class="net-grid" id="netGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============== dual audience ============== -->
+  <section class="dual" id="audience">
+    <div class="wrap">
+      <div class="sec-label">two sides · one conversation</div>
+      <div class="dual-grid">
+        <div class="aud pub">
+          <span class="chip">PUBLISHER</span>
+          <h3>earn it. track it. get paid.</h3>
+          <p>Commissions across every network you're on, in one thread.</p>
+          <div class="ask"><span class="q">▸</span> "what did I earn last month?"</div>
+          <div class="ask"><span class="q">▸</span> "which programmes are pending after 90 days?"</div>
+          <div class="ask"><span class="q">▸</span> "audit the affiliate links in my sitemap."</div>
+        </div>
+        <div class="aud brand">
+          <span class="chip mag">BRAND / AGENCY</span>
+          <h3>run it. watch it. report it.</h3>
+          <p>One question fans out across every brand × network you manage.</p>
+          <div class="ask"><span class="q">▸</span> "how is Acme performing this quarter?"</div>
+          <div class="ask"><span class="q">▸</span> "revenue across all my clients this week."</div>
+          <div class="ask"><span class="q">▸</span> "any anomalies in the affiliate data?"</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== install ============== -->
+  <section class="install" id="install">
+    <div class="wrap">
+      <div class="sec-label">install · bring your own keys</div>
+      <h2>five minutes. <span class="hl">no account.</span></h2>
+      <div class="tabs" id="installTabs">
+        <button class="tab on" data-tab="desktop">Claude Desktop</button>
+        <button class="tab" data-tab="code">Claude Code</button>
+        <button class="tab" data-tab="codex">Codex</button>
+      </div>
+      <div id="installCmds"></div>
+      <p class="note">Keys live in <code>~/.affiliate-mcp/.env</code> on your machine, mode 0600. Nothing is hosted. Nothing phones home.</p>
+    </div>
+  </section>
+
+  <!-- ============== footer ============== -->
+  <footer class="foot">
+    <div class="wrap">
+      <div class="big">affiliate<span class="mcp">mcp</span></div>
+      <div class="stamps" style="margin-bottom:30px">
+        <span class="chip acid">FREE &amp; OPEN</span>
+        <span class="chip">MIT LICENCE</span>
+        <span class="chip">LOCAL-FIRST</span>
+        <span class="chip mag">NO TELEMETRY</span>
+        <span class="chip">UK ENGLISH</span>
+      </div>
+      <div class="rows">
+        <div style="display:flex;gap:22px;flex-wrap:wrap">
+          <a href="https://github.com/bobberrisford/affiliatemcp">github</a>
+          <a href="https://github.com/bobberrisford/affiliatemcp/blob/main/docs/product/manifesto.md">manifesto</a>
+          <a href="#networks">networks</a>
+          <a href="https://github.com/bobberrisford/affiliatemcp/blob/main/CONTRIBUTING.md">contribute</a>
+        </div>
+        <div class="meta">built from the open-source repo · free · open · yours</div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // ---- real bundled networks, from the repo ----
+    const NETWORKS = [
+      { nm: 'Awin', side: 'both' },
+      { nm: 'CJ Affiliate', side: 'both' },
+      { nm: 'Impact', side: 'both' },
+      { nm: 'eBay Partner', side: 'pub' },
+      { nm: 'Rakuten', side: 'pub' },
+      { nm: 'Skimlinks', side: 'pub' },
+      { nm: 'Partnerize', side: 'pub' },
+      { nm: 'Tradedoubler', side: 'pub' },
+      { nm: 'Sovrn Commerce', side: 'pub' },
+      { nm: 'Everflow', side: 'both' },
+      { nm: 'mrge', side: 'pub' },
+    ];
+
+    // ---- demo content per audience ----
+    const DEMO = {
+      pub: {
+        q: 'what did I earn across all networks last month?',
+        lead: '£18,402<span class="hl">.55</span>',
+        sub: 'across 5 networks · 2 transactions pending >90d',
+        rows: [
+          ['Awin',         'paid',      'var(--blue)',    '£7,210.00'],
+          ['CJ Affiliate', 'pending',   'var(--pending)', '£4,980.20'],
+          ['Rakuten',      'approved',  'var(--blue)',    '£6,824.75'],
+          ['Impact',       'reversed',  'var(--magenta)', '−£612.40'],
+        ],
+      },
+      brand: {
+        q: 'show me revenue across all my clients this week',
+        lead: '£214,900',
+        sub: '3 brands · 1 needs attention (reversal spike)',
+        rows: [
+          ['Acme',    '↑ 14%',  'var(--blue)',    '£128,400'],
+          ['Globex',  '↓ 9%',   'var(--magenta)', '£61,200'],
+          ['Initech', '→ flat', 'var(--pending)', '£25,300'],
+        ],
+      },
+    };
+
+    // ---- install commands per client ----
+    const INSTALL = {
+      desktop: [
+        'npx affiliate-networks-mcp setup',
+        'npx affiliate-networks-mcp install',
+      ],
+      code: [
+        'claude plugin marketplace add bobberrisford/affiliatemcp',
+        'claude plugin install affiliate-networks-mcp@affiliatemcp',
+      ],
+      codex: [
+        'npx affiliate-networks-mcp install --codex',
+        'codex mcp add affiliate -- npx -y affiliate-networks-mcp',
+      ],
+    };
+
+    // ---- render network wall ----
+    const netGrid = document.getElementById('netGrid');
+    netGrid.innerHTML = NETWORKS.map(n => `
+      <div class="net">
+        <span class="nm">${n.nm}</span>
+        <span class="tag${n.side === 'both' ? ' both' : ''}">${n.side === 'both' ? 'pub + brand' : 'publisher'}</span>
+      </div>
+    `).join('') + `
+      <div class="net" style="border-style:dashed;color:var(--smudge-dk)">
+        <span class="nm">+ your network</span>
+        <span class="tag">adopt it</span>
+      </div>
+    `;
+
+    // ---- hero demo: render per audience ----
+    function renderDemo(aud) {
+      const d = DEMO[aud];
+      document.getElementById('demoQ').textContent = ' ' + d.q;
+      document.getElementById('demoLead').innerHTML = d.lead;
+      document.getElementById('demoSub').textContent = d.sub;
+      document.getElementById('demoRows').innerHTML = d.rows.map(r => `
+        <tr>
+          <td>${r[0]}</td>
+          <td><span class="dot" style="background:${r[2]}"></span>${r[1]}</td>
+          <td class="r">${r[3]}</td>
+        </tr>
+      `).join('');
+    }
+    renderDemo('pub');
+
+    // ---- hero audience toggle ----
+    document.getElementById('audSeg').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-aud]');
+      if (!btn) return;
+      [...e.currentTarget.querySelectorAll('button')].forEach(b => b.classList.toggle('on', b === btn));
+      renderDemo(btn.dataset.aud);
+    });
+
+    // ---- install tabs + copy ----
+    function renderInstall(tab) {
+      const cmds = INSTALL[tab];
+      const el = document.getElementById('installCmds');
+      el.innerHTML = cmds.map(c => `
+        <div class="cmd">
+          <span class="pr">$</span>
+          <span class="text">${c}</span>
+          <button class="copy" data-cmd="${c.replace(/"/g, '&quot;')}">copy</button>
+        </div>
+      `).join('');
+    }
+    renderInstall('desktop');
+
+    document.getElementById('installTabs').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-tab]');
+      if (!btn) return;
+      [...e.currentTarget.querySelectorAll('button')].forEach(b => b.classList.toggle('on', b === btn));
+      renderInstall(btn.dataset.tab);
+    });
+
+    document.getElementById('installCmds').addEventListener('click', async (e) => {
+      const btn = e.target.closest('button.copy');
+      if (!btn) return;
+      try { await navigator.clipboard.writeText(btn.dataset.cmd); } catch {}
+      btn.textContent = 'copied ✓';
+      btn.classList.add('done');
+      setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('done'); }, 1200);
+    });
+  </script>
+</body>
+</html>

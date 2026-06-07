@@ -28,6 +28,11 @@ const { execFile } = require('node:child_process');
 
 const PROTOCOL = 'affiliate-mcp';
 
+// The live Cloudflare Worker that issues licences. Baked in so a packaged app a
+// user double-clicks can reach checkout out of the box; AFFILIATE_MCP_ISSUER_URL
+// overrides it for dev/testing.
+const DEFAULT_ISSUER_URL = 'https://affiliate-mcp-issuer.robertberrisford.workers.dev';
+
 /**
  * Pure, testable URL → licence-key extractor.
  *
@@ -267,13 +272,10 @@ handle('licence:activate', async (_e, key) => {
 
 handle('licence:buy', async () => {
   // In-app buy → the issuer Worker's /checkout (Stripe Checkout Sessions, §2A).
-  // The Worker is built/deployed separately; its URL is supplied at release via
-  // AFFILIATE_MCP_ISSUER_URL. With no URL there is nothing real to open, so we
-  // refuse rather than send the user to a placeholder. (HONESTY: no fake URL.)
-  const issuer = process.env.AFFILIATE_MCP_ISSUER_URL;
-  if (!issuer || issuer.trim() === '') {
-    return { ok: false, error: 'Checkout is not configured yet (issuer URL unset).' };
-  }
+  // The Worker is LIVE; its URL is baked in as DEFAULT_ISSUER_URL so a packaged
+  // build works out of the box. AFFILIATE_MCP_ISSUER_URL still overrides it for
+  // local testing. The resolved issuer is therefore never empty.
+  const issuer = process.env.AFFILIATE_MCP_ISSUER_URL || DEFAULT_ISSUER_URL;
   const res = await fetch(issuer.replace(/\/$/, '') + '/checkout', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },

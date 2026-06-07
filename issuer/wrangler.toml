@@ -16,16 +16,16 @@ compatibility_flags = ["nodejs_compat"]
 # then paste the returned ids below.
 [[kv_namespaces]]
 binding = "LICENCES"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
-preview_id = "REPLACE_WITH_PREVIEW_KV_NAMESPACE_ID"
+id = "23c1179a84c14acab2c5491ad3663914"
+preview_id = "66a17a43c6284e02b202a8c3b9432c21"
 
 # ── Non-secret vars (override per-env or in the dashboard) ─────────────────
 # Public-ish config. Secrets (below) are NOT set here.
 [vars]
 # Base URLs for the Checkout redirect. SUCCESS_URL gets
 # ?session_id={CHECKOUT_SESSION_ID} appended by the Worker.
-SUCCESS_URL = "https://issuer.example.com/success"
-CANCEL_URL = "https://issuer.example.com/cancel"
+SUCCESS_URL = "https://affiliate-mcp-issuer.robertberrisford.workers.dev/success"
+CANCEL_URL = "https://affiliate-mcp-issuer.robertberrisford.workers.dev/cancel"
 # From address for the licence email (must be a verified Resend sender).
 LICENCE_FROM_EMAIL = "licences@example.com"
 # Optional: a pre-created Stripe Price id. If unset, inline price_data (£39) is used.
