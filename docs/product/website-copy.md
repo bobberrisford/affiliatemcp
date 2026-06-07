@@ -13,12 +13,22 @@
 ## Homepage
 
 ### Hero
-**Headline:** The doing layer for affiliate.
+**Headline:** Take the grind out of affiliate marketing.
 
-**Sub-line:** See your data, set your strategy, decide what you'll approve — and
-let the routine work run on auto. Your keys, your machine, your call.
+**Sub-line:** Pulling reports, chasing pending commissions, checking links,
+watching for drops — the repetitive work that eats your week, handled. You set
+the rules and sign off what matters.
 
 **Buttons:** [ Get started ] · [ See how it works ]
+
+**Lead-in above the ladder:** Most AI shows you the numbers. This one *actually
+does things* with them.
+
+Headline alternates (kept for reference):
+- Affiliate marketing, minus the daily grind.
+- The daily grind of affiliate, on autopilot.
+- Automate the daily grind of affiliate marketing.
+- Less affiliate grind. More of everything else.
 
 ### The shift, in one line
 Your affiliate data is scattered across dashboards, exports, and spreadsheets —
@@ -91,9 +101,26 @@ If you can copy and paste one line, you can take the first rung today.
 
 ---
 
+## Tagline system (three lines, by role)
+
+The exploration produced three strong lines. Rather than pick one, each owns the
+spot where it works hardest:
+
+| Line | Role |
+| --- | --- |
+| **Agentic affiliate** | One-word category tagline — logo lockup, meta/OG title (e.g. "Agentic affiliate · take the grind out of affiliate marketing"), the one-sentence description of what this is |
+| **Affiliate AI that actually does things** | Lead-in above the homepage ladder — the bridge from the hero to the five rungs |
+| **Automating affiliate** | `/mission` page H1 — the plain statement of the end game where the full vision is told |
+
+The homepage hero itself is the grind-led line above ("Take the grind out of
+affiliate marketing"), because a verb that promises relief pulls harder on the
+non-technical reader than a descriptor of the product.
+
 ## Notes & rejected directions
 
-Hero alternatives considered (kept for reference):
+Hero directions considered (kept for reference):
+- *Doing layer:* "The doing layer for affiliate." Strong, but "layer" is faintly
+  technical; promoted "Agentic affiliate" to the tagline slot instead.
 - *Vision + control:* "Affiliate work that runs itself — with you in control."
 - *The arc:* "From 'show me the numbers' to 'handle it.'"
 - Earlier, pre-automation framing: "Chat with your affiliate data — in the AI
