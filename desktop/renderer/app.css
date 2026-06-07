@@ -60,6 +60,39 @@ h2.scr { font-family: var(--font-display); font-weight: 800; text-transform: low
 .welcome-h { font-family: var(--font-display); font-weight: 800; text-transform: lowercase; letter-spacing: -.03em; line-height: .96; font-size: var(--t-h1); margin: 0 0 var(--s-4); }
 .trust { display: flex; gap: var(--s-2); justify-content: center; flex-wrap: wrap; margin: var(--s-5) 0 var(--s-6); }
 
+/* ---- network picker --------------------------------------------------- */
+/* The picker is its own three-band layout INSIDE the .screen card: a fixed
+   header (rail + heading + search/filters), a single scrolling band that holds
+   ONLY the tile grid, and a pinned footer bar. The card itself doesn't scroll,
+   so the bar is always visible and the grid scrolls within a capped height. */
+.screen.picker { display: flex; flex-direction: column; }
+.picker-head { padding: var(--s-7) var(--s-7) var(--s-5); flex: none; border-bottom: var(--rule) solid var(--ink); }
+.picker-head .scr-lead { margin-bottom: var(--s-4); }
+.picker-scroll { flex: 1 1 auto; overflow-y: auto; padding: var(--s-5) var(--s-7); max-height: 46vh; }
+.picker-bar { flex: none; display: flex; align-items: center; justify-content: space-between; padding: var(--s-4) var(--s-7); border-top: var(--rule) solid var(--ink); background: var(--paper); }
+
+/* search + filter row */
+.picker-controls { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.picker-search { flex: 1 1 240px; min-width: 200px; }
+.chips { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+.chip-toggle {
+  font-family: var(--font-mono); font-weight: 700; font-size: var(--t-mono-lbl);
+  letter-spacing: var(--tracking-lbl); text-transform: uppercase;
+  background: var(--paper); color: var(--ink);
+  border: var(--rule) solid var(--ink); border-radius: var(--r-xs);
+  padding: 8px 12px; cursor: pointer;
+  transition: box-shadow .08s steps(2), transform .08s steps(2);
+}
+.chip-toggle:hover { box-shadow: var(--shadow); }
+.chip-toggle.on { background: var(--ink); color: var(--paper); box-shadow: var(--shadow-acid); }
+.chip-toggle.chip-sel.on { box-shadow: var(--shadow-mag); }
+
+/* empty state when search/filters match nothing */
+.grid.empty { display: block; }
+.net-empty { border: var(--rule) dashed var(--line-strong); border-radius: var(--r-xs); padding: var(--s-6); text-align: center; }
+.net-empty .ne-h { font-family: var(--font-mono); font-weight: 800; font-size: .95rem; }
+.net-empty .ne-b { font-family: var(--font-mono); font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; color: var(--fg-muted); margin-top: 8px; }
+
 /* ---- network grid ----------------------------------------------------- */
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-3); }
 .net { border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: 14px; background: var(--paper); position: relative; cursor: pointer; transition: box-shadow .08s steps(2); }

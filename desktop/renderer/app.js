@@ -12,6 +12,30 @@ const MOCK_NETWORKS = [
   { slug: 'impact', name: 'Impact', side: 'publisher', setupMinutes: 4, approval: false },
   { slug: 'partnerize', name: 'Partnerize', side: 'publisher', setupMinutes: 4, approval: false },
   { slug: 'cj', name: 'CJ', side: 'publisher', setupMinutes: 3, approval: false },
+  { slug: 'rakuten', name: 'Rakuten Advertising', side: 'publisher', setupMinutes: 5, approval: true },
+  { slug: 'skimlinks', name: 'Skimlinks', side: 'publisher', setupMinutes: 2, approval: false },
+  { slug: 'tradedoubler', name: 'Tradedoubler', side: 'publisher', setupMinutes: 4, approval: false },
+  { slug: 'sovrn-commerce', name: 'Sovrn Commerce', side: 'publisher', setupMinutes: 3, approval: false },
+  { slug: 'everflow', name: 'Everflow', side: 'publisher', setupMinutes: 4, approval: false },
+  { slug: 'mrge', name: 'mrge', side: 'publisher', setupMinutes: 3, approval: false },
+  { slug: 'ebay', name: 'eBay Partner Network', side: 'publisher', setupMinutes: 5, approval: true },
+  { slug: 'admitad', name: 'Admitad', side: 'publisher', setupMinutes: 4, approval: false },
+  { slug: 'adtraction', name: 'Adtraction', side: 'publisher', setupMinutes: 3, approval: false },
+  { slug: 'daisycon', name: 'Daisycon', side: 'publisher', setupMinutes: 4, approval: false },
+  { slug: 'kwanko', name: 'Kwanko', side: 'publisher', setupMinutes: 4, approval: false },
+  { slug: 'adservice', name: 'Adservice', side: 'publisher', setupMinutes: 3, approval: false },
+  { slug: 'flexoffers', name: 'FlexOffers', side: 'publisher', setupMinutes: 4, approval: true },
+  { slug: 'indoleads', name: 'Indoleads', side: 'publisher', setupMinutes: 3, approval: false },
+  { slug: 'coupang-partners', name: 'Coupang Partners', side: 'publisher', setupMinutes: 5, approval: true },
+  { slug: 'awin-advertiser', name: 'Awin (advertiser)', side: 'brand', setupMinutes: 4, approval: false },
+  { slug: 'cj-advertiser', name: 'CJ (advertiser)', side: 'brand', setupMinutes: 4, approval: false },
+  { slug: 'impact-advertiser', name: 'Impact (advertiser)', side: 'brand', setupMinutes: 5, approval: false },
+  { slug: 'partnerize-advertiser', name: 'Partnerize (advertiser)', side: 'brand', setupMinutes: 5, approval: false },
+  { slug: 'partnerstack-advertiser', name: 'PartnerStack (advertiser)', side: 'brand', setupMinutes: 4, approval: false },
+  { slug: 'rewardful', name: 'Rewardful (advertiser)', side: 'brand', setupMinutes: 3, approval: false },
+  { slug: 'tradedoubler-advertiser', name: 'Tradedoubler (advertiser)', side: 'brand', setupMinutes: 5, approval: false },
+  { slug: 'webgains-advertiser', name: 'Webgains (advertiser)', side: 'brand', setupMinutes: 4, approval: true },
+  { slug: 'commission-factory-advertiser', name: 'Commission Factory (advertiser)', side: 'brand', setupMinutes: 4, approval: false },
 ];
 const MOCK_STEPS = {
   cj: [{ field: 'CJ_PERSONAL_ACCESS_TOKEN', label: 'Personal access token', type: 'password', description: 'In the CJ dashboard, open Account → Web Services and copy your Personal Access Token. It’s a long string starting with a few letters.', deepLink: 'https://developers.cj.com/account/personal-access-tokens', example: 'by_kf93…' }],
@@ -136,37 +160,107 @@ function renderWelcome() {
   document.getElementById('start').onclick = () => go('networks');
 }
 
+// Network-picker view state (transient: query string + active filters). Kept
+// here so it survives the per-keystroke re-render of the grid but is reset
+// fresh each time the screen mounts. Selections live in state.selected and are
+// never touched by filtering — searching a tile away never deselects it.
+const picker = { q: '', side: 'all', selectedOnly: false };
+
+// Build the tile markup for one network (shared by initial render + re-filter).
+function netTile(n) {
+  const on = state.selected.includes(n.slug);
+  const sideLabel = n.side === 'brand' ? 'brand' : 'publisher';
+  return `<div class="net ${on ? 'sel' : ''}" data-slug="${esc(n.slug)}"><span class="tick">✓</span>
+    <div class="nm">${esc(n.name)}</div>
+    <div class="mt">~${n.setupMinutes} min · ${esc(sideLabel)}${n.approval ? ' · approval' : ''}</div></div>`;
+}
+
+// Apply the current search + filters (AND-combined) to the full network list.
+function filteredNetworks() {
+  const q = picker.q.trim().toLowerCase();
+  return state.networks.filter((n) => {
+    if (picker.side !== 'all' && n.side !== picker.side) return false;
+    if (picker.selectedOnly && !state.selected.includes(n.slug)) return false;
+    if (q && !n.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
 async function renderNetworks() {
   if (!state.networks.length) state.networks = await api.listNetworks();
-  const tiles = state.networks.map((n) => {
-    const on = state.selected.includes(n.slug);
-    return `<div class="net ${on ? 'sel' : ''}" data-slug="${n.slug}"><span class="tick">✓</span>
-      <div class="nm">${esc(n.name)}</div>
-      <div class="mt">~${n.setupMinutes} min · ${esc(n.side)}${n.approval ? ' · approval' : ''}</div></div>`;
-  }).join('');
-  app.innerHTML = wrap(`
-    ${rail('networks')}
-    <h2 class="scr">which networks do you use?</h2>
-    <p class="scr-lead">pick any number. we’ll walk you through each one. publisher or brand side — both work.</p>
-    <div class="grid">${tiles}</div>
-    <div class="actions">
+  picker.q = ''; picker.side = 'all'; picker.selectedOnly = false;
+
+  app.innerHTML = `<div class="screen picker fade">
+    <div class="picker-head">
+      ${rail('networks')}
+      <h2 class="scr">which networks do you use?</h2>
+      <p class="scr-lead">pick any number. we’ll walk you through each one. publisher or brand side — both work.</p>
+      <div class="picker-controls">
+        <div class="kv picker-search">
+          <span class="pre">find</span>
+          <input id="net-q" type="text" placeholder="search ${state.networks.length} networks…" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="chips" id="net-filters" role="group" aria-label="filter by side">
+          <button class="chip-toggle" data-side="all">all</button>
+          <button class="chip-toggle" data-side="publisher">publisher</button>
+          <button class="chip-toggle" data-side="brand">brand</button>
+          <button class="chip-toggle chip-sel" data-selonly="1">selected only</button>
+        </div>
+      </div>
+    </div>
+    <div class="picker-scroll"><div class="grid" id="net-grid"></div></div>
+    <div class="picker-bar">
       <button class="btn btn-ghost" id="back">back</button>
       <button class="btn btn-primary" id="next">continue ▸</button>
     </div>
-  `);
-  app.querySelectorAll('.net').forEach((tile) => {
-    tile.addEventListener('click', () => {
-      const slug = tile.getAttribute('data-slug');
-      const i = state.selected.indexOf(slug);
-      if (i >= 0) state.selected.splice(i, 1); else state.selected.push(slug);
-      renderNetworks();
-    });
-  });
-  document.getElementById('back').onclick = () => go('welcome');
+  </div>`;
+
+  const grid = document.getElementById('net-grid');
   const next = /** @type {HTMLButtonElement} */(document.getElementById('next'));
-  next.textContent = state.selected.length ? `${state.selected.length} selected — continue ▸` : 'continue ▸';
-  next.disabled = state.selected.length === 0;
-  next.onclick = () => { state.credIndex = 0; go('credentials'); };
+  const filters = document.getElementById('net-filters');
+  const qInput = /** @type {HTMLInputElement} */(document.getElementById('net-q'));
+
+  // Redraw only the grid (tiles) + footer count + active chip states. The
+  // header/search/bar persist, so the search input keeps focus while typing.
+  function paint() {
+    const list = filteredNetworks();
+    if (list.length) {
+      grid.classList.remove('empty');
+      grid.innerHTML = list.map(netTile).join('');
+      grid.querySelectorAll('.net').forEach((tile) => tile.addEventListener('click', () => {
+        const slug = tile.getAttribute('data-slug');
+        const i = state.selected.indexOf(slug);
+        if (i >= 0) state.selected.splice(i, 1); else state.selected.push(slug);
+        paint();
+      }));
+    } else {
+      grid.classList.add('empty');
+      const reason = picker.q.trim()
+        ? `no networks match “${esc(picker.q.trim())}”`
+        : 'no networks match these filters';
+      grid.innerHTML = `<div class="net-empty"><div class="ne-h">${reason}</div>
+        <div class="ne-b">try a different search${picker.side !== 'all' || picker.selectedOnly ? ' or clear the filters' : ''}.</div></div>`;
+    }
+    // Active filter chips.
+    filters.querySelectorAll('.chip-toggle').forEach((c) => {
+      const side = c.getAttribute('data-side');
+      const on = side ? picker.side === side : picker.selectedOnly;
+      c.classList.toggle('on', on);
+    });
+    next.textContent = state.selected.length ? `${state.selected.length} selected — continue ▸` : 'continue ▸';
+    next.disabled = state.selected.length === 0;
+  }
+
+  qInput.addEventListener('input', () => { picker.q = qInput.value; paint(); });
+  filters.querySelectorAll('.chip-toggle').forEach((c) => c.addEventListener('click', () => {
+    const side = c.getAttribute('data-side');
+    if (side) picker.side = side; else picker.selectedOnly = !picker.selectedOnly;
+    paint();
+  }));
+
+  document.getElementById('back').onclick = () => go('welcome');
+  next.onclick = () => { if (state.selected.length) { state.credIndex = 0; go('credentials'); } };
+  paint();
 }
 
 async function renderCredentials() {
