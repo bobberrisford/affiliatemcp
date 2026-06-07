@@ -51,6 +51,7 @@
     padding:6px 10px;border-radius:var(--r-xs)}
   .chip.acid,.chip.blue{background:var(--blue);color:var(--paper)}
   .chip.mag{background:var(--magenta);color:var(--paper)}
+  .chip.soon{background:transparent;color:var(--smudge-dk);border:2px dashed var(--line-strong)}
   .stamp{display:inline-block;font-family:var(--font-mono);font-weight:800;
     letter-spacing:0.08em;text-transform:uppercase;border:2px solid currentColor;
     padding:4px 10px;border-radius:var(--r-xs);transform:rotate(-7deg)}
@@ -119,6 +120,22 @@
   .demo .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px}
   .blink{animation:bl 1s steps(2) infinite}
   @keyframes bl{50%{opacity:0}}
+
+  /* ladder / how it works */
+  .steps{padding:70px 0}
+  .step-list{border-top:2px solid var(--ink)}
+  .step{display:grid;grid-template-columns:90px 1fr auto;gap:24px;align-items:baseline;
+    padding:26px 0;border-bottom:2px solid var(--ink);transition:padding-left .08s steps(2)}
+  .step:hover{padding-left:10px}
+  .step .num{font-family:var(--font-mono);font-weight:800;font-size:1.4rem;color:var(--smudge-dk);line-height:1}
+  .step:hover .num{color:var(--blue)}
+  .step h3{font-family:var(--font-display);font-weight:800;font-size:1.7rem;text-transform:lowercase;letter-spacing:-0.02em;margin:0 0 4px}
+  .step p{margin:0;color:var(--smudge-dk);max-width:56ch;font-size:0.98rem}
+  @media(max-width:760px){
+    .step{grid-template-columns:54px 1fr;gap:14px}
+    .step .chip{grid-column:2;justify-self:start;margin-top:10px}
+    .step .num{font-size:1.1rem}
+  }
 
   /* band */
   .band{background:var(--ink);color:var(--paper);padding:70px 0}
@@ -197,10 +214,10 @@
       <span class="wm">affiliate<span class="mcp">mcp</span></span>
     </a>
     <div class="links">
+      <a href="#how">how it works</a>
       <a href="#nets">networks</a>
       <a href="#dual">publishers</a>
       <a href="#dual">brands</a>
-      <a href="#install">docs</a>
     </div>
     <div class="right">
       <a class="btn d sm" href="#">★ github</a>
@@ -219,8 +236,8 @@
         <span class="chip">NO TELEMETRY</span>
         <span class="stamp">v0.5.0</span>
       </div>
-      <h1 class="h-mega">tear up the<br>dashboard.</h1>
-      <p class="h-sub">Chat with your affiliate data in the workspace you already use. <b>One question</b> — every network, every brand. Live from the APIs. <b>Your data, your machine.</b></p>
+      <h1 class="h-mega">automate the<br>affiliate grind.</h1>
+      <p class="h-sub">Connect every network to the AI you already use. Ask in plain english, then let it run the repetitive checks. <b>You approve anything that acts.</b> Your data, your machine.</p>
       <div class="kicker" style="margin-bottom:18px">
         <div class="seg" id="seg">
           <button class="on" data-aud="pub">publisher</button>
@@ -256,7 +273,41 @@
 <!-- BAND -->
 <section class="band">
   <div class="wrap">
-    <h2 class="wm-big">one question. <span class="hl">every network.</span><br>every brand. plain english.</h2>
+    <h2 class="wm-big">you approve.<br><span class="hl">it does the rest.</span></h2>
+  </div>
+</section>
+
+<!-- LADDER -->
+<section class="steps" id="how">
+  <div class="wrap">
+    <div class="sec-label">how it works · five steps, answers to autopilot</div>
+    <div class="step-list">
+      <div class="step">
+        <div class="num">01</div>
+        <div><h3>connect</h3><p>Add your network logins. They stay on your machine. Claude and Codex can then read your data.</p></div>
+        <span class="chip acid">● available now</span>
+      </div>
+      <div class="step">
+        <div class="num">02</div>
+        <div><h3>analyse</h3><p>Ask across every network at once — earnings, pending commissions, reversals, dead links — in plain english, no filters or exports.</p></div>
+        <span class="chip acid">● available now</span>
+      </div>
+      <div class="step">
+        <div class="num">03</div>
+        <div><h3>strategy &amp; kpis</h3><p>Set the targets you care about. It tracks where you stand against them, not just what already happened.</p></div>
+        <span class="chip soon">○ coming</span>
+      </div>
+      <div class="step">
+        <div class="num">04</div>
+        <div><h3>approvals</h3><p>Decide what runs on its own and what waits for your sign-off.</p></div>
+        <span class="chip soon">○ coming</span>
+      </div>
+      <div class="step">
+        <div class="num">05</div>
+        <div><h3>automation</h3><p>The checks and actions you've approved run on a schedule. Everything else comes to you.</p></div>
+        <span class="chip soon">○ coming</span>
+      </div>
+    </div>
   </div>
 </section>
 
