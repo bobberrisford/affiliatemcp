@@ -4,188 +4,137 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>affiliate-mcp — get started</title>
-<link rel="stylesheet" href="brand.css">
 <style>
-  .layout{display:grid;grid-template-columns:1fr;gap:0}
-  .step-block{padding:34px 0;border-top:2px solid var(--ink)}
-  .step-block:first-of-type{border-top:0}
-  .step-head{display:flex;align-items:baseline;gap:14px;margin-bottom:14px}
-  .step-head .n{font-family:var(--font-mono);font-weight:800;font-size:1.3rem;color:var(--blue)}
-  .step-head h2{font-family:var(--font-display);font-weight:800;font-size:1.7rem;text-transform:lowercase;letter-spacing:-0.02em}
-  .step-block p{color:var(--smudge-dk);max-width:60ch}
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+:root{--ink:#0B0B0C;--ink-soft:#16161B;--paper:#FFFFFF;--paper-2:#F2F3F7;--smudge:#8B8FA0;--smudge-dk:#565A6B;--blue:#2B2BFF;--blue-bright:#5A78FF;--magenta:#FF2E88;--acid:var(--blue-bright);--pending:#E8A317;--fg-invert-mut:#9A9DAC;--line:rgba(11,11,12,0.14);--line-strong:rgba(11,11,12,0.85);--line-invert:rgba(255,255,255,0.16);--shadow:4px 4px 0 0 var(--ink);--shadow-lg:6px 6px 0 0 var(--ink);--font-display:'Bricolage Grotesque','Arial Black',system-ui,sans-serif;--font-sans:'Space Grotesk',system-ui,-apple-system,sans-serif;--font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;}
+*,*::before,*::after{box-sizing:border-box}html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-sans);font-size:1.0625rem;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+h1,h2,h3{margin:0;font-family:var(--font-display);text-transform:lowercase}p{margin:0 0 1em;max-width:64ch}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}.small{font-size:.875rem}.muted{color:var(--smudge-dk)}.lead{font-size:1.22rem;line-height:1.5}
+a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size:.92em;background:var(--ink);color:var(--blue-bright);padding:.12em .4em;border-radius:3px}
+.chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);font-weight:700;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;background:var(--ink);color:var(--paper);padding:6px 10px;border-radius:3px}.chip.acid{background:var(--blue);color:var(--paper)}.chip.mag{background:var(--magenta);color:var(--paper)}
+.hl{background:var(--blue);color:var(--paper);padding:.02em .18em}
+.sec-label{font-family:var(--font-mono);font-weight:700;font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--smudge-dk);display:flex;align-items:center;gap:10px;margin-bottom:26px}.sec-label::before{content:"";width:26px;height:2px;background:var(--ink)}
+.btn{font-family:var(--font-mono);font-weight:700;font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;padding:11px 17px;border:2px solid var(--ink);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;background:var(--paper);color:var(--ink);text-decoration:none;transition:transform .08s steps(2),box-shadow .08s steps(2)}
+.btn.p{background:var(--blue);color:var(--paper);box-shadow:var(--shadow)}.btn.p:active{transform:translate(4px,4px);box-shadow:0 0 0}.btn.d{background:var(--ink);color:var(--paper);box-shadow:4px 4px 0 var(--magenta)}.btn.sm{padding:8px 12px;font-size:.72rem}
+.card{background:var(--paper);border:2px solid var(--ink);border-radius:8px;padding:24px;box-shadow:var(--shadow)}
+.nav{position:sticky;top:0;z-index:50;background:var(--paper);border-bottom:2px solid var(--ink)}.nav .wrap{display:flex;align-items:center;gap:22px;height:64px}
+.brand{display:flex;align-items:center;gap:10px}.brand svg{width:34px;height:34px;display:block}.brand .wm{font-family:var(--font-display);font-weight:800;font-size:1.32rem;letter-spacing:-.03em;line-height:1}.brand .wm .mcp{background:var(--blue);color:var(--paper);padding:0 5px;border-radius:3px}
+.nav .links{display:flex;gap:18px;margin-left:14px}.nav .links a{font-family:var(--font-mono);font-size:.78rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase}.nav .links a.on{background:var(--blue);color:var(--paper);padding:0 4px}.nav .links a:hover{background:var(--blue);color:var(--paper)}.nav .right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.phead{padding:60px 0 26px}.phead h1{font-family:var(--font-display);font-weight:800;font-size:clamp(2.6rem,6vw,4.6rem);line-height:.92;letter-spacing:-.03em;text-transform:lowercase}.phead .lead{margin-top:20px;max-width:52ch;color:var(--ink)}.phead .lead b{font-weight:700}
+.foot{background:var(--ink);color:var(--paper);padding:56px 0 38px}.foot .big{font-family:var(--font-display);font-weight:800;font-size:clamp(2.6rem,8vw,6rem);line-height:.86;letter-spacing:-.04em;text-transform:lowercase;margin:0 0 26px}.foot .big .mcp{background:var(--blue);color:var(--paper);padding:0 .1em;border-radius:8px}.foot .stamps{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}.foot .rows{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;border-top:1px solid var(--line-invert);padding-top:22px}.foot a{color:var(--paper);font-family:var(--font-mono);font-size:.8rem}.foot a:hover{color:var(--acid)}.foot .cols{display:flex;gap:22px;flex-wrap:wrap}
+@media(max-width:900px){.nav .links{display:none}}
 
-  .pre{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:8px 0 0}
-  @media(max-width:760px){.pre{grid-template-columns:1fr}}
-  .pre .card{padding:18px}
-  .pre h3{font-family:var(--font-display);font-weight:800;font-size:1.15rem;text-transform:lowercase;margin:0 0 4px}
-  .pre p{font-size:0.9rem;margin:0}
-
-  .tabs{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap}
-  .tab{font-family:var(--font-mono);font-weight:700;font-size:0.74rem;letter-spacing:0.06em;text-transform:uppercase;padding:8px 14px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);cursor:pointer}
-  .tab.on{background:var(--ink);color:var(--acid)}
-
-  /* real terminal block (Terminal / PowerShell running npx) */
-  .term{background:var(--ink);border:2px solid var(--ink);border-radius:10px;box-shadow:6px 6px 0 var(--ink);overflow:hidden;margin-top:6px}
-  .term .bar{display:flex;align-items:center;gap:7px;padding:10px 14px;border-bottom:1px solid var(--line-invert)}
-  .term .bar i{width:11px;height:11px;border-radius:50%;display:block;background:var(--line-invert)}
-  .term .bar .t{margin-left:auto;font-family:var(--font-mono);color:var(--fg-invert-mut);font-size:0.66rem;letter-spacing:0.08em}
-  .term .body{padding:16px 18px;font-family:var(--font-mono);font-size:0.85rem;color:var(--paper);line-height:1.7;white-space:pre-wrap}
-  .term .pr{color:var(--acid);font-weight:700}
-  .term .ok{color:var(--blue-bright)}
-  .term .warn{color:var(--pending)}
-  .term .err{color:var(--magenta)}
-  .term .dim{color:var(--fg-invert-mut)}
-
-  /* faithful Claude verification */
-  .demo{background:#FAF9F5;border:2px solid var(--ink);border-radius:10px;box-shadow:6px 6px 0 var(--ink);overflow:hidden;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;margin-top:6px}
-  .cl-top{display:flex;align-items:center;gap:9px;padding:12px 16px;background:#fff;border-bottom:1px solid #ECEAE0}
-  .cl-top svg{width:22px;height:22px}
-  .cl-name{font-weight:600;color:#1F1E1D;font-size:0.95rem}
-  .cl-conn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:0.68rem;color:#8a8782;border:1px solid #E5E2D6;border-radius:999px;padding:3px 10px}
-  .cl-conn .ast{color:#D97757;font-weight:700}
-  .cl-body{padding:18px 16px;color:#1F1E1D;font-size:0.9rem;line-height:1.55}
-  .cl-user{margin-left:auto;width:max-content;max-width:84%;background:#F0EEE6;border-radius:14px;border-bottom-right-radius:4px;padding:10px 14px;font-size:0.88rem}
-  .cl-asst{display:flex;gap:11px;margin-top:16px}
-  .cl-asst svg{width:24px;height:24px;flex:none;margin-top:2px}
-  .cl-asst p{margin:0}
-  .cl-pill{display:inline-block;font-family:var(--font-mono);font-size:0.72rem;background:#F0EEE6;border-radius:6px;padding:3px 8px;margin:4px 5px 0 0;color:#1F1E1D}
-
-  .seen{font-family:var(--font-mono);font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--smudge-dk);margin:14px 0 4px}
-  .tip-list{list-style:none;padding:0;margin:0}
-  .tip-list li{border-top:1px solid var(--line);padding:16px 0;display:grid;grid-template-columns:200px 1fr;gap:18px}
-  .tip-list li:last-child{border-bottom:1px solid var(--line)}
-  .tip-list .sym{font-family:var(--font-mono);font-size:0.82rem;color:var(--ink);font-weight:700}
-  .tip-list .fix{color:var(--smudge-dk);font-size:0.95rem}
-  @media(max-width:640px){.tip-list li{grid-template-columns:1fr;gap:6px}}
+.step-block{padding:34px 0;border-top:2px solid var(--ink)}.step-block:first-of-type{border-top:0}
+.step-head{display:flex;align-items:baseline;gap:14px;margin-bottom:14px}.step-head .n{font-family:var(--font-mono);font-weight:800;font-size:1.3rem;color:var(--blue)}.step-head h2{font-family:var(--font-display);font-weight:800;font-size:1.7rem;text-transform:lowercase;letter-spacing:-.02em}
+.step-block p{color:var(--smudge-dk);max-width:60ch}
+.pre{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:8px 0 0}@media(max-width:760px){.pre{grid-template-columns:1fr}}.pre .card{padding:18px}.pre h3{font-family:var(--font-display);font-weight:800;font-size:1.15rem;text-transform:lowercase;margin:0 0 4px}.pre p{font-size:.9rem;margin:0}
+.tabs{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap}.tab{font-family:var(--font-mono);font-weight:700;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;padding:8px 14px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);cursor:pointer}.tab.on{background:var(--ink);color:var(--acid)}
+.term{background:var(--ink);border:2px solid var(--ink);border-radius:10px;box-shadow:6px 6px 0 var(--ink);overflow:hidden;margin-top:6px}
+.term .bar{display:flex;align-items:center;gap:7px;padding:10px 14px;border-bottom:1px solid var(--line-invert)}.term .bar i{width:11px;height:11px;border-radius:50%;display:block;background:var(--line-invert)}.term .bar .t{margin-left:auto;font-family:var(--font-mono);color:var(--fg-invert-mut);font-size:.66rem;letter-spacing:.08em}
+.term .body{padding:16px 18px;font-family:var(--font-mono);font-size:.85rem;color:var(--paper);line-height:1.7;white-space:pre-wrap}.term .pr{color:var(--acid);font-weight:700}.term .ok{color:var(--blue-bright)}.term .warn{color:var(--pending)}.term .dim{color:var(--fg-invert-mut)}
+.demo{background:#FAF9F5;border:2px solid var(--ink);border-radius:10px;box-shadow:6px 6px 0 var(--ink);overflow:hidden;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;margin-top:6px}
+.cl-top{display:flex;align-items:center;gap:9px;padding:12px 16px;background:#fff;border-bottom:1px solid #ECEAE0}.cl-top svg{width:22px;height:22px}.cl-name{font-weight:600;color:#1F1E1D;font-size:.95rem}.cl-conn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:.68rem;color:#8a8782;border:1px solid #E5E2D6;border-radius:999px;padding:3px 10px}.cl-conn .ast{color:#D97757;font-weight:700}
+.cl-body{padding:18px 16px;color:#1F1E1D;font-size:.9rem;line-height:1.55}.cl-user{margin-left:auto;width:max-content;max-width:84%;background:#F0EEE6;border-radius:14px;border-bottom-right-radius:4px;padding:10px 14px;font-size:.88rem}.cl-asst{display:flex;gap:11px;margin-top:16px}.cl-asst svg{width:24px;height:24px;flex:none;margin-top:2px}.cl-asst p{margin:0}
+.cl-pill{display:inline-block;font-family:var(--font-mono);font-size:.72rem;background:#F0EEE6;border-radius:6px;padding:3px 8px;margin:4px 5px 0 0;color:#1F1E1D}
+.seen{font-family:var(--font-mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;color:var(--smudge-dk);margin:14px 0 4px}
+.tip-list{list-style:none;padding:0;margin:0}.tip-list li{border-top:1px solid var(--line);padding:16px 0;display:grid;grid-template-columns:200px 1fr;gap:18px}.tip-list li:last-child{border-bottom:1px solid var(--line)}.tip-list .sym{font-family:var(--font-mono);font-size:.82rem;color:var(--ink);font-weight:700}.tip-list .fix{color:var(--smudge-dk);font-size:.95rem}
+@media(max-width:640px){.tip-list li{grid-template-columns:1fr;gap:6px}}
 </style>
 </head>
 <body data-page="">
-<div id="site-nav"></div>
 
-<header class="phead">
-  <div class="wrap">
-    <div class="sec-label">get started</div>
-    <h1>five minutes.<br>no code.</h1>
-    <p class="lead">You do <b>not</b> need to know what an API is. If you can copy and paste one line at a time, you can do this. Here's the whole thing.</p>
-  </div>
-</header>
+<nav class="nav"><div class="wrap">
+  <a class="brand" href="index.html"><svg viewBox="0 0 120 120"><rect width="120" height="120" rx="14" fill="#2B2BFF"></rect><polyline points="34,38 58,60 34,82" fill="none" stroke="#fff" stroke-width="13"></polyline><rect x="66" y="68" width="24" height="14" fill="#fff"></rect></svg><span class="wm">affiliate<span class="mcp">mcp</span></span></a>
+  <div class="links"><a href="index.html#how">how it works</a><a href="networks.html">networks</a><a href="adopt.html">adopt your adapter</a><a href="what-you-can-ask.html">what you can ask</a><a href="mission.html">mission</a></div>
+  <div class="right"><a class="btn d sm" href="https://github.com/bobberrisford/affiliatemcp">★ github</a><a class="btn p sm" href="get-started.html">npx setup ▸</a></div>
+</div></nav>
 
-<section style="padding:0 0 60px">
-  <div class="wrap layout">
+<header class="phead"><div class="wrap">
+  <div class="sec-label">get started</div>
+  <h1>five minutes.<br>no code.</h1>
+  <p class="lead">You do <b>not</b> need to know what an API is. If you can copy and paste one line at a time, you can do this. Here's the whole thing.</p>
+</div></header>
 
-    <!-- prerequisites -->
-    <div class="step-block" style="border-top:0">
-      <div class="step-head"><span class="n">00</span><h2>what you need</h2></div>
-      <div class="pre">
-        <div class="card"><h3>node 20+</h3><p>A free runtime. Grab it from <a href="https://nodejs.org" style="border-bottom:2px solid var(--blue)">nodejs.org</a> if you don't have it.</p></div>
-        <div class="card"><h3>your logins</h3><p>The accounts you already use for the affiliate networks you're on. Nothing new to sign up for.</p></div>
-        <div class="card"><h3>claude or codex</h3><p>Claude Desktop, Claude Code, or Codex installed. That's where you'll ask the questions.</p></div>
-      </div>
+<section style="padding:0 0 60px"><div class="wrap">
+  <div class="step-block" style="border-top:0">
+    <div class="step-head"><span class="n">00</span><h2>what you need</h2></div>
+    <div class="pre">
+      <div class="card"><h3>node 20+</h3><p>A free runtime. Grab it from <a href="https://nodejs.org" style="border-bottom:2px solid var(--blue)">nodejs.org</a> if you don't have it.</p></div>
+      <div class="card"><h3>your logins</h3><p>The accounts you already use for the affiliate networks you're on. Nothing new to sign up for.</p></div>
+      <div class="card"><h3>claude or codex</h3><p>Claude Desktop, Claude Code, or Codex installed. That's where you'll ask the questions.</p></div>
     </div>
+  </div>
 
-    <!-- step 1 -->
-    <div class="step-block">
-      <div class="step-head"><span class="n">01</span><h2>run the setup wizard</h2></div>
-      <p>Open <b>Terminal</b> (Mac) or <b>PowerShell</b> (Windows), paste the line, press enter. It walks you through one network at a time and shows exactly where to find each login.</p>
-      <div class="term">
-        <div class="bar"><i></i><i></i><i></i><span class="t">terminal</span></div>
-        <div class="body"><span class="pr">$</span> npx affiliate-networks-mcp setup
+  <div class="step-block">
+    <div class="step-head"><span class="n">01</span><h2>run the setup wizard</h2></div>
+    <p>Open <b>Terminal</b> (Mac) or <b>PowerShell</b> (Windows), paste the line, press enter. It walks you through one network at a time and shows exactly where to find each login.</p>
+    <div class="term"><div class="bar"><i></i><i></i><i></i><span class="t">terminal</span></div><div class="body"><span class="pr">$</span> npx affiliate-networks-mcp setup
 
 <span class="dim">? which network?</span> Awin
 <span class="dim">? which side?</span> publisher
 <span class="dim">? paste your API token</span> ••••••••••••
   checking against Awin… <span class="ok">ok ✓</span>  publisher id 123456 found
 <span class="dim">? add another network?</span> no
-<span class="ok">saved →</span> ~/.affiliate-mcp/.env  <span class="dim">(mode 0600, your machine only)</span></div>
-      </div>
-    </div>
+<span class="ok">saved →</span> ~/.affiliate-mcp/.env  <span class="dim">(mode 0600, your machine only)</span></div></div>
+  </div>
 
-    <!-- step 2 -->
-    <div class="step-block">
-      <div class="step-head"><span class="n">02</span><h2>check it's wired up</h2></div>
-      <p>One line per network: <span class="ok" style="font-family:var(--font-mono)">ok</span> for healthy, or a plain reason if something's off.</p>
-      <div class="term">
-        <div class="bar"><i></i><i></i><i></i><span class="t">terminal</span></div>
-        <div class="body"><span class="pr">$</span> npx affiliate-networks-mcp test
+  <div class="step-block">
+    <div class="step-head"><span class="n">02</span><h2>check it's wired up</h2></div>
+    <p>One line per network: <span class="ok" style="font-family:var(--font-mono)">ok</span> for healthy, or a plain reason if something's off.</p>
+    <div class="term"><div class="bar"><i></i><i></i><i></i><span class="t">terminal</span></div><div class="body"><span class="pr">$</span> npx affiliate-networks-mcp test
 
   Awin            <span class="ok">ok</span>
   CJ Affiliate    <span class="ok">ok</span>
-  Rakuten         <span class="warn">error — token expired, re-run setup</span></div>
-      </div>
-    </div>
-
-    <!-- step 3 -->
-    <div class="step-block">
-      <div class="step-head"><span class="n">03</span><h2>connect it to your ai</h2></div>
-      <p>Pick the client you use. The wizard offers this automatically at the end, too.</p>
-      <div class="tabs" id="tabs">
-        <button class="tab on" data-tab="desktop">Claude Desktop</button>
-        <button class="tab" data-tab="code">Claude Code</button>
-        <button class="tab" data-tab="codex">Codex</button>
-      </div>
-      <div class="term">
-        <div class="bar"><i></i><i></i><i></i><span class="t" id="term-label">terminal</span></div>
-        <div class="body" id="connect-body"></div>
-      </div>
-    </div>
-
-    <!-- step 4 -->
-    <div class="step-block">
-      <div class="step-head"><span class="n">04</span><h2>ask it anything</h2></div>
-      <p>Open a new conversation and check it's connected. You should see every network you set up.</p>
-      <div class="seen">what you'll see</div>
-      <div class="demo">
-        <div class="cl-top">
-          <svg viewBox="0 0 24 24"><g fill="#D97757"><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3"/><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(45 12 12)"/><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(90 12 12)"/><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(135 12 12)"/></g></svg>
-          <span class="cl-name">Claude</span><span class="cl-conn"><span class="ast">✳</span> affiliate · connected</span>
-        </div>
-        <div class="cl-body">
-          <div class="cl-user">what affiliate networks do you have access to?</div>
-          <div class="cl-asst">
-            <svg viewBox="0 0 24 24"><g fill="#D97757"><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3"/><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(45 12 12)"/><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(90 12 12)"/><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(135 12 12)"/></g></svg>
-            <div><p>You're connected to 3 networks:</p>
-              <span class="cl-pill">Awin · publisher</span><span class="cl-pill">CJ Affiliate · publisher</span><span class="cl-pill">Rakuten · publisher</span>
-              <p style="margin-top:10px">Ask me anything — earnings, pending commissions, link audits, or a report.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- troubleshooting -->
-    <div class="step-block">
-      <div class="step-head"><span class="n">?</span><h2>stuck?</h2></div>
-      <ul class="tip-list">
-        <li><span class="sym">"…returns nothing"</span><span class="fix">The server's loaded but credentials are missing. Ask "help me set up my affiliate network credentials", or re-run <code>npx affiliate-networks-mcp setup</code>.</span></li>
-        <li><span class="sym">"unknown skill: plugin"</span><span class="fix">The <code>plugin</code> commands are shell commands, not chat. Run them in your terminal, not inside the conversation.</span></li>
-        <li><span class="sym">stale version</span><span class="fix">Force a fresh fetch with <code>npx --yes affiliate-networks-mcp@latest</code>.</span></li>
-      </ul>
-    </div>
-
+  Rakuten         <span class="warn">error — token expired, re-run setup</span></div></div>
   </div>
-</section>
 
-<div id="site-footer"></div>
+  <div class="step-block">
+    <div class="step-head"><span class="n">03</span><h2>connect it to your ai</h2></div>
+    <p>Pick the client you use. The wizard offers this automatically at the end, too.</p>
+    <div class="tabs" id="tabs"><button class="tab on" data-tab="desktop">Claude Desktop</button><button class="tab" data-tab="code">Claude Code</button><button class="tab" data-tab="codex">Codex</button></div>
+    <div class="term"><div class="bar"><i></i><i></i><i></i><span class="t">terminal</span></div><div class="body" id="connect-body"></div></div>
+  </div>
 
-<script src="site.js"></script>
+  <div class="step-block">
+    <div class="step-head"><span class="n">04</span><h2>ask it anything</h2></div>
+    <p>Open a new conversation and check it's connected. You should see every network you set up.</p>
+    <div class="seen">what you'll see</div>
+    <div class="demo">
+      <div class="cl-top"><svg viewBox="0 0 24 24"><g fill="#D97757"><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3"/><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(45 12 12)"/><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(90 12 12)"/><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(135 12 12)"/></g></svg><span class="cl-name">Claude</span><span class="cl-conn"><span class="ast">✳</span> affiliate · connected</span></div>
+      <div class="cl-body">
+        <div class="cl-user">what affiliate networks do you have access to?</div>
+        <div class="cl-asst"><svg viewBox="0 0 24 24"><g fill="#D97757"><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3"/><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(45 12 12)"/><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(90 12 12)"/><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(135 12 12)"/></g></svg>
+          <div><p>You're connected to 3 networks:</p><span class="cl-pill">Awin · publisher</span><span class="cl-pill">CJ Affiliate · publisher</span><span class="cl-pill">Rakuten · publisher</span><p style="margin-top:10px">Ask me anything — earnings, pending commissions, link audits, or a report.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step-block">
+    <div class="step-head"><span class="n">?</span><h2>stuck?</h2></div>
+    <ul class="tip-list">
+      <li><span class="sym">"…returns nothing"</span><span class="fix">The server's loaded but credentials are missing. Ask "help me set up my affiliate network credentials", or re-run <code>npx affiliate-networks-mcp setup</code>.</span></li>
+      <li><span class="sym">"unknown skill: plugin"</span><span class="fix">The <code>plugin</code> commands are shell commands, not chat. Run them in your terminal, not inside the conversation.</span></li>
+      <li><span class="sym">stale version</span><span class="fix">Force a fresh fetch with <code>npx --yes affiliate-networks-mcp@latest</code>.</span></li>
+    </ul>
+  </div>
+</div></section>
+
+<footer class="foot"><div class="wrap">
+  <div class="big">affiliate<span class="mcp">mcp</span></div>
+  <div class="stamps"><span class="chip acid">FREE &amp; OPEN</span><span class="chip">MIT LICENCE</span><span class="chip">LOCAL-FIRST</span><span class="chip mag">NO TELEMETRY</span><span class="chip">UK ENGLISH</span></div>
+  <div class="rows"><div class="cols"><a href="get-started.html">get started</a><a href="networks.html">networks</a><a href="adopt.html">adopt your adapter</a><a href="mission.html">manifesto</a><a href="https://github.com/bobberrisford/affiliatemcp">github</a></div>
+  <div style="font-family:var(--font-mono);font-size:.74rem;color:var(--fg-invert-mut)">built from the open-source repo · free · open · yours</div></div>
+</div></footer>
+
 <script>
-  var CONNECT = {
-    desktop:{label:"terminal", lines:[['$ ','npx affiliate-networks-mcp install'],['','finds Claude Desktop config, adds the affiliate entry,'],['','takes a timestamped backup first.'],['ok','restart Claude Desktop and you’re done ✓']]},
-    code:{label:"terminal", lines:[['$ ','claude plugin marketplace add bobberrisford/affiliatemcp'],['$ ','claude plugin install affiliate-networks-mcp@affiliatemcp'],['ok','registers the MCP server + bundled skills in one step ✓']]},
-    codex:{label:"terminal", lines:[['$ ','npx affiliate-networks-mcp install --codex'],['','adds the local MCP server to ~/.codex/config.toml'],['ok','open Codex, run /mcp to confirm ✓']]}
-  };
-  function renderConnect(t){
-    var d=CONNECT[t];
-    document.getElementById("term-label").textContent=d.label;
-    document.getElementById("connect-body").innerHTML = d.lines.map(function(l){
-      var cls = l[0].trim()==='$' ? 'pr' : (l[0]==='ok'?'ok':'dim');
-      var head = l[0]==='ok' ? '' : (l[0]? '<span class="'+cls+'">'+l[0].trim()+'</span> ' : '');
-      if(l[0]==='ok') return '<span class="ok">'+l[1]+'</span>';
-      return head + l[1];
-    }).join("\n");
-  }
-  document.getElementById("tabs").addEventListener("click",function(e){var b=e.target.closest(".tab");if(!b)return;this.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on")});b.classList.add("on");renderConnect(b.dataset.tab);});
-  renderConnect("desktop");
+var CONNECT={desktop:[['$','npx affiliate-networks-mcp install'],['','finds Claude Desktop config, adds the affiliate entry,'],['','takes a timestamped backup first.'],['ok','restart Claude Desktop and you’re done ✓']],
+code:[['$','claude plugin marketplace add bobberrisford/affiliatemcp'],['$','claude plugin install affiliate-networks-mcp@affiliatemcp'],['ok','registers the MCP server + bundled skills in one step ✓']],
+codex:[['$','npx affiliate-networks-mcp install --codex'],['','adds the local MCP server to ~/.codex/config.toml'],['ok','open Codex, run /mcp to confirm ✓']]};
+function renderConnect(t){var d=CONNECT[t];document.getElementById("connect-body").innerHTML=d.map(function(l){if(l[0]==='ok')return '<span class="ok">'+l[1]+'</span>';if(l[0]==='$')return '<span class="pr">$</span> '+l[1];return '<span class="dim">'+l[1]+'</span>';}).join("\n");}
+document.getElementById("tabs").addEventListener("click",function(e){var b=e.target.closest(".tab");if(!b)return;this.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on")});b.classList.add("on");renderConnect(b.dataset.tab);});
+renderConnect("desktop");
 </script>
 </body>
 </html>
