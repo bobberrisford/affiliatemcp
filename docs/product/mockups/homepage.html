@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>agentic affiliate · take the grind out of affiliate marketing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4F0E7;
+    --paper-2:#EDE7DA;
+    --ink:#15120D;
+    --ink-2:#4E4739;
+    --ink-3:#857C6A;
+    --line:#D8D0BF;
+    --accent:#FF4326;
+    --accent-ink:#C8300F;
+    --dark:#171511;
+    --live:#1E9E5A;
+    --radius:18px;
+    --maxw:1180px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Hanken Grotesk",sans-serif;
+    font-size:18px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    position:relative;
+  }
+  /* grain + warm bloom atmosphere */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(1100px 600px at 78% -8%, rgba(255,67,38,.10), transparent 60%),
+      radial-gradient(900px 700px at -10% 10%, rgba(30,158,90,.08), transparent 55%);
+  }
+  body::after{
+    content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 32px;position:relative;z-index:1}
+  a{color:inherit;text-decoration:none}
+
+  /* type */
+  h1,h2,h3{font-family:"Fraunces",serif;font-weight:600;line-height:1.02;letter-spacing:-.015em}
+  .mono{font-family:"JetBrains Mono",monospace}
+  .eyebrow{
+    font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--ink-3);font-weight:500;
+  }
+
+  /* buttons */
+  .btn{
+    display:inline-flex;align-items:center;gap:10px;font-weight:600;font-size:16px;
+    padding:15px 26px;border-radius:100px;border:1.5px solid var(--ink);
+    transition:transform .18s ease, box-shadow .18s ease, background .18s ease, color .18s ease;
+    cursor:pointer;white-space:nowrap;
+  }
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 0 0 rgba(255,67,38,.35)}
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 30px -10px rgba(255,67,38,.6)}
+  .btn-ghost{background:transparent}
+  .btn-ghost:hover{transform:translateY(-2px);background:var(--ink);color:var(--paper)}
+  .btn .arr{transition:transform .18s ease}
+  .btn:hover .arr{transform:translateX(4px)}
+
+  /* nav */
+  header{position:sticky;top:0;z-index:50;backdrop-filter:blur(10px);
+    background:rgba(244,240,231,.82);border-bottom:1px solid var(--line)}
+  nav{display:flex;align-items:center;justify-content:space-between;height:72px}
+  .brand{display:flex;align-items:center;gap:11px;font-family:"JetBrains Mono",monospace;
+    font-weight:600;letter-spacing:-.01em;font-size:16px}
+  .brand .dot{width:11px;height:11px;border-radius:3px;background:var(--accent);
+    box-shadow:0 0 0 4px rgba(255,67,38,.16);transform:rotate(45deg)}
+  .navlinks{display:flex;gap:34px;align-items:center}
+  .navlinks a{font-size:15px;font-weight:500;color:var(--ink-2)}
+  .navlinks a:hover{color:var(--ink)}
+  .nav-cta{display:flex;align-items:center;gap:18px}
+  @media(max-width:860px){.navlinks{display:none}}
+
+  /* hero */
+  .hero{padding:96px 0 60px;position:relative}
+  .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:56px;align-items:center}
+  @media(max-width:960px){.hero-grid{grid-template-columns:1fr;gap:40px}}
+  .tagpill{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);
+    background:rgba(255,255,255,.5);border-radius:100px;padding:7px 15px;font-size:13px;
+    font-weight:500;color:var(--ink-2);margin-bottom:26px}
+  .tagpill .live{width:7px;height:7px;border-radius:50%;background:var(--live);
+    box-shadow:0 0 0 3px rgba(30,158,90,.18)}
+  h1{font-size:clamp(44px,6.4vw,82px)}
+  h1 .em{font-style:italic;color:var(--accent-ink)}
+  .lede{font-size:20px;color:var(--ink-2);margin:26px 0 34px;max-width:30ch}
+  .lede b{color:var(--ink);font-weight:600}
+  .cta-row{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .reassure{margin-top:20px;font-size:14px;color:var(--ink-3)}
+
+  /* hero chat card */
+  .chat{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:0 30px 60px -34px rgba(21,18,13,.4);overflow:hidden}
+  .chat-top{display:flex;align-items:center;gap:8px;padding:14px 18px;border-bottom:1px solid var(--paper-2);
+    font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink-3)}
+  .chat-top i{width:10px;height:10px;border-radius:50%;background:var(--line);display:inline-block}
+  .chat-body{padding:22px 20px;display:flex;flex-direction:column;gap:14px}
+  .bubble{padding:14px 16px;border-radius:14px;font-size:15.5px;line-height:1.5}
+  .bubble.you{align-self:flex-end;background:var(--ink);color:var(--paper);border-bottom-right-radius:4px;max-width:82%}
+  .bubble.ai{align-self:flex-start;background:var(--paper-2);border-bottom-left-radius:4px;max-width:92%}
+  .bubble.ai b{font-weight:600}
+  .stat{display:flex;gap:18px;margin-top:6px;flex-wrap:wrap}
+  .stat .s{font-family:"JetBrains Mono",monospace}
+  .stat .s span{display:block;font-size:11px;color:var(--ink-3);letter-spacing:.04em}
+  .stat .s strong{font-size:17px;color:var(--ink)}
+  .stat .s .flag{color:var(--accent-ink)}
+  .typing{display:inline-flex;gap:4px;align-items:center}
+  .typing i{width:6px;height:6px;border-radius:50%;background:var(--ink-3);animation:blink 1.2s infinite}
+  .typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,60%,100%{opacity:.25}30%{opacity:1}}
+
+  /* section scaffolding */
+  section{padding:84px 0;position:relative}
+  .sec-head{max-width:62ch;margin-bottom:46px}
+  .sec-head h2{font-size:clamp(30px,4vw,46px);margin-top:12px}
+  .sec-head p{color:var(--ink-2);margin-top:14px;font-size:18px}
+
+  /* problem strip */
+  .problem{border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    background:var(--paper-2)}
+  .problem .wrap{display:grid;grid-template-columns:.4fr .6fr;gap:40px;align-items:center}
+  @media(max-width:820px){.problem .wrap{grid-template-columns:1fr;gap:18px}}
+  .problem p{font-size:clamp(20px,2.4vw,27px);font-family:"Fraunces",serif;line-height:1.28}
+  .problem .eyebrow{align-self:start}
+
+  /* ladder */
+  .ladder{display:flex;flex-direction:column}
+  .rung{display:grid;grid-template-columns:84px 1fr auto;gap:28px;align-items:baseline;
+    padding:30px 0;border-top:1px solid var(--line);transition:padding-left .25s ease}
+  .rung:last-child{border-bottom:1px solid var(--line)}
+  .rung:hover{padding-left:10px}
+  .rung .num{font-family:"Fraunces",serif;font-size:40px;font-weight:500;color:var(--ink-3);
+    line-height:1}
+  .rung:hover .num{color:var(--accent)}
+  .rung .copy h3{font-size:25px;margin-bottom:6px}
+  .rung .copy p{color:var(--ink-2);max-width:54ch;font-size:16.5px}
+  .chip{display:inline-flex;align-items:center;gap:8px;font-family:"JetBrains Mono",monospace;
+    font-size:12px;font-weight:500;padding:7px 13px;border-radius:100px;white-space:nowrap}
+  .chip.now{background:rgba(30,158,90,.12);color:#157a44;border:1px solid rgba(30,158,90,.3)}
+  .chip.soon{background:transparent;color:var(--ink-3);border:1px dashed var(--line)}
+  .chip .d{width:7px;height:7px;border-radius:50%}
+  .chip.now .d{background:var(--live);box-shadow:0 0 0 3px rgba(30,158,90,.2)}
+  .chip.soon .d{background:var(--ink-3);opacity:.5}
+  @media(max-width:760px){.rung{grid-template-columns:54px 1fr;gap:16px}
+    .rung .chip{grid-column:2;justify-self:start;margin-top:10px}.rung .num{font-size:30px}}
+
+  /* sides */
+  .sides{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+  @media(max-width:820px){.sides{grid-template-columns:1fr}}
+  .side{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:34px;
+    transition:transform .2s ease, box-shadow .2s ease}
+  .side:hover{transform:translateY(-4px);box-shadow:0 26px 50px -30px rgba(21,18,13,.35)}
+  .side h3{font-size:27px;margin:6px 0 4px}
+  .side .who{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--accent-ink)}
+  .qs{list-style:none;margin:20px 0 22px;display:flex;flex-direction:column;gap:12px}
+  .qs li{padding:13px 16px;background:var(--paper);border:1px solid var(--line);border-radius:12px;
+    font-size:15.5px;font-style:italic;font-family:"Fraunces",serif;color:var(--ink)}
+  .side .more{font-weight:600;font-size:15px;color:var(--accent-ink);display:inline-flex;gap:7px}
+  .side .more .arr{transition:transform .18s ease}.side:hover .more .arr{transform:translateX(4px)}
+
+  /* trust dark band */
+  .trust{background:var(--dark);color:var(--paper)}
+  .trust .eyebrow{color:#9a9081}
+  .trust h2{color:#fff}
+  .tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;margin-top:14px}
+  @media(max-width:900px){.tgrid{grid-template-columns:1fr 1fr}}
+  @media(max-width:540px){.tgrid{grid-template-columns:1fr}}
+  .tcard{border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:24px;
+    background:rgba(255,255,255,.02)}
+  .tcard h4{font-family:"Fraunces",serif;font-size:20px;font-weight:600;margin-bottom:8px}
+  .tcard p{font-size:14.5px;color:#b9b1a3}
+  .tcard .ic{font-size:20px;margin-bottom:14px;display:block}
+
+  /* surface list */
+  .surface .wrap{display:grid;grid-template-columns:.5fr .5fr;gap:40px;align-items:center}
+  @media(max-width:820px){.surface .wrap{grid-template-columns:1fr}}
+  .slist{list-style:none;display:flex;flex-direction:column}
+  .slist li{padding:18px 0;border-top:1px solid var(--line);display:flex;gap:14px;align-items:baseline;font-size:18px}
+  .slist li:last-child{border-bottom:1px solid var(--line)}
+  .slist .mk{font-family:"JetBrains Mono",monospace;color:var(--accent);font-size:14px}
+
+  /* mission + cta */
+  .mission p{font-family:"Fraunces",serif;font-size:clamp(24px,3.2vw,38px);line-height:1.25;max-width:24ch}
+  .mission a{border-bottom:2px solid var(--accent);padding-bottom:2px;font-family:"Hanken Grotesk";
+    font-size:16px;display:inline-block;margin-top:26px;font-weight:600}
+  .cta{background:var(--accent);color:#fff;border-radius:0}
+  .cta .wrap{text-align:center}
+  .cta h2{color:#fff;font-size:clamp(34px,5vw,60px)}
+  .cta p{color:rgba(255,255,255,.9);max-width:42ch;margin:18px auto 30px;font-size:18px}
+  .cta .btn{border-color:#fff;background:#fff;color:var(--accent-ink)}
+  .cta .btn:hover{transform:translateY(-2px);box-shadow:0 16px 34px -12px rgba(0,0,0,.4)}
+
+  footer{background:var(--dark);color:#b9b1a3;padding:50px 0 40px;font-size:14px}
+  footer .wrap{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center}
+  footer .brand{color:#fff}
+  footer .flinks{display:flex;gap:26px;flex-wrap:wrap}
+  footer .flinks a:hover{color:#fff}
+
+  /* load reveal */
+  .reveal{opacity:0;transform:translateY(18px);animation:rise .8s cubic-bezier(.2,.7,.2,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+  .d1{animation-delay:.05s}.d2{animation-delay:.15s}.d3{animation-delay:.25s}
+  .d4{animation-delay:.35s}.d5{animation-delay:.5s}
+  @media(prefers-reduced-motion:reduce){.reveal{animation:none;opacity:1;transform:none}
+    .typing i{animation:none}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="#"><span class="dot"></span>agentic&nbsp;affiliate</a>
+      <div class="navlinks">
+        <a href="#how">How it works</a>
+        <a href="#ask">What you can ask</a>
+        <a href="#networks">Networks</a>
+        <a href="#mission">Mission</a>
+      </div>
+      <div class="nav-cta">
+        <a href="#" class="btn btn-ghost" style="padding:11px 20px;font-size:15px">Get started</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-left">
+      <span class="tagpill reveal d1"><span class="live"></span>72 networks · publisher &amp; brand side · open source</span>
+      <h1 class="reveal d2">Take the grind out of <span class="em">affiliate</span> marketing.</h1>
+      <p class="lede reveal d3">Connect your affiliate networks to Claude or Codex, ask across all of them in plain English, and automate the repetitive checks. <b>You approve anything that acts.</b></p>
+      <div class="cta-row reveal d4">
+        <a href="#" class="btn btn-primary">Get started <span class="arr">→</span></a>
+        <a href="#how" class="btn btn-ghost">See how it works</a>
+      </div>
+      <p class="reassure reveal d4">No code. Runs on your machine. Setup takes about five minutes.</p>
+    </div>
+
+    <!-- chat mock -->
+    <div class="chat reveal d5" aria-hidden="true">
+      <div class="chat-top"><i></i><i></i><i></i><span style="margin-left:6px">claude · affiliate</span></div>
+      <div class="chat-body">
+        <div class="bubble you">What did I earn across all networks last month?</div>
+        <div class="bubble ai">
+          <b>£18,420</b> across 6 networks in May.
+          <div class="stat">
+            <div class="s"><strong>£12,910</strong><span>approved</span></div>
+            <div class="s"><strong>£4,180</strong><span>pending</span></div>
+            <div class="s"><strong class="flag">£1,330</strong><span>pending &gt; 90 days ⚑</span></div>
+          </div>
+        </div>
+        <div class="bubble you">Chase the ones over 90 days.</div>
+        <div class="bubble ai"><span class="typing"><i></i><i></i><i></i></span> &nbsp;drafting follow-ups for your approval…</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<div class="problem">
+  <div class="wrap">
+    <span class="eyebrow">The problem</span>
+    <p>Affiliate data lives in a dozen network dashboards. Getting a straight answer means logging into each one, exporting, and stitching it together by hand.</p>
+  </div>
+</div>
+
+<!-- LADDER -->
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Affiliate AI that actually does things</span>
+      <h2>Five steps, from answers to autopilot.</h2>
+      <p>Each step earns the next. We're honest about what works today and what's still coming.</p>
+    </div>
+    <div class="ladder">
+      <div class="rung">
+        <div class="num">01</div>
+        <div class="copy"><h3>Connect</h3><p>Add your network logins. They stay on your machine. Claude and Codex can then read your data.</p></div>
+        <span class="chip now"><span class="d"></span>Available now</span>
+      </div>
+      <div class="rung">
+        <div class="num">02</div>
+        <div class="copy"><h3>Analyse</h3><p>Ask across every network at once — earnings, pending commissions, reversals, dead links — in plain English, no filters or exports.</p></div>
+        <span class="chip now"><span class="d"></span>Available now</span>
+      </div>
+      <div class="rung">
+        <div class="num">03</div>
+        <div class="copy"><h3>Strategy &amp; KPIs</h3><p>Set the targets you care about. It tracks where you stand against them, not just what already happened.</p></div>
+        <span class="chip soon"><span class="d"></span>Coming</span>
+      </div>
+      <div class="rung">
+        <div class="num">04</div>
+        <div class="copy"><h3>Approvals</h3><p>Decide what runs on its own and what waits for your sign-off.</p></div>
+        <span class="chip soon"><span class="d"></span>Coming</span>
+      </div>
+      <div class="rung">
+        <div class="num">05</div>
+        <div class="copy"><h3>Automation</h3><p>The checks and actions you've approved run on a schedule. Everything else comes to you.</p></div>
+        <span class="chip soon"><span class="d"></span>Coming</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SIDES -->
+<section id="ask" style="background:var(--paper-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">What you can ask</span>
+      <h2>Two sides. One conversation.</h2>
+    </div>
+    <div class="sides">
+      <div class="side">
+        <span class="who">You earn commissions</span>
+        <h3>Publishers &amp; creators</h3>
+        <ul class="qs">
+          <li>"What did I earn across all networks last month?"</li>
+          <li>"Anything still pending after 90 days?"</li>
+          <li>"Compare my earnings month on month."</li>
+        </ul>
+        <a href="#" class="more">Publisher examples <span class="arr">→</span></a>
+      </div>
+      <div class="side">
+        <span class="who">You run programmes</span>
+        <h3>Brands &amp; agencies</h3>
+        <ul class="qs">
+          <li>"How is Acme doing this quarter?"</li>
+          <li>"Revenue across all my clients this week."</li>
+          <li>"Any anomalies this week?"</li>
+        </ul>
+        <a href="#" class="more">Brand examples <span class="arr">→</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TRUST -->
+<section class="trust">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">Why you can let it run</span>
+      <h2>Built so you stay in control.</h2>
+    </div>
+    <div class="tgrid">
+      <div class="tcard"><span class="ic">🔒</span><h4>Your data, your machine</h4><p>Logins are stored locally, not in a hosted account. Networks see the same calls as your own dashboard.</p></div>
+      <div class="tcard"><span class="ic">✓</span><h4>Approvals first</h4><p>Automation only does what you've approved. Nothing acts without your sign-off.</p></div>
+      <div class="tcard"><span class="ic">∅</span><h4>No telemetry</h4><p>Nothing is tracked or sent anywhere. No account to create.</p></div>
+      <div class="tcard"><span class="ic">&lt;/&gt;</span><h4>Open source</h4><p>MIT licensed. Read the code, or contribute to it.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- SURFACE -->
+<section class="surface" id="networks">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow">Things dashboards don't surface</span>
+      <h2 style="font-size:clamp(28px,3.6vw,42px);margin-top:12px">The quiet problems, found early.</h2>
+      <p style="color:var(--ink-2);margin-top:14px;max-width:42ch">Ask for any of these now — or, soon, set it to watch for them.</p>
+    </div>
+    <ul class="slist">
+      <li><span class="mk">→</span> Transactions stuck pending</li>
+      <li><span class="mk">→</span> Dead links across your site</li>
+      <li><span class="mk">→</span> Reversal spikes</li>
+      <li><span class="mk">→</span> Week-on-week drops</li>
+      <li><span class="mk">→</span> Programmes trending to zero</li>
+    </ul>
+  </div>
+</section>
+
+<!-- MISSION -->
+<section class="mission" id="mission" style="background:var(--paper-2);border-top:1px solid var(--line)">
+  <div class="wrap">
+    <span class="eyebrow">The mission</span>
+    <p style="margin-top:16px">We're building toward affiliate work that runs itself, with you in control of what it's allowed to do.</p>
+    <a href="#">Read the mission →</a>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="wrap">
+    <h2>Try it on your own data.</h2>
+    <p>No code, and you don't need to know what an API is. Setup takes about five minutes and it's free.</p>
+    <a href="#" class="btn">Get started <span class="arr">→</span></a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <a class="brand" href="#"><span class="dot"></span>agentic&nbsp;affiliate</a>
+    <div class="flinks">
+      <a href="#">For networks</a>
+      <a href="#">For developers</a>
+      <a href="#">Privacy</a>
+      <a href="#">GitHub</a>
+    </div>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#7d756a">MIT · bring your own keys</span>
+  </div>
+</footer>
+
+</body>
+</html>
