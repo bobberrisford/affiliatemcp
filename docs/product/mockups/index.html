@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>affiliate-mcp — automate the affiliate grind</title>
+<link rel="stylesheet" href="brand.css">
+<style>
+  /* hero */
+  .hero{position:relative;padding:60px 0 40px;overflow:hidden}
+  .hero .halftone-bg{position:absolute;inset:0;opacity:0.06;pointer-events:none;
+    background-image:radial-gradient(var(--ink) 1.2px,transparent 1.4px);background-size:9px 9px}
+  .hero-grid{display:grid;grid-template-columns:1.05fr 0.95fr;gap:46px;align-items:center;position:relative}
+  .kicker{display:flex;gap:10px;align-items:center;margin-bottom:22px;flex-wrap:wrap}
+  .h-mega{font-family:var(--font-display);font-weight:800;font-size:clamp(3.2rem,6.4vw,5.6rem);line-height:0.9;letter-spacing:-0.035em;text-transform:lowercase;margin:0}
+  .h-sub{font-size:1.22rem;line-height:1.5;max-width:35ch;margin:22px 0 26px;color:var(--ink)}
+  .h-sub b{font-weight:700}
+  .h-cta{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .h-note{font-family:var(--font-mono);font-size:0.72rem;color:var(--smudge-dk);letter-spacing:0.04em;margin-top:18px}
+  .seg{display:inline-flex;border:2px solid var(--ink);border-radius:7px;overflow:hidden;font-family:var(--font-mono);font-weight:700;font-size:0.76rem;letter-spacing:0.06em;text-transform:uppercase}
+  .seg button{border:0;background:var(--paper);color:var(--ink);padding:8px 15px;cursor:pointer;font:inherit}
+  .seg button.on{background:var(--ink);color:var(--acid)}
+
+  /* demo — faithful Claude conversation in the punk frame */
+  .demo{background:#FAF9F5;border:2px solid var(--ink);border-radius:10px;box-shadow:6px 6px 0 var(--ink);overflow:hidden;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif}
+  .cl-top{display:flex;align-items:center;gap:9px;padding:12px 16px;background:#fff;border-bottom:1px solid #ECEAE0}
+  .cl-top svg{width:22px;height:22px;display:block}
+  .cl-name{font-weight:600;color:#1F1E1D;font-size:0.95rem;letter-spacing:-0.01em}
+  .cl-conn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:0.68rem;color:#8a8782;border:1px solid #E5E2D6;border-radius:999px;padding:3px 10px}
+  .cl-conn .ast{color:#D97757;font-weight:700}
+  .cl-body{padding:18px 16px 20px;min-height:268px;color:#1F1E1D;font-size:0.9rem;line-height:1.5}
+  .cl-user{margin-left:auto;width:max-content;max-width:84%;background:#F0EEE6;border-radius:14px;border-bottom-right-radius:4px;padding:10px 14px;color:#1F1E1D;font-size:0.88rem}
+  .cl-asst{display:flex;gap:11px;margin-top:18px}
+  .cl-asst > svg{width:24px;height:24px;flex:none;margin-top:2px}
+  .cl-content{flex:1;min-width:0}
+  .cl-tool{display:inline-flex;align-items:center;gap:8px;border:1px solid #E5E2D6;background:#fff;border-radius:8px;padding:6px 11px;font-size:0.72rem;color:#6F6E69;margin-bottom:12px}
+  .cl-tool .ast{color:#D97757;font-weight:700}
+  .cl-tool .fn{color:#1F1E1D;font-family:var(--font-mono);font-size:0.68rem}
+  .cl-say{margin:0 0 12px;color:#1F1E1D;max-width:none}
+  .cl-say b{font-weight:700}
+  .cl-table{width:100%;border-collapse:collapse;font-size:0.8rem}
+  .cl-table th{text-align:left;font-weight:600;color:#8a8782;font-size:0.66rem;text-transform:uppercase;letter-spacing:0.05em;padding:0 0 7px;border-bottom:1px solid #E5E2D6}
+  .cl-table th.r,.cl-table td.r{text-align:right}
+  .cl-table td{padding:8px 0;border-bottom:1px solid #ECEAE0;color:#1F1E1D}
+  .cl-table td.r{font-variant-numeric:tabular-nums}
+  .cl-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:middle}
+
+  /* network wall */
+  .nets{padding:60px 0}
+  .net-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .net{display:flex;align-items:center;justify-content:space-between;gap:8px;border:2px solid var(--ink);border-radius:6px;padding:14px 15px;background:var(--paper);font-family:var(--font-mono);font-weight:700;transition:transform .08s steps(2),box-shadow .08s steps(2)}
+  .net:hover{box-shadow:var(--shadow);transform:translate(-2px,-2px)}
+  .net .nm{font-size:0.95rem}
+  .net .tag{font-size:0.58rem;letter-spacing:0.08em;text-transform:uppercase;padding:3px 6px;border-radius:3px;background:var(--paper-2);color:var(--smudge-dk)}
+  .net .tag.both{background:var(--blue);color:var(--paper)}
+  .net.adopt{border-style:dashed;color:var(--blue);background:var(--paper)}
+
+  /* dual audience */
+  .dual{padding:64px 0}
+  .dual-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .aud{border:2px solid var(--ink);border-radius:8px;padding:26px;background:var(--paper);box-shadow:var(--shadow)}
+  .aud.brand{background:var(--ink);color:var(--paper);box-shadow:6px 6px 0 var(--magenta)}
+  .aud h3{font-family:var(--font-display);font-weight:800;font-size:2rem;text-transform:lowercase;letter-spacing:-0.02em;margin:10px 0 6px}
+  .aud .ask{font-family:var(--font-mono);font-size:0.86rem;padding:11px 13px;border-radius:6px;margin-top:10px;display:flex;gap:9px;align-items:flex-start}
+  .aud .ask .q{color:var(--acid);font-weight:700;flex:none}
+  .aud.pub .ask{background:var(--paper-2)}
+  .aud.brand .ask{background:var(--ink-soft)}
+
+  /* install */
+  .install{padding:64px 0}
+  .install h2{font-size:clamp(1.9rem,3.5vw,2.75rem);line-height:1.08;letter-spacing:-0.015em;margin-bottom:18px}
+  .tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+  .tab{font-family:var(--font-mono);font-weight:700;font-size:0.74rem;letter-spacing:0.06em;text-transform:uppercase;padding:8px 14px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);cursor:pointer}
+  .tab.on{background:var(--ink);color:var(--acid)}
+  .cmd{display:flex;align-items:center;gap:12px;background:var(--ink);border-radius:8px;padding:15px 17px;font-family:var(--font-mono);font-size:0.92rem;color:var(--paper);border:2px solid var(--ink)}
+  .cmd + .cmd{margin-top:10px}
+  .cmd .pr{color:var(--acid);font-weight:700}
+  .cmd .copy{margin-left:auto;border:1px solid var(--line-invert);background:transparent;color:var(--fg-invert-mut);font-family:var(--font-mono);font-size:0.64rem;letter-spacing:0.08em;text-transform:uppercase;padding:6px 9px;border-radius:4px;cursor:pointer}
+  .cmd .copy:hover{border-color:var(--acid);color:var(--acid)}
+
+  @media(max-width:900px){ .hero-grid,.dual-grid{grid-template-columns:1fr} .net-grid{grid-template-columns:repeat(2,1fr)} }
+</style>
+</head>
+<body data-page="how">
+<div id="site-nav"></div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="halftone-bg"></div>
+  <div class="wrap hero-grid">
+    <div>
+      <div class="kicker">
+        <span class="chip acid">FREE &amp; OPEN · MIT</span>
+        <span class="chip">NO TELEMETRY</span>
+        <span class="stamp">v0.5.0</span>
+      </div>
+      <h1 class="h-mega">automate the<br>affiliate grind.</h1>
+      <p class="h-sub">Connect every network to the AI you already use. Ask in plain english, then let it run the repetitive checks. <b>You approve anything that acts.</b> Your data, your machine.</p>
+      <div class="kicker" style="margin-bottom:18px">
+        <div class="seg" id="seg">
+          <button class="on" data-aud="pub">publisher</button>
+          <button data-aud="brand">brand / agency</button>
+        </div>
+      </div>
+      <div class="h-cta">
+        <a class="btn p" href="get-started.html">npx setup ▸</a>
+        <a class="btn ghost" href="mission.html">read the manifesto</a>
+      </div>
+      <div class="h-note">node 20+ · claude desktop, claude code, codex · 5-min wizard</div>
+    </div>
+
+    <div class="demo">
+      <div class="cl-top">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#D97757"><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3"></rect><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(45 12 12)"></rect><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(90 12 12)"></rect><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(135 12 12)"></rect></g></svg>
+        <span class="cl-name">Claude</span>
+        <span class="cl-conn"><span class="ast">✳</span> affiliate · connected</span>
+      </div>
+      <div class="cl-body">
+        <div class="cl-user" id="demo-q"></div>
+        <div class="cl-asst">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#D97757"><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3"></rect><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(45 12 12)"></rect><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(90 12 12)"></rect><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(135 12 12)"></rect></g></svg>
+          <div class="cl-content">
+            <div class="cl-tool"><span class="ast">✳</span> affiliate <span class="fn" id="demo-tool"></span></div>
+            <p class="cl-say" id="demo-say"></p>
+            <table class="cl-table"><thead id="demo-head"></thead><tbody id="demo-rows"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BAND -->
+<section class="band"><div class="wrap"><h2 class="wm-big">you approve.<br><span class="hl">it does the rest.</span></h2></div></section>
+
+<!-- LADDER -->
+<section class="steps" id="how">
+  <div class="wrap">
+    <div class="sec-label">how it works · five steps, answers to autopilot</div>
+    <div class="step-list">
+      <div class="step"><div class="num">01</div><div><h3>connect</h3><p>Add your network logins. They stay on your machine. Claude and Codex can then read your data.</p></div><span class="chip acid">● available now</span></div>
+      <div class="step"><div class="num">02</div><div><h3>analyse</h3><p>Ask across every network at once — earnings, pending commissions, reversals, dead links — in plain english, no filters or exports.</p></div><span class="chip acid">● available now</span></div>
+      <div class="step"><div class="num">03</div><div><h3>strategy &amp; kpis</h3><p>Set the targets you care about. It tracks where you stand against them, not just what already happened.</p></div><span class="chip soon">○ coming</span></div>
+      <div class="step"><div class="num">04</div><div><h3>approvals</h3><p>Decide what runs on its own and what waits for your sign-off.</p></div><span class="chip soon">○ coming</span></div>
+      <div class="step"><div class="num">05</div><div><h3>automation</h3><p>The checks and actions you've approved run on a schedule. Everything else comes to you.</p></div><span class="chip soon">○ coming</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- NETWORK WALL -->
+<section class="nets" id="nets">
+  <div class="wrap">
+    <div class="sec-label" id="nets-label">networks bundled · adapters are open source</div>
+    <div class="net-grid" id="net-grid"></div>
+    <div style="margin-top:22px"><a class="btn ghost" href="networks.html">see all networks ▸</a></div>
+  </div>
+</section>
+
+<!-- DUAL AUDIENCE -->
+<section class="dual" id="dual">
+  <div class="wrap">
+    <div class="sec-label">two sides · one conversation</div>
+    <div class="dual-grid">
+      <div class="aud pub">
+        <span class="chip">PUBLISHER</span>
+        <h3>earn it. track it. get paid.</h3>
+        <p class="small muted" style="max-width:none;margin:0 0 6px">Commissions across every network you're on, in one thread.</p>
+        <div class="ask"><span class="q">▸</span> "what did I earn last month?"</div>
+        <div class="ask"><span class="q">▸</span> "which programmes are pending after 90 days?"</div>
+        <div class="ask"><span class="q">▸</span> "audit the affiliate links in my sitemap."</div>
+      </div>
+      <div class="aud brand">
+        <span class="chip mag">BRAND / AGENCY</span>
+        <h3>run it. watch it. report it.</h3>
+        <p class="small" style="max-width:none;margin:0 0 6px;color:var(--fg-invert-mut)">One question fans out across every brand × network you manage.</p>
+        <div class="ask"><span class="q">▸</span> "how is Acme performing this quarter?"</div>
+        <div class="ask"><span class="q">▸</span> "revenue across all my clients this week."</div>
+        <div class="ask"><span class="q">▸</span> "any anomalies in the affiliate data?"</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALL -->
+<section class="install" id="install">
+  <div class="wrap">
+    <div class="sec-label">install · bring your own keys</div>
+    <h2>five minutes. <span class="hl">no account.</span></h2>
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-tab="desktop">Claude Desktop</button>
+      <button class="tab" data-tab="code">Claude Code</button>
+      <button class="tab" data-tab="codex">Codex</button>
+    </div>
+    <div id="cmds"></div>
+    <p class="small muted" style="margin-top:16px">Keys live in <code>~/.affiliate-mcp/.env</code> on your machine, mode 0600. Nothing is hosted. Nothing phones home.</p>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="networks-data.js"></script>
+<script src="site.js"></script>
+<script>
+  // hero Claude demo
+  var GREY="#8a8782", AMBER="#C8881C", DOWN="#C2412D", UP="#3B7D4F";
+  var DEMO = {
+    pub:{ q:"what did I earn across all networks last month?", tool:"get_earnings",
+      say:'You earned <b>£18,402.55</b> across 5 networks last month. 2 transactions are still pending after 90 days.',
+      head:["Network","Status","Amount"],
+      rows:[["Awin","paid",UP,"£7,210.00"],["CJ Affiliate","pending",AMBER,"£4,980.20"],["Rakuten","approved",UP,"£6,824.75"],["Impact","reversed",DOWN,"−£612.40"]] },
+    brand:{ q:"show me revenue across all my clients this week", tool:"get_portfolio",
+      say:'Revenue across your 3 clients this week is <b>£214,900</b>. Globex needs attention — a reversal spike.',
+      head:["Brand","Trend","Revenue"],
+      rows:[["Acme","↑ 14%",UP,"£128,400"],["Globex","↓ 9%",DOWN,"£61,200"],["Initech","→ flat",GREY,"£25,300"]] }
+  };
+  function renderDemo(a){var d=DEMO[a];
+    document.getElementById("demo-q").textContent=d.q;
+    document.getElementById("demo-tool").textContent="· "+d.tool;
+    document.getElementById("demo-say").innerHTML=d.say;
+    document.getElementById("demo-head").innerHTML='<tr><th>'+d.head[0]+'</th><th>'+d.head[1]+'</th><th class="r">'+d.head[2]+'</th></tr>';
+    document.getElementById("demo-rows").innerHTML=d.rows.map(function(r){return '<tr><td>'+r[0]+'</td><td><span class="cl-dot" style="background:'+r[2]+'"></span>'+r[1]+'</td><td class="r">'+r[3]+'</td></tr>';}).join("");
+  }
+  document.getElementById("seg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;this.querySelectorAll("button").forEach(function(x){x.classList.remove("on")});b.classList.add("on");renderDemo(b.dataset.aud);});
+  renderDemo("pub");
+
+  // network wall — bundled (stable) families + adopt tile
+  var stable = window.NETWORKS.filter(function(n){return n.maturity==="stable";});
+  document.getElementById("nets-label").textContent = window.NETWORKS.length + " networks bundled · adapters are open source";
+  document.getElementById("net-grid").innerHTML = stable.map(function(n){
+    var label = n.side==="both" ? "pub + brand" : "publisher";
+    return '<div class="net"><span class="nm">'+n.nm+'</span><span class="tag'+(n.side==="both"?" both":"")+'">'+label+'</span></div>';
+  }).join("") + '<a class="net adopt" href="adopt.html"><span class="nm">+ your network</span><span class="tag">adopt it ▸</span></a>';
+
+  // install tabs
+  var CMDS={desktop:["npx affiliate-networks-mcp setup","npx affiliate-networks-mcp install"],
+    code:["claude plugin marketplace add bobberrisford/affiliatemcp","claude plugin install affiliate-networks-mcp@affiliatemcp"],
+    codex:["npx affiliate-networks-mcp install --codex","codex mcp add affiliate -- npx -y affiliate-networks-mcp"]};
+  function renderCmds(t){document.getElementById("cmds").innerHTML=CMDS[t].map(function(c){return '<div class="cmd"><span class="pr">$</span><span class="cmd-text">'+c+'</span><button class="copy">copy</button></div>';}).join("");}
+  document.getElementById("tabs").addEventListener("click",function(e){var b=e.target.closest(".tab");if(!b)return;this.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on")});b.classList.add("on");renderCmds(b.dataset.tab);});
+  document.getElementById("cmds").addEventListener("click",function(e){var btn=e.target.closest(".copy");if(!btn)return;var t=btn.parentElement.querySelector(".cmd-text").textContent;try{navigator.clipboard.writeText(t);}catch(err){}btn.textContent="copied ✓";setTimeout(function(){btn.textContent="copy";},1200);});
+  renderCmds("desktop");
+</script>
+</body>
+</html>

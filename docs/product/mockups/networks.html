@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>affiliate-mcp — networks</title>
+<link rel="stylesheet" href="brand.css">
+<style>
+  .controls{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:22px}
+  .search{flex:1;min-width:240px;display:flex;align-items:center;gap:10px;border:2px solid var(--ink);border-radius:7px;padding:11px 14px;background:var(--paper)}
+  .search input{border:0;outline:0;font:inherit;font-size:0.95rem;width:100%;background:transparent;color:var(--ink)}
+  .search .pr{font-family:var(--font-mono);color:var(--smudge-dk);font-weight:700}
+  .filters{display:flex;gap:8px;flex-wrap:wrap}
+  .filt{font-family:var(--font-mono);font-weight:700;font-size:0.72rem;letter-spacing:0.06em;text-transform:uppercase;padding:8px 13px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);cursor:pointer}
+  .filt.on{background:var(--ink);color:var(--acid)}
+  .count{font-family:var(--font-mono);font-size:0.74rem;color:var(--smudge-dk);letter-spacing:0.05em;margin-bottom:18px}
+
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media(max-width:860px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}}
+  .ncard{border:2px solid var(--ink);border-radius:8px;padding:16px 17px;background:var(--paper);
+    transition:transform .08s steps(2),box-shadow .08s steps(2);display:flex;flex-direction:column;gap:10px}
+  .ncard:hover{box-shadow:var(--shadow);transform:translate(-2px,-2px)}
+  .ncard .top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .ncard .nm{font-family:var(--font-display);font-weight:800;font-size:1.18rem;letter-spacing:-0.01em;text-transform:lowercase}
+  .ncard .meta{font-family:var(--font-mono);font-size:0.66rem;letter-spacing:0.05em;text-transform:uppercase;color:var(--smudge-dk)}
+  .tags{display:flex;gap:7px;flex-wrap:wrap}
+  .t{font-family:var(--font-mono);font-weight:700;font-size:0.6rem;letter-spacing:0.07em;text-transform:uppercase;padding:4px 7px;border-radius:3px;background:var(--paper-2);color:var(--smudge-dk)}
+  .t.both{background:var(--blue);color:var(--paper)}
+  .t.pub{background:var(--ink);color:var(--paper)}
+  .t.stable{border:1.5px solid var(--ink);background:transparent;color:var(--ink)}
+  .t.exp{border:1.5px dashed var(--line-strong);background:transparent;color:var(--smudge-dk)}
+  .t.adopt{background:var(--magenta);color:var(--paper)}
+  .none{font-family:var(--font-mono);color:var(--smudge-dk);padding:40px 0}
+</style>
+</head>
+<body data-page="networks">
+<div id="site-nav"></div>
+
+<header class="phead">
+  <div class="wrap">
+    <div class="sec-label">networks</div>
+    <h1>every network,<br>one conversation.</h1>
+    <p class="lead">Each adapter is open source and <b>community-built</b> until the network adopts it. Publisher side, brand side, or both. <a href="adopt.html" style="border-bottom:2px solid var(--blue)">run a network? adopt yours ▸</a></p>
+  </div>
+</header>
+
+<section style="padding:10px 0 70px">
+  <div class="wrap">
+    <div class="controls">
+      <label class="search"><span class="pr">/</span><input id="q" type="search" placeholder="search networks…" autocomplete="off"></label>
+      <div class="filters" id="filters">
+        <button class="filt on" data-f="all">all</button>
+        <button class="filt" data-f="pub">publisher only</button>
+        <button class="filt" data-f="both">brand side</button>
+        <button class="filt" data-f="stable">stable</button>
+        <button class="filt" data-f="experimental">experimental</button>
+      </div>
+    </div>
+    <div class="count" id="count"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="networks-data.js"></script>
+<script src="site.js"></script>
+<script>
+  var q="", filt="all";
+  function match(n){
+    if(q && n.nm.toLowerCase().indexOf(q)===-1) return false;
+    if(filt==="all") return true;
+    if(filt==="pub") return n.side==="pub";
+    if(filt==="both") return n.side==="both";
+    if(filt==="stable") return n.maturity==="stable";
+    if(filt==="experimental") return n.maturity==="experimental";
+    return true;
+  }
+  function render(){
+    var list = window.NETWORKS.filter(match);
+    document.getElementById("count").textContent =
+      list.length + " of " + window.NETWORKS.length + " networks · 0 adopted by their operator · all awaiting adoption";
+    var g = document.getElementById("grid");
+    if(!list.length){ g.innerHTML='<div class="none">no networks match "'+q+'".</div>'; return; }
+    g.innerHTML = list.map(function(n){
+      var side = n.side==="both"
+        ? '<span class="t both">pub + brand</span>'
+        : '<span class="t pub">publisher</span>';
+      var mat = n.maturity==="stable"
+        ? '<span class="t stable">stable</span>'
+        : '<span class="t exp">experimental</span>';
+      var meta = n.setup + (n.approval ? " · approval needed" : " · no approval");
+      return '<div class="ncard"><div class="top"><span class="nm">'+n.nm.toLowerCase()+'</span></div>'+
+        '<div class="tags">'+side+mat+'<span class="t adopt">adopt ▸</span></div>'+
+        '<div class="meta">'+meta+'</div></div>';
+    }).join("");
+  }
+  document.getElementById("q").addEventListener("input",function(e){q=e.target.value.trim().toLowerCase();render();});
+  document.getElementById("filters").addEventListener("click",function(e){var b=e.target.closest(".filt");if(!b)return;this.querySelectorAll(".filt").forEach(function(x){x.classList.remove("on")});b.classList.add("on");filt=b.dataset.f;render();});
+  render();
+</script>
+</body>
+</html>

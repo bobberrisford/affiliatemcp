@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>affiliate-mcp — mission</title>
+<link rel="stylesheet" href="brand.css">
+<style>
+  .manifesto{padding:30px 0 20px}
+  .manifesto .big{font-family:var(--font-display);font-weight:800;font-size:clamp(2.2rem,5vw,3.6rem);line-height:1.05;letter-spacing:-0.025em;text-transform:lowercase;max-width:20ch;margin:0 0 26px}
+  .manifesto .big .hl{color:var(--paper)}
+  .manifesto p{font-size:1.15rem;line-height:1.55;max-width:60ch;color:var(--ink)}
+  .principles{display:grid;grid-template-columns:1fr 1fr;gap:0 40px;border-top:2px solid var(--ink)}
+  @media(max-width:760px){.principles{grid-template-columns:1fr}}
+  .pr-item{padding:22px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:38px 1fr;gap:14px}
+  .pr-item .n{font-family:var(--font-mono);font-weight:800;color:var(--blue)}
+  .pr-item h3{font-family:var(--font-display);font-weight:800;font-size:1.2rem;text-transform:lowercase;letter-spacing:-0.01em;margin:0 0 4px}
+  .pr-item p{font-size:0.92rem;color:var(--smudge-dk);margin:0;max-width:none}
+  .wont{padding:50px 0}
+  .wont ul{list-style:none;padding:0;margin:14px 0 0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:760px){.wont ul{grid-template-columns:1fr}}
+  .wont li{font-family:var(--font-mono);font-size:0.86rem;padding:13px 15px;border:2px solid var(--ink);border-radius:6px;display:flex;gap:10px;align-items:flex-start}
+  .wont li .x{color:var(--magenta);font-weight:800;flex:none}
+</style>
+</head>
+<body data-page="mission">
+<div id="site-nav"></div>
+
+<header class="phead">
+  <div class="wrap">
+    <div class="sec-label">the mission</div>
+    <h1>automating affiliate.</h1>
+    <p class="lead">Affiliate work is spread across dashboards, exports, spreadsheets, and decks. AI workspaces are where knowledge work happens now — but affiliate operational data is still trapped elsewhere. We're closing that gap, then taking the grind off your plate entirely.</p>
+  </div>
+</header>
+
+<section class="band"><div class="wrap"><h2 class="wm-big">make affiliate data work<br>where <span class="hl">affiliate work happens.</span></h2></div></section>
+
+<section class="manifesto">
+  <div class="wrap">
+    <p style="margin:30px 0 14px"><b>The end game isn't a chatbot for your dashboards.</b> It's affiliate work that runs itself, with you deciding what "itself" is allowed to do. You start by bringing your data into the AI you already use. You climb to analysis, then strategy, then a clear line between what you sign off and what you delegate. Eventually the routine work runs on its own, and you stay in control of what matters.</p>
+  </div>
+</section>
+
+<!-- the ladder, restated -->
+<section class="steps">
+  <div class="wrap">
+    <div class="sec-label">the path · today vs. where this goes</div>
+    <div class="step-list">
+      <div class="step"><div class="num">01</div><div><h3>connect</h3><p>Your network data, in Claude and Codex. Local-first, your keys.</p></div><span class="chip acid">● available now</span></div>
+      <div class="step"><div class="num">02</div><div><h3>analyse</h3><p>Ask across every network in plain english. Honest about what each one can and can't expose.</p></div><span class="chip acid">● available now</span></div>
+      <div class="step"><div class="num">03</div><div><h3>strategy &amp; kpis</h3><p>Track where you stand against the targets you set.</p></div><span class="chip soon">○ coming</span></div>
+      <div class="step"><div class="num">04</div><div><h3>approvals</h3><p>A safe line between what runs on its own and what waits for your yes.</p></div><span class="chip soon">○ coming</span></div>
+      <div class="step"><div class="num">05</div><div><h3>automation</h3><p>The approved work runs on a schedule. Everything else comes to you.</p></div><span class="chip soon">○ coming</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- principles -->
+<section style="padding:50px 0 10px">
+  <div class="wrap">
+    <div class="sec-label">principles</div>
+    <div class="principles">
+      <div class="pr-item"><span class="n">01</span><div><h3>api-first, browser as fallback</h3><p>Prefer a network's public API. Where none exists, drive the user's own authenticated session — and label it as such.</p></div></div>
+      <div class="pr-item"><span class="n">02</span><div><h3>local-first by default</h3><p>Users bring their own credentials. Keys stay on the machine. No hosted account.</p></div></div>
+      <div class="pr-item"><span class="n">03</span><div><h3>workflows over endpoint trivia</h3><p>You shouldn't need to know API names to prepare a report or chase a reversal.</p></div></div>
+      <div class="pr-item"><span class="n">04</span><div><h3>honest network truth</h3><p>Every adapter says what's supported, partial, experimental, or gated. No fake support.</p></div></div>
+      <div class="pr-item"><span class="n">05</span><div><h3>you set the limits</h3><p>Automation only ever acts within rules you approve. Nothing runs behind your back.</p></div></div>
+      <div class="pr-item"><span class="n">06</span><div><h3>contributor &amp; agent friendly</h3><p>Humans and AI agents can find the right files, run the checks, and open focused PRs.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- what it won't do -->
+<section class="wont">
+  <div class="wrap">
+    <div class="sec-label">what this will not do</div>
+    <ul>
+      <li><span class="x">✕</span> store your credentials in a hosted service</li>
+      <li><span class="x">✕</span> phone home with telemetry or analytics</li>
+      <li><span class="x">✕</span> pretend unsupported operations work</li>
+      <li><span class="x">✕</span> hide upstream API errors behind vague failures</li>
+    </ul>
+    <p style="margin-top:26px"><a class="btn ghost" href="https://github.com/bobberrisford/affiliatemcp/blob/main/docs/product/manifesto.md">read the full manifesto ▸</a></p>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="site.js"></script>
+</body>
+</html>

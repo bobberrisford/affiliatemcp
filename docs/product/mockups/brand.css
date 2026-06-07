@@ -1,0 +1,122 @@
+/* ============================================================================
+   affiliate-mcp — shared brand stylesheet for the site mockups
+   Foundations vendored from ../design-system/colors_and_type.css, plus the
+   shared chrome (nav, footer, buttons, chips, ladder) used across every page.
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+
+:root{
+  --ink:#0B0B0C; --ink-soft:#16161B; --paper:#FFFFFF; --paper-2:#F2F3F7;
+  --smudge:#8B8FA0; --smudge-dk:#565A6B;
+  --blue:#2B2BFF; --blue-deep:#1B1BB8; --blue-bright:#5A78FF; --magenta:#FF2E88;
+  --acid:var(--blue-bright); --pending:#E8A317;
+  --fg-invert-mut:#9A9DAC;
+  --line:rgba(11,11,12,0.14); --line-strong:rgba(11,11,12,0.85); --line-invert:rgba(255,255,255,0.16);
+  --r-xs:3px; --r-sm:6px;
+  --shadow:4px 4px 0 0 var(--ink); --shadow-lg:6px 6px 0 0 var(--ink);
+  --font-display:'Bricolage Grotesque','Arial Black',system-ui,sans-serif;
+  --font-sans:'Space Grotesk',system-ui,-apple-system,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  --t-mono-lbl:0.78rem; --tracking-lbl:0.14em;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-sans);
+  font-size:1.0625rem;line-height:1.55;-webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;overflow-x:hidden}
+h1,h2,h3{margin:0;font-family:var(--font-display);text-transform:lowercase}
+p{margin:0 0 1em;text-wrap:pretty;max-width:64ch}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+.nowrap{white-space:nowrap}
+.small{font-size:0.875rem}.muted{color:var(--smudge-dk)}
+.lead{font-size:1.22rem;line-height:1.5}
+a{color:inherit;text-decoration:none}
+code{font-family:var(--font-mono);font-size:0.92em;background:var(--ink);
+  color:var(--blue-bright);padding:0.12em 0.4em;border-radius:var(--r-xs)}
+
+/* chips / stamps / highlight */
+.chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);
+  font-weight:700;font-size:var(--t-mono-lbl);letter-spacing:var(--tracking-lbl);
+  text-transform:uppercase;white-space:nowrap;background:var(--ink);color:var(--paper);
+  padding:6px 10px;border-radius:var(--r-xs)}
+.chip.acid,.chip.blue{background:var(--blue);color:var(--paper)}
+.chip.mag{background:var(--magenta);color:var(--paper)}
+.chip.soon{background:transparent;color:var(--smudge-dk);border:2px dashed var(--line-strong)}
+.chip.ghost{background:transparent;color:var(--ink);border:2px solid var(--ink)}
+.stamp{display:inline-block;font-family:var(--font-mono);font-weight:800;letter-spacing:0.08em;
+  text-transform:uppercase;border:2px solid currentColor;padding:4px 10px;border-radius:var(--r-xs);transform:rotate(-7deg)}
+.hl{background:var(--blue);color:var(--paper);padding:0.02em 0.18em;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.hl-mag{background:var(--magenta);color:var(--paper);padding:0.02em 0.18em}
+
+/* section label */
+.sec-label{font-family:var(--font-mono);font-weight:700;font-size:0.74rem;letter-spacing:0.16em;
+  text-transform:uppercase;color:var(--smudge-dk);display:flex;align-items:center;gap:10px;margin-bottom:26px}
+.sec-label::before{content:"";width:26px;height:2px;background:var(--ink)}
+
+/* buttons */
+.btn{font-family:var(--font-mono);font-weight:700;font-size:0.82rem;letter-spacing:0.04em;text-transform:uppercase;
+  padding:11px 17px;border:2px solid var(--ink);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;
+  gap:8px;white-space:nowrap;background:var(--paper);color:var(--ink);text-decoration:none;
+  transition:transform .08s steps(2),box-shadow .08s steps(2)}
+.btn.p{background:var(--blue);color:var(--paper);box-shadow:var(--shadow)}
+.btn.p:hover{box-shadow:var(--shadow-lg)}
+.btn.p:active{transform:translate(4px,4px);box-shadow:0 0 0}
+.btn.d{background:var(--ink);color:var(--paper);box-shadow:4px 4px 0 var(--magenta)}
+.btn.d:active{transform:translate(4px,4px);box-shadow:0 0 0}
+.btn.ghost{background:var(--paper)}
+.btn.sm{padding:8px 12px;font-size:0.72rem}
+
+/* nav (injected by site.js) */
+.nav{position:sticky;top:0;z-index:50;background:var(--paper);border-bottom:2px solid var(--ink)}
+.nav .wrap{display:flex;align-items:center;gap:22px;height:64px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand svg{width:34px;height:34px;display:block}
+.brand .wm{font-family:var(--font-display);font-weight:800;font-size:1.32rem;letter-spacing:-0.03em;line-height:1}
+.brand .wm .mcp{background:var(--blue);color:var(--paper);padding:0 5px;border-radius:3px}
+.nav .links{display:flex;gap:18px;margin-left:14px}
+.nav .links a{font-family:var(--font-mono);font-size:0.78rem;font-weight:700;letter-spacing:0.07em;text-transform:uppercase}
+.nav .links a.on{background:var(--blue);color:var(--paper);padding:0 4px}
+.nav .links a:hover{background:var(--blue);color:var(--paper)}
+.nav .right{margin-left:auto;display:flex;align-items:center;gap:12px}
+
+/* page header (interior pages) */
+.phead{padding:60px 0 26px}
+.phead h1{font-family:var(--font-display);font-weight:800;font-size:clamp(2.6rem,6vw,4.6rem);line-height:0.92;letter-spacing:-0.03em;text-transform:lowercase}
+.phead .lead{margin-top:20px;max-width:48ch;color:var(--ink)}
+.phead .lead b{font-weight:700}
+
+/* band */
+.band{background:var(--ink);color:var(--paper);padding:64px 0}
+.band .wm-big{font-family:var(--font-display);font-weight:800;font-size:clamp(2rem,4.5vw,3.4rem);line-height:0.98;
+  letter-spacing:-0.03em;text-transform:lowercase;text-align:center;margin:0}
+
+/* ladder / how it works */
+.steps{padding:64px 0}
+.step-list{border-top:2px solid var(--ink)}
+.step{display:grid;grid-template-columns:90px 1fr auto;gap:24px;align-items:baseline;
+  padding:26px 0;border-bottom:2px solid var(--ink);transition:padding-left .08s steps(2)}
+.step:hover{padding-left:10px}
+.step .num{font-family:var(--font-mono);font-weight:800;font-size:1.4rem;color:var(--smudge-dk);line-height:1}
+.step:hover .num{color:var(--blue)}
+.step h3{font-family:var(--font-display);font-weight:800;font-size:1.7rem;text-transform:lowercase;letter-spacing:-0.02em;margin:0 0 4px}
+.step p{margin:0;color:var(--smudge-dk);max-width:56ch;font-size:0.98rem}
+@media(max-width:760px){
+  .step{grid-template-columns:54px 1fr;gap:14px}
+  .step .chip{grid-column:2;justify-self:start;margin-top:10px}
+  .step .num{font-size:1.1rem}
+}
+
+/* hard card */
+.card{background:var(--paper);border:2px solid var(--ink);border-radius:8px;padding:24px;box-shadow:var(--shadow)}
+
+/* footer (injected by site.js) */
+.foot{background:var(--ink);color:var(--paper);padding:56px 0 38px}
+.foot .big{font-family:var(--font-display);font-weight:800;font-size:clamp(2.6rem,8vw,6rem);line-height:0.86;letter-spacing:-0.04em;text-transform:lowercase;margin:0 0 26px}
+.foot .big .mcp{background:var(--blue);color:var(--paper);padding:0 0.1em;border-radius:8px}
+.foot .stamps{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}
+.foot .rows{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;border-top:1px solid var(--line-invert);padding-top:22px}
+.foot a{color:var(--paper);font-family:var(--font-mono);font-size:0.8rem}
+.foot a:hover{color:var(--acid)}
+.foot .cols{display:flex;gap:22px;flex-wrap:wrap}
+
+@media(max-width:900px){ .nav .links{display:none} }

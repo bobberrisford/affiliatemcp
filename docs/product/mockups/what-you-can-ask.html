@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>affiliate-mcp — what you can ask</title>
+<link rel="stylesheet" href="brand.css">
+<style>
+  .switch{display:inline-flex;border:2px solid var(--ink);border-radius:7px;overflow:hidden;font-family:var(--font-mono);font-weight:700;font-size:0.78rem;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:30px}
+  .switch button{border:0;background:var(--paper);color:var(--ink);padding:10px 18px;cursor:pointer;font:inherit}
+  .switch button.on{background:var(--ink);color:var(--acid)}
+  .group{margin-bottom:20px}
+  .group h2{font-family:var(--font-display);font-weight:800;font-size:1.5rem;text-transform:lowercase;letter-spacing:-0.01em;margin:0 0 14px;display:flex;align-items:center;gap:10px}
+  .group h2::before{content:"";width:22px;height:2px;background:var(--blue)}
+  .qgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:30px}
+  @media(max-width:760px){.qgrid{grid-template-columns:1fr}}
+  .qcard{border:2px solid var(--ink);border-radius:10px;background:#FAF9F5;overflow:hidden;
+    transition:transform .08s steps(2),box-shadow .08s steps(2)}
+  .qcard:hover{box-shadow:var(--shadow);transform:translate(-2px,-2px)}
+  .qcard .u{padding:14px 16px;background:#fff;border-bottom:1px solid #ECEAE0;display:flex;gap:9px;align-items:flex-start;
+    font-family:ui-sans-serif,system-ui,-apple-system,sans-serif}
+  .qcard .u .ast{color:#D97757;font-weight:800;flex:none;font-family:var(--font-mono)}
+  .qcard .u b{font-weight:600;color:#1F1E1D}
+  .qcard .a{padding:13px 16px;font-size:0.9rem;color:#4a463f;font-family:ui-sans-serif,system-ui,-apple-system,sans-serif}
+  .qcard .a .lab{font-family:var(--font-mono);font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;color:#8a8782;display:block;margin-bottom:5px}
+  .hidden{display:none}
+</style>
+</head>
+<body data-page="ask">
+<div id="site-nav"></div>
+
+<header class="phead">
+  <div class="wrap">
+    <div class="sec-label">what you can ask</div>
+    <h1>plain english.<br>not filters.</h1>
+    <p class="lead">No date pickers, no saved views, no exports. Type the question the way you'd say it. Claude works out which networks to call and answers. <b>Available now</b> — steps one and two of the ladder.</p>
+  </div>
+</header>
+
+<section style="padding:6px 0 70px">
+  <div class="wrap">
+    <div class="switch" id="switch">
+      <button class="on" data-side="pub">publisher</button>
+      <button data-side="brand">brand / agency</button>
+    </div>
+
+    <!-- PUBLISHER -->
+    <div data-panel="pub">
+      <div class="group"><h2>earnings</h2>
+        <div class="qgrid">
+          <div class="qcard"><div class="u"><span class="ast">▸</span><b>"what did I earn across all networks last month?"</b></div><div class="a"><span class="lab">you get</span>One total, split by status — pending, approved, paid, reversed — with anything unpaid over 90 days flagged.</div></div>
+          <div class="qcard"><div class="u"><span class="ast">▸</span><b>"compare my earnings month on month."</b></div><div class="a"><span class="lab">you get</span>A period-over-period delta per network, so you see what moved and by how much.</div></div>
+        </div>
+      </div>
+      <div class="group"><h2>health</h2>
+        <div class="qgrid">
+          <div class="qcard"><div class="u"><span class="ast">▸</span><b>"are all my affiliate networks healthy?"</b></div><div class="a"><span class="lab">you get</span>A one-shot auth + capability check, one line per network: ok, or a plain reason.</div></div>
+          <div class="qcard"><div class="u"><span class="ast">▸</span><b>"which programmes are pending after 90 days?"</b></div><div class="a"><span class="lab">you get</span>Every stale transaction surfaced, so nothing quietly ages out unpaid.</div></div>
+        </div>
+      </div>
+      <div class="group"><h2>links &amp; setup</h2>
+        <div class="qgrid">
+          <div class="qcard"><div class="u"><span class="ast">▸</span><b>"audit the affiliate links in my sitemap."</b></div><div class="a"><span class="lab">you get</span>Every link classified by network, with dead or declined ones flagged.</div></div>
+          <div class="qcard"><div class="u"><span class="ast">▸</span><b>"help me set up Awin."</b></div><div class="a"><span class="lab">you get</span>Guided credential setup with the dashboard menu paths quoted verbatim.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BRAND -->
+    <div data-panel="brand" class="hidden">
+      <div class="group"><h2>single brand</h2>
+        <div class="qgrid">
+          <div class="qcard"><div class="u"><span class="ast">▸</span><b>"how is Acme performing this quarter?"</b></div><div class="a"><span class="lab">you get</span>A report across that brand's bound networks — top publishers, status splits, period delta.</div></div>
+          <div class="qcard"><div class="u"><span class="ast">▸</span><b>"who are Acme's top publishers this month?"</b></div><div class="a"><span class="lab">you get</span>A ranked partner list with revenue and trend, pulled live.</div></div>
+        </div>
+      </div>
+      <div class="group"><h2>portfolio</h2>
+        <div class="qgrid">
+          <div class="qcard"><div class="u"><span class="ast">▸</span><b>"show me revenue across all my clients this week."</b></div><div class="a"><span class="lab">you get</span>A brand-aggregated rollup, with a "needs attention" subsection for anything trending down.</div></div>
+          <div class="qcard"><div class="u"><span class="ast">▸</span><b>"any anomalies in the affiliate data this week?"</b></div><div class="a"><span class="lab">you get</span>A week-over-week scan: revenue drops, reversal spikes, top-10 dropouts, dead programmes.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="site-footer"></div>
+
+<script src="site.js"></script>
+<script>
+  document.getElementById("switch").addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b) return;
+    this.querySelectorAll("button").forEach(function(x){x.classList.remove("on")});
+    b.classList.add("on");
+    document.querySelectorAll("[data-panel]").forEach(function(p){p.classList.toggle("hidden", p.dataset.panel!==b.dataset.side);});
+  });
+</script>
+</body>
+</html>
