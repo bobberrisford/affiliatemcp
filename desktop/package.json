@@ -18,9 +18,8 @@
     "@electron/notarize": "^2.3.2"
   },
   "build": {
-    "appId": "affiliate-mcp",
+    "appId": "com.affiliateintelligence.affiliate-mcp",
     "productName": "affiliate-mcp",
-    "afterSign": "build/notarize.js",
     "protocols": [
       { "name": "affiliate-mcp", "schemes": ["affiliate-mcp"] }
     ],
@@ -39,7 +38,8 @@
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist"
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": { "teamId": "K5WQQYQWTR" }
     }
   }
 }
