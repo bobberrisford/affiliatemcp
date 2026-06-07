@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" font-family="'Arial Black','Helvetica Neue',Arial,sans-serif">
+  <rect width="1200" height="630" fill="#FFFFFF"/>
+  <rect x="0" y="0" width="1200" height="14" fill="#0B0B0C"/>
+  <rect x="0" y="616" width="1200" height="14" fill="#0B0B0C"/>
+  <!-- mark -->
+  <g transform="translate(80,72)">
+    <rect width="84" height="84" rx="10" fill="#2B2BFF"/>
+    <polyline points="24,27 41,42 24,57" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="square"/>
+    <rect x="46" y="48" width="17" height="10" fill="#fff"/>
+  </g>
+  <text x="184" y="128" font-size="40" font-weight="800" fill="#0B0B0C" letter-spacing="-1">affiliate<tspan dx="2" fill="#FFFFFF" stroke="none"> </tspan><tspan fill="#FFFFFF">mcp</tspan></text>
+  <rect x="372" y="92" width="118" height="48" rx="6" fill="#2B2BFF"/>
+  <text x="386" y="128" font-size="40" font-weight="800" fill="#FFFFFF" letter-spacing="-1">mcp</text>
+
+  <!-- headline -->
+  <text x="80" y="330" font-size="118" font-weight="800" fill="#0B0B0C" letter-spacing="-4">automate the</text>
+  <text x="80" y="450" font-size="118" font-weight="800" fill="#0B0B0C" letter-spacing="-4">affiliate <tspan fill="#FFFFFF">grind.</tspan></text>
+  <rect x="592" y="362" width="330" height="104" fill="#2B2BFF"/>
+  <text x="608" y="450" font-size="118" font-weight="800" fill="#FFFFFF" letter-spacing="-4">grind.</text>
+
+  <!-- footer chips -->
+  <g font-family="'Courier New',monospace" font-weight="700" font-size="22">
+    <rect x="80" y="520" width="190" height="40" fill="#0B0B0C"/>
+    <text x="98" y="547" fill="#FFFFFF" letter-spacing="2">FREE &amp; OPEN</text>
+    <rect x="286" y="520" width="168" height="40" fill="#0B0B0C"/>
+    <text x="304" y="547" fill="#FFFFFF" letter-spacing="2">MIT LICENCE</text>
+    <rect x="470" y="520" width="208" height="40" fill="#FF2E88"/>
+    <text x="488" y="547" fill="#FFFFFF" letter-spacing="2">NO TELEMETRY</text>
+  </g>
+</svg>

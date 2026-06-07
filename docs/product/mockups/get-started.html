@@ -4,8 +4,27 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>affiliate-mcp — get started</title>
+<meta name="description" content="Set up affiliate-mcp in about five minutes, no code. Connect your networks to Claude, Claude Code, or Codex and start asking.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='14' fill='%232B2BFF'/%3E%3Cpolyline points='34,38 58,60 34,82' fill='none' stroke='%23fff' stroke-width='13'/%3E%3Crect x='66' y='68' width='24' height='14' fill='%23fff'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="affiliate-mcp">
+<meta property="og:title" content="affiliate-mcp — get started">
+<meta property="og:description" content="Set up affiliate-mcp in about five minutes, no code. Connect your networks to Claude, Claude Code, or Codex and start asking.">
+<meta property="og:url" content="https://bobberrisford.github.io/affiliatemcp/get-started.html">
+<meta property="og:image" content="https://bobberrisford.github.io/affiliatemcp/og.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="affiliate-mcp — get started">
+<meta name="twitter:description" content="Set up affiliate-mcp in about five minutes, no code. Connect your networks to Claude, Claude Code, or Codex and start asking.">
+<meta name="twitter:image" content="https://bobberrisford.github.io/affiliatemcp/og.svg">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+@font-face{font-family:'Bricolage Grotesque';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/bricolage-grotesque-700.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'Bricolage Grotesque';font-style:normal;font-weight:800;font-display:swap;src:url(fonts/bricolage-grotesque-800.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/jetbrains-mono-400.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/jetbrains-mono-700.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:800;font-display:swap;src:url(fonts/jetbrains-mono-800.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'Space Grotesk';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/space-grotesk-400.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'Space Grotesk';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/space-grotesk-500.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
+@font-face{font-family:'Space Grotesk';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/space-grotesk-700.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
 :root{--ink:#0B0B0C;--ink-soft:#16161B;--paper:#FFFFFF;--paper-2:#F2F3F7;--smudge:#8B8FA0;--smudge-dk:#565A6B;--blue:#2B2BFF;--blue-bright:#5A78FF;--magenta:#FF2E88;--acid:var(--blue-bright);--pending:#E8A317;--fg-invert-mut:#9A9DAC;--line:rgba(11,11,12,0.14);--line-strong:rgba(11,11,12,0.85);--line-invert:rgba(255,255,255,0.16);--shadow:4px 4px 0 0 var(--ink);--shadow-lg:6px 6px 0 0 var(--ink);--font-display:'Bricolage Grotesque','Arial Black',system-ui,sans-serif;--font-sans:'Space Grotesk',system-ui,-apple-system,sans-serif;--font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;}
 *,*::before,*::after{box-sizing:border-box}html,body{margin:0}
 body{background:var(--paper);color:var(--ink);font-family:var(--font-sans);font-size:1.0625rem;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
@@ -33,6 +52,7 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
 .term{background:var(--ink);border:2px solid var(--ink);border-radius:10px;box-shadow:6px 6px 0 var(--ink);overflow:hidden;margin-top:6px}
 .term .bar{display:flex;align-items:center;gap:7px;padding:10px 14px;border-bottom:1px solid var(--line-invert)}.term .bar i{width:11px;height:11px;border-radius:50%;display:block;background:var(--line-invert)}.term .bar .t{margin-left:auto;font-family:var(--font-mono);color:var(--fg-invert-mut);font-size:.66rem;letter-spacing:.08em}
 .term .body{padding:16px 18px;font-family:var(--font-mono);font-size:.85rem;color:var(--paper);line-height:1.7;white-space:pre-wrap}.term .pr{color:var(--acid);font-weight:700}.term .ok{color:var(--blue-bright)}.term .warn{color:var(--pending)}.term .dim{color:var(--fg-invert-mut)}
+.term .tcopy{margin-left:10px;border:1px solid var(--line-invert);background:transparent;color:var(--fg-invert-mut);font-family:var(--font-mono);font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;padding:5px 8px;border-radius:4px;cursor:pointer}.term .tcopy:hover{border-color:var(--acid);color:var(--acid)}
 .demo{background:#FAF9F5;border:2px solid var(--ink);border-radius:10px;box-shadow:6px 6px 0 var(--ink);overflow:hidden;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;margin-top:6px}
 .cl-top{display:flex;align-items:center;gap:9px;padding:12px 16px;background:#fff;border-bottom:1px solid #ECEAE0}.cl-top svg{width:22px;height:22px}.cl-name{font-weight:600;color:#1F1E1D;font-size:.95rem}.cl-conn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:.68rem;color:#8a8782;border:1px solid #E5E2D6;border-radius:999px;padding:3px 10px}.cl-conn .ast{color:#D97757;font-weight:700}
 .cl-body{padding:18px 16px;color:#1F1E1D;font-size:.9rem;line-height:1.55}.cl-user{margin-left:auto;width:max-content;max-width:84%;background:#F0EEE6;border-radius:14px;border-bottom-right-radius:4px;padding:10px 14px;font-size:.88rem}.cl-asst{display:flex;gap:11px;margin-top:16px}.cl-asst svg{width:24px;height:24px;flex:none;margin-top:2px}.cl-asst p{margin:0}
@@ -69,7 +89,7 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
   <div class="step-block">
     <div class="step-head"><span class="n">01</span><h2>run the setup wizard</h2></div>
     <p>Open <b>Terminal</b> (Mac) or <b>PowerShell</b> (Windows), paste the line, press enter. It walks you through one network at a time and shows exactly where to find each login.</p>
-    <div class="term"><div class="bar"><i></i><i></i><i></i><span class="t">terminal</span></div><div class="body"><span class="pr">$</span> npx affiliate-networks-mcp setup
+    <div class="term" data-cmd="npx affiliate-networks-mcp setup"><div class="bar"><i></i><i></i><i></i><span class="t">terminal</span><button class="tcopy">copy</button></div><div class="body"><span class="pr">$</span> npx affiliate-networks-mcp setup
 
 <span class="dim">? which network?</span> Awin
 <span class="dim">? which side?</span> publisher
@@ -82,7 +102,7 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
   <div class="step-block">
     <div class="step-head"><span class="n">02</span><h2>check it's wired up</h2></div>
     <p>One line per network: <span class="ok" style="font-family:var(--font-mono)">ok</span> for healthy, or a plain reason if something's off.</p>
-    <div class="term"><div class="bar"><i></i><i></i><i></i><span class="t">terminal</span></div><div class="body"><span class="pr">$</span> npx affiliate-networks-mcp test
+    <div class="term" data-cmd="npx affiliate-networks-mcp test"><div class="bar"><i></i><i></i><i></i><span class="t">terminal</span><button class="tcopy">copy</button></div><div class="body"><span class="pr">$</span> npx affiliate-networks-mcp test
 
   Awin            <span class="ok">ok</span>
   CJ Affiliate    <span class="ok">ok</span>
@@ -93,7 +113,7 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
     <div class="step-head"><span class="n">03</span><h2>connect it to your ai</h2></div>
     <p>Pick the client you use. The wizard offers this automatically at the end, too.</p>
     <div class="tabs" id="tabs"><button class="tab on" data-tab="desktop">Claude Desktop</button><button class="tab" data-tab="code">Claude Code</button><button class="tab" data-tab="codex">Codex</button></div>
-    <div class="term"><div class="bar"><i></i><i></i><i></i><span class="t">terminal</span></div><div class="body" id="connect-body"></div></div>
+    <div class="term" id="connect-term"><div class="bar"><i></i><i></i><i></i><span class="t">terminal</span><button class="tcopy">copy</button></div><div class="body" id="connect-body"></div></div>
   </div>
 
   <div class="step-block">
@@ -132,9 +152,10 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
 var CONNECT={desktop:[['$','npx affiliate-networks-mcp install'],['','finds Claude Desktop config, adds the affiliate entry,'],['','takes a timestamped backup first.'],['ok','restart Claude Desktop and you’re done ✓']],
 code:[['$','claude plugin marketplace add bobberrisford/affiliatemcp'],['$','claude plugin install affiliate-networks-mcp@affiliatemcp'],['ok','registers the MCP server + bundled skills in one step ✓']],
 codex:[['$','npx affiliate-networks-mcp install --codex'],['','adds the local MCP server to ~/.codex/config.toml'],['ok','open Codex, run /mcp to confirm ✓']]};
-function renderConnect(t){var d=CONNECT[t];document.getElementById("connect-body").innerHTML=d.map(function(l){if(l[0]==='ok')return '<span class="ok">'+l[1]+'</span>';if(l[0]==='$')return '<span class="pr">$</span> '+l[1];return '<span class="dim">'+l[1]+'</span>';}).join("\n");}
+function renderConnect(t){var d=CONNECT[t];document.getElementById("connect-body").innerHTML=d.map(function(l){if(l[0]==='ok')return '<span class="ok">'+l[1]+'</span>';if(l[0]==='$')return '<span class="pr">$</span> '+l[1];return '<span class="dim">'+l[1]+'</span>';}).join("\n");document.getElementById("connect-term").setAttribute("data-cmd",d.filter(function(l){return l[0]==='$';}).map(function(l){return l[1];}).join("\n"));}
 document.getElementById("tabs").addEventListener("click",function(e){var b=e.target.closest(".tab");if(!b)return;this.querySelectorAll(".tab").forEach(function(x){x.classList.remove("on")});b.classList.add("on");renderConnect(b.dataset.tab);});
 renderConnect("desktop");
+document.addEventListener("click",function(e){var b=e.target.closest(".tcopy");if(!b)return;var term=b.closest(".term");var cmd=term?term.getAttribute("data-cmd"):"";try{navigator.clipboard.writeText(cmd||"");}catch(err){}b.textContent="copied ✓";setTimeout(function(){b.textContent="copy";},1200);});
 </script>
 </body>
 </html>

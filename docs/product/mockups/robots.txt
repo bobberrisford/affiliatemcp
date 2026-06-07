@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://bobberrisford.github.io/affiliatemcp/sitemap.xml
