@@ -8,9 +8,9 @@
  * as today (D9). This process only configures it.
  *
  * The IPC handlers below are the app's view of the core facade. Each one calls
- * into the BUILT core (`dist/core/facade.js` + `dist/shared/config.js`), loaded
- * once via dynamic import (the core is ESM; this file is CommonJS). There are
- * no mocks in the Electron path — if the build is missing we fail loudly.
+ * into the BUILT core, which esbuild bundles into a self-contained CommonJS
+ * file (`build/core.cjs`) we require() once and cache. There are no mocks in
+ * the Electron path — if the bundle is missing we fail loudly.
  */
 const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('node:path');
@@ -139,54 +139,55 @@ if (!gotInstanceLock) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Core loader — dynamic import of the BUILT ESM output, cached.       */
+/* Core loader — require the self-contained CJS bundle, cached.        */
+/*                                                                     */
+/* The packaged app ships NO node_modules and NO `"type":"module"`     */
+/* marker, so it can't load the raw ESM `dist/` tree. Instead esbuild  */
+/* bundles the core + server into standalone CommonJS files            */
+/* (`core.cjs` / `server.cjs`) that we require() directly. The core    */
+/* bundle is flat — every symbol main.js needs as `facade.*` and       */
+/* `config.*` lives on the one object — so we return it for both.      */
 /* ------------------------------------------------------------------ */
 
 /**
- * Resolve the directory that holds the built `dist/` tree.
- * - dev (`!app.isPackaged`): the repo's `dist/` one level up from `desktop/`.
- * - packaged: `dist/` is shipped as an extraResource under resourcesPath.
+ * Resolve an absolute path to a shipped bundle.
+ * - dev (`!app.isPackaged`): `desktop/build/<file>` (written by `npm run bundle`).
+ * - packaged: the bundle sits directly under resourcesPath (extraResources).
+ * @param {string} file e.g. 'core.cjs' | 'server.cjs'
  */
-function distDir() {
+function bundlePath(file) {
   return app.isPackaged
-    ? path.join(process.resourcesPath, 'dist')
-    : path.join(__dirname, '..', 'dist');
+    ? path.join(process.resourcesPath, file)
+    : path.join(__dirname, 'build', file);
 }
 
 /** Absolute path to the bundled MCP server entrypoint (for the Claude config). */
 function serverEntrypoint() {
-  return path.join(distDir(), 'index.js');
+  return bundlePath('server.cjs');
 }
 
-/** @type {Promise<{ facade: any, config: any }> | null} */
-let corePromise = null;
+/** @type {{ facade: any, config: any } | null} */
+let core = null;
 
 /**
  * Load the built core once and cache it. Throws a clear, actionable error if
- * the build output is missing — we never silently fall back to mock data here.
+ * the bundle is missing — we never silently fall back to mock data here.
+ *
+ * The bundle is plain CommonJS, so a synchronous require() is enough; both
+ * `facade` and `config` point at the same flat module.
  */
 function loadCore() {
-  if (corePromise) return corePromise;
-  corePromise = (async () => {
-    const facadePath = path.join(distDir(), 'core', 'facade.js');
-    const configPath = path.join(distDir(), 'shared', 'config.js');
-    if (!fs.existsSync(facadePath) || !fs.existsSync(configPath)) {
-      throw new Error(
-        `affiliate-mcp core build not found at ${distDir()}. ` +
-          'Run `npm run build` in the repo root first.',
-      );
-    }
-    // pathToFileURL keeps Windows paths + spaces in the path valid for import().
-    const { pathToFileURL } = require('node:url');
-    const facade = await import(pathToFileURL(facadePath).href);
-    const config = await import(pathToFileURL(configPath).href);
-    return { facade, config };
-  })().catch((err) => {
-    // Reset so a later call can retry (e.g. after the user runs the build).
-    corePromise = null;
-    throw err;
-  });
-  return corePromise;
+  if (core) return core;
+  const corePath = bundlePath('core.cjs');
+  if (!fs.existsSync(corePath)) {
+    throw new Error(
+      `affiliate-mcp core build not found at ${corePath}. ` +
+        'Run `npm run build` in the repo root then `npm run bundle` in desktop/.',
+    );
+  }
+  const mod = require(corePath);
+  core = { facade: mod, config: mod };
+  return core;
 }
 
 function createWindow() {
@@ -347,7 +348,7 @@ handle('claude:connect', async () => {
   // Packaged: point Claude at the bundled server, run via THIS app's own
   // Electron binary in Node mode (ELECTRON_RUN_AS_NODE=1) so we don't ship a
   // second Node binary. The config entry's `command` is the app executable and
-  // its single arg is the bundled dist/index.js. We pass the env through
+  // its single arg is the bundled server.cjs. We pass the env through
   // `nodePath`/`serverPath`; addAffiliateEntry writes { command, args }. The
   // ELECTRON_RUN_AS_NODE flag is injected into the entry below.
   //
@@ -357,7 +358,7 @@ handle('claude:connect', async () => {
   }
   const result = await facade.connectClaudeDesktop({
     nodePath: process.execPath, // the app's Electron executable
-    serverPath: serverEntrypoint(), // bundled dist/index.js
+    serverPath: serverEntrypoint(), // bundled server.cjs
   });
   // The facade builds { command: <appExe>, args: [<server>] } but cannot set an
   // env on the entry. Patch the written config so Electron runs as plain Node.

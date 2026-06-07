@@ -26,3 +26,5 @@ SUBMISSION.md
 # The dev pair lives here; production keys live in the Worker secret store.
 /licence-keys/
 /apple-signing/
+desktop/build/core.cjs
+desktop/build/server.cjs

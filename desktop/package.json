@@ -10,11 +10,13 @@
     "start": "electron .",
     "dev": "electron .",
     "prebuild:core": "npm --prefix .. run build",
-    "dist": "npm run prebuild:core && electron-builder --mac dmg"
+    "bundle": "esbuild ../dist/core/app-entry.js --bundle --platform=node --format=cjs --outfile=build/core.cjs && esbuild ../dist/index.js --bundle --platform=node --format=cjs --outfile=build/server.cjs",
+    "dist": "npm run prebuild:core && npm run bundle && electron-builder --mac dmg"
   },
   "devDependencies": {
     "electron": "^31.0.0",
     "electron-builder": "^24.13.3",
+    "esbuild": "^0.21.0",
     "@electron/notarize": "^2.3.2"
   },
   "build": {
@@ -29,7 +31,8 @@
       "renderer/**"
     ],
     "extraResources": [
-      { "from": "../dist", "to": "dist" },
+      { "from": "build/core.cjs", "to": "core.cjs" },
+      { "from": "build/server.cjs", "to": "server.cjs" },
       { "from": "../design-system", "to": "design-system" }
     ],
     "mac": {
