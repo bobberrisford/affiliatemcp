@@ -104,22 +104,34 @@
   .seg button{border:0;background:var(--paper);color:var(--ink);padding:8px 15px;cursor:pointer;font:inherit}
   .seg button.on{background:var(--ink);color:var(--acid)}
 
-  /* demo terminal */
-  .demo{background:var(--ink);border:2px solid var(--ink);border-radius:10px;box-shadow:6px 6px 0 var(--ink);overflow:hidden}
-  .demo .bar{display:flex;align-items:center;gap:7px;padding:11px 14px;border-bottom:1px solid var(--line-invert)}
-  .demo .bar i{width:11px;height:11px;border-radius:50%;display:block}
-  .demo .bar .t{margin-left:auto;font-family:var(--font-mono);color:var(--fg-invert-mut);font-size:0.66rem;letter-spacing:0.08em}
-  .demo .body{padding:16px 16px 18px;font-family:var(--font-mono);font-size:0.84rem;color:var(--paper);min-height:268px}
-  .demo .q .pr{color:var(--acid);font-weight:700}
-  .demo .ans{margin-top:14px;border-top:1px dashed var(--line-invert);padding-top:14px}
-  .demo .ans .lead{font-family:var(--font-display);font-weight:800;font-size:1.7rem;color:var(--paper);line-height:1;margin-bottom:12px}
-  .demo .ans .sub{font-family:var(--font-mono);font-size:0.7rem;color:var(--fg-invert-mut);letter-spacing:0.04em;margin-bottom:12px;text-transform:uppercase}
-  .demo table{width:100%;border-collapse:collapse;font-size:0.78rem}
-  .demo td{padding:6px 0;border-bottom:1px dashed var(--line-invert);color:var(--paper)}
-  .demo td.r{text-align:right}
-  .demo .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px}
-  .blink{animation:bl 1s steps(2) infinite}
-  @keyframes bl{50%{opacity:0}}
+  /* demo — faithful Claude conversation, inside the punk sticker frame */
+  .demo{background:#FAF9F5;border:2px solid var(--ink);border-radius:10px;box-shadow:6px 6px 0 var(--ink);
+    overflow:hidden;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif}
+  .cl-top{display:flex;align-items:center;gap:9px;padding:12px 16px;background:#fff;border-bottom:1px solid #ECEAE0}
+  .cl-top svg{width:22px;height:22px;display:block}
+  .cl-name{font-weight:600;color:#1F1E1D;font-size:0.95rem;letter-spacing:-0.01em}
+  .cl-conn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:0.68rem;color:#8a8782;
+    border:1px solid #E5E2D6;border-radius:999px;padding:3px 10px}
+  .cl-conn .ast{color:#D97757;font-weight:700}
+  .cl-body{padding:18px 16px 20px;min-height:268px;color:#1F1E1D;font-size:0.9rem;line-height:1.5}
+  .cl-user{margin-left:auto;width:max-content;max-width:84%;background:#F0EEE6;border-radius:14px;
+    border-bottom-right-radius:4px;padding:10px 14px;color:#1F1E1D;font-size:0.88rem}
+  .cl-asst{display:flex;gap:11px;margin-top:18px}
+  .cl-asst > svg{width:24px;height:24px;flex:none;margin-top:2px}
+  .cl-content{flex:1;min-width:0}
+  .cl-tool{display:inline-flex;align-items:center;gap:8px;border:1px solid #E5E2D6;background:#fff;border-radius:8px;
+    padding:6px 11px;font-size:0.72rem;color:#6F6E69;margin-bottom:12px}
+  .cl-tool .ast{color:#D97757;font-weight:700}
+  .cl-tool .fn{color:#1F1E1D;font-family:var(--font-mono);font-size:0.68rem}
+  .cl-say{margin:0 0 12px;color:#1F1E1D;max-width:none}
+  .cl-say b{font-weight:700}
+  .cl-table{width:100%;border-collapse:collapse;font-size:0.8rem}
+  .cl-table th{text-align:left;font-weight:600;color:#8a8782;font-size:0.66rem;text-transform:uppercase;
+    letter-spacing:0.05em;padding:0 0 7px;border-bottom:1px solid #E5E2D6}
+  .cl-table th.r,.cl-table td.r{text-align:right}
+  .cl-table td{padding:8px 0;border-bottom:1px solid #ECEAE0;color:#1F1E1D}
+  .cl-table td.r{font-variant-numeric:tabular-nums}
+  .cl-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;vertical-align:middle}
 
   /* ladder / how it works */
   .steps{padding:70px 0}
@@ -197,7 +209,6 @@
     .net-grid{grid-template-columns:repeat(2,1fr)}
     .nav .links{display:none}
   }
-  @media(prefers-reduced-motion:reduce){.blink{animation:none}}
 </style>
 </head>
 <body>
@@ -252,18 +263,34 @@
     </div>
 
     <div class="demo">
-      <div class="bar">
-        <i style="background:var(--magenta)"></i>
-        <i style="background:var(--pending)"></i>
-        <i style="background:var(--acid)"></i>
-        <span class="t">ai workspace — affiliate</span>
+      <div class="cl-top">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <g fill="#D97757">
+            <rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3"></rect>
+            <rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(45 12 12)"></rect>
+            <rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(90 12 12)"></rect>
+            <rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(135 12 12)"></rect>
+          </g>
+        </svg>
+        <span class="cl-name">Claude</span>
+        <span class="cl-conn"><span class="ast">✳</span> affiliate · connected</span>
       </div>
-      <div class="body">
-        <div class="q"><span class="pr">you ▸</span> <span id="demo-q"></span><span class="blink">▮</span></div>
-        <div class="ans">
-          <div class="lead" id="demo-lead"></div>
-          <div class="sub" id="demo-sub"></div>
-          <table><tbody id="demo-rows"></tbody></table>
+      <div class="cl-body">
+        <div class="cl-user" id="demo-q"></div>
+        <div class="cl-asst">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <g fill="#D97757">
+              <rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3"></rect>
+              <rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(45 12 12)"></rect>
+              <rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(90 12 12)"></rect>
+              <rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(135 12 12)"></rect>
+            </g>
+          </svg>
+          <div class="cl-content">
+            <div class="cl-tool"><span class="ast">✳</span> affiliate <span class="fn" id="demo-tool"></span></div>
+            <p class="cl-say" id="demo-say"></p>
+            <table class="cl-table"><thead id="demo-head"></thead><tbody id="demo-rows"></tbody></table>
+          </div>
         </div>
       </div>
     </div>
@@ -381,36 +408,41 @@
 
 <script>
   // ---- hero publisher/brand toggle (from sections.jsx DEMO) ----
+  var GREY="#8a8782", AMBER="#C8881C", DOWN="#C2412D", UP="#3B7D4F";
   var DEMO = {
     pub: {
       q: "what did I earn across all networks last month?",
-      lead: '£18,402<span class="hl"> .55</span>',
-      sub: "across 5 networks · 2 transactions pending >90d",
+      tool: "get_earnings",
+      say: 'You earned <b>£18,402.55</b> across 5 networks last month. 2 transactions are still pending after 90 days.',
+      head: ["Network","Status","Amount"],
       rows: [
-        ["Awin", "paid", "var(--acid)", "£7,210.00"],
-        ["CJ Affiliate", "pending", "var(--pending)", "£4,980.20"],
-        ["Rakuten", "approved", "var(--acid)", "£6,824.75"],
-        ["Impact", "reversed", "var(--magenta)", "−£612.40"]
+        ["Awin", "paid", UP, "£7,210.00"],
+        ["CJ Affiliate", "pending", AMBER, "£4,980.20"],
+        ["Rakuten", "approved", UP, "£6,824.75"],
+        ["Impact", "reversed", DOWN, "−£612.40"]
       ]
     },
     brand: {
       q: "show me revenue across all my clients this week",
-      lead: "£214,900",
-      sub: "3 brands · 1 needs attention (reversal spike)",
+      tool: "get_portfolio",
+      say: 'Revenue across your 3 clients this week is <b>£214,900</b>. Globex needs attention — a reversal spike.',
+      head: ["Brand","Trend","Revenue"],
       rows: [
-        ["Acme", "↑ 14%", "var(--acid)", "£128,400"],
-        ["Globex", "↓ 9%", "var(--magenta)", "£61,200"],
-        ["Initech", "→ flat", "var(--pending)", "£25,300"]
+        ["Acme", "↑ 14%", UP, "£128,400"],
+        ["Globex", "↓ 9%", DOWN, "£61,200"],
+        ["Initech", "→ flat", GREY, "£25,300"]
       ]
     }
   };
   function renderDemo(aud){
     var d = DEMO[aud];
     document.getElementById("demo-q").textContent = d.q;
-    document.getElementById("demo-lead").innerHTML = d.lead;
-    document.getElementById("demo-sub").textContent = d.sub;
+    document.getElementById("demo-tool").textContent = "· " + d.tool;
+    document.getElementById("demo-say").innerHTML = d.say;
+    document.getElementById("demo-head").innerHTML =
+      '<tr><th>'+d.head[0]+'</th><th>'+d.head[1]+'</th><th class="r">'+d.head[2]+'</th></tr>';
     document.getElementById("demo-rows").innerHTML = d.rows.map(function(r){
-      return '<tr><td>'+r[0]+'</td><td><span class="dot" style="background:'+r[2]+'"></span>'+r[1]+'</td><td class="r">'+r[3]+'</td></tr>';
+      return '<tr><td>'+r[0]+'</td><td><span class="cl-dot" style="background:'+r[2]+'"></span>'+r[1]+'</td><td class="r">'+r[3]+'</td></tr>';
     }).join("");
   }
   document.getElementById("seg").addEventListener("click", function(e){
