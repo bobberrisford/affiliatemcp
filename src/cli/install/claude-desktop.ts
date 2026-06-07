@@ -30,6 +30,32 @@ export const AFFILIATE_ENTRY_VALUE = {
   args: ['affiliate-networks-mcp'],
 } as const;
 
+/** A Claude Desktop MCP server entry: a command plus its argument vector. */
+export interface AffiliateEntryValue {
+  command: string;
+  args: string[];
+}
+
+/**
+ * Build the `mcpServers.affiliate` entry value.
+ *
+ * When both `nodePath` and `serverPath` are supplied (the desktop app's
+ * bundled-runtime case, D9), the entry spawns that exact Node binary against
+ * that exact server entrypoint — no reliance on a globally-installed `npx`.
+ * Otherwise it falls back to the `npx affiliate-networks-mcp` default, byte-for-byte
+ * identical to `AFFILIATE_ENTRY_VALUE`, preserving back-compat for the CLI installer.
+ */
+export function buildAffiliateEntryValue(opts: {
+  nodePath?: string;
+  serverPath?: string;
+} = {}): AffiliateEntryValue {
+  const { nodePath, serverPath } = opts;
+  if (nodePath && serverPath) {
+    return { command: nodePath, args: [serverPath] };
+  }
+  return { command: AFFILIATE_ENTRY_VALUE.command, args: [...AFFILIATE_ENTRY_VALUE.args] };
+}
+
 export type DesktopAction =
   | 'created'
   | 'added'
@@ -84,12 +110,25 @@ export interface AddOptions {
    * orchestrator is expected to prompt the user up front when interactive.
    */
   onConflict?: () => Promise<boolean>;
+  /**
+   * The entry value to write under `mcpServers.affiliate`. Defaults to
+   * `AFFILIATE_ENTRY_VALUE` (the `npx affiliate-networks-mcp` default) when
+   * omitted, so existing callers and tests are unaffected. The desktop app
+   * passes a bundled-runtime value here (see `buildAffiliateEntryValue`, D9).
+   */
+  entryValue?: AffiliateEntryValue;
   /** Injected for tests. */
   now?: () => Date;
 }
 
 export async function addAffiliateEntry(opts: AddOptions): Promise<DesktopEditResult> {
-  const { configPath, dryRun = false, forceOverwrite = false, now = () => new Date() } = opts;
+  const {
+    configPath,
+    dryRun = false,
+    forceOverwrite = false,
+    entryValue = AFFILIATE_ENTRY_VALUE,
+    now = () => new Date(),
+  } = opts;
 
   const fileExists = existsSync(configPath);
 
@@ -98,7 +137,7 @@ export async function addAffiliateEntry(opts: AddOptions): Promise<DesktopEditRe
       return { path: configPath, action: 'would-create' };
     }
     mkdirSync(path.dirname(configPath), { recursive: true });
-    const fresh = { mcpServers: { [AFFILIATE_ENTRY_KEY]: AFFILIATE_ENTRY_VALUE } };
+    const fresh = { mcpServers: { [AFFILIATE_ENTRY_KEY]: entryValue } };
     atomicWriteJSON(configPath, fresh);
     return { path: configPath, action: 'created' };
   }
@@ -116,7 +155,7 @@ export async function addAffiliateEntry(opts: AddOptions): Promise<DesktopEditRe
       return { path: configPath, action: 'would-update' };
     }
     const backupPath = timestampedBackup(configPath, now());
-    const fresh = { mcpServers: { [AFFILIATE_ENTRY_KEY]: AFFILIATE_ENTRY_VALUE } };
+    const fresh = { mcpServers: { [AFFILIATE_ENTRY_KEY]: entryValue } };
     atomicWriteJSON(configPath, fresh);
     return { path: configPath, action: 'updated', backupPath };
   }
@@ -127,7 +166,7 @@ export async function addAffiliateEntry(opts: AddOptions): Promise<DesktopEditRe
     : {};
 
   const existingEntry = servers[AFFILIATE_ENTRY_KEY];
-  const desired = AFFILIATE_ENTRY_VALUE;
+  const desired = entryValue;
 
   if (existingEntry !== undefined) {
     if (entriesMatch(existingEntry, desired)) {

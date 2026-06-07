@@ -1,0 +1,85 @@
+/* ============================================================================
+   affiliate-mcp — Design System COMPONENTS
+   ----------------------------------------------------------------------------
+   Canonical component classes, lifted verbatim from the design-system review
+   cards (preview/buttons.html, card.html, terminal-block.html, data-table.html,
+   chips-stamps.html). Import AFTER colors_and_type.css.
+
+   Rule: surfaces consume these classes — they do NOT re-define buttons, cards,
+   terminals, or tables locally. New components are added here, once.
+   ========================================================================== */
+
+/* ---- Buttons — chunky, physical, stamp-on-press ----------------------- */
+.btn {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.86rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 13px 20px;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform .08s steps(2), box-shadow .08s steps(2);
+}
+.btn-primary { background: var(--acid); color: var(--ink); box-shadow: var(--shadow); }
+.btn-primary:hover { box-shadow: var(--shadow-lg); }
+.btn-primary:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--ink); }
+.btn-dark { background: var(--ink); color: var(--paper); box-shadow: 4px 4px 0 var(--magenta); }
+.btn-dark:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--magenta); }
+.btn-ghost { background: transparent; color: var(--ink); }
+.btn-ghost:hover { background: var(--ink); color: var(--paper); }
+.btn[disabled] { opacity: .4; cursor: not-allowed; box-shadow: none; }
+.btn .k { opacity: .55; font-weight: 500; }
+
+/* ---- Card — paper, hard border, offset shadow ------------------------- */
+.card {
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-lg);
+  border-radius: 6px;
+  padding: 18px 20px;
+  position: relative;
+}
+.card .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.card .amt { font-family: var(--font-display); font-weight: 800; font-size: 2.6rem; line-height: 1; letter-spacing: -0.02em; }
+.card .delta { font-family: var(--font-mono); font-weight: 700; font-size: 0.8rem; color: var(--pos); }
+.card .sub { font-family: var(--font-mono); font-size: 0.72rem; color: var(--smudge-dk); letter-spacing: 0.05em; text-transform: uppercase; }
+
+/* ---- Terminal block — the product surface ----------------------------- */
+.term {
+  background: var(--ink);
+  border-radius: 8px;
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+.term .bar { display: flex; align-items: center; gap: 7px; padding: 9px 12px; border-bottom: 1px solid var(--line-invert); }
+.term .bar i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+.term .bar .t { margin-left: auto; color: var(--fg-invert-mut); font-size: 0.66rem; letter-spacing: 0.08em; }
+.term .body { padding: 14px; color: var(--paper); line-height: 1.7; }
+.term .pr { color: var(--acid); font-weight: 700; }
+.term .ok { color: var(--acid); }
+.term .mut { color: var(--fg-invert-mut); }
+.term .err { color: var(--magenta); }
+
+/* ---- Data table — affiliate rows -------------------------------------- */
+.data-table { border-collapse: collapse; width: 100%; font-family: var(--font-mono); font-size: 0.82rem; }
+.data-table th { text-align: left; font-size: 0.64rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--smudge-dk); padding: 0 10px 8px; border-bottom: 2px solid var(--ink); }
+.data-table td { padding: 9px 10px; border-bottom: 1px dashed var(--line); }
+.data-table .net { font-weight: 700; }
+.data-table .num { text-align: right; }
+.data-table .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+
+/* ---- Status dot + label (data: paid / pending / reversed) ------------- */
+.status { font-family: var(--font-mono); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.04em; display: inline-flex; align-items: center; gap: 8px; }
+.status .dot { width: 9px; height: 9px; border-radius: 999px; display: inline-block; }
+.dot-pos { background: var(--pos); }
+.dot-pending { background: var(--pending); }
+.dot-neg { background: var(--neg); }
+.dot-idle { background: var(--smudge); }

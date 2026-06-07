@@ -1,0 +1,42 @@
+{
+  "name": "affiliate-mcp-desktop",
+  "productName": "affiliate-mcp",
+  "version": "0.1.0",
+  "description": "The local-first setup app for affiliate-mcp — get connected to Claude Desktop without a terminal.",
+  "license": "MIT",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "prebuild:core": "npm --prefix .. run build",
+    "dist": "npm run prebuild:core && electron-builder --mac dmg"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3",
+    "@electron/notarize": "^2.3.2"
+  },
+  "build": {
+    "appId": "affiliate-mcp",
+    "productName": "affiliate-mcp",
+    "afterSign": "build/notarize.js",
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**"
+    ],
+    "extraResources": [
+      { "from": "../dist", "to": "dist" },
+      { "from": "../design-system", "to": "design-system" }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": ["dmg"],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    }
+  }
+}

@@ -1,0 +1,102 @@
+/* ============================================================================
+   affiliate-mcp desktop — APP layout only.
+   Components (buttons, cards, terminals, chips, status) come from the design
+   system (../../design-system/components.css). This file is window chrome and
+   screen scaffolding ONLY — it must not re-define any design-system component.
+   ========================================================================== */
+
+html, body { margin: 0; height: 100%; }
+body.amcp {
+  background:
+    radial-gradient(var(--ink-soft) 2.4px, transparent 2.7px) 0 0 / 13px 13px,
+    var(--ink);
+  color: var(--paper);
+  overflow: hidden;
+}
+
+/* ---- window chrome (custom titlebar; drag region on mac) -------------- */
+.titlebar {
+  -webkit-app-region: drag;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 0 14px 0 84px; /* leave room for mac traffic lights */
+  background: var(--ink);
+  border-bottom: 1px solid var(--line-invert);
+}
+.titlebar .mark { width: 18px; height: 18px; border-radius: 3px; }
+.titlebar .t { font-family: var(--font-mono); font-weight: 700; font-size: .72rem; letter-spacing: .08em; color: var(--fg-invert-mut); }
+.titlebar .t b { color: var(--paper); }
+
+/* ---- app stage: a centred paper "screen" on the ink desktop ---------- */
+.stage { height: calc(100% - 38px); display: flex; align-items: center; justify-content: center; padding: var(--s-6); box-sizing: border-box; }
+.screen {
+  width: 100%; max-width: 720px; max-height: 100%;
+  background: var(--paper); color: var(--ink);
+  border: var(--rule) solid var(--ink);
+  box-shadow: 10px 10px 0 0 var(--blue);
+  border-radius: var(--r-sm);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.screen .scroll { padding: var(--s-7); overflow-y: auto; }
+.screen.center .scroll { text-align: center; padding: var(--s-8) var(--s-7); }
+
+/* ---- step rail -------------------------------------------------------- */
+.steps { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-5); }
+.steps .stepno { font-family: var(--font-mono); font-weight: 700; font-size: var(--t-micro); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-muted); white-space: nowrap; }
+.steps .seg { height: 6px; flex: 1; background: var(--paper-2); border: 1px solid var(--line); }
+.steps .seg.on { background: var(--blue); border-color: var(--blue-deep); }
+
+h2.scr { font-family: var(--font-display); font-weight: 800; text-transform: lowercase; letter-spacing: -.02em; line-height: 1; margin: 0 0 var(--s-3); font-size: var(--t-h2); }
+.scr-lead { color: var(--fg-muted); max-width: 56ch; margin: 0 0 var(--s-5); line-height: 1.5; }
+
+/* ---- footer actions --------------------------------------------------- */
+.actions { display: flex; align-items: center; justify-content: space-between; margin-top: var(--s-6); padding-top: var(--s-5); border-top: var(--rule) solid var(--ink); }
+
+/* ---- welcome / centred screens --------------------------------------- */
+.bigmark { width: 76px; height: 76px; border-radius: 12px; box-shadow: var(--shadow); margin: 0 auto var(--s-5); display: block; }
+.welcome-h { font-family: var(--font-display); font-weight: 800; text-transform: lowercase; letter-spacing: -.03em; line-height: .96; font-size: var(--t-h1); margin: 0 0 var(--s-4); }
+.trust { display: flex; gap: var(--s-2); justify-content: center; flex-wrap: wrap; margin: var(--s-5) 0 var(--s-6); }
+
+/* ---- network grid ----------------------------------------------------- */
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-3); }
+.net { border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: 14px; background: var(--paper); position: relative; cursor: pointer; transition: box-shadow .08s steps(2); }
+.net:hover { box-shadow: var(--shadow); }
+.net .nm { font-family: var(--font-mono); font-weight: 800; font-size: .95rem; }
+.net .mt { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .04em; color: var(--fg-muted); text-transform: uppercase; margin-top: 6px; }
+.net.sel { background: var(--ink); color: var(--paper); box-shadow: var(--shadow-acid); }
+.net.sel .mt { color: var(--blue-bright); }
+.net .tick { position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; background: var(--blue); color: #fff; display: none; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 800; font-size: 13px; border-radius: 3px; }
+.net.sel .tick { display: flex; }
+
+/* ---- credential fields ------------------------------------------------ */
+.field { margin-bottom: var(--s-5); }
+.field .fl { font-family: var(--font-mono); font-weight: 700; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; display: block; margin-bottom: 6px; }
+.help { background: var(--paper-2); border-left: var(--rule-heavy) solid var(--blue); padding: 12px 14px; font-size: .9rem; line-height: 1.5; color: var(--fg-muted); margin-bottom: 10px; border-radius: 0 4px 4px 0; }
+.deeplink { font-family: var(--font-mono); font-weight: 700; font-size: .76rem; letter-spacing: .04em; text-transform: uppercase; color: var(--blue); border: 1px dashed var(--blue); padding: 5px 10px; border-radius: 4px; display: inline-flex; gap: 6px; align-items: center; margin-top: 8px; text-decoration: none; cursor: pointer; }
+.kv { display: flex; align-items: stretch; border: var(--rule) solid var(--ink); border-radius: var(--r-xs); overflow: hidden; }
+.kv .pre { font-family: var(--font-mono); font-weight: 700; background: var(--ink); color: var(--blue-bright); padding: 12px; font-size: .8rem; display: flex; align-items: center; }
+.kv input { border: 0; flex: 1; font-family: var(--font-mono); font-size: .9rem; padding: 12px; outline: none; color: var(--ink); background: var(--paper); }
+.verify-row { margin-top: 10px; min-height: 22px; }
+
+/* ---- brand rows ------------------------------------------------------- */
+.brow { display: flex; align-items: center; gap: 14px; border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: 12px 14px; margin-bottom: 10px; cursor: pointer; }
+.brow .cb { width: 20px; height: 20px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 800; font-size: 13px; flex: none; background: var(--blue); color: #fff; }
+.brow.off .cb { background: var(--paper); border: var(--rule) solid var(--ink); color: transparent; }
+.brow .bn { font-family: var(--font-mono); font-weight: 800; }
+.brow .nick { margin-left: auto; }
+.brow .nick input { font-family: var(--font-mono); font-size: .82rem; padding: 7px 9px; border: var(--rule) solid var(--ink); border-radius: 3px; width: 130px; outline: none; }
+
+/* ---- connect detect row ---------------------------------------------- */
+.detect { display: flex; align-items: center; gap: 14px; border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: 16px 18px; box-shadow: var(--shadow); }
+.detect .ico { width: 40px; height: 40px; background: var(--ink); color: var(--blue-bright); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 800; font-size: 18px; border-radius: 4px; flex: none; }
+.detect .meta { flex: 1; } .detect .meta .a { font-weight: 700; } .detect .meta .b { font-size: .8rem; color: var(--fg-muted); font-family: var(--font-mono); }
+
+/* ---- example query rows (done) --------------------------------------- */
+.q { display: flex; align-items: center; gap: 12px; background: var(--ink); color: var(--paper); border-radius: var(--r-xs); padding: 13px 15px; margin-bottom: 10px; font-family: var(--font-mono); font-size: .88rem; }
+.q .p { color: var(--blue-bright); font-weight: 800; }
+
+.fade { animation: fade .18s steps(3) both; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
