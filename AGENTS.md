@@ -235,7 +235,9 @@ Request `@offmann` for changes involving shared/public contracts,
 cross-network semantics, authentication or security, write actions or consent,
 payments or licensing, deployment architecture, cross-client architecture, or
 product-direction decisions with implementation consequences. Routine isolated
-changes do not require this risk-based review gate.
+changes do not require this risk-based review gate. A PR author must never be
+requested to review their own PR; when `@offmann` authors a risk-based change,
+request the maintainer instead.
 
 ## Conventions
 

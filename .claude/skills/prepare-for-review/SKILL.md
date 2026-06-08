@@ -117,7 +117,8 @@ When every gate passes:
 
 1. Mark the PR ready with `gh pr ready`.
 2. Request `@offmann` with `gh pr edit --add-reviewer offmann` only when the PR
-   is in a risk-based category and his queue is empty.
+   is in a risk-based category, his queue is empty, and he is not the PR author.
+   When `@offmann` is the author, request the repository maintainer instead.
 3. For routine isolated changes, mark ready without requesting `@offmann`.
 4. Report the PR URL, verification evidence, risk classification, and reviewer
    request made.
