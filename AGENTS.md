@@ -218,11 +218,10 @@ stay with their feature. A PR over 1,000 additions or 20 changed files is not
 automatically rejected, but its description must explain why splitting would
 make the change harder to understand or validate.
 
-Use `.claude/skills/prepare-for-review/SKILL.md` before opening, updating, or
-requesting review on a PR. Codex discovers the same skill through
-`.agents/skills/prepare-for-review`. Only one PR at a time may actively await
-`@offmann`'s review. Other work may continue in draft. A PR is review-ready
-only when:
+Use the repo-local `prepare-for-review` skill before opening, updating, or
+requesting review on a PR. It is available to Claude Code and Codex. Only one
+PR at a time may actively await `@offmann`'s review. Other work may continue in
+draft. A PR is review-ready only when:
 
 - it is conflict-free and based on its intended foundation;
 - CI is green;
