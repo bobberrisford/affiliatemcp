@@ -1,23 +1,37 @@
-## Summary
+## User outcome
 
-One to three sentences describing what this PR changes.
+Describe the one user outcome this PR enables.
 
-## Why
+## Review request
 
-The user need or upstream change that motivated the work.
+- Mode: `decision | implementation | ready-to-merge`
+- Reviewer focus:
 
-## Test plan
+## Architecture and contracts
 
-- [ ] `npm run typecheck`
-- [ ] `npm run lint`
-- [ ] `npm test`
-- [ ] `npm run build`
-- [ ] Manual verification, if relevant, describe it here
+- Owning layer:
+- Public contracts changed:
+- Dependencies:
 
-## AI-assisted contribution
+## Risks and scope
 
-If an AI assistant helped, state what it generated, what you manually checked,
-and what remains uncertain. Delete this section if not relevant.
+- Risk domains:
+- Failure modes:
+- Deliberately out of scope:
+- Split rationale, required over 1,000 additions or 20 changed files:
+
+## Verification
+
+- [ ] Relevant automated checks pass
+- [ ] Manual verification, if relevant:
+- Commands and results:
+
+## Agent self-review
+
+- Complete diff inspected:
+- What the agent generated:
+- What a human or agent manually checked:
+- Remaining uncertainty:
 
 ## Screenshots
 

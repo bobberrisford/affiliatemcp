@@ -191,6 +191,53 @@ generated names that do not explain the work.
   inspect the diff and confirm the changed paths are documentation or GitHub
   community files only.
 
+## Delivery and review protocol
+
+Start each change from one user outcome. Before implementation, identify:
+
+- the architectural layer that owns the behaviour;
+- any PRs or decisions it depends on;
+- any public MCP, domain, CLI, or client contract it changes;
+- the failure modes and deliberately excluded scope.
+
+Keep provider-neutral domain behaviour in shared core and MCP layers. Claude,
+Codex, Desktop, CLI, and other client integrations should remain thin clients
+of those shared contracts. Do not solve a client-parity problem by duplicating
+domain behaviour inside each client.
+
+Create and merge a small decision PR before implementation when the work has an
+unresolved architecture, public-contract, security, payment, licensing,
+action-execution, or cross-client decision. Record the decision under
+`docs/decisions/YYYY-MM-DD-<slug>.md` with context, the chosen direction,
+rejected alternatives, consequences, and implementation follow-ups. Keep
+dependent implementation PRs draft until the decision or foundation PR merges.
+
+Split a PR when it combines independent user outcomes or separable high-risk
+domains. Tests, directly related docs, fixtures, and generated artefacts may
+stay with their feature. A PR over 1,000 additions or 20 changed files is not
+automatically rejected, but its description must explain why splitting would
+make the change harder to understand or validate.
+
+Use the repo-local `prepare-for-review` skill before opening, updating, or
+requesting review on a PR. It is available to Claude Code and Codex. Only one
+PR at a time may actively await `@offmann`'s review. Other work may continue in
+draft. A PR is review-ready only when:
+
+- it is conflict-free and based on its intended foundation;
+- CI is green;
+- the review brief is complete;
+- no product or architecture decision needed for this PR remains unresolved;
+- the complete diff has been inspected by the coding agent;
+- the PR has one coherent outcome and an explicit split rationale when large.
+
+Request `@offmann` for changes involving shared/public contracts,
+cross-network semantics, authentication or security, write actions or consent,
+payments or licensing, deployment architecture, cross-client architecture, or
+product-direction decisions with implementation consequences. Routine isolated
+changes do not require this risk-based review gate. A PR author must never be
+requested to review their own PR; when `@offmann` authors a risk-based change,
+request the maintainer instead.
+
 ## Conventions
 
 - **TypeScript strict.** `tsconfig.json` runs strict mode and `noUnusedLocals`.
