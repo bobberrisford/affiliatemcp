@@ -35,7 +35,7 @@
  * before the wizard fails to validate.
  */
 
-import type { SetupStep } from '../../src/shared/types.js';
+import type { SetupStep } from '../../shared/types.js';
 
 // TODO: enumerate prompts. Each step should have a `validateOnEntry` where the
 // network's API allows a per-field live check.

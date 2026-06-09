@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with eBay Partner Network (estimated 10-15 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Aebay%22)
+
 This guide walks you through the credentials affiliate-mcp needs to talk to
 your eBay Partner Network (EPN) publisher account. You will end up with three
 values written to `~/.affiliate-mcp/.env`: `EBAY_CLIENT_ID`,

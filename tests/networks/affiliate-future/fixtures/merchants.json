@@ -1,0 +1,35 @@
+[
+  {
+    "merchantID": 5969,
+    "merchantName": "Atolls Bookshop",
+    "programmeID": 16315,
+    "programmeName": "Atolls Bookshop UK",
+    "joined": true,
+    "category": "Books & Media",
+    "currency": "GBP",
+    "commissionDescription": "Up to 8% per sale",
+    "url": "https://www.atolls-bookshop.example.com"
+  },
+  {
+    "merchantID": 7252,
+    "merchantName": "Northern Outdoors",
+    "programmeID": 26550,
+    "programmeName": "Northern Outdoors",
+    "joined": false,
+    "category": "Sports & Outdoors",
+    "currency": "GBP",
+    "commissionDescription": "5% per sale",
+    "url": "https://www.northern-outdoors.example.com"
+  },
+  {
+    "merchantID": 1138,
+    "merchantName": "Maps International",
+    "programmeID": 3628,
+    "programmeName": "Maps International",
+    "joined": true,
+    "category": "Gifts",
+    "currency": "GBP",
+    "commissionDescription": "10% per sale",
+    "url": "https://www.maps-international.example.com"
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "data": {
+    "token_id": "tok_abc123",
+    "uid": 9001,
+    "description": "affiliate-mcp test key",
+    "is_enabled_by_user": true,
+    "datetime_created": "2026-01-02T10:00:00Z",
+    "datetime_expires": "2027-01-02T10:00:00Z"
+  }
+}

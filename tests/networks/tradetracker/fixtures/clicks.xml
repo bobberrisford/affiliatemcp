@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope
+    xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:ns1="https://ws.tradetracker.com/soap/affiliate">
+  <SOAP-ENV:Body>
+    <ns1:getClickTransactionsResponse>
+      <return SOAP-ENC:arrayType="ns1:ClickTransaction[2]"
+              xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/">
+        <clickTransaction>
+          <ID>click-3001</ID>
+          <campaign>
+            <ID>1001</ID>
+            <name>Atolls Bookshop</name>
+          </campaign>
+          <registrationDate>2026-02-15 12:00:00</registrationDate>
+          <refererUrl>https://reviews.atolls.example.com/best-books</refererUrl>
+        </clickTransaction>
+        <clickTransaction>
+          <ID>click-3002</ID>
+          <campaign>
+            <ID>1002</ID>
+            <name>Atolls Travel</name>
+          </campaign>
+          <registrationDate>2026-02-16 09:15:00</registrationDate>
+          <refererUrl>https://reviews.atolls.example.com/holiday-deals</refererUrl>
+        </clickTransaction>
+      </return>
+    </ns1:getClickTransactionsResponse>
+  </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

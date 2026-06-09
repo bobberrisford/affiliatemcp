@@ -1,0 +1,34 @@
+{
+  "Promotions": [
+    {
+      "MerchantId": "5001",
+      "MerchantName": "Atolls Bookshop",
+      "PromotionDescription": "10% off all hardbacks",
+      "CouponCode": "BOOKS10",
+      "AffiliateUrl": "https://www.linkconnector.com/ta.php?atid=1&mid=5001",
+      "MerchantUrl": "https://www.atolls-bookshop.example.com",
+      "Category": "Books",
+      "Currency": "USD"
+    },
+    {
+      "MerchantId": "5001",
+      "MerchantName": "Atolls Bookshop",
+      "PromotionDescription": "Free shipping over $25",
+      "CouponCode": "FREESHIP",
+      "AffiliateUrl": "https://www.linkconnector.com/ta.php?atid=2&mid=5001",
+      "MerchantUrl": "https://www.atolls-bookshop.example.com",
+      "Category": "Books",
+      "Currency": "USD"
+    },
+    {
+      "MerchantId": "5002",
+      "MerchantName": "Atolls Coffee",
+      "PromotionDescription": "Buy one get one free",
+      "CouponCode": "BOGO",
+      "AffiliateUrl": "https://www.linkconnector.com/ta.php?atid=3&mid=5002",
+      "MerchantUrl": "https://www.atolls-coffee.example.com",
+      "Category": "Food & Drink",
+      "Currency": "USD"
+    }
+  ]
+}

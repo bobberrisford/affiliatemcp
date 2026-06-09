@@ -1,0 +1,26 @@
+{
+  "slug": "post-affiliate-pro",
+  "name": "Post Affiliate Pro",
+  "base_url": "https://demo.postaffiliatepro.com/api/v3",
+  "auth_model": "bearer",
+  "env_vars": ["POST_AFFILIATE_PRO_BASE_URL", "POST_AFFILIATE_PRO_API_KEY"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Experimental: built against the documented Post Affiliate Pro API v3 contract but not verified against a live account.",
+    "Per-tenant base URL: Post Affiliate Pro is hosted per account, so the API base is the per-account subdomain supplied via POST_AFFILIATE_PRO_BASE_URL (e.g. https://acme.postaffiliatepro.com/api/v3). The base_url here is a placeholder demo host.",
+    "transaction / affiliate / campaign field names and the amount unit (assumed MAJOR currency units, not minor units / cents) have not been confirmed against a live account; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).",
+    "advertiser + single-brand: one API key + base URL scopes one Post Affiliate Pro account. Bind your single brand in brands.json manually.",
+    "listClicks is unsupported: API v3 exposes no raw click record list to the merchant via this surface.",
+    "generateTrackingLink is unsupported: affiliate links belong to individual affiliates; the merchant API does not mint per-destination links.",
+    "getProgrammePerformance is computed client-side from /transactions grouped by (affiliate, day). Clicks are not available from /transactions and are reported as 0.",
+    "Pagination is offset/limit and capped at MAX_PAGES with a warning rather than a silent truncation."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "single-brand",
+  "docs_url": "https://support.qualityunit.com/868880-API-v3-documentation-overview"
+}

@@ -1,0 +1,31 @@
+{
+  "programs": [
+    {
+      "programId": 1001,
+      "programName": "Atolls Bücher",
+      "status": "aktiv",
+      "currency": "EUR",
+      "commission": "7%",
+      "category": "Bücher",
+      "url": "https://www.atolls-buecher.example.com"
+    },
+    {
+      "programId": 1002,
+      "programName": "Coral Coast Reisen",
+      "status": "wartend",
+      "currency": "EUR",
+      "commission": 5,
+      "categories": ["Reisen", "Freizeit"],
+      "url": "https://www.coral-reisen.example.com"
+    },
+    {
+      "programId": 1003,
+      "programName": "Riff Technik",
+      "status": "abgelehnt",
+      "currency": "EUR",
+      "commissionText": "bis zu 4,50 EUR pro Sale",
+      "category": "Technik",
+      "url": "https://www.riff-technik.example.com"
+    }
+  ]
+}

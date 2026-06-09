@@ -1,0 +1,21 @@
+{
+  "slug": "avantlink",
+  "name": "AvantLink",
+  "base_url": "https://classic.avantlink.com/api.php",
+  "auth_model": "custom",
+  "env_vars": ["AVANTLINK_AFFILIATE_ID", "AVANTLINK_API_KEY", "AVANTLINK_WEBSITE_ID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live AvantLink account.",
+    "Monetary amounts are assumed to be decimal currency units (e.g. 12.50), not minor units (cents); confirm against a live account.",
+    "Click-level data is not exposed as a stable per-click feed via the affiliate API; listClicks is unsupported."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://support.avantlink.com/hc/en-us/sections/200985665-API-Module-Documentation"
+}

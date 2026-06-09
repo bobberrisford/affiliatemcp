@@ -1,0 +1,25 @@
+{
+  "slug": "tapfiliate",
+  "name": "Tapfiliate",
+  "base_url": "https://api.tapfiliate.com",
+  "auth_model": "custom",
+  "env_vars": ["TAPFILIATE_API_KEY"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "experimental: conversion / commission / affiliate / programme field names have not been confirmed against a live account; transformers read fields defensively and preserve verbatim payloads on rawNetworkData. TODO(verify).",
+    "amount unit: Tapfiliate documents amounts as decimal major units (e.g. \"amount\": 100.0), so this adapter passes amounts through verbatim and does not divide by 100. TODO(verify) against a live account.",
+    "advertiser + single-brand: one API key scopes one Tapfiliate account. Bind your single brand in brands.json manually.",
+    "listClicks is unsupported: Tapfiliate exposes a POST clicks endpoint that records a click, but no documented list-clicks endpoint on the merchant API.",
+    "generateTrackingLink is unsupported: tracking links belong to individual affiliates; the merchant API does not mint per-destination links.",
+    "getProgrammePerformance is computed client-side from /conversions grouped by (affiliate, day). Clicks are not available from /conversions and are reported as 0.",
+    "Pagination is 1-based via ?page= (the next-page link is in the Link header) and is capped at MAX_PAGES with a warning rather than a silent truncation."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": true,
+  "side": "advertiser",
+  "credential_scope": "single-brand",
+  "docs_url": "https://tapfiliate.com/docs/rest/"
+}

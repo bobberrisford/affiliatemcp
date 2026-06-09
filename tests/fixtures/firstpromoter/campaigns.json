@@ -1,0 +1,14 @@
+[
+  {
+    "id": 3001,
+    "name": "Default Campaign",
+    "color": "#1d4ed8",
+    "default_promoter_reward": { "type": "per", "amount": 30 }
+  },
+  {
+    "id": 3002,
+    "name": "Black Friday Campaign",
+    "color": "#dc2626",
+    "default_promoter_reward": { "type": "per_amount", "amount": 2500, "unit": "USD" }
+  }
+]

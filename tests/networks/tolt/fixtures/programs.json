@@ -1,0 +1,22 @@
+{
+  "success": true,
+  "has_more": false,
+  "data": [
+    {
+      "id": "prog_1111111111111111111111111",
+      "name": "Default Programme",
+      "url": "https://example.com",
+      "currency": "USD",
+      "commission_type": "percentage",
+      "commission_percent": 30
+    },
+    {
+      "id": "prog_2222222222222222222222222",
+      "name": "Black Friday Programme",
+      "url": "https://example.com/bf",
+      "currency": "USD",
+      "commission_type": "fixed",
+      "commission_amount": 2500
+    }
+  ]
+}

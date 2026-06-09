@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "has_more": false,
+  "data": [
+    {
+      "id": "part_1111111111111111111111111",
+      "first_name": "Alpha",
+      "last_name": "Reviewer",
+      "email": "alpha@example.com",
+      "status": "active",
+      "created_at": "2024-01-01T10:00:00Z"
+    },
+    {
+      "id": "part_2222222222222222222222222",
+      "email": "beta@example.com",
+      "status": "pending",
+      "created_at": "2024-02-01T10:00:00Z"
+    }
+  ]
+}

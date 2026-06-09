@@ -1,0 +1,39 @@
+{
+  "results": [
+    {
+      "id": 1001,
+      "name": "Atolls Bookshop SE",
+      "displayName": "Atolls Bookshop",
+      "market": "SE",
+      "currency": "SEK",
+      "status": "active",
+      "joined": true,
+      "url": "https://www.atolls-bookshop.example.se",
+      "categories": ["Books", "Media"],
+      "commission": "8%"
+    },
+    {
+      "id": 1002,
+      "name": "Nordic Outdoors",
+      "displayName": "Nordic Outdoors",
+      "market": "SE",
+      "currency": "SEK",
+      "status": "pending",
+      "joined": false,
+      "url": "https://www.nordic-outdoors.example.se",
+      "category": "Sports",
+      "provision": "5%"
+    },
+    {
+      "id": 1003,
+      "name": "Helsinki Home",
+      "displayName": "Helsinki Home",
+      "market": "FI",
+      "currency": "EUR",
+      "status": "available",
+      "joined": false,
+      "url": "https://www.helsinki-home.example.fi",
+      "categories": ["Home"]
+    }
+  ]
+}

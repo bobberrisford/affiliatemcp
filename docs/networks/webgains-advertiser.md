@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with Webgains (advertiser side) (estimated 10 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Awebgains%22)
+
 This guide walks you through the credentials affiliate-mcp needs to read
 your Webgains **brand / advertiser** account — i.e. the side of Webgains
 that runs a programme publishers promote, not the publisher side that

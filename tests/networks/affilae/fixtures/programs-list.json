@@ -1,0 +1,29 @@
+{
+  "programs": [
+    {
+      "id": "5e2f798000000000000000a1",
+      "name": "Atolls Bookshop",
+      "partnershipStatus": "accepted",
+      "currency": "EUR",
+      "url": "https://www.atolls-bookshop.example.com",
+      "category": "Books",
+      "commission": "8%"
+    },
+    {
+      "id": "5e2f798000000000000000a2",
+      "name": "Atolls Garden",
+      "partnershipStatus": "pending",
+      "currency": "EUR",
+      "url": "https://www.atolls-garden.example.com",
+      "categories": ["Home", "Garden"],
+      "commissionRate": 12
+    },
+    {
+      "id": "5e2f798000000000000000a3",
+      "name": "Atolls Travel",
+      "partnershipStatus": "refused",
+      "currency": "GBP",
+      "url": "https://www.atolls-travel.example.com"
+    }
+  ]
+}

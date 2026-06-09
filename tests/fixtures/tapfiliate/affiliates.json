@@ -1,0 +1,18 @@
+[
+  {
+    "id": "aff-1",
+    "firstname": "Alpha",
+    "lastname": "Reviewer",
+    "email": "alpha@example.com",
+    "approved": true,
+    "created_at": "2024-01-10T08:00:00+00:00"
+  },
+  {
+    "id": "aff-2",
+    "firstname": "",
+    "lastname": "",
+    "email": "beta@example.com",
+    "approved": null,
+    "created_at": "2024-02-12T09:30:00+00:00"
+  }
+]

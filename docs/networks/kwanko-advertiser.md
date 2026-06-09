@@ -1,5 +1,7 @@
 # Setting up affiliate-mcp with Kwanko (advertiser side) (estimated 10 minutes)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Akwanko%22)
+
 This guide walks you through the credentials affiliate-mcp needs to read
 your Kwanko **advertiser / brand** account — i.e. the side of Kwanko
 that runs a campaign other publishers promote, not the publisher side

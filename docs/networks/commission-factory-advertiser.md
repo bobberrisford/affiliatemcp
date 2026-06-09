@@ -1,5 +1,7 @@
 # Commission Factory (advertiser)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Acommission-factory%22)
+
 Brand/merchant-side adapter for Commission Factory. Read-only at v0.1: the
 adapter reports on your merchant account's transactions and promotions and never
 issues a write. Built from the public API documentation and not yet verified

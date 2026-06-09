@@ -1,0 +1,31 @@
+{
+  "result": [
+    {
+      "merchantId": 46483,
+      "organization": "Atolls Outdoors US",
+      "status": "approved",
+      "category": "Outdoors",
+      "commission": "8%",
+      "currency": "USD",
+      "url": "https://www.atolls-outdoors.example.com"
+    },
+    {
+      "merchantId": 51172,
+      "organization": "Example Electronics US",
+      "status": "pending",
+      "categories": ["Electronics", "Home"],
+      "commission": "3.5%",
+      "currency": "USD",
+      "url": "https://www.example-electronics.example.com"
+    },
+    {
+      "merchantId": 42528,
+      "organization": "Example Apparel US",
+      "status": "declined",
+      "category": "Apparel",
+      "commission": "10%",
+      "currency": "USD",
+      "url": "https://www.example-apparel.example.com"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "results": [
+    {
+      "id": 5001,
+      "advertiserId": 1001,
+      "advertiserName": "Atolls Bookshop",
+      "channelId": 123456,
+      "status": "approved",
+      "orderValue": 499.0,
+      "commission": 39.92,
+      "currency": "SEK",
+      "market": "SE",
+      "clickDate": "2024-08-31T09:00:00Z",
+      "conversionDate": "2024-09-01T12:30:00Z",
+      "approvedDate": "2024-09-15T08:00:00Z",
+      "orderId": "ORD-5001"
+    },
+    {
+      "id": 5002,
+      "advertiserId": 1002,
+      "advertiserName": "Nordic Outdoors",
+      "channelId": 123456,
+      "status": "pending",
+      "orderValue": 1200.0,
+      "commission": 60.0,
+      "currency": "SEK",
+      "market": "SE",
+      "clickDate": "2025-12-01T10:00:00Z",
+      "conversionDate": "2025-12-02T18:45:00Z",
+      "orderId": "ORD-5002"
+    },
+    {
+      "id": 5003,
+      "advertiserId": 1001,
+      "advertiserName": "Atolls Bookshop",
+      "channelId": 123456,
+      "status": "rejected",
+      "orderValue": 250.0,
+      "commission": 0.0,
+      "currency": "SEK",
+      "market": "SE",
+      "clickDate": "2025-08-10T07:00:00Z",
+      "conversionDate": "2025-08-11T09:15:00Z",
+      "modifiedDate": "2025-08-25T09:15:00Z",
+      "rejectionReason": "Customer returned the item within 14 days",
+      "orderId": "ORD-5003"
+    },
+    {
+      "id": 5004,
+      "advertiserId": 1003,
+      "advertiserName": "Helsinki Home",
+      "channelId": 123456,
+      "status": "approved",
+      "orderValue": 800.0,
+      "commission": 48.0,
+      "currency": "EUR",
+      "market": "FI",
+      "clickDate": "2024-01-01T00:00:00Z",
+      "conversionDate": "2024-01-02T00:00:00Z",
+      "approvedDate": "2024-01-20T00:00:00Z",
+      "paidDate": "2024-02-15T00:00:00Z",
+      "orderId": "ORD-5004"
+    }
+  ]
+}

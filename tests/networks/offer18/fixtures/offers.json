@@ -1,0 +1,44 @@
+{
+  "status": 200,
+  "page": 1,
+  "results": 100,
+  "total": 3,
+  "data": [
+    {
+      "offerid": 1001,
+      "name": "Atolls Bookshop",
+      "logo": "https://cdn.example.com/logos/1001.png",
+      "status": "active",
+      "category": "Ecommerce, Books",
+      "currency": "GBP",
+      "price": 5.0,
+      "model": "CPA",
+      "date_start": "2026-01-01",
+      "date_end": "2026-12-31",
+      "preview_url": "https://www.atolls-bookshop.example.com/",
+      "authorized": 1
+    },
+    {
+      "offerid": 1002,
+      "name": "Atolls Gaming",
+      "status": "active",
+      "category": "Gaming",
+      "currency": "GBP",
+      "price": 2.5,
+      "model": "CPL",
+      "preview_url": "https://www.atolls-gaming.example.com/",
+      "authorized": 0
+    },
+    {
+      "offerid": 1003,
+      "name": "Atolls Subscription",
+      "status": "paused",
+      "category": "Subscription",
+      "currency": "GBP",
+      "price": 10.0,
+      "model": "CPS",
+      "preview_url": "https://www.atolls-sub.example.com/",
+      "authorized": 0
+    }
+  ]
+}

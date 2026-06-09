@@ -1,0 +1,7 @@
+conversion_id;advertiser_program_id;advertiser_name;status;amount;commission;currency;conversion_date;confirmation_date;rejection_reason
+9001;1001;Atolls Bookshop;confirmed;1.234,56;61,73;EUR;15.01.2026;20.01.2026;
+9002;1001;Atolls Bookshop;open;49,99;2,50;EUR;01.06.2026;;
+9003;1002;Atolls Garden Centre;rejected;199,00;0,00;EUR;10.03.2026;12.03.2026;Customer cancelled the order
+9004;1002;Atolls Garden Centre;confirmed;2.500,00;125,00;EUR;05.04.2026;10.04.2026;
+9005;1003;Atolls Electronics;1;349,90;17,49;EUR;20.05.2026;;
+9006;1003;Atolls Electronics;7;10,00;0,50;EUR;02.06.2026;;

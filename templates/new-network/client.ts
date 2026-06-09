@@ -44,9 +44,9 @@
  *   NetworkErrorEnvelope. Never silently swallow a non-2xx.
  */
 
-// TODO: import { withResilience, HttpStatusError, DEFAULT_RESILIENCE } from '../../src/shared/resilience.js';
-// TODO: import type { ResilienceConfig } from '../../src/shared/types.js';
-// TODO: import { createLogger } from '../../src/shared/logging.js';
+// TODO: import { withResilience, HttpStatusError, DEFAULT_RESILIENCE } from '../../shared/resilience.js';
+// TODO: import type { ResilienceConfig } from '../../shared/types.js';
+// TODO: import { createLogger } from '../../shared/logging.js';
 // TODO: export async function <network>Request<T>(opts: { ... }): Promise<T> { ... }
 // TODO: export { HttpStatusError };
 export {};

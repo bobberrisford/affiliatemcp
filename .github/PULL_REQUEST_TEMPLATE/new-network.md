@@ -1,10 +1,28 @@
 <!-- Use this template when adding a new network adapter. -->
 <!-- ?template=new-network.md -->
 
-## Summary
+## User outcome
 
-A one-line summary of the network being added and its current claim status
-(expected to be `partial` for a first landing).
+Describe the user outcome enabled by adding this network and state its current
+claim status, expected to be `partial` for a first landing.
+
+## Review request
+
+- Mode: `implementation | ready-to-merge`
+- Reviewer focus:
+
+## Architecture and contracts
+
+- Owning layer:
+- Public contracts changed:
+- Dependencies:
+
+## Risks and scope
+
+- Risk domains:
+- Failure modes:
+- Deliberately out of scope:
+- Split rationale, required over 1,000 additions or 20 changed files:
 
 ## Which operations are live
 
@@ -20,7 +38,7 @@ the documented unsupported envelope rather than throwing.
 - `generate_tracking_link`:
 - `verify_auth`:
 
-## Closing checklist
+## Verification
 
 - [ ] `npm run typecheck` passes
 - [ ] `npm run lint` passes
@@ -42,3 +60,10 @@ the documented unsupported envelope rather than throwing.
 
 Anything specific you want a maintainer to look at — known limitations,
 upstream quirks, areas where you would like a second opinion.
+
+## Agent self-review
+
+- Complete diff inspected:
+- What the agent generated:
+- What a human or agent manually checked:
+- Remaining uncertainty:

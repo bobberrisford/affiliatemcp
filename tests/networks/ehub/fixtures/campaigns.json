@@ -1,0 +1,32 @@
+{
+  "code": 200,
+  "campaigns": [
+    {
+      "id": 55,
+      "name": "Trenyrkarna.cz",
+      "status": "approved",
+      "approved": true,
+      "currency": "CZK",
+      "category": "Fashion",
+      "url": "https://www.trenyrkarna.cz",
+      "commission": "10%"
+    },
+    {
+      "id": 77,
+      "name": "Knihy.cz",
+      "status": "pending",
+      "approved": false,
+      "currency": "CZK",
+      "categories": ["Books", "Media"],
+      "webUrl": "https://www.knihy.cz",
+      "provision": "8%"
+    },
+    {
+      "id": 88,
+      "name": "Available Shop",
+      "status": "available",
+      "currency": "EUR",
+      "url": "https://example.com"
+    }
+  ]
+}

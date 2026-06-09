@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<offer_feed_response xmlns="http://cakemarketing.com/api/4/">
+  <success>true</success>
+  <row_count>3</row_count>
+  <offers>
+    <offer>
+      <offer_id>1001</offer_id>
+      <offer_name>Atolls Bookshop</offer_name>
+      <offer_status>approved</offer_status>
+      <payout>$6.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <preview_link>https://www.atolls-bookshop.example.com</preview_link>
+      <category>Retail</category>
+      <vertical_name>Books</vertical_name>
+    </offer>
+    <offer>
+      <offer_id>1002</offer_id>
+      <offer_name>Atolls Travel</offer_name>
+      <offer_status>apply-to-run</offer_status>
+      <payout>$25.00</payout>
+      <price_format>CPL</price_format>
+      <currency>USD</currency>
+      <preview_link>https://www.atolls-travel.example.com</preview_link>
+      <category>Travel</category>
+    </offer>
+    <offer>
+      <offer_id>1003</offer_id>
+      <offer_name>Atolls Finance</offer_name>
+      <offer_status>private</offer_status>
+      <payout>$0.00</payout>
+      <price_format>RevShare</price_format>
+      <currency>USD</currency>
+      <category>Finance</category>
+    </offer>
+  </offers>
+</offer_feed_response>

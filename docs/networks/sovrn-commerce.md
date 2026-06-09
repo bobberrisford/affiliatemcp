@@ -1,5 +1,7 @@
 # Sovrn Commerce
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Asovrn-commerce%22)
+
 Sovrn Commerce (formerly VigLink) is a link-monetisation platform that automatically converts outbound links on a publisher's site into affiliate links. The platform handles merchant programme relationships centrally — publishers do not need to apply to individual merchant programmes.
 
 **Status:** `experimental` — response field names confirmed from public documentation (developer.sovrn.com) but not yet verified against a live account. See `docs/findings/sovrn-commerce.md` for details.

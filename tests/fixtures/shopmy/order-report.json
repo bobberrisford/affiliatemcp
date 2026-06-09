@@ -1,0 +1,50 @@
+{
+  "orders": [
+    {
+      "id": "ord_1001",
+      "status": "locked",
+      "order_amount": 12000,
+      "commission_amount": 1800,
+      "transaction_date": "2026-01-02T10:00:00Z",
+      "locked_date": "2026-02-02T10:00:00Z",
+      "currency": "USD",
+      "source": "creator_link",
+      "user_name": "creator-a"
+    },
+    {
+      "id": "ord_1002",
+      "status": "pending",
+      "order_amount": 5000,
+      "commission_amount": 750,
+      "transaction_date": "2026-05-20T08:30:00Z",
+      "currency": "USD",
+      "source": "creator_link"
+    },
+    {
+      "id": "ord_1003",
+      "status": "paid",
+      "order_amount": 9000,
+      "commission_amount": 1350,
+      "transaction_date": "2026-01-15T12:00:00Z",
+      "locked_date": "2026-02-15T12:00:00Z",
+      "paid_date": "2026-02-20T00:00:00Z",
+      "currency": "USD"
+    },
+    {
+      "id": "ord_1004",
+      "status": "cancelled",
+      "order_amount": 4000,
+      "commission_amount": 600,
+      "transaction_date": "2026-03-01T09:00:00Z",
+      "currency": "USD"
+    },
+    {
+      "id": "ord_1005",
+      "status": "some-future-state",
+      "order_amount": 3000,
+      "commission_amount": 450,
+      "transaction_date": "2026-05-25T09:00:00Z",
+      "currency": "USD"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "id": "4pdlhb",
+  "name": "Pied Piper Referral Programme",
+  "status": "ENABLED",
+  "url": "https://piedpiper.com",
+  "referralCount": 42,
+  "participantCount": 120,
+  "rewards": [
+    {
+      "id": "rwd_1",
+      "type": "DOUBLE_SIDED",
+      "value": 10,
+      "trigger": "REFERRAL"
+    }
+  ]
+}

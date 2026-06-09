@@ -1,0 +1,21 @@
+{
+  "status": 1,
+  "offers": [
+    {
+      "id": "59359e1d7e28feb7568b4001",
+      "offer_id": 1001,
+      "title": "Atolls Bookshop",
+      "status": "active",
+      "currency": "GBP",
+      "url": "https://api-yournetwork.affise.com/click?pid=42&offer_id=1001",
+      "preview_url": "https://www.atolls-bookshop.example.com",
+      "is_connected": true,
+      "required_approval": false,
+      "categories": ["Books"],
+      "payments": [
+        { "country": ["GB"], "total": 6.5, "revenue": 9.0, "currency": "GBP", "title": "Sale" }
+      ]
+    }
+  ],
+  "pagination": { "page": 1, "per_page": 1, "total_count": 1 }
+}

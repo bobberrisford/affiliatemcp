@@ -1,0 +1,51 @@
+{
+  "status": 200,
+  "page": 0,
+  "results": 1000,
+  "total": 3,
+  "data": [
+    {
+      "tid": "txn-jan-approved",
+      "offer": 1001,
+      "offer_name": "Atolls Bookshop",
+      "conversion": 1,
+      "clicks": 12,
+      "affiliate_price": 5.0,
+      "advertiser_price": 8.0,
+      "currency": "GBP",
+      "date": "2026-01-15",
+      "time": "10:00:00",
+      "status": "approved",
+      "status_type": "approved"
+    },
+    {
+      "tid": "txn-apr-pending",
+      "offer": 1002,
+      "offer_name": "Atolls Gaming",
+      "conversion": 1,
+      "clicks": 3,
+      "affiliate_price": 5.0,
+      "advertiser_price": 7.5,
+      "currency": "GBP",
+      "date": "2026-04-20",
+      "time": "14:30:00",
+      "status": "pending",
+      "status_type": "pending"
+    },
+    {
+      "tid": "txn-apr-rejected",
+      "offer": 1001,
+      "offer_name": "Atolls Bookshop",
+      "conversion": 1,
+      "clicks": 1,
+      "affiliate_price": 0.0,
+      "advertiser_price": 0.0,
+      "currency": "GBP",
+      "date": "2026-04-22",
+      "time": "09:15:00",
+      "status": "rejected",
+      "status_type": "rejected",
+      "filter_log": "Duplicate conversion — transaction already recorded for this order"
+    }
+  ]
+}

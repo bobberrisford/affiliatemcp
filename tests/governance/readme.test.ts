@@ -30,14 +30,14 @@ describe('README.md (PRD §15.20)', () => {
     expect(existsSync(README_PATH)).toBe(true);
   });
 
-  it('has between 50 and 700 lines', () => {
-    // Upper bound raised from 550 → 700 when the Wanted-networks table
-    // expanded from 4 to 20 entries. The intent of the cap is "don't let
-    // the front door sprawl" — 700 still keeps it scannable while leaving
-    // room for the wanted table to grow as new networks ship.
+  it('has between 50 and 800 lines', () => {
+    // Upper bound raised 550 → 700 (wanted table grew 4 → 20), then 700 → 800
+    // when the bundled network table expanded past 70 adapters. The intent of
+    // the cap is "don't let the front door sprawl" — 800 still keeps it
+    // scannable while leaving room as new networks ship.
     const lines = readReadme().split(/\r?\n/);
     expect(lines.length).toBeGreaterThanOrEqual(50);
-    expect(lines.length).toBeLessThanOrEqual(700);
+    expect(lines.length).toBeLessThanOrEqual(800);
   });
 
   it('contains the required sections', () => {

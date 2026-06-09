@@ -1,0 +1,23 @@
+{
+  "slug": "connexity",
+  "name": "Connexity",
+  "base_url": "https://publisher-api.connexity.com",
+  "auth_model": "custom",
+  "env_vars": ["CONNEXITY_PUBLISHER_ID", "CONNEXITY_API_KEY"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Experimental: the adapter has not been validated against a live Connexity publisher account; endpoint shapes are mapped from public documentation.",
+    "Connexity is a cost-per-click (CPC) network: reporting is daily aggregate, not per-sale. listTransactions surfaces one synthetic transaction per day (redirects, estimated earnings, effective CPC) rather than individual sales, and all rows are reported as approved because CPC earnings carry no pending/reversed sale lifecycle.",
+    "Amount unit assumed to be major currency units (US dollars) based on the documented decimal earnings figures; not yet confirmed against a live account.",
+    "Click-level data is not exposed as structured records via the publisher API; the click report is a CSV download rather than per-click rows, so listClicks is unsupported.",
+    "Distinct from the Skimlinks adapter: Connexity (ShopYourLikes) is a separate network with separate credentials, hosts, and API."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://pubresources.connexity.com/hc/en-us/articles/24602346033053-Publisher-API-Reference"
+}

@@ -1,0 +1,26 @@
+{
+  "apiListings": {
+    "mobiles": {
+      "availableVariants": {
+        "v1.1.0": {
+          "get": "https://affiliate-api.flipkart.net/affiliate/feeds/exampleid/category/mobiles.json",
+          "deltaGet": "https://affiliate-api.flipkart.net/affiliate/deltaFeeds/exampleid/category/mobiles.json"
+        }
+      }
+    },
+    "audio": {
+      "availableVariants": {
+        "v1.1.0": {
+          "get": "https://affiliate-api.flipkart.net/affiliate/feeds/exampleid/category/audio.json"
+        }
+      }
+    },
+    "books": {
+      "availableVariants": {
+        "v1.1.0": {
+          "get": "https://affiliate-api.flipkart.net/affiliate/feeds/exampleid/category/books.json"
+        }
+      }
+    }
+  }
+}

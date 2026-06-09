@@ -1,0 +1,22 @@
+{
+  "slug": "clickbank",
+  "name": "ClickBank",
+  "base_url": "https://api.clickbank.com",
+  "auth_model": "custom",
+  "env_vars": ["CLICKBANK_DEV_KEY", "CLICKBANK_CLERK_KEY", "CLICKBANK_NICKNAME"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live ClickBank account.",
+    "Amount unit assumption: order amounts (totalAccountAmount) are treated as major currency units (whole dollars/pounds, not cents); verify against a live account before relying on the figures.",
+    "ClickBank is a single marketplace with no per-merchant join lifecycle exposed to the publisher API; programmes are synthesised from the affiliate's own order history (one programme per promoted vendor).",
+    "Click-level data is not exposed via the ClickBank publisher API; listClicks is unsupported."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://support.clickbank.com/en/articles/10535397-clickbank-api-specifications"
+}

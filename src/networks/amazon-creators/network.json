@@ -1,0 +1,30 @@
+{
+  "slug": "amazon-creators",
+  "name": "Amazon Creators",
+  "base_url": "https://creatorsapi.amazon",
+  "auth_model": "custom",
+  "env_vars": [
+    "AMAZON_CREATORS_CLIENT_ID",
+    "AMAZON_CREATORS_CLIENT_SECRET",
+    "AMAZON_PARTNER_TAG",
+    "AMAZON_MARKETPLACE"
+  ],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": true,
+  "setup_approval_days_typical": 1,
+  "known_limitations": [
+    "Experimental: this adapter has not been validated against a live Amazon Creators API account; the exact API shape needs live verification.",
+    "The Amazon Creators API is a product-catalog API only (getItems / searchItems); it exposes no earnings, transactions, commissions or clicks endpoint. Affiliate performance data is available only in the Associates Central dashboard and its CSV report exports.",
+    "listTransactions, getEarningsSummary and listClicks are unsupported because the Creators API has no reporting surface.",
+    "Programmes are synthesised: Amazon is a single programme per (marketplace, partner tag), so listProgrammes/getProgramme return one synthetic programme rather than a queryable catalogue.",
+    "Amount unit is assumed to be the marketplace major currency unit (e.g. USD/GBP), not minor units; this is unverified and moot at v0.1 because no monetary data is returned by the supported operations.",
+    "Successor to the Product Advertising API (PA-API 5.0), which deprecates 30 April 2026 and retires 15 May 2026; the auth model (OAuth2 client-credentials, scope creatorsapi::default) and catalog host (creatorsapi.amazon) are reconstructed from public sources and need confirmation against a live account."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://affiliate-program.amazon.com/creatorsapi/docs"
+}

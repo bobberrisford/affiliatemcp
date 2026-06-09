@@ -1,0 +1,78 @@
+[
+  {
+    "id": 1001,
+    "status": "pending",
+    "amount": 5000,
+    "sale_amount": 50000,
+    "original_sale_amount": 50000,
+    "original_sale_currency": "USD",
+    "unit": "USD",
+    "is_paid": false,
+    "commission_type": "sale",
+    "created_at": "2024-04-01T10:00:00Z",
+    "status_updated_at": "2024-04-01T10:00:00Z",
+    "referral": { "id": 9001, "email": "lead-a@example.com", "state": "active", "created_at": "2024-04-01T09:50:00Z" },
+    "promoter_campaign": {
+      "id": 7001,
+      "promoter": { "id": 5001, "name": "Alpha Reviewer", "email": "alpha@example.com", "state": "active" },
+      "campaign": { "id": 3001, "name": "Default Campaign" }
+    }
+  },
+  {
+    "id": 1002,
+    "status": "approved",
+    "amount": 2500,
+    "sale_amount": 25000,
+    "original_sale_amount": 25000,
+    "original_sale_currency": "USD",
+    "unit": "USD",
+    "is_paid": false,
+    "commission_type": "sale",
+    "created_at": "2024-04-02T10:00:00Z",
+    "status_updated_at": "2024-05-02T10:00:00Z",
+    "referral": { "id": 9002, "email": "lead-b@example.com", "state": "active", "created_at": "2024-04-02T09:50:00Z" },
+    "promoter_campaign": {
+      "id": 7001,
+      "promoter": { "id": 5001, "name": "Alpha Reviewer", "email": "alpha@example.com", "state": "active" },
+      "campaign": { "id": 3001, "name": "Default Campaign" }
+    }
+  },
+  {
+    "id": 1003,
+    "status": "approved",
+    "amount": 1000,
+    "sale_amount": 10000,
+    "original_sale_amount": 10000,
+    "original_sale_currency": "USD",
+    "unit": "USD",
+    "is_paid": true,
+    "commission_type": "sale",
+    "created_at": "2024-03-15T10:00:00Z",
+    "status_updated_at": "2024-04-20T10:00:00Z",
+    "referral": { "id": 9003, "email": "lead-c@example.com", "state": "active", "created_at": "2024-03-15T09:50:00Z" },
+    "promoter_campaign": {
+      "id": 7002,
+      "promoter": { "id": 5002, "email": "beta@example.com", "state": "active" },
+      "campaign": { "id": 3002, "name": "Black Friday Campaign" }
+    }
+  },
+  {
+    "id": 1004,
+    "status": "denied",
+    "amount": 750,
+    "sale_amount": 7500,
+    "original_sale_amount": 7500,
+    "original_sale_currency": "USD",
+    "unit": "USD",
+    "is_paid": false,
+    "commission_type": "sale",
+    "created_at": "2024-04-03T10:00:00Z",
+    "status_updated_at": "2024-04-04T10:00:00Z",
+    "referral": { "id": 9004, "email": "lead-d@example.com", "state": "refunded", "created_at": "2024-04-03T09:50:00Z" },
+    "promoter_campaign": {
+      "id": 7002,
+      "promoter": { "id": 5002, "email": "beta@example.com", "state": "active" },
+      "campaign": { "id": 3001, "name": "Default Campaign" }
+    }
+  }
+]

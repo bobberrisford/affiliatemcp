@@ -1,0 +1,49 @@
+{
+  "result": [
+    {
+      "id": 5001,
+      "advertiser": "Atolls Bookshop RO",
+      "advertiser_id": 101,
+      "status": "accepted",
+      "amount": "120.50",
+      "commission": "9.64",
+      "currency": "RON",
+      "date": "2026-01-10 09:30:00",
+      "date_modified": "2026-01-20 12:00:00"
+    },
+    {
+      "id": 5002,
+      "advertiser": "Example Electronics RO",
+      "advertiser_id": 102,
+      "status": "pending",
+      "amount": "899.99",
+      "commission": "31.50",
+      "currency": "RON",
+      "date": "2026-05-30 14:05:00"
+    },
+    {
+      "id": 5003,
+      "advertiser": "Atolls Bookshop RO",
+      "advertiser_id": 101,
+      "status": "rejected",
+      "amount": "45.00",
+      "commission": "3.60",
+      "currency": "RON",
+      "date": "2026-04-01 08:00:00",
+      "date_modified": "2026-04-15 10:00:00"
+    },
+    {
+      "id": 5004,
+      "advertiser": "Example Electronics RO",
+      "advertiser_id": 102,
+      "status": "paid",
+      "amount": "250.00",
+      "commission": "8.75",
+      "currency": "RON",
+      "date": "2025-12-01 11:00:00",
+      "date_paid": "2026-02-01 09:00:00"
+    }
+  ],
+  "total_pages": 1,
+  "page": 1
+}

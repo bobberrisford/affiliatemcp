@@ -1,0 +1,34 @@
+{
+  "total": 3,
+  "page": 1,
+  "limit": 100,
+  "data": [
+    {
+      "id": "5001",
+      "name": "Atolls Bookshop SEA",
+      "url": "https://www.atolls-bookshop.example.com",
+      "imageUrl": "https://cdn.example.com/atolls.png",
+      "affiliationStatus": "affiliated",
+      "defaultRewards": "Up to 8% per sale",
+      "categories": [{ "id": "10", "name": "Books" }, "Retail"],
+      "currency": "SGD"
+    },
+    {
+      "id": "5002",
+      "name": "Reef Outfitters JP",
+      "url": "https://www.reef-outfitters.example.com",
+      "affiliationStatus": "applied",
+      "defaultRewards": { "type": "cps", "value": 5 },
+      "categories": ["Outdoor"],
+      "currency": "JPY"
+    },
+    {
+      "id": "5003",
+      "name": "Lagoon Travel",
+      "url": "https://www.lagoon-travel.example.com",
+      "affiliationStatus": "rejected",
+      "categories": ["Travel"],
+      "currency": "THB"
+    }
+  ]
+}

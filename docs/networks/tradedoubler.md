@@ -1,5 +1,7 @@
 # Tradedoubler — Publisher Adapter
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Atradedoubler%22)
+
 **Status:** Experimental  
 **Side:** Publisher  
 **Adapter version:** 0.1.0  

@@ -1,0 +1,23 @@
+{
+  "slug": "offer18",
+  "name": "Offer18",
+  "base_url": "https://api.offer18.com",
+  "auth_model": "custom",
+  "env_vars": ["OFFER18_BASE_URL", "OFFER18_API_KEY", "OFFER18_SECRET_KEY", "OFFER18_MID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public API documentation; not yet verified against a live account.",
+    "Offer18 is a tenant network engine: there is no fixed base URL. The real base is the per-tenant instance host supplied via OFFER18_BASE_URL.",
+    "Amount unit assumed to be major currency units (e.g. 5.00 = five units of the reported currency); not confirmed against a live tenant.",
+    "Click-level data is not exposed as a distinct affiliate endpoint; listClicks is unsupported.",
+    "Tracking links are not deterministically constructible from the affiliate API; generateTrackingLink is unsupported."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://knowledgebase.offer18.com/affiliate/affiliate-apis"
+}

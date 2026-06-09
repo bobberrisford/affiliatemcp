@@ -1,0 +1,43 @@
+{
+  "Report": [
+    {
+      "Date": "2026-06-01T00:00:00Z",
+      "BrandId": "BR-100",
+      "BrandName": "Atolls Casino",
+      "TrackerId": "TR-1",
+      "TrackerName": "homepage-banner",
+      "Currency": "EUR",
+      "Clicks": { "Result": 1200, "Adjustment": 0 },
+      "Registrations": { "Result": 40, "Adjustment": -2 },
+      "Deposits": { "Result": 5000.0, "Adjustment": -250.0 },
+      "CPA": { "Result": 800.0, "Adjustment": 0 },
+      "RevShare": { "Result": 150.5, "Adjustment": -10.5 }
+    },
+    {
+      "Date": "2026-05-15T00:00:00Z",
+      "BrandId": "BR-100",
+      "BrandName": "Atolls Casino",
+      "TrackerId": "TR-2",
+      "TrackerName": "review-page",
+      "Currency": "EUR",
+      "Clicks": { "Result": 300, "Adjustment": 0 },
+      "Registrations": { "Result": 9, "Adjustment": 0 },
+      "Deposits": { "Result": 1200.0, "Adjustment": 0 },
+      "CPA": { "Result": 180.0, "Adjustment": 0 },
+      "RevShare": { "Result": 20.0, "Adjustment": 0 }
+    },
+    {
+      "date": "2026-03-01T00:00:00Z",
+      "brandId": "BR-200",
+      "brandName": "Atolls Sports",
+      "trackerId": "TR-3",
+      "trackerName": "newsletter",
+      "currency": "EUR",
+      "clicks": 75,
+      "registrations": 3,
+      "deposits": 600.0,
+      "cpa": 90.0,
+      "revShare": 12.0
+    }
+  ]
+}

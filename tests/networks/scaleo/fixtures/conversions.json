@@ -1,0 +1,42 @@
+{
+  "data": [
+    {
+      "conversion_id": "cv-0001",
+      "offer_id": 1001,
+      "offer_name": "Atolls Bookshop",
+      "status": "approved",
+      "payout": 5.0,
+      "revenue": 40.0,
+      "amount": 40.0,
+      "currency": "GBP",
+      "conversion_date": "2026-01-15 10:00:00",
+      "click_date": "2026-01-15 09:30:00"
+    },
+    {
+      "conversion_id": "cv-0002",
+      "offer_id": 1002,
+      "offer_name": "Reef Travel Club",
+      "status": "pending",
+      "payout": 5.0,
+      "revenue": 25.0,
+      "amount": 25.0,
+      "currency": "GBP",
+      "conversion_date": "2026-04-20 14:00:00",
+      "click_date": "2026-04-20 13:45:00"
+    },
+    {
+      "conversion_id": "cv-0003",
+      "offer_id": 1001,
+      "offer_name": "Atolls Bookshop",
+      "status": "declined",
+      "payout": 0,
+      "revenue": 0,
+      "amount": 18.0,
+      "currency": "GBP",
+      "conversion_date": "2026-03-01 08:00:00",
+      "click_date": "2026-03-01 07:55:00",
+      "decline_reason": "Duplicate conversion for this order"
+    }
+  ],
+  "meta": { "total": 3, "page": 1, "perPage": 1000 }
+}

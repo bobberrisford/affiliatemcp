@@ -1,0 +1,24 @@
+{
+  "slug": "adcell",
+  "name": "Adcell",
+  "base_url": "https://api.adcell.com",
+  "auth_model": "custom",
+  "env_vars": ["ADCELL_API_TOKEN", "ADCELL_AFFILIATE_ID"],
+  "setup_time_estimate_minutes": 10,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Adapter built from public, third-party sources; not yet verified against a live account.",
+    "Adcell's publisher API is dashboard-gated; endpoint paths, field names, and the auth header scheme are reconstructed and need live verification.",
+    "Amounts are assumed to be EUR (Adcell is a DACH network); the assumption is unverified and the raw payload retains the source value.",
+    "Click-level data is not exposed via a documented publisher endpoint; listClicks is unsupported.",
+    "No documented deterministic deep-link scheme or publisher link API; generateTrackingLink is unsupported.",
+    "Distinct from the mrge adapter: Adcell is now under the mrge holding group but is integrated here as a standalone network with its own API and credentials."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://strackr.com/docs/adcell"
+}

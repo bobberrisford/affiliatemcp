@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<SOAP-ENV:Envelope
+    xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+    xmlns:ns1="https://ws.tradetracker.com/soap/affiliate">
+  <SOAP-ENV:Body>
+    <ns1:getConversionTransactionsResponse>
+      <return SOAP-ENC:arrayType="ns1:ConversionTransaction[4]"
+              xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/">
+        <conversionTransaction>
+          <ID>tx-2001</ID>
+          <transactionStatus>accepted</transactionStatus>
+          <paidOut>false</paidOut>
+          <campaign>
+            <ID>1001</ID>
+            <name>Atolls Bookshop</name>
+          </campaign>
+          <commission>4.25</commission>
+          <orderAmount>50.00</orderAmount>
+          <currency>EUR</currency>
+          <registrationDate>2026-01-15 10:00:00</registrationDate>
+          <assessmentDate>2026-01-20 09:30:00</assessmentDate>
+          <originatingClickDate>2026-01-15 09:30:00</originatingClickDate>
+        </conversionTransaction>
+        <conversionTransaction>
+          <ID>tx-2002</ID>
+          <transactionStatus>pending</transactionStatus>
+          <paidOut>false</paidOut>
+          <campaign>
+            <ID>1002</ID>
+            <name>Atolls Travel</name>
+          </campaign>
+          <commission>5.00</commission>
+          <orderAmount>120.00</orderAmount>
+          <currency>EUR</currency>
+          <registrationDate>2026-02-01 14:00:00</registrationDate>
+          <originatingClickDate>2026-02-01 13:00:00</originatingClickDate>
+        </conversionTransaction>
+        <conversionTransaction>
+          <ID>tx-2003</ID>
+          <transactionStatus>rejected</transactionStatus>
+          <paidOut>false</paidOut>
+          <campaign>
+            <ID>1001</ID>
+            <name>Atolls Bookshop</name>
+          </campaign>
+          <commission>0.00</commission>
+          <orderAmount>0.00</orderAmount>
+          <currency>EUR</currency>
+          <registrationDate>2026-02-10 11:00:00</registrationDate>
+          <assessmentDate>2026-02-12 08:00:00</assessmentDate>
+          <originatingClickDate>2026-02-10 10:00:00</originatingClickDate>
+          <rejectionReason>Order cancelled by the customer within the cooling-off period</rejectionReason>
+        </conversionTransaction>
+        <conversionTransaction>
+          <ID>tx-2004</ID>
+          <transactionStatus>accepted</transactionStatus>
+          <paidOut>true</paidOut>
+          <campaign>
+            <ID>1002</ID>
+            <name>Atolls Travel</name>
+          </campaign>
+          <commission>9.00</commission>
+          <orderAmount>200.00</orderAmount>
+          <currency>EUR</currency>
+          <registrationDate>2026-02-05 16:00:00</registrationDate>
+          <assessmentDate>2026-02-09 16:00:00</assessmentDate>
+          <originatingClickDate>2026-02-05 15:00:00</originatingClickDate>
+        </conversionTransaction>
+      </return>
+    </ns1:getConversionTransactionsResponse>
+  </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>

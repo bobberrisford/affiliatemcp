@@ -1,0 +1,19 @@
+{
+  "data": [
+    {
+      "id": "aff-1",
+      "username": "alpha",
+      "firstname": "Alpha",
+      "surname": "Reviewer",
+      "email": "alpha@example.com",
+      "rstatus": "A"
+    },
+    {
+      "id": "aff-2",
+      "username": "beta",
+      "email": "beta@example.com",
+      "rstatus": "P"
+    }
+  ],
+  "total": 2
+}

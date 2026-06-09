@@ -1,5 +1,7 @@
 # Rewardful (advertiser side)
 
+[![Maintainer: seeking](https://img.shields.io/badge/maintainer-seeking%20a%20network%20owner-orange)](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3A%22network%3Arewardful%22)
+
 Setup guide for the `rewardful` adapter. Rewardful is a Stripe-native affiliate
 tool for SaaS brands, so this is a merchant/advertiser integration: the view a
 brand has of its own affiliate programme — campaigns, the affiliates promoting

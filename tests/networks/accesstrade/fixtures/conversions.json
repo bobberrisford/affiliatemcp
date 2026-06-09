@@ -1,0 +1,57 @@
+{
+  "totalConversionsCount": 4,
+  "totalReward": 18.0,
+  "conversionReportItems": [
+    {
+      "conversionId": "c-1001",
+      "transactionId": "t-1001",
+      "siteId": "site-abc",
+      "campaignId": "5001",
+      "campaignName": "Atolls Bookshop SEA",
+      "creativeId": "cr-1",
+      "status": "APPROVED",
+      "reward": 8.0,
+      "transactionAmount": 100.0,
+      "currency": "SGD",
+      "clickTime": "2024-09-01T10:00:00+09:00",
+      "conversionTime": "2024-09-01T10:30:00+09:00",
+      "confirmedTime": "2024-09-15T00:00:00+09:00"
+    },
+    {
+      "conversionId": "c-1002",
+      "campaignId": "5001",
+      "campaignName": "Atolls Bookshop SEA",
+      "status": "PENDING",
+      "reward": 4.0,
+      "transactionAmount": 50.0,
+      "currency": "SGD",
+      "clickTime": "2025-12-20T18:00:00+09:00",
+      "conversionTime": "2025-12-20T18:05:00+09:00"
+    },
+    {
+      "conversionId": "c-1003",
+      "campaignId": "5003",
+      "campaignName": "Lagoon Travel",
+      "status": "REJECTED",
+      "reward": 0.0,
+      "transactionAmount": 200.0,
+      "currency": "SGD",
+      "clickTime": "2025-08-01T09:00:00+09:00",
+      "conversionTime": "2025-08-01T09:30:00+09:00",
+      "confirmedTime": "2025-08-20T00:00:00+09:00",
+      "rejectReason": "Customer returned the item within 14 days"
+    },
+    {
+      "conversionId": "c-1004",
+      "campaignId": "5001",
+      "campaignName": "Atolls Bookshop SEA",
+      "status": "APPROVED",
+      "reward": 6.0,
+      "transactionAmount": 75.0,
+      "currency": "SGD",
+      "clickTime": "2024-01-05T12:00:00+09:00",
+      "conversionTime": "2024-01-05T12:30:00+09:00",
+      "confirmedTime": "2024-01-20T00:00:00+09:00"
+    }
+  ]
+}

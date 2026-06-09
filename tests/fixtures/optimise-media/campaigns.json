@@ -1,0 +1,32 @@
+{
+  "data": [
+    {
+      "campaignId": 1001,
+      "campaignName": "Atolls Bookshop",
+      "relationshipStatus": "Joined",
+      "currency": "GBP",
+      "commissionDescription": "5% of basket value",
+      "category": "Books",
+      "displayUrl": "https://www.atolls-bookshop.example.com"
+    },
+    {
+      "campaignId": 1002,
+      "campaignName": "Atolls Travel",
+      "relationshipStatus": "Pending",
+      "currency": "GBP",
+      "category": "Travel",
+      "displayUrl": "https://www.atolls-travel.example.com"
+    },
+    {
+      "campaignId": 1003,
+      "campaignName": "Atolls Electronics",
+      "relationshipStatus": "Declined",
+      "currency": "GBP",
+      "category": "Electronics",
+      "displayUrl": "https://www.atolls-electronics.example.com"
+    }
+  ],
+  "page": 1,
+  "pageSize": 100,
+  "totalCount": 3
+}

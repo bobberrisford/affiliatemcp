@@ -1,0 +1,23 @@
+{
+  "slug": "profitshare",
+  "name": "Profitshare",
+  "base_url": "https://api.profitshare.ro",
+  "auth_model": "custom",
+  "env_vars": ["PROFITSHARE_API_USER", "PROFITSHARE_API_KEY"],
+  "setup_time_estimate_minutes": 5,
+  "setup_requires_approval": false,
+  "known_limitations": [
+    "Experimental: the adapter has not been validated against a live Profitshare account; endpoint shapes and field names are inferred from the public reference client and may differ in production.",
+    "Commission amounts are assumed to be major-currency units (RON) as returned by the API; the unit is not authoritatively documented and is preserved verbatim on rawNetworkData.",
+    "Requests are HMAC-SHA1 signed (X-PS-Auth) over a canonical method+path+query+user+date string; a clock skewed from GMT will produce signature failures.",
+    "Click-level data is not exposed via the public affiliate API; listClicks is unsupported.",
+    "Tracking-link generation requires the affiliate-links endpoint (POST) and is not deterministically constructible; generateTrackingLink is unsupported pending live verification."
+  ],
+  "claim_status": "experimental",
+  "adapter_version": "0.1.0",
+  "last_verified": "2026-06-05",
+  "supports_brand_ops": false,
+  "side": "publisher",
+  "credential_scope": "single-brand",
+  "docs_url": "https://doc.profitshare.com/"
+}

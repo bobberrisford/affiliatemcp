@@ -1,0 +1,22 @@
+{
+  "result": [
+    {
+      "id": 101,
+      "name": "Atolls Bookshop RO",
+      "url": "https://www.atolls-bookshop.example.ro",
+      "currency": "RON",
+      "category": "Books",
+      "commission": "8%",
+      "status": "active"
+    },
+    {
+      "id": 102,
+      "name": "Example Electronics RO",
+      "url": "https://www.example-electronics.example.ro",
+      "currency": "RON",
+      "categories": ["Electronics", "Home"],
+      "commission": "3.5%",
+      "status": "active"
+    }
+  ]
+}

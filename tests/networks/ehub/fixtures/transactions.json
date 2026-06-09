@@ -1,0 +1,75 @@
+{
+  "code": 200,
+  "transactions": [
+    {
+      "id": 1001,
+      "campaignId": 55,
+      "campaignName": "Trenyrkarna.cz",
+      "orderId": "ORD-1001",
+      "status": "approved",
+      "type": "sale",
+      "totalCost": 1990.0,
+      "commission": 199.0,
+      "currency": "CZK",
+      "dateInsert": "2026-04-01T10:00:00+02:00",
+      "dateApproved": "2026-04-10T10:00:00+02:00",
+      "canChangeStatus": false
+    },
+    {
+      "id": 1002,
+      "campaignId": 55,
+      "campaignName": "Trenyrkarna.cz",
+      "orderId": "ORD-1002",
+      "status": "pending",
+      "type": "sale",
+      "totalCost": 500.0,
+      "commission": 50.0,
+      "currency": "CZK",
+      "dateInsert": "2026-05-15T12:00:00+02:00",
+      "canChangeStatus": true
+    },
+    {
+      "id": 1003,
+      "campaignId": 77,
+      "campaignName": "Knihy.cz",
+      "orderId": "ORD-1003",
+      "status": "declined",
+      "type": "sale",
+      "totalCost": 300.0,
+      "commission": 30.0,
+      "currency": "CZK",
+      "dateInsert": "2026-03-20T09:00:00+02:00",
+      "dateApproved": "2026-03-25T09:00:00+02:00",
+      "declineReason": "Customer returned the item within 14 days",
+      "canChangeStatus": false
+    },
+    {
+      "id": 1004,
+      "campaignId": 77,
+      "campaignName": "Knihy.cz",
+      "orderId": "ORD-1004",
+      "status": "approved",
+      "type": "lead",
+      "totalCost": 0,
+      "commission": 25.0,
+      "currency": "CZK",
+      "dateInsert": "2024-09-01T09:00:00+02:00",
+      "dateApproved": "2024-09-05T09:00:00+02:00",
+      "datePaid": "2024-10-01T09:00:00+02:00",
+      "canChangeStatus": false
+    },
+    {
+      "id": 1005,
+      "campaignId": 88,
+      "campaignName": "PreApproved Shop",
+      "orderId": "ORD-1005",
+      "status": "pre-approved",
+      "type": "sale",
+      "totalCost": "1 299,50",
+      "commission": "129,95",
+      "currency": "CZK",
+      "dateInsert": "2026-05-01T09:00:00+02:00",
+      "canChangeStatus": true
+    }
+  ]
+}

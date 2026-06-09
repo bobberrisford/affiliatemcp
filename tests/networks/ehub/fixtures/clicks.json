@@ -1,0 +1,19 @@
+{
+  "code": 200,
+  "clicks": [
+    {
+      "id": 9001,
+      "campaignId": 55,
+      "date": "2026-06-01T08:30:00+02:00",
+      "referer": "https://blog.example.com/post",
+      "url": "https://www.trenyrkarna.cz/sale"
+    },
+    {
+      "id": 9002,
+      "campaignId": 77,
+      "dateInsert": "2026-06-02T11:00:00+02:00",
+      "referrer": "https://blog.example.com/books",
+      "destination": "https://www.knihy.cz/novinky"
+    }
+  ]
+}
