@@ -238,6 +238,29 @@ describe('advertiser-side tool generation', () => {
       expect(schema.properties ?? {}).not.toHaveProperty('brand');
     }
   });
+
+  // The Anthropic API rejects any MCP tool whose name exceeds 64 characters,
+  // and one over-length name makes a client discard the entire tool list. The
+  // longest combo today is the commission-factory advertiser performance tool.
+  it('never emits a tool name longer than 64 characters', () => {
+    const a = fakeAdapter('commission-factory-advertiser', 'Commission Factory Advertiser');
+    (a as { meta: { side: string; credentialScope: string } }).meta.side = 'advertiser';
+    (a as { meta: { side: string; credentialScope: string } }).meta.credentialScope =
+      'multi-brand';
+    a.listBrands = async () => [];
+    const tools = generateToolsFor(a);
+    for (const t of tools) {
+      expect(t.name.length, `${t.name} is ${t.name.length} chars`).toBeLessThanOrEqual(64);
+    }
+    // The overflowing name is shortened by abbreviating `-advertiser` → `-adv`.
+    expect(tools.map((t) => t.name)).toContain(
+      'affiliate_commission-factory-adv_get_programme_performance',
+    );
+    // Names that already fit keep the full `-advertiser` slug untouched.
+    expect(tools.map((t) => t.name)).toContain(
+      'affiliate_commission-factory-advertiser_generate_tracking_link',
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
