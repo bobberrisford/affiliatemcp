@@ -18,5 +18,6 @@ contextBridge.exposeInMainWorld('affiliate', {
   saveBrands: (network, selections) => ipcRenderer.invoke('claude:saveBrands', { network, selections }),
   connectClaude: () => ipcRenderer.invoke('claude:connect'),
   restartClaude: () => ipcRenderer.invoke('claude:restart'),
+  openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
   quit: () => ipcRenderer.invoke('app:quit'),
 });

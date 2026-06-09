@@ -387,6 +387,31 @@ describe('connectClaudeDesktop', () => {
       else process.env['HOME'] = originalHome;
     }
   });
+
+  it('writes the env onto the entry in a single pass when given', async () => {
+    const originalHome = process.env['HOME'];
+    process.env['HOME'] = tmp;
+    try {
+      const result = await connectClaudeDesktop({
+        nodePath: '/opt/amcp/node',
+        serverPath: '/opt/amcp/server.js',
+        env: { ELECTRON_RUN_AS_NODE: '1' },
+      });
+      if (result.action === 'absent') {
+        expect(result.path).toBe('');
+        return;
+      }
+      const written = JSON.parse(readFileSync(result.path, 'utf8'));
+      expect(written.mcpServers.affiliate).toEqual({
+        command: '/opt/amcp/node',
+        args: ['/opt/amcp/server.js'],
+        env: { ELECTRON_RUN_AS_NODE: '1' },
+      });
+    } finally {
+      if (originalHome === undefined) delete process.env['HOME'];
+      else process.env['HOME'] = originalHome;
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------

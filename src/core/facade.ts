@@ -259,20 +259,32 @@ export async function saveBrands(
  * `serverPath` are supplied, the config entry spawns that exact bundled runtime
  * (D9); otherwise it falls back to the `npx affiliate-networks-mcp` default.
  *
+ * `env` (e.g. `{ ELECTRON_RUN_AS_NODE: '1' }`) is attached to the bundled-runtime
+ * entry so the COMPLETE entry — command, args, AND env — is written in one
+ * atomic/backup pass. The desktop app no longer hand-patches the config after
+ * the fact, so a failed write surfaces as a thrown error rather than silently
+ * leaving an entry that launches the GUI instead of the MCP server.
+ *
  * On platforms where Claude Desktop is not supported (`resolveDesktopConfigPath`
  * returns `null`, e.g. Linux), returns an `'absent'` result with the path nulled
  * out rather than writing a file no client will read.
  */
 export async function connectClaudeDesktop(
-  opts: { nodePath?: string; serverPath?: string; forceOverwrite?: boolean } = {},
+  opts: {
+    nodePath?: string;
+    serverPath?: string;
+    env?: Record<string, string>;
+    forceOverwrite?: boolean;
+  } = {},
 ): Promise<DesktopEditResult> {
   const configPath = resolveDesktopConfigPath();
   if (configPath === null) {
     return { path: '', action: 'absent' };
   }
-  const entryOpts: { nodePath?: string; serverPath?: string } = {};
+  const entryOpts: { nodePath?: string; serverPath?: string; env?: Record<string, string> } = {};
   if (opts.nodePath !== undefined) entryOpts.nodePath = opts.nodePath;
   if (opts.serverPath !== undefined) entryOpts.serverPath = opts.serverPath;
+  if (opts.env !== undefined) entryOpts.env = opts.env;
   const entryValue =
     opts.nodePath && opts.serverPath
       ? buildAffiliateEntryValue(entryOpts)

@@ -30,10 +30,16 @@ export const AFFILIATE_ENTRY_VALUE = {
   args: ['affiliate-networks-mcp'],
 } as const;
 
-/** A Claude Desktop MCP server entry: a command plus its argument vector. */
+/**
+ * A Claude Desktop MCP server entry: a command, its argument vector, and an
+ * optional environment map. `env` is only emitted when non-empty so the
+ * `npx affiliate-networks-mcp` default entry stays byte-for-byte identical to
+ * what the CLI installer has always written.
+ */
 export interface AffiliateEntryValue {
   command: string;
   args: string[];
+  env?: Record<string, string>;
 }
 
 /**
@@ -44,14 +50,23 @@ export interface AffiliateEntryValue {
  * that exact server entrypoint — no reliance on a globally-installed `npx`.
  * Otherwise it falls back to the `npx affiliate-networks-mcp` default, byte-for-byte
  * identical to `AFFILIATE_ENTRY_VALUE`, preserving back-compat for the CLI installer.
+ *
+ * `env` (e.g. `{ ELECTRON_RUN_AS_NODE: '1' }` so the packaged app's Electron
+ * binary runs as plain Node) is attached only to the bundled-runtime entry, and
+ * only when non-empty — the npx default never carries an env. Carrying env here
+ * means the COMPLETE entry is written through the single atomic/backup path in
+ * `addAffiliateEntry`, with no second hand-patch of the config file afterwards.
  */
 export function buildAffiliateEntryValue(opts: {
   nodePath?: string;
   serverPath?: string;
+  env?: Record<string, string>;
 } = {}): AffiliateEntryValue {
-  const { nodePath, serverPath } = opts;
+  const { nodePath, serverPath, env } = opts;
   if (nodePath && serverPath) {
-    return { command: nodePath, args: [serverPath] };
+    const entry: AffiliateEntryValue = { command: nodePath, args: [serverPath] };
+    if (env && Object.keys(env).length > 0) entry.env = { ...env };
+    return entry;
   }
   return { command: AFFILIATE_ENTRY_VALUE.command, args: [...AFFILIATE_ENTRY_VALUE.args] };
 }
