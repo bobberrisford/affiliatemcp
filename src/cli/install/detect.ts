@@ -21,6 +21,7 @@
 
 import { existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
+import { homedir } from 'node:os';
 import path from 'node:path';
 
 import { resolveDesktopConfigPath } from './claude-desktop.js';
@@ -73,7 +74,13 @@ export async function detectClients(opts: DetectOptions = {}): Promise<Detection
 
 function defaultProbeDesktopBundle(platform: NodeJS.Platform, env: NodeJS.ProcessEnv): boolean {
   if (platform === 'darwin') {
-    return existsSync('/Applications/Claude.app');
+    // System-wide install or a per-user one under ~/Applications — Claude
+    // Desktop can live in either, so a missing /Applications copy alone must
+    // not be read as "not installed".
+    return (
+      existsSync('/Applications/Claude.app') ||
+      existsSync(path.join(homedir(), 'Applications', 'Claude.app'))
+    );
   }
   if (platform === 'win32') {
     const localAppData = env['LOCALAPPDATA'];

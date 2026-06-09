@@ -227,7 +227,10 @@ handle('shell:openExternal', async (_e, url) => {
 
 handle('clients:detect', async () => {
   const { facade } = await loadCore();
-  const det = facade.detectClients();
+  // detectClients is async — it probes the filesystem and may shell out. Without
+  // the await, `det` is a Promise and `det.desktop` is undefined, so the UI would
+  // always report Claude Desktop as absent even when it is installed.
+  const det = await facade.detectClients();
   // Renderer reads only { desktop, desktopConfigPath }.
   return { desktop: det.desktop, desktopConfigPath: det.desktopConfigPath };
 });
