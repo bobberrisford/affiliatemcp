@@ -26,3 +26,7 @@ SUBMISSION.md
 /apple-signing/
 desktop/build/core.cjs
 desktop/build/server.cjs
+
+# Playwright (desktop E2E) output.
+desktop/test-results/
+desktop/playwright-report/

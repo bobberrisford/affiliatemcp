@@ -151,11 +151,16 @@ Only the macOS signing/notarisation creds are needed — there is no backend.
 # Root: full gate (typecheck + lint + tests + build) — must be green
 npm run verify
 
-# Desktop: rebuild the core, esbuild the bundles, and load-smoke them. This is
-# the only check that exercises desktop/ — `npm run verify` and CI do not bundle,
-# package, or load the Electron app. It catches the ESM/unbundled-dep breakage
-# that would otherwise only surface in a packaged build.
+# Desktop: rebuild the core, esbuild the bundles, and load-smoke them. Catches
+# the ESM/unbundled-dep breakage that would otherwise only surface in a packaged
+# build. (CI runs this as the `desktop` job.)
 npm --prefix desktop run verify:desktop
+
+# Desktop E2E: launch the real Electron main process and drive it through the
+# real preload bridge (detect / listNetworks / saveEnv / openExternal allowlist).
+# Catches runtime-only IPC bugs the browser mock can't. macOS only (needs the
+# Electron binary + a display). CI runs this as the `desktop-e2e` job on macOS.
+npm --prefix desktop run test:e2e
 
 # Root: design-system adherence lint on the renderer
 npm run lint:design

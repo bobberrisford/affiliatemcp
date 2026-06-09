@@ -39,3 +39,20 @@ jobs:
         env:
           ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       - run: npm --prefix desktop run verify:desktop
+
+  # End-to-end smoke: launch the REAL Electron main process and drive it through
+  # the REAL preload bridge (window.affiliate.*). Catches runtime-only bugs the
+  # browser mock can't — e.g. an un-awaited async IPC handler. Runs on macOS so
+  # Electron has native windowing (no xvfb) and matches the only shipping target;
+  # the Electron binary IS needed here, so it is not skipped.
+  desktop-e2e:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm ci --prefix desktop
+      - run: npm --prefix desktop run test:e2e
