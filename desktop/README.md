@@ -28,7 +28,7 @@ in-file **mock** of the facade, so you can click the whole flow.
 | `preload.js` | `contextBridge` exposing a narrow `window.affiliate` API to the renderer. No other Node access. |
 | `renderer/index.html` | Loads the design system (`/design-system`) then the app. |
 | `renderer/app.css` | **App layout only** — window chrome + screen scaffolding. Re-defines no design-system component. |
-| `renderer/app.js` | The screen state-machine (activate → welcome → networks → credentials → brands → connect → done). Uses `window.affiliate` or the browser mock. |
+| `renderer/app.js` | The screen state-machine (welcome → networks → credentials → brands → connect → done). Uses `window.affiliate` or the browser mock. |
 
 ## Design system
 
@@ -53,12 +53,6 @@ only exists in the renderer's browser-preview path (`app.js`), never in Electron
 
 ## IPC handlers (all wired to the real core)
 
-- `licence:read` → `config.readLicence()` — `{ email, issued }` or `null`.
-- `licence:activate` → `config.verifyLicenceToken(key)`; on success writes the
-  token verbatim to `<CONFIG_DIR>/licence` (dir 0700, file 0600).
-- `licence:buy` → `POST {}` to `AFFILIATE_MCP_ISSUER_URL + '/checkout'`, then
-  opens the returned Stripe URL. **If `AFFILIATE_MCP_ISSUER_URL` is unset it
-  returns an error and opens nothing** — no placeholder URL.
 - `clients:detect` / `networks:*` / `config:saveEnv` / `claude:saveBrands` →
   the matching `src/core/facade` functions.
 - `claude:connect` → `facade.connectClaudeDesktop(...)` (bundled-runtime entry,
@@ -111,11 +105,8 @@ for a notarised Electron app (`allow-jit`, unsigned-executable-memory,
 disable-library-validation, allow-dyld-environment-variables — the last is
 needed because we set `ELECTRON_RUN_AS_NODE` on the spawned server).
 
-## Runtime env vars the human must supply
-
-- `AFFILIATE_MCP_ISSUER_URL` — base URL of the Stripe issuer Worker. **Required
-  for the in-app "Buy" button** to do anything; unset = buy is disabled with a
-  clear message. (The Worker is built/deployed separately, plan §2A.)
+The app is free and open source — it has no licence gate, no in-app purchase,
+and no backend. The setup flow opens straight at the welcome screen.
 
 ## v1 scope notes
 

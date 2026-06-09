@@ -16,6 +16,5 @@
 //   saveEnv, saveBrands, connectClaudeDesktop, detectClients.
 export * from './facade.js';
 
-// Everything main.js calls as `config.*`:
-//   readLicence, verifyLicenceToken, CONFIG_DIR.
-export { readLicence, verifyLicenceToken, CONFIG_DIR } from '../shared/config.js';
+// Config symbols main.js may reference as `config.*`:
+export { CONFIG_DIR } from '../shared/config.js';

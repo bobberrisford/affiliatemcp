@@ -1,5 +1,11 @@
 # affiliate-mcp Desktop — full plan, decisions, and roadmap (2026-06-07)
 
+> **Superseded in part (2026-06-09):** the desktop app now ships **free and open
+> source** — there is no licence, no Stripe issuer, and no activation gate. See
+> [`../decisions/2026-06-09-desktop-app-free.md`](../decisions/2026-06-09-desktop-app-free.md).
+> The paid-model sections below (§2A licence/Stripe, Phase 1b issuer, the £39
+> pricing) are kept for historical context only and no longer reflect what ships.
+
 > Status: planning. Builds on
 > [`claude-desktop-app-scoping.md`](./claude-desktop-app-scoping.md).
 > North star: **easy onboarding for non-technical users.**

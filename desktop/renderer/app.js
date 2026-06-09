@@ -52,13 +52,6 @@ const MOCK_BRANDS = [
 function mockApi() {
   const wait = (v, ms = 350) => new Promise((r) => setTimeout(() => r(v), ms));
   return {
-    licence: {
-      read: () => wait(null),
-      activate: (key) => wait(typeof key === 'string' && key.startsWith('amcp_') && key.length > 20
-        ? { ok: true, licence: { email: 'buyer@example.com', issued: '2026-06-07' } }
-        : { ok: false, error: 'That key could not be verified. Check it and try again.' }, 600),
-      buy: () => { window.open('https://example.com/checkout-placeholder', '_blank'); return wait({ ok: true }); },
-    },
     detectClients: () => wait({ desktop: 'present', desktopConfigPath: '~/Library/Application Support/Claude/claude_desktop_config.json' }),
     listNetworks: () => wait(MOCK_NETWORKS),
     setupSteps: (slug) => wait(MOCK_STEPS[slug] || []),
@@ -84,8 +77,7 @@ const api = window.affiliate || mockApi();
 
 /* ---- state ------------------------------------------------------------ */
 const state = {
-  screen: 'activate',
-  licence: null,
+  screen: 'welcome',
   networks: [],
   selected: [],          // slugs
   credIndex: 0,          // index into selected[]
@@ -106,48 +98,6 @@ function rail(current) {
 const wrap = (body, center) => `<div class="screen ${center ? 'center' : ''} fade"><div class="scroll">${body}</div></div>`;
 
 /* ---- screens ---------------------------------------------------------- */
-function renderActivate() {
-  app.innerHTML = wrap(`
-    <img class="bigmark" src="${MARK}" alt="" />
-    <h1 class="welcome-h">activate affiliate-mcp.</h1>
-    <p class="scr-lead" style="margin-inline:auto">a one-off £39 licence. paste the key from your email, or buy it now — it’s yours for life, no subscription.</p>
-    <div class="kv" style="max-width:520px;margin:0 auto"><span class="pre">licence</span><input id="key" placeholder="amcp_…" autocomplete="off" spellcheck="false" /></div>
-    <div class="verify-row" id="lic-status" style="text-align:center;margin-top:14px"></div>
-    <div class="trust"><span class="chip">● OFFLINE LICENCE</span><span class="chip">● NO TELEMETRY</span><span class="chip acid">SOURCE STAYS OPEN</span></div>
-    <div style="display:flex;gap:14px;justify-content:center">
-      <button class="btn btn-ghost" id="buy">buy — £39</button>
-      <button class="btn btn-primary" id="activate">activate ▸</button>
-    </div>
-  `, true);
-  const status = document.getElementById('lic-status');
-  const keyInput = /** @type {HTMLInputElement} */(document.getElementById('key'));
-  document.getElementById('buy').onclick = () => api.licence.buy();
-  // The single activate routine — shared by the button and the deep-link path
-  // so there's exactly one place that verifies + advances. Guards re-entry.
-  let activating = false;
-  async function activate() {
-    if (activating) return;
-    const key = keyInput.value.trim();
-    if (!key) return;
-    activating = true;
-    status.innerHTML = `<span class="status"><span class="dot dot-pending"></span> checking…</span>`;
-    const res = await api.licence.activate(key);
-    if (res && res.ok) {
-      state.licence = res.licence;
-      status.innerHTML = `<span class="status"><span class="dot dot-pos"></span> verified offline</span>`;
-      setTimeout(() => go('welcome'), 450);
-    } else {
-      activating = false;
-      status.innerHTML = `<span class="status"><span class="dot dot-neg"></span> ${esc((res && res.error) || 'invalid key')}</span>`;
-    }
-  }
-  document.getElementById('activate').onclick = activate;
-  // A deep link may have delivered a key — either queued before this screen
-  // rendered (cold launch) or while it's already showing (the boot-level
-  // subscriber re-renders us). Prefill + auto-activate it exactly once.
-  if (incomingKey) { keyInput.value = incomingKey; incomingKey = null; activate(); }
-}
-
 function renderWelcome() {
   app.innerHTML = wrap(`
     <img class="bigmark" src="${MARK}" alt="" />
@@ -466,28 +416,10 @@ function renderDone() {
 
 /* ---- router ----------------------------------------------------------- */
 const SCREENS = {
-  activate: renderActivate, welcome: renderWelcome, networks: renderNetworks,
+  welcome: renderWelcome, networks: renderNetworks,
   credentials: renderCredentials, brands: renderBrands, connect: renderConnect, done: renderDone,
 };
-function go(name) { state.screen = name; (SCREENS[name] || renderActivate)(); }
+function go(name) { state.screen = name; (SCREENS[name] || renderWelcome)(); }
 
-/* ---- deep-link key (affiliate-mcp://activate?key=…) ------------------ */
-// A key can arrive from main before renderActivate runs (cold launch via the
-// link). Stash the latest here; renderActivate consumes + auto-activates it.
-// If it arrives once we're already past the gate (licensed), it's ignored.
-let incomingKey = null;
-api.onIncomingKey?.((key) => {
-  if (state.screen === 'activate') {
-    incomingKey = key;
-    renderActivate(); // re-render so it picks up + auto-activates the key
-  }
-  // else: already licensed / mid-flow — the renderActivate subscriber handles
-  // the on-screen case; anything later is intentionally ignored.
-});
-
-/* boot: skip the gate if already licensed */
-(async () => {
-  const lic = await api.licence.read();
-  if (lic && lic.email) { state.licence = lic; go('welcome'); }
-  else go('activate');
-})();
+/* boot: the app is free — start straight at the welcome screen */
+go('welcome');

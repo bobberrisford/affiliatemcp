@@ -2,139 +2,33 @@
 /**
  * affiliate-mcp desktop — Electron main process.
  *
- * Scope (v1): a setup-only, launch-and-quit app. It runs the onboarding UI,
- * writes credentials + the Claude Desktop config, then the user quits. The MCP
- * server itself is NOT run here — Claude Desktop spawns it over stdio, exactly
- * as today (D9). This process only configures it.
+ * Scope (v1): a free, setup-only, launch-and-quit app. It runs the onboarding
+ * UI, writes credentials + the Claude Desktop config, then the user quits. The
+ * MCP server itself is NOT run here — Claude Desktop spawns it over stdio,
+ * exactly as today (D9). This process only configures it.
  *
  * The IPC handlers below are the app's view of the core facade. Each one calls
  * into the BUILT core, which esbuild bundles into a self-contained CommonJS
  * file (`build/core.cjs`) we require() once and cache. There are no mocks in
  * the Electron path — if the bundle is missing we fail loudly.
  */
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const { execFile } = require('node:child_process');
 
-/* ------------------------------------------------------------------ */
-/* Deep link: affiliate-mcp://activate?key=<licence-token>            */
-/*                                                                    */
-/* The issuer Worker's Stripe success page emits an                   */
-/* `affiliate-mcp://activate?key=…` button. When the OS hands that    */
-/* url to the app we extract the key and forward it to the renderer,  */
-/* which prefills + auto-activates. See parseActivateUrl below.       */
-/* ------------------------------------------------------------------ */
-
-const PROTOCOL = 'affiliate-mcp';
-
-// The live Cloudflare Worker that issues licences. Baked in so a packaged app a
-// user double-clicks can reach checkout out of the box; AFFILIATE_MCP_ISSUER_URL
-// overrides it for dev/testing.
-const DEFAULT_ISSUER_URL = 'https://affiliate-mcp-issuer.robertberrisford.workers.dev';
-
-/**
- * Pure, testable URL → licence-key extractor.
- *
- * Accepts only `affiliate-mcp://activate?key=…`; the key is URL-decoded.
- * Any other scheme, host/path, or a missing/empty key yields null. This is
- * deliberately strict so a stray deep link can never trigger activation with
- * an unexpected value.
- *
- * @param {string} url
- * @returns {string | null}
- */
-function parseActivateUrl(url) {
-  if (typeof url !== 'string' || url.trim() === '') return null;
-  let parsed;
-  try {
-    parsed = new URL(url.trim());
-  } catch {
-    return null;
-  }
-  // URL() normalises the scheme to lower-case and strips the trailing colon.
-  if (parsed.protocol !== `${PROTOCOL}:`) return null;
-  // For `affiliate-mcp://activate?…` the WHATWG parser treats `activate` as the
-  // host. Accept it whether it lands in host or the first path segment, but
-  // reject anything else (e.g. affiliate-mcp://other).
-  const host = parsed.hostname;
-  const firstPathSeg = parsed.pathname.replace(/^\/+/, '').split('/')[0];
-  const route = host || firstPathSeg;
-  if (route !== 'activate') return null;
-  const key = parsed.searchParams.get('key');
-  if (!key || key.trim() === '') return null;
-  return key.trim();
-}
-
-// Keys that arrive before the window exists are queued and flushed on create.
-/** @type {string[]} */
-const pendingKeys = [];
-
-/**
- * Forward a licence key to the renderer. If no window exists yet (the url
- * launched the app cold), queue it and flush once the window is created.
- * @param {string} key
- */
-function deliverKey(key) {
-  if (!key) return;
-  const win = BrowserWindow.getAllWindows()[0];
-  if (win) {
-    if (win.isMinimized()) win.restore();
-    win.show();
-    win.focus();
-    win.webContents.send('licence:incoming-key', key);
-  } else {
-    pendingKeys.push(key);
-  }
-}
-
-/** Extract + deliver a key from a single url string (no-op if not an activate url). */
-function handleActivateUrl(url) {
-  const key = parseActivateUrl(url);
-  if (key) deliverKey(key);
-}
-
-/** Scan a process argv array for the first activate deep link (Windows/Linux). */
-function handleActivateArgv(argv) {
-  if (!Array.isArray(argv)) return;
-  for (const arg of argv) {
-    if (typeof arg === 'string' && arg.startsWith(`${PROTOCOL}://`)) {
-      handleActivateUrl(arg);
-      return;
-    }
-  }
-}
-
-// Register as the default handler for the affiliate-mcp:// scheme. In dev the
-// app runs via the electron binary, so we must pass execPath + the script path
-// per the Electron docs, otherwise the OS would try to launch electron with no
-// entrypoint when following a deep link.
-if (!app.isPackaged && process.argv.length >= 2) {
-  app.setAsDefaultProtocolClient(PROTOCOL, process.execPath, [path.resolve(process.argv[1])]);
-} else {
-  app.setAsDefaultProtocolClient(PROTOCOL);
-}
-
-// Single-instance: a second launch (e.g. the OS opening a deep link on
-// Windows/Linux) hands its argv to the running instance instead of starting a
-// new one, which then focuses the window and forwards the url.
+// Single-instance: a second launch hands off to the running instance, which
+// focuses its window rather than starting a duplicate setup process.
 const gotInstanceLock = app.requestSingleInstanceLock();
 if (!gotInstanceLock) {
   app.quit();
 } else {
-  app.on('second-instance', (_event, argv) => {
+  app.on('second-instance', () => {
     const win = BrowserWindow.getAllWindows()[0];
     if (win) {
       if (win.isMinimized()) win.restore();
       win.focus();
     }
-    handleActivateArgv(argv);
-  });
-
-  // macOS delivers deep links via open-url (may fire before whenReady).
-  app.on('open-url', (event, url) => {
-    event.preventDefault();
-    handleActivateUrl(url);
   });
 }
 
@@ -205,21 +99,11 @@ function createWindow() {
     },
   });
   win.loadFile(path.join(__dirname, 'renderer', 'index.html'));
-  // Flush any deep-link keys that arrived before the window existed. We wait
-  // for the renderer to finish loading so its onIncomingKey listener is live.
-  win.webContents.once('did-finish-load', () => {
-    while (pendingKeys.length) {
-      const key = pendingKeys.shift();
-      if (key) win.webContents.send('licence:incoming-key', key);
-    }
-  });
 }
 
 if (gotInstanceLock) {
   app.whenReady().then(() => {
     createWindow();
-    // Cold launch via a deep link on Windows/Linux: the url is in our own argv.
-    handleActivateArgv(process.argv);
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });
@@ -247,51 +131,6 @@ function handle(channel, fn) {
     }
   });
 }
-
-// ---- Licence (offline verify; the only paid-feature gate, app-shell only) --
-
-handle('licence:read', async () => {
-  const { config } = await loadCore();
-  const res = config.readLicence();
-  if (res && res.valid) return { email: res.email, issued: res.issued };
-  return null; // null = not activated (renderer shows the gate)
-});
-
-handle('licence:activate', async (_e, key) => {
-  const { config } = await loadCore();
-  const res = config.verifyLicenceToken(typeof key === 'string' ? key.trim() : '');
-  if (!res.valid) return { ok: false, error: res.reason };
-  // Persist verbatim, single line, mode 0600 (dir 0700) at <CONFIG_DIR>/licence.
-  const override = process.env.AFFILIATE_MCP_CONFIG_DIR;
-  const dir = override && override.trim() !== '' ? override : config.CONFIG_DIR;
-  fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
-  fs.writeFileSync(path.join(dir, 'licence'), typeof key === 'string' ? key.trim() : '', {
-    mode: 0o600,
-  });
-  return { ok: true, licence: { email: res.email, issued: res.issued } };
-});
-
-handle('licence:buy', async () => {
-  // In-app buy → the issuer Worker's /checkout (Stripe Checkout Sessions, §2A).
-  // The Worker is LIVE; its URL is baked in as DEFAULT_ISSUER_URL so a packaged
-  // build works out of the box. AFFILIATE_MCP_ISSUER_URL still overrides it for
-  // local testing. The resolved issuer is therefore never empty.
-  const issuer = process.env.AFFILIATE_MCP_ISSUER_URL || DEFAULT_ISSUER_URL;
-  const res = await fetch(issuer.replace(/\/$/, '') + '/checkout', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: '{}',
-  });
-  if (!res.ok) {
-    return { ok: false, error: `Checkout request failed (${res.status}).` };
-  }
-  const data = await res.json();
-  if (!data || typeof data.url !== 'string') {
-    return { ok: false, error: 'Checkout did not return a URL.' };
-  }
-  await shell.openExternal(data.url);
-  return { ok: true };
-});
 
 // ---- Client detection ------------------------------------------------------
 
@@ -402,8 +241,3 @@ handle('app:quit', async () => {
   app.quit();
   return { ok: true };
 });
-
-// Exported for the deep-link self-check / unit tests. Requiring this module in
-// a non-Electron context (with a stubbed `electron`) exposes the pure parser
-// without starting the app.
-module.exports = { parseActivateUrl };

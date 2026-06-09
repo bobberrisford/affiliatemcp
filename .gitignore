@@ -22,9 +22,7 @@ scratch/
 # Local submission notes — not for the repo
 SUBMISSION.md
 
-# Licence signing keys — the Ed25519 PRIVATE key must NEVER be committed.
-# The dev pair lives here; production keys live in the Worker secret store.
-/licence-keys/
+# Apple signing assets and built desktop bundles — never committed.
 /apple-signing/
 desktop/build/core.cjs
 desktop/build/server.cjs
