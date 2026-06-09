@@ -234,3 +234,26 @@ describe('agency-side skills (PR 4)', () => {
     });
   }
 });
+
+// The two lists above (SKILLS + AGENCY_SKILLS) are exactly what every user
+// receives: plugin.json auto-discovers them from `skills/`, so they ship with
+// the plugin install. This guard pins the shipped set to the validated set.
+// Adding a skill folder without registering it here (so it goes unvalidated),
+// or losing one from disk, fails the build instead of silently changing what
+// users get.
+describe('shipped skill set matches the validated set', () => {
+  it('every skills/ subdirectory with a SKILL.md is covered above, and vice versa', () => {
+    const onDisk = readdirSync(skillsRoot, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .filter((name) => existsSync(join(skillsRoot, name, 'SKILL.md')))
+      .sort();
+    const validated = [...SKILLS, ...AGENCY_SKILLS].sort();
+    expect(
+      onDisk,
+      'skills/ drifted from the validated set: a skill on disk is not listed in ' +
+        'SKILLS/AGENCY_SKILLS (so it ships unvalidated), or a validated skill is ' +
+        'missing from disk (so users would not receive it).',
+    ).toEqual(validated);
+  });
+});
