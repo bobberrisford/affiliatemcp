@@ -88,10 +88,27 @@ const ProgrammePerformanceQuerySchema = z
   })
   .strict();
 
+/**
+ * MCP tool names are capped at 64 characters by the Anthropic API; a single
+ * over-length name makes a client reject the entire tool list. Only advertiser
+ * slugs (carrying the `-advertiser` suffix) get close, and exactly one combo
+ * overflows today: `affiliate_commission-factory-advertiser_get_programme_performance`
+ * (65 chars). When — and only when — the assembled name would exceed the cap,
+ * abbreviate the slug's `-advertiser` suffix to `-adv`; every other name stays
+ * byte-identical, and any future long advertiser name is handled automatically.
+ */
+const MAX_TOOL_NAME_LEN = 64;
+
 function toolNameFor(network: string, op: AdapterOperation): string {
   // e.g. `affiliate_awin_list_programmes`
   const snake = op.replace(/([A-Z])/g, '_$1').toLowerCase();
-  return `affiliate_${network}_${snake}`.replace(/__+/g, '_');
+  const name = `affiliate_${network}_${snake}`.replace(/__+/g, '_');
+  if (name.length <= MAX_TOOL_NAME_LEN) return name;
+  const shortened = `affiliate_${network.replace(/-advertiser$/, '-adv')}_${snake}`.replace(
+    /__+/g,
+    '_',
+  );
+  return shortened;
 }
 
 interface OpSpec {
