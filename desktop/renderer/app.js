@@ -70,6 +70,7 @@ function mockApi() {
     saveBrands: (_network, selections) => wait({ ok: true, count: (selections || []).length }),
     connectClaude: () => wait({ ok: true, action: 'added', backupPath: '…/claude_desktop_config.json.bak' }, 500),
     restartClaude: () => wait({ ok: true }),
+    openExternal: (url) => { window.open(url, '_blank'); return wait({ ok: true }); },
     quit: () => wait({ ok: true }),
   };
 }
@@ -82,8 +83,9 @@ const state = {
   selected: [],          // slugs
   credIndex: 0,          // index into selected[]
   verified: {},          // slug -> identity
-  brands: [],            // discovered
-  brandSel: {},          // id -> { on, nick }
+  brandIndex: 0,         // index into brandSideSlugs() — we walk each in turn
+  brandsByNet: {},       // slug -> discovered brands[]
+  brandSelByNet: {},     // slug -> { id: { on, nick } }
   envEntries: {},        // FIELD -> value, accumulated across verified networks
 };
 const app = document.getElementById('app');
@@ -239,10 +241,16 @@ async function renderCredentials() {
       <button class="btn btn-primary" id="verify">verify &amp; continue ▸</button>
     </div>
   `);
-  app.querySelectorAll('.deeplink').forEach((a) => a.addEventListener('click', (e) => {
+  app.querySelectorAll('.deeplink').forEach((a) => a.addEventListener('click', async (e) => {
     e.preventDefault();
     const url = a.getAttribute('data-url');
-    if (window.affiliate) window.open(url, '_blank'); else window.open(url, '_blank');
+    if (!url || url === '#') return;
+    // Open via the main process, which allowlists the host — the renderer is
+    // not allowed to spawn windows or navigate (see main.js boundary).
+    const res = await api.openExternal(url);
+    if (res && res.ok === false) {
+      a.textContent = `↗ couldn’t open that link (${esc(res.error || 'blocked')})`;
+    }
   }));
 
   // ---- live per-field validation (✓/✗) -----------------------------------
@@ -308,7 +316,8 @@ async function renderCredentials() {
       vs.innerHTML = `<span class="status"><span class="dot dot-pos"></span> verified as ${esc(res.identity)}</span>`;
       setTimeout(() => {
         if (!last) { state.credIndex++; go('credentials'); }
-        else go(anyBrandSide() ? 'brands' : 'connect');
+        else if (anyBrandSide()) { state.brandIndex = 0; go('brands'); }
+        else go('connect');
       }, 550);
     } else {
       vs.innerHTML = `<span class="status"><span class="dot dot-neg"></span> ${esc((res && res.reason) || 'could not verify')}</span>`;
@@ -316,49 +325,86 @@ async function renderCredentials() {
   };
 }
 
-const anyBrandSide = () => state.selected.some((s) => (state.networks.find((n) => n.slug === s) || {}).side === 'brand');
+const anyBrandSide = () => brandSideSlugs().length > 0;
+// Selected slugs that are brand/advertiser side, in selection order. The brands
+// screen walks these one at a time (state.brandIndex) — every brand-side
+// network gets its own discovery + persistence, not just the first.
+const brandSideSlugs = () => state.selected.filter((s) => (state.networks.find((n) => n.slug === s) || {}).side === 'brand');
 
 async function renderBrands() {
-  const brandNetworkSlug = state.selected.find((s) => (state.networks.find((n) => n.slug === s) || {}).side === 'brand');
-  if (!state.brands.length) {
-    state.brands = await api.discoverBrands(brandNetworkSlug);
-    state.brands.forEach((b) => { state.brandSel[b.id] = { on: b.status === 'active', nick: b.name.split(' ')[0].toLowerCase() }; });
+  const brandSlugs = brandSideSlugs();
+  // Defensive: nothing brand-side to do (shouldn't happen via the normal flow).
+  if (!brandSlugs.length) { go('connect'); return; }
+  if (state.brandIndex < 0) state.brandIndex = 0;
+  if (state.brandIndex > brandSlugs.length - 1) state.brandIndex = brandSlugs.length - 1;
+
+  const slug = brandSlugs[state.brandIndex];
+  const net = state.networks.find((n) => n.slug === slug) || { name: slug };
+  const total = brandSlugs.length;
+  const isLastBrand = state.brandIndex === total - 1;
+
+  if (!state.brandsByNet[slug]) {
+    state.brandsByNet[slug] = await api.discoverBrands(slug);
+    const sel = {};
+    state.brandsByNet[slug].forEach((b) => { sel[b.id] = { on: b.status === 'active', nick: b.name.split(' ')[0].toLowerCase() }; });
+    state.brandSelByNet[slug] = sel;
   }
-  const rows = state.brands.map((b) => {
-    const sel = state.brandSel[b.id];
-    const dot = b.status === 'active' ? 'dot-pos' : 'dot-pending';
-    return `<div class="brow ${sel.on ? '' : 'off'}" data-id="${b.id}">
-      <span class="cb">✓</span><span class="bn">${esc(b.name)}</span>
-      <span class="status" style="margin-left:14px"><span class="dot ${dot}"></span> ${esc(b.status)}</span>
-      <span class="nick"><input data-nick="${b.id}" value="${esc(sel.nick)}" placeholder="nickname" /></span>
-    </div>`;
-  }).join('');
+  const brands = state.brandsByNet[slug];
+  const brandSel = state.brandSelByNet[slug];
+
+  const counter = total > 1 ? ` brand network ${state.brandIndex + 1} of ${total} — ${esc(net.name)}.` : '';
+  const body = brands.length
+    ? brands.map((b) => {
+        const sel = brandSel[b.id];
+        const dot = b.status === 'active' ? 'dot-pos' : 'dot-pending';
+        return `<div class="brow ${sel.on ? '' : 'off'}" data-id="${esc(b.id)}">
+          <span class="cb">✓</span><span class="bn">${esc(b.name)}</span>
+          <span class="status" style="margin-left:14px"><span class="dot ${dot}"></span> ${esc(b.status)}</span>
+          <span class="nick"><input data-nick="${esc(b.id)}" value="${esc(sel.nick)}" placeholder="nickname" /></span>
+        </div>`;
+      }).join('')
+    : `<div class="help">${esc(net.name)} doesn’t expose a brand list to pick from here — its credentials are already scoped. Continue.</div>`;
+
+  const nextLabel = isLastBrand ? 'save brands — continue ▸' : 'save — next network ▸';
   app.innerHTML = wrap(`
     ${rail('brands')}
     <h2 class="scr">which brands can these keys reach?</h2>
-    <p class="scr-lead">your credentials see these advertiser accounts. pick the ones you manage and give each a nickname you’ll use when you ask questions.</p>
-    ${rows}
+    <p class="scr-lead">your credentials see these advertiser accounts. pick the ones you manage and give each a nickname you’ll use when you ask questions.${counter}</p>
+    ${body}
     <div class="actions">
       <button class="btn btn-ghost" id="back">back</button>
-      <button class="btn btn-primary" id="next">save brands — continue ▸</button>
+      <button class="btn btn-primary" id="next">${nextLabel}</button>
     </div>
   `);
   app.querySelectorAll('.brow').forEach((row) => row.addEventListener('click', (e) => {
     if (e.target.tagName === 'INPUT') return;
     const id = row.getAttribute('data-id');
-    state.brandSel[id].on = !state.brandSel[id].on;
+    brandSel[id].on = !brandSel[id].on;
     renderBrands();
   }));
   app.querySelectorAll('[data-nick]').forEach((inp) => inp.addEventListener('input', () => {
-    state.brandSel[inp.getAttribute('data-nick')].nick = inp.value;
+    brandSel[inp.getAttribute('data-nick')].nick = inp.value;
   }));
-  document.getElementById('back').onclick = () => { state.credIndex = state.selected.length - 1; go('credentials'); };
+  document.getElementById('back').onclick = () => {
+    if (state.brandIndex > 0) { state.brandIndex--; renderBrands(); }
+    else { state.credIndex = state.selected.length - 1; go('credentials'); }
+  };
   document.getElementById('next').onclick = async () => {
-    const selections = state.brands
-      .filter((b) => state.brandSel[b.id] && state.brandSel[b.id].on)
-      .map((b) => ({ networkBrandId: b.id, slug: state.brandSel[b.id].nick }));
-    await api.saveBrands(brandNetworkSlug, selections);
-    go('connect');
+    const selections = brands
+      .filter((b) => brandSel[b.id] && brandSel[b.id].on)
+      .map((b) => ({ networkBrandId: b.id, slug: brandSel[b.id].nick }));
+    const res = await api.saveBrands(slug, selections);
+    if (res && res.ok === false) {
+      // Surface persistence failure rather than silently advancing.
+      const note = document.createElement('div');
+      note.className = 'help';
+      note.style.borderLeftColor = 'var(--magenta)';
+      note.textContent = `couldn’t save brands for ${net.name}: ${res.error || 'unknown error'}`;
+      app.querySelector('.actions').before(note);
+      return;
+    }
+    if (!isLastBrand) { state.brandIndex++; renderBrands(); }
+    else go('connect');
   };
 }
 
@@ -381,14 +427,38 @@ async function renderConnect() {
       <button class="btn btn-primary" id="go" ${present ? '' : 'disabled'}>connect &amp; restart Claude ▸</button>
     </div>
   `);
-  document.getElementById('back').onclick = () => go(anyBrandSide() ? 'brands' : 'credentials');
+  document.getElementById('back').onclick = () => {
+    if (anyBrandSide()) { state.brandIndex = brandSideSlugs().length - 1; go('brands'); }
+    else go('credentials');
+  };
   const goBtn = document.getElementById('go');
   if (goBtn) goBtn.onclick = async () => {
     const cs = document.getElementById('cstatus');
-    cs.innerHTML = `<span class="status"><span class="dot dot-pending"></span> writing config…</span>`;
-    await api.saveEnv(state.envEntries);
-    await api.connectClaude();
-    await api.restartClaude();
+    // Each step must succeed before the next runs, and ALL must succeed before
+    // we show "all set". A failure stops here with an actionable message rather
+    // than marching on to the done screen. Steps return either a structured
+    // failure ({ ok:false, error }) or, for connect, a desktop edit result.
+    const fail = (msg) => {
+      cs.innerHTML = `<span class="status"><span class="dot dot-neg"></span> ${esc(msg)}</span>`;
+      goBtn.disabled = false;
+      goBtn.textContent = 'try again ▸';
+    };
+    const failed = (res) => res && res.ok === false;
+
+    goBtn.disabled = true;
+    cs.innerHTML = `<span class="status"><span class="dot dot-pending"></span> writing credentials…</span>`;
+    const saved = await api.saveEnv(state.envEntries);
+    if (failed(saved)) return fail(`couldn’t save credentials: ${saved.error || 'unknown error'}`);
+
+    cs.innerHTML = `<span class="status"><span class="dot dot-pending"></span> writing Claude config…</span>`;
+    const connected = await api.connectClaude();
+    if (failed(connected)) return fail(`couldn’t update Claude’s config: ${connected.error || 'unknown error'}`);
+
+    cs.innerHTML = `<span class="status"><span class="dot dot-pending"></span> restarting Claude…</span>`;
+    const restarted = await api.restartClaude();
+    if (failed(restarted)) return fail(`couldn’t restart Claude: ${restarted.error || 'restart it yourself to load the tools'}`);
+
+    cs.innerHTML = `<span class="status"><span class="dot dot-pos"></span> done</span>`;
     go('done');
   };
 }
