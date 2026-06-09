@@ -43,24 +43,32 @@ npm run dist        # = prebuild:core (npm --prefix .. run build) + electron-bui
 - **Artefact:** `"desktop/dist/affiliate-mcp-<version>-<arch>.dmg"` — e.g.
   `"desktop/dist/affiliate-mcp-0.1.0-arm64.dmg"` (version from `desktop/package.json`;
   arch is the build host's, arm64 on Apple Silicon).
-- The build bundles, as `extraResources` under `Contents/Resources/`:
-  - the built MCP server `dist/` → `Contents/Resources/dist/`
-  - `design-system/` → `Contents/Resources/design-system/`
+- `npm run bundle` (run by `npm run dist`) esbuilds two self-contained CommonJS
+  files into `desktop/build/`: `core.cjs` (the facade the UI drives) and
+  `server.cjs` (the MCP server entrypoint). The packaged app ships **no
+  `node_modules` and no `dist/` tree** — just these bundles.
+- The build copies, as `extraResources`, directly under `Contents/Resources/`:
+  - `build/core.cjs` → `Contents/Resources/core.cjs`
+  - `build/server.cjs` → `Contents/Resources/server.cjs`
+  - `../design-system` → `Contents/Resources/design-system/`
 - **Bundled-runtime Claude config.** The packaged app does not ship a second Node
   binary. When the user clicks **Connect**, the app writes a `claude_desktop_config.json`
-  entry that runs the app's **own Electron binary in Node mode**:
+  entry that runs the app's **own Electron binary in Node mode** against the
+  bundled `server.cjs`:
   ```json
   {
     "mcpServers": {
       "affiliate": {
         "command": "/Applications/affiliate-mcp.app/Contents/MacOS/affiliate-mcp",
-        "args": ["/Applications/affiliate-mcp.app/Contents/Resources/dist/index.js"],
+        "args": ["/Applications/affiliate-mcp.app/Contents/Resources/server.cjs"],
         "env": { "ELECTRON_RUN_AS_NODE": "1" }
       }
     }
   }
   ```
-  `main.js` injects `ELECTRON_RUN_AS_NODE: "1"` so the Electron binary behaves as a
+  The whole entry — command, args, and `env` — is written in one atomic, backed-up
+  pass by the core facade (`connectClaudeDesktop`); the app does not hand-patch the
+  file afterwards. `ELECTRON_RUN_AS_NODE: "1"` makes the Electron binary behave as a
   plain Node runtime — no system Node, no `npx` round-trip. (In dev the app falls
   back to `npx affiliate-networks-mcp`.)
 - **With no signing creds set, `npm run dist` produces an UNSIGNED, un-notarised
@@ -142,6 +150,12 @@ Only the macOS signing/notarisation creds are needed — there is no backend.
 ```sh
 # Root: full gate (typecheck + lint + tests + build) — must be green
 npm run verify
+
+# Desktop: rebuild the core, esbuild the bundles, and load-smoke them. This is
+# the only check that exercises desktop/ — `npm run verify` and CI do not bundle,
+# package, or load the Electron app. It catches the ESM/unbundled-dep breakage
+# that would otherwise only surface in a packaged build.
+npm --prefix desktop run verify:desktop
 
 # Root: design-system adherence lint on the renderer
 npm run lint:design

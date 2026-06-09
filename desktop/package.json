@@ -11,6 +11,8 @@
     "dev": "electron .",
     "prebuild:core": "npm --prefix .. run build",
     "bundle": "esbuild ../dist/core/app-entry.js --bundle --platform=node --format=cjs --outfile=build/core.cjs && esbuild ../dist/index.js --bundle --platform=node --format=cjs --outfile=build/server.cjs",
+    "smoke": "node scripts/smoke.mjs",
+    "verify:desktop": "npm run prebuild:core && npm run bundle && npm run smoke",
     "dist": "npm run prebuild:core && npm run bundle && electron-builder --mac dmg"
   },
   "devDependencies": {
@@ -22,6 +24,7 @@
   "build": {
     "appId": "com.affiliateintelligence.affiliate-mcp",
     "productName": "affiliate-mcp",
+    "afterSign": "build/notarize.js",
     "protocols": [
       { "name": "affiliate-mcp", "schemes": ["affiliate-mcp"] }
     ],
@@ -42,8 +45,7 @@
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist",
-      "notarize": { "teamId": "K5WQQYQWTR" }
+      "entitlementsInherit": "build/entitlements.mac.plist"
     }
   }
 }
