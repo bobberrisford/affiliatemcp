@@ -17,7 +17,6 @@
     "dist": "npm run prebuild:core && npm run bundle && electron-builder --mac dmg"
   },
   "devDependencies": {
-    "@electron/notarize": "^2.3.2",
     "@playwright/test": "^1.60.0",
     "electron": "^31.0.0",
     "electron-builder": "^24.13.3",
@@ -26,7 +25,6 @@
   "build": {
     "appId": "com.affiliateintelligence.affiliate-mcp",
     "productName": "affiliate-mcp",
-    "afterSign": "build/notarize.js",
     "protocols": [
       {
         "name": "affiliate-mcp",
@@ -63,7 +61,10 @@
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist"
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": {
+        "teamId": "K5WQQYQWTR"
+      }
     }
   }
 }

@@ -72,37 +72,61 @@ npm run dist        # = prebuild:core (npm --prefix .. run build) + electron-bui
   plain Node runtime — no system Node, no `npx` round-trip. (In dev the app falls
   back to `npx affiliate-networks-mcp`.)
 - **With no signing creds set, `npm run dist` produces an UNSIGNED, un-notarised
-  `.dmg`** and the notarise hook logs a skip (no crash). Fine for local testing;
-  not shippable. See section 3.
+  `.dmg`** — electron-builder skips signing and notarisation (no crash). Fine for
+  local testing; not shippable. See section 3.
 
 ---
 
 ## 3. Signing + notarising (macOS)
 
-electron-builder does the signing; `"desktop/build/notarize.js"` (the `afterSign`
-hook) does the notarisation. Both are gated purely on environment variables.
+Both are electron-builder's own, gated purely on environment variables — there is
+no custom `afterSign` hook. Signing is driven by the `CSC_*` vars; notarisation by
+electron-builder's built-in `mac.notarize` (set to `{ "teamId": "K5WQQYQWTR" }` in
+`desktop/package.json`), which reads the `APPLE_*` vars and notarises + staples the
+`.app` via the bundled `@electron/notarize`.
+
+> Note: electron-builder v24 runs its built-in notarisation automatically when the
+> `APPLE_*` vars are present. The `mac.notarize` config object must therefore exist
+> (it does) — without it the build crashes (`Cannot destructure … 'appBundleId'`).
+> Do not also add a custom `afterSign` notarize hook; the two conflict.
 
 **Signing** (read by electron-builder):
 
 | Env var | Purpose |
 |---|---|
-| `CSC_LINK` | Path or base64 of the `.p12` signing certificate |
+| `CSC_LINK` | Path or base64 of the `.p12` signing certificate (a **Developer ID Application** cert) |
 | `CSC_KEY_PASSWORD` | Password for that `.p12` |
 
 With neither set, electron-builder skips signing and emits an unsigned app.
 
-**Notarisation** (read by `notarize.js`):
+**Notarisation** (read by electron-builder's built-in `mac.notarize`):
 
 | Env var | Purpose |
 |---|---|
 | `APPLE_ID` | Apple Developer account email |
 | `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password for that account |
-| `APPLE_TEAM_ID` | Developer Team ID |
+| `APPLE_TEAM_ID` | Developer Team ID (matches the `teamId` in `mac.notarize`) |
 
-`notarize.js` only runs on `darwin`. If **any** of the three notarisation vars is
-missing it logs a warning and returns without notarising (the `.dmg` is still
-produced, just un-notarised). All three present → it notarises
-`<app>.app` via `@electron/notarize`.
+With the `APPLE_*` vars unset, notarisation is skipped and the `.dmg` is still
+produced (just un-notarised). All set → the build notarises and **staples the
+`.app`**.
+
+**Staple the `.dmg` too.** electron-builder notarises/staples the `.app`, not the
+`.dmg` container. After `npm run dist`, notarise + staple the disk image itself so
+it verifies offline on first mount:
+
+```sh
+xcrun notarytool submit "dist/affiliate-mcp-<version>-<arch>.dmg" \
+  --apple-id "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+  --team-id "$APPLE_TEAM_ID" --wait
+xcrun stapler staple   "dist/affiliate-mcp-<version>-<arch>.dmg"
+xcrun stapler validate "dist/affiliate-mcp-<version>-<arch>.dmg"   # → "The validate action worked!"
+```
+
+Verify the result: `spctl -a -vvv -t exec "dist/mac-<arch>/affiliate-mcp.app"`
+should report `accepted … source=Notarized Developer ID`. (Do **not** use
+`spctl -t install` on the `.dmg` — that assessment is for `.pkg` installers and
+always reports "no usable signature" for a disk image; use `stapler validate`.)
 
 The hardened runtime is on (`build.mac.hardenedRuntime: true`) with
 `"desktop/build/entitlements.mac.plist"` granting `allow-jit`,
