@@ -319,21 +319,65 @@ function assertConnected(result) {
   return { ok: true, ...result };
 }
 
+/** Run an AppleScript snippet; resolve with its trimmed stdout ('' on error). */
+function osascript(script) {
+  return new Promise((resolve) => {
+    execFile('osascript', ['-e', script], (err, stdout) => {
+      resolve(err ? '' : String(stdout || '').trim());
+    });
+  });
+}
+
+/**
+ * Is Claude Desktop currently running? Uses AppleScript's `is running`, which —
+ * unlike `tell application "Claude" to …` — does NOT launch the app as a
+ * side-effect, so polling it is safe.
+ */
+async function claudeIsRunning() {
+  return (await osascript('application "Claude" is running')) === 'true';
+}
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 handle('claude:restart', async () => {
-  // macOS: quit Claude (if running) then relaunch it. We use AppleScript to ask
-  // it to quit cleanly, then `open -a` to relaunch. MCP servers only load on a
-  // fresh launch — this is the step users forget.
+  // macOS: quit Claude (if running), wait for it to ACTUALLY exit, then relaunch.
+  // MCP servers only load on a fresh launch — this is the step users forget.
+  //
+  // The previous version fired `open -a Claude` immediately after asking Claude
+  // to quit. The quit is asynchronous, so `open` raced the shutdown: it either
+  // no-op'd on the still-alive app or got torn down by the in-progress quit,
+  // leaving Claude closed instead of restarted. We now poll until it has fully
+  // exited before relaunching.
   if (process.platform !== 'darwin') {
     // TODO(win): implement a Windows restart (taskkill + start) in Phase 2.
     return { ok: false, error: 'Restarting Claude is only supported on macOS in v1.' };
   }
-  await new Promise((resolve) => {
-    // `quit` is best-effort: if Claude isn't running, osascript errors harmlessly.
-    execFile('osascript', ['-e', 'tell application "Claude" to quit'], () => resolve(undefined));
+
+  const wasRunning = await claudeIsRunning();
+  if (wasRunning) {
+    await osascript('tell application "Claude" to quit');
+    // Wait up to ~12s for a clean exit, polling so we relaunch the instant it's
+    // gone rather than guessing a fixed delay.
+    const deadline = Date.now() + 12_000;
+    while (Date.now() < deadline && (await claudeIsRunning())) {
+      await sleep(250);
+    }
+    if (await claudeIsRunning()) {
+      // Still up (e.g. an unsaved-changes prompt blocked the quit). Don't fire
+      // `open` into a half-quit app — tell the user to finish the restart.
+      return {
+        ok: false,
+        error: 'Claude didn’t finish quitting. Quit it manually, then reopen it to load the tools.',
+      };
+    }
+  }
+
+  const launchErr = await new Promise((resolve) => {
+    execFile('open', ['-a', 'Claude'], (err) => resolve(err));
   });
-  await new Promise((resolve, reject) => {
-    execFile('open', ['-a', 'Claude'], (err) => (err ? reject(err) : resolve(undefined)));
-  });
+  if (launchErr) {
+    return { ok: false, error: 'Couldn’t relaunch Claude. Open it yourself to load the new tools.' };
+  }
   return { ok: true };
 });
 
