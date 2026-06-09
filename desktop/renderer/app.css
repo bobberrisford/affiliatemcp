@@ -40,7 +40,11 @@ body.amcp {
   display: flex; flex-direction: column;
   overflow: hidden;
 }
-.screen .scroll { padding: var(--s-7); overflow-y: auto; }
+/* flex: 1 + min-height:0 is what makes this a bounded, scrollable region inside
+   the capped-height .screen card. Without min-height:0 the flex item refuses to
+   shrink below its content, so overflow-y never engages and the footer actions
+   (back / verify) get clipped by the card's overflow:hidden with no scrollbar. */
+.screen .scroll { flex: 1 1 auto; min-height: 0; padding: var(--s-7); overflow-y: auto; }
 .screen.center .scroll { text-align: center; padding: var(--s-8) var(--s-7); }
 
 /* ---- step rail -------------------------------------------------------- */

@@ -293,6 +293,16 @@ async function renderCredentials() {
       }
     });
   });
+  // Enter in any credential field submits the screen (verify & continue),
+  // matching the obvious keyboard expectation — there's no <form> to do it for us.
+  app.querySelectorAll('.field input').forEach((input) => {
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('verify').click();
+      }
+    });
+  });
   document.getElementById('back').onclick = () => {
     if (state.credIndex === 0) go('networks');
     else { state.credIndex--; go('credentials'); }
