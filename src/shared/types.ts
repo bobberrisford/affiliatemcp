@@ -67,11 +67,21 @@ export interface NetworkMeta {
    */
   credentialScope: 'single-brand' | 'multi-brand';
   /**
-   * IANA timezone (e.g. `"Europe/London"`, `"America/New_York"`) the network
-   * reports dates in when its API does not include an explicit offset.
-   * Lets cross-network consumers reason about "Awin reports in London" without
-   * stamping every Transaction row. Optional: absent means timestamps are
-   * already offset-qualified (the network returns ISO-8601 with `Z` or `±HH:MM`).
+   * IANA timezone (e.g. `"Europe/London"`, `"America/New_York"`) a network
+   * reports dates in when its API returns naïve timestamps with no explicit
+   * offset.
+   *
+   * Adapter-side parsing contract: when an adapter declares this, it MUST use
+   * this zone to interpret naïve upstream timestamps into canonical UTC before
+   * emitting them via `toISOString()`. Consumers cannot recover the original
+   * instant after the fact — a UTC timestamp parsed in the host timezone is
+   * already lossy — so the conversion is the adapter's responsibility, not a
+   * hint for consumers to reinterpret returned timestamps.
+   *
+   * Optional, and during the per-network rollout absence carries no semantic
+   * meaning: it may mean the network is offset-qualified (ISO-8601 with `Z` or
+   * `±HH:MM`) or that the adapter has not yet been migrated. Consumers must not
+   * infer offset-qualification from absence until rollout is complete.
    */
   networkTimezone?: string;
 }
