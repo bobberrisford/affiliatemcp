@@ -107,9 +107,10 @@ In **dev** (`!app.isPackaged`) no paths are passed, so it falls back to the
 **Signing + notarisation are electron-builder's own, gated purely on env vars**
 — there is no custom `afterSign` hook. Absent the creds, `npm run dist` produces
 an unsigned, un-notarised `.dmg` (no crash). Notarisation uses electron-builder's
-built-in `mac.notarize` (`{ "teamId": "K5WQQYQWTR" }` in `package.json`), which
-reads the `APPLE_*` vars. See [`DEPLOY.md`](../DEPLOY.md) §3 for the full release
-path, including stapling the `.dmg`.
+built-in notarisation (`"notarize": true` under `mac` in `package.json`), which
+reads the `APPLE_*` vars — the team id comes from `APPLE_TEAM_ID`. See
+[`DEPLOY.md`](../DEPLOY.md) §3 for the full release path, including stapling the
+`.dmg`.
 
 | Env var | Purpose |
 |---|---|

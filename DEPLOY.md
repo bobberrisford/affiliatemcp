@@ -81,16 +81,16 @@ npm run dist        # = prebuild:core (npm --prefix .. run build) + electron-bui
 
 Both are electron-builder's own, gated purely on environment variables — there is
 no custom `afterSign` hook. Signing is driven by the `CSC_*` vars; notarisation by
-electron-builder's built-in `mac.notarize` (set to `{ "teamId": "K5WQQYQWTR" }` in
-`desktop/package.json`), which reads the `APPLE_*` vars and notarises + staples the
-`.app` via the bundled `@electron/notarize`.
+electron-builder's built-in notarisation (`"notarize": true` under `mac` in
+`desktop/package.json`), which reads the `APPLE_*` vars — including the team id
+from `APPLE_TEAM_ID` — and notarises + staples the `.app` via `notarytool`.
 
-> Note: notarisation is driven entirely by the `mac.notarize` config object (it
-> exists, set to `{ "teamId": "K5WQQYQWTR" }`) plus the `APPLE_*` env vars — do
-> not also add a custom `afterSign` notarize hook, the two conflict. Verified on
-> electron-builder 24; the toolchain is now on electron-builder 26 (with Electron
-> 42), so re-confirm the signed/notarised `.dmg` on the upgraded toolchain before
-> the first release.
+> Note: electron-builder 26 changed the schema — `mac.notarize` is now a **boolean**
+> (the team id comes from the `APPLE_TEAM_ID` env var), not the `{ "teamId": … }`
+> object that v24 used. Do not add a custom `afterSign` notarize hook; it conflicts
+> with the built-in. Verified end-to-end on electron-builder 26 + Electron 42: the
+> signed `.app` assesses as `Notarized Developer ID` and the notarised `.dmg`
+> staples and validates (see §6).
 
 **Signing** (read by electron-builder):
 
@@ -107,7 +107,7 @@ With neither set, electron-builder skips signing and emits an unsigned app.
 |---|---|
 | `APPLE_ID` | Apple Developer account email |
 | `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password for that account |
-| `APPLE_TEAM_ID` | Developer Team ID (matches the `teamId` in `mac.notarize`) |
+| `APPLE_TEAM_ID` | Developer Team ID (`K5WQQYQWTR`) — supplies the team id for `mac.notarize: true` |
 
 With the `APPLE_*` vars unset, notarisation is skipped and the `.dmg` is still
 produced (just un-notarised). All set → the build notarises and **staples the
