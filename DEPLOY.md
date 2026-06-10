@@ -85,10 +85,12 @@ electron-builder's built-in `mac.notarize` (set to `{ "teamId": "K5WQQYQWTR" }` 
 `desktop/package.json`), which reads the `APPLE_*` vars and notarises + staples the
 `.app` via the bundled `@electron/notarize`.
 
-> Note: electron-builder v24 runs its built-in notarisation automatically when the
-> `APPLE_*` vars are present. The `mac.notarize` config object must therefore exist
-> (it does) — without it the build crashes (`Cannot destructure … 'appBundleId'`).
-> Do not also add a custom `afterSign` notarize hook; the two conflict.
+> Note: notarisation is driven entirely by the `mac.notarize` config object (it
+> exists, set to `{ "teamId": "K5WQQYQWTR" }`) plus the `APPLE_*` env vars — do
+> not also add a custom `afterSign` notarize hook, the two conflict. Verified on
+> electron-builder 24; the toolchain is now on electron-builder 26 (with Electron
+> 42), so re-confirm the signed/notarised `.dmg` on the upgraded toolchain before
+> the first release.
 
 **Signing** (read by electron-builder):
 

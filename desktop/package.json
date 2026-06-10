@@ -18,9 +18,9 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
-    "electron": "^31.0.0",
-    "electron-builder": "^24.13.3",
-    "esbuild": "^0.21.0"
+    "electron": "^42.0.0",
+    "electron-builder": "^26.0.0",
+    "esbuild": "^0.28.0"
   },
   "build": {
     "appId": "com.affiliateintelligence.affiliate-mcp",

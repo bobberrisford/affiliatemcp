@@ -31,7 +31,9 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          # Electron 42 + its toolchain (node-abi, @electron/get) require Node
+          # >= 22.12. The root build job stays on 20 (the MCP server supports it).
+          node-version: '24'
           cache: 'npm'
       - run: npm ci
       - name: Install desktop deps (no Electron binary)
@@ -51,7 +53,10 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          # Electron 42's postinstall require()s @electron/get (now ESM), which
+          # only works on Node >= 22.12 (also node-abi's floor). Node 20 fails
+          # the binary install, so this job must run on a newer Node.
+          node-version: '24'
           cache: 'npm'
       - run: npm ci
       - run: npm ci --prefix desktop
