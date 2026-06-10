@@ -131,6 +131,13 @@ h2.scr { font-family: var(--font-display); font-weight: 800; text-transform: low
 .brow .nick { margin-left: auto; }
 .brow .nick input { font-family: var(--font-mono); font-size: .82rem; padding: 7px 9px; border: var(--rule) solid var(--ink); border-radius: 3px; width: 130px; outline: none; }
 
+/* Manual brand entry (multi-brand networks with no list endpoint, e.g. CJ). */
+.mrow { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.mrow input { font-family: var(--font-mono); font-size: .82rem; padding: 8px 10px; border: var(--rule) solid var(--ink); border-radius: 3px; outline: none; }
+.mrow input[data-mid] { flex: 1 1 auto; min-width: 0; }
+.mrow input[data-mnick] { flex: none; width: 160px; }
+.mrow-del { flex: none; }
+
 /* ---- connect detect row ---------------------------------------------- */
 .detect { display: flex; align-items: center; gap: 14px; border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: 16px 18px; box-shadow: var(--shadow); }
 .detect .ico { width: 40px; height: 40px; background: var(--ink); color: var(--blue-bright); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 800; font-size: 18px; border-radius: 4px; flex: none; }

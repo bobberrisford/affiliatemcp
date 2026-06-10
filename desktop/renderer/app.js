@@ -28,7 +28,7 @@ const MOCK_NETWORKS = [
   { slug: 'indoleads', name: 'Indoleads', side: 'publisher', setupMinutes: 3, approval: false },
   { slug: 'coupang-partners', name: 'Coupang Partners', side: 'publisher', setupMinutes: 5, approval: true },
   { slug: 'awin-advertiser', name: 'Awin (advertiser)', side: 'brand', setupMinutes: 4, approval: false },
-  { slug: 'cj-advertiser', name: 'CJ (advertiser)', side: 'brand', setupMinutes: 4, approval: false },
+  { slug: 'cj-advertiser', name: 'CJ (advertiser)', side: 'brand', setupMinutes: 4, approval: false, multiBrand: true },
   { slug: 'impact-advertiser', name: 'Impact (advertiser)', side: 'brand', setupMinutes: 5, approval: false },
   { slug: 'partnerize-advertiser', name: 'Partnerize (advertiser)', side: 'brand', setupMinutes: 5, approval: false },
   { slug: 'partnerstack-advertiser', name: 'PartnerStack (advertiser)', side: 'brand', setupMinutes: 4, approval: false },
@@ -65,7 +65,9 @@ function mockApi() {
         : { ok: false, message: 'that looks too short — copy the full value' }, 300);
     },
     verifyAuth: (slug, _values) => wait({ ok: true, identity: MOCK_IDENTITY[slug] || 'your account' }, 800),
-    discoverBrands: () => wait(MOCK_BRANDS, 500),
+    // cj-advertiser is multi-brand but has no list endpoint (NotImplementedError
+    // → []), so the preview exercises the manual-entry path; others return a list.
+    discoverBrands: (slug) => wait(slug === 'cj-advertiser' ? [] : MOCK_BRANDS, 500),
     saveEnv: (_entries) => wait({ ok: true }),
     saveBrands: (_network, selections) => wait({ ok: true, count: (selections || []).length }),
     connectClaude: () => wait({ ok: true, action: 'added', backupPath: '…/claude_desktop_config.json.bak' }, 500),
@@ -86,10 +88,15 @@ const state = {
   brandIndex: 0,         // index into brandSideSlugs() — we walk each in turn
   brandsByNet: {},       // slug -> discovered brands[]
   brandSelByNet: {},     // slug -> { id: { on, nick } }
+  manualByNet: {},       // slug -> [{ networkBrandId, nick }] for multi-brand nets with no list
   envEntries: {},        // FIELD -> value, accumulated across verified networks
 };
 const app = document.getElementById('app');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// Mirrors BRAND_SLUG_RE in src/shared/brands.ts. saveBrands silently skips
+// slugs that fail this, so the brands screen validates nicknames against the
+// same rule before submitting and treats a short write `count` as a failure.
+const BRAND_SLUG_RE = /^[a-z0-9-]+$/;
 
 const FLOW = ['networks', 'credentials', 'brands', 'connect'];
 function rail(current) {
@@ -354,26 +361,57 @@ async function renderBrands() {
   const isLastBrand = state.brandIndex === total - 1;
 
   if (!state.brandsByNet[slug]) {
-    state.brandsByNet[slug] = await api.discoverBrands(slug);
+    const discovered = await api.discoverBrands(slug);
+    // discoverBrands throws are turned into { ok:false, error } by the main-process
+    // IPC wrapper. Treat a non-array as a discovery failure and surface it with a
+    // retry, rather than calling .forEach on it — which would throw a secondary,
+    // opaque renderer error and strand the user.
+    if (!Array.isArray(discovered)) {
+      renderBrandsError(net, slug, (discovered && discovered.error) || 'could not load brands');
+      return;
+    }
+    state.brandsByNet[slug] = discovered;
     const sel = {};
-    state.brandsByNet[slug].forEach((b) => { sel[b.id] = { on: b.status === 'active', nick: b.name.split(' ')[0].toLowerCase() }; });
+    discovered.forEach((b) => { sel[b.id] = { on: b.status === 'active', nick: b.name.split(' ')[0].toLowerCase() }; });
     state.brandSelByNet[slug] = sel;
   }
   const brands = state.brandsByNet[slug];
   const brandSel = state.brandSelByNet[slug];
 
+  // An empty list means different things. For a single-brand network the
+  // credentials are genuinely scoped to one account and there is nothing to
+  // pick. For a multi-brand network whose adapter can't enumerate brands
+  // (e.g. cj-advertiser, which has no list endpoint) an empty list is NOT
+  // "already scoped" — the user must bind brands by hand, so we offer manual
+  // (id, nickname) entry instead of letting them continue with nothing.
+  const manualMode = !brands.length && !!net.multiBrand;
+  if (manualMode && !state.manualByNet[slug]) state.manualByNet[slug] = [{ networkBrandId: '', nick: '' }];
+  const manualRows = state.manualByNet[slug] || [];
+
   const counter = total > 1 ? ` brand network ${state.brandIndex + 1} of ${total} — ${esc(net.name)}.` : '';
-  const body = brands.length
-    ? brands.map((b) => {
-        const sel = brandSel[b.id];
-        const dot = b.status === 'active' ? 'dot-pos' : 'dot-pending';
-        return `<div class="brow ${sel.on ? '' : 'off'}" data-id="${esc(b.id)}">
+
+  let body;
+  if (brands.length) {
+    body = brands.map((b) => {
+      const sel = brandSel[b.id];
+      const dot = b.status === 'active' ? 'dot-pos' : 'dot-pending';
+      return `<div class="brow ${sel.on ? '' : 'off'}" data-id="${esc(b.id)}">
           <span class="cb">✓</span><span class="bn">${esc(b.name)}</span>
           <span class="status" style="margin-left:14px"><span class="dot ${dot}"></span> ${esc(b.status)}</span>
           <span class="nick"><input data-nick="${esc(b.id)}" value="${esc(sel.nick)}" placeholder="nickname" /></span>
         </div>`;
-      }).join('')
-    : `<div class="help">${esc(net.name)} doesn’t expose a brand list to pick from here — its credentials are already scoped. Continue.</div>`;
+    }).join('');
+  } else if (manualMode) {
+    body = `<div class="help" style="border-left-color:var(--magenta)">${esc(net.name)} can manage more than one brand, but it doesn’t expose a list to pick from automatically. Add each brand’s id from your ${esc(net.name)} dashboard and give it a nickname you’ll use when you ask questions.</div>`
+      + manualRows.map((row, i) => `<div class="mrow" data-mrow="${i}">
+          <input data-mid="${i}" value="${esc(row.networkBrandId)}" placeholder="brand / account id" />
+          <input data-mnick="${i}" value="${esc(row.nick)}" placeholder="nickname (a-z, 0-9, -)" />
+          <button class="btn btn-ghost mrow-del" data-mdel="${i}" ${manualRows.length > 1 ? '' : 'disabled'}>remove</button>
+        </div>`).join('')
+      + `<button class="btn btn-ghost" id="addrow">+ add another brand</button>`;
+  } else {
+    body = `<div class="help">${esc(net.name)} doesn’t expose a brand list to pick from here — its credentials are already scoped. Continue.</div>`;
+  }
 
   const nextLabel = isLastBrand ? 'save brands — continue ▸' : 'save — next network ▸';
   app.innerHTML = wrap(`
@@ -386,6 +424,19 @@ async function renderBrands() {
       <button class="btn btn-primary" id="next">${nextLabel}</button>
     </div>
   `);
+
+  // A single magenta-ruled note above the actions, reused for validation and
+  // persistence problems so a brand never silently fails to save.
+  const showBrandNote = (msg) => {
+    const existing = app.querySelector('.brand-note');
+    if (existing) existing.remove();
+    const note = document.createElement('div');
+    note.className = 'help brand-note';
+    note.style.borderLeftColor = 'var(--magenta)';
+    note.textContent = msg;
+    app.querySelector('.actions').before(note);
+  };
+
   app.querySelectorAll('.brow').forEach((row) => row.addEventListener('click', (e) => {
     if (e.target.tagName === 'INPUT') return;
     const id = row.getAttribute('data-id');
@@ -395,26 +446,88 @@ async function renderBrands() {
   app.querySelectorAll('[data-nick]').forEach((inp) => inp.addEventListener('input', () => {
     brandSel[inp.getAttribute('data-nick')].nick = inp.value;
   }));
+  // Manual-entry wiring: update row state on input (no re-render, so focus is
+  // kept); only add/remove rows re-render.
+  app.querySelectorAll('[data-mid]').forEach((inp) => inp.addEventListener('input', () => {
+    manualRows[+inp.getAttribute('data-mid')].networkBrandId = inp.value;
+  }));
+  app.querySelectorAll('[data-mnick]').forEach((inp) => inp.addEventListener('input', () => {
+    manualRows[+inp.getAttribute('data-mnick')].nick = inp.value;
+  }));
+  app.querySelectorAll('[data-mdel]').forEach((b) => b.addEventListener('click', () => {
+    manualRows.splice(+b.getAttribute('data-mdel'), 1);
+    renderBrands();
+  }));
+  const addRow = document.getElementById('addrow');
+  if (addRow) addRow.onclick = () => { manualRows.push({ networkBrandId: '', nick: '' }); renderBrands(); };
+
   document.getElementById('back').onclick = () => {
     if (state.brandIndex > 0) { state.brandIndex--; renderBrands(); }
     else { state.credIndex = state.selected.length - 1; go('credentials'); }
   };
   document.getElementById('next').onclick = async () => {
-    const selections = brands
-      .filter((b) => brandSel[b.id] && brandSel[b.id].on)
-      .map((b) => ({ networkBrandId: b.id, slug: brandSel[b.id].nick }));
+    const selections = manualMode
+      ? manualRows
+          .filter((r) => r.networkBrandId.trim() && r.nick.trim())
+          .map((r) => ({ networkBrandId: r.networkBrandId.trim(), slug: r.nick.trim() }))
+      : brands
+          .filter((b) => brandSel[b.id] && brandSel[b.id].on)
+          .map((b) => ({ networkBrandId: b.id, slug: brandSel[b.id].nick }));
+
+    // A multi-brand network must end up with at least one binding — advancing
+    // with none is the "claims connected but isn't configured" gap we're
+    // closing. Discovered-list networks may legitimately have nothing selected.
+    if (manualMode && !selections.length) {
+      showBrandNote(`add at least one ${net.name} brand (id + nickname), or go back and deselect ${net.name}.`);
+      return;
+    }
+
+    // Validate nicknames against the same rule the core enforces (lowercase
+    // letters, digits, hyphens). saveBrands silently skips invalid slugs, so
+    // catching them here keeps the persisted count honest and the message clear.
+    const bad = selections.filter((s) => !BRAND_SLUG_RE.test(s.slug));
+    if (bad.length) {
+      showBrandNote(`fix these nicknames — use lowercase letters, numbers and hyphens only: ${bad.map((s) => s.slug).join(', ')}`);
+      return;
+    }
+
     const res = await api.saveBrands(slug, selections);
     if (res && res.ok === false) {
-      // Surface persistence failure rather than silently advancing.
-      const note = document.createElement('div');
-      note.className = 'help';
-      note.style.borderLeftColor = 'var(--magenta)';
-      note.textContent = `couldn’t save brands for ${net.name}: ${res.error || 'unknown error'}`;
-      app.querySelector('.actions').before(note);
+      showBrandNote(`couldn’t save brands for ${net.name}: ${res.error || 'unknown error'}`);
+      return;
+    }
+    // Backstop: if the core wrote fewer than we sent, some entries were rejected
+    // upstream — don't advance and claim success.
+    if (res && typeof res.count === 'number' && res.count < selections.length) {
+      showBrandNote(`only ${res.count} of ${selections.length} brands saved for ${net.name} — some entries were rejected. check the ids/nicknames and try again.`);
       return;
     }
     if (!isLastBrand) { state.brandIndex++; renderBrands(); }
     else go('connect');
+  };
+}
+
+// Brand discovery failed (auth, network, or upstream error surfaced as
+// { ok:false, error } by the IPC wrapper). Show the reason with a retry that
+// re-attempts discovery, plus a back route, instead of stranding the user on a
+// half-rendered screen.
+function renderBrandsError(net, slug, msg) {
+  app.innerHTML = wrap(`
+    ${rail('brands')}
+    <h2 class="scr">couldn’t load brands</h2>
+    <div class="help" style="border-left-color:var(--magenta)">we couldn’t load the brands for ${esc(net.name)}: ${esc(msg)}</div>
+    <div class="actions">
+      <button class="btn btn-ghost" id="back">back</button>
+      <button class="btn btn-primary" id="retry">try again ▸</button>
+    </div>
+  `);
+  document.getElementById('back').onclick = () => {
+    if (state.brandIndex > 0) { state.brandIndex--; renderBrands(); }
+    else { state.credIndex = state.selected.length - 1; go('credentials'); }
+  };
+  document.getElementById('retry').onclick = () => {
+    delete state.brandsByNet[slug];
+    renderBrands();
   };
 }
 
