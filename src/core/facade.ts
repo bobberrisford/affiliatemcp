@@ -236,11 +236,30 @@ export async function saveEnv(
  * Persist brand bindings to `brands.json`. Each selection binds a logical slug
  * to the network's own brand id under the `'default'` credential set. Invalid
  * slugs are skipped; the returned `count` is the number actually written.
+ *
+ * Rejects duplicate slugs within a single call: `registerBrand` keys a binding
+ * by `(slug, network)`, so two selections sharing a nickname would have the
+ * second overwrite the first while both still counted as writes — silently
+ * losing a brand. Throwing instead makes the collision loud rather than letting
+ * a `count` backstop report a success that actually dropped a binding.
  */
 export async function saveBrands(
   network: string,
   selections: Array<{ networkBrandId: string; slug: string }>,
 ): Promise<{ ok: true; count: number }> {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const { slug } of selections) {
+    if (!isValidBrandSlug(slug)) continue;
+    if (seen.has(slug)) duplicates.add(slug);
+    seen.add(slug);
+  }
+  if (duplicates.size > 0) {
+    throw new Error(
+      `Duplicate brand nickname(s) for ${network}: ${[...duplicates].join(', ')}. ` +
+        'Each brand needs a unique nickname.',
+    );
+  }
   let count = 0;
   for (const { networkBrandId, slug } of selections) {
     if (!isValidBrandSlug(slug)) continue;

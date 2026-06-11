@@ -13,7 +13,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -341,6 +341,21 @@ describe('saveBrands', () => {
       { network: 'adv', credentialId: 'default', networkBrandId: 'b3' },
     ]);
     expect(file.brands['Invalid Slug']).toBeUndefined();
+  });
+
+  it('rejects duplicate nicknames so a collision cannot silently overwrite', async () => {
+    // Two distinct brand IDs sharing the nickname "acme": registerBrand keys by
+    // (slug, network), so the second would overwrite the first while count still
+    // reported 2. saveBrands must throw rather than silently lose a binding.
+    await expect(
+      saveBrands('adv', [
+        { networkBrandId: 'b1', slug: 'acme' },
+        { networkBrandId: 'b2', slug: 'acme' },
+      ]),
+    ).rejects.toThrow(/duplicate brand nickname/i);
+
+    // Nothing was written for the colliding slug.
+    expect(existsSync(path.join(tmp, 'brands.json'))).toBe(false);
   });
 });
 

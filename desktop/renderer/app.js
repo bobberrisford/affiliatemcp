@@ -491,6 +491,18 @@ async function renderBrands() {
       return;
     }
 
+    // Reject duplicate nicknames within this network. brands.json keys a binding
+    // by (slug, network), so two brands sharing a nickname would have the second
+    // overwrite the first — and the count backstop above can't see it (count
+    // still equals the submission). The core throws on this too; we catch it
+    // here first to give a clearer, pre-write message.
+    const slugs = selections.map((s) => s.slug);
+    const dupes = [...new Set(slugs.filter((s, i) => slugs.indexOf(s) !== i))];
+    if (dupes.length) {
+      showBrandNote(`each brand needs a unique nickname — used more than once: ${dupes.join(', ')}`);
+      return;
+    }
+
     const res = await api.saveBrands(slug, selections);
     if (res && res.ok === false) {
       showBrandNote(`couldn’t save brands for ${net.name}: ${res.error || 'unknown error'}`);

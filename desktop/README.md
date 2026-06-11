@@ -118,7 +118,7 @@ reads the `APPLE_*` vars — the team id comes from `APPLE_TEAM_ID`. See
 | `CSC_KEY_PASSWORD` | Password for that `.p12`. |
 | `APPLE_ID` | Apple Developer account email (built-in notarisation). |
 | `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password for that account. |
-| `APPLE_TEAM_ID` | Developer Team ID (matches `mac.notarize.teamId`). |
+| `APPLE_TEAM_ID` | Developer Team ID — supplies the team id for built-in notarisation (`mac.notarize: true`). |
 
 The hardened runtime + entitlements (`build/entitlements.mac.plist`) are wired
 for a notarised Electron app (`allow-jit`, unsigned-executable-memory,

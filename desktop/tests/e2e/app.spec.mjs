@@ -125,6 +125,18 @@ test('saveBrands skips invalid slugs and reports a short count (renderer cross-c
   expect(res.count).toBe(1);
 });
 
+test('saveBrands rejects duplicate nicknames instead of silently overwriting', async () => {
+  // Two distinct brand IDs sharing the nickname "acme" would collide on the
+  // (slug, network) key — the second overwriting the first while count reported
+  // 2. The facade throws, which the IPC wrapper surfaces as { ok:false }.
+  const res = await page.evaluate(() => window.affiliate.saveBrands('cj-advertiser', [
+    { networkBrandId: '111', slug: 'acme' },
+    { networkBrandId: '222', slug: 'acme' },
+  ]));
+  expect(res.ok).toBe(false);
+  expect(String(res.error)).toMatch(/duplicate brand nickname/i);
+});
+
 test('UI renders real network tiles from IPC (welcome → picker)', async () => {
   // Drive the actual UI, not the mock: the picker must populate from the real
   // listNetworks IPC call.
