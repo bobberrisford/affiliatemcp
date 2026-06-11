@@ -35,6 +35,7 @@
     "typecheck": "tsc -p tsconfig.dev.json",
     "lint": "eslint \"src/**/*.ts\" \"scripts/**/*.ts\" \"tests/**/*.ts\"",
     "lint:design": "npx --yes oxlint@latest -c design-system/adherence.oxlintrc.json desktop/renderer || true",
+    "check:change": "tsx scripts/check-change.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:live": "echo \"test:live placeholder — implemented in a later chunk\" && exit 0",
