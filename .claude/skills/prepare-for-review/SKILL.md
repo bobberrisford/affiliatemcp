@@ -65,6 +65,7 @@ related docs, and generated artefacts with the feature they validate.
 For code, configuration, fixtures, generated artefacts, or runtime changes:
 
 ```bash
+npm run check:change -- --base origin/main
 npm run verify
 ```
 
@@ -79,6 +80,11 @@ Confirm the docs-only path list contains only Markdown, agent skills,
 instruction files, or GitHub community files. Do not claim checks passed unless
 you ran them. Record failures and uncertainty in the PR body.
 
+The coding agent owns failures caused by its branch. Inspect failed CI, make the
+smallest scoped repair, rerun the relevant local proof, push when authorised,
+and watch the replacement checks before requesting review. Do not hand a known
+branch-caused CI failure to the reviewer as an undiagnosed problem.
+
 ## 4. Write the review brief
 
 Update the PR body to follow the applicable template under
@@ -91,7 +97,9 @@ The body must state:
 - owning layer, contracts changed, and dependencies;
 - risk domains, failure modes, out-of-scope items, and split rationale;
 - verification commands and results;
-- what the coding agent inspected and what remains uncertain.
+- what the coding agent inspected and what remains uncertain;
+- exact questions or decisions for the reviewer, especially around abstraction,
+  ownership boundaries, or live-proof gaps.
 
 Use `gh pr edit --body-file <file>` after preparing the body in a temporary
 file. Do not hide failed checks, conflicts, unresolved decisions, or dependency
@@ -124,3 +132,16 @@ When every gate passes:
    request made.
 
 Never approve or merge the PR yourself.
+
+## 6. Respond to review
+
+For each blocking review finding, reply with one of:
+
+- `fixed`: name the commit and proof run;
+- `needs decision`: state the smallest unresolved choice;
+- `not changing`: explain the evidence-based reason and leave the thread open
+  for the reviewer.
+
+After fixes, rerun the affected checks plus `npm run check:change -- --base
+origin/main`, update the PR body's verification and uncertainty sections, and
+request re-review. Do not introduce unrelated cleanup while addressing review.
