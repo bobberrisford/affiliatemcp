@@ -8,6 +8,7 @@ import {
   AFFILIATE_ENTRY_VALUE,
   MalformedDesktopConfigError,
   addAffiliateEntry,
+  buildAffiliateEntryValue,
   removeAffiliateEntry,
   resolveDesktopConfigPath,
 } from '../../../src/cli/install/claude-desktop.js';
@@ -49,6 +50,88 @@ describe('resolveDesktopConfigPath', () => {
 
   it('returns null on linux', () => {
     expect(resolveDesktopConfigPath('linux', {})).toBeNull();
+  });
+});
+
+describe('buildAffiliateEntryValue — env', () => {
+  it('attaches a non-empty env only to the bundled-runtime entry', () => {
+    expect(
+      buildAffiliateEntryValue({
+        nodePath: '/app/affiliate-mcp',
+        serverPath: '/app/server.cjs',
+        env: { ELECTRON_RUN_AS_NODE: '1' },
+      }),
+    ).toEqual({
+      command: '/app/affiliate-mcp',
+      args: ['/app/server.cjs'],
+      env: { ELECTRON_RUN_AS_NODE: '1' },
+    });
+  });
+
+  it('omits env when it is empty', () => {
+    const entry = buildAffiliateEntryValue({
+      nodePath: '/app/affiliate-mcp',
+      serverPath: '/app/server.cjs',
+      env: {},
+    });
+    expect(entry).toEqual({ command: '/app/affiliate-mcp', args: ['/app/server.cjs'] });
+    expect('env' in entry).toBe(false);
+  });
+
+  it('never attaches env to the npx fallback', () => {
+    const entry = buildAffiliateEntryValue({ env: { ELECTRON_RUN_AS_NODE: '1' } });
+    expect(entry).toEqual({
+      command: AFFILIATE_ENTRY_VALUE.command,
+      args: [...AFFILIATE_ENTRY_VALUE.args],
+    });
+  });
+});
+
+describe('addAffiliateEntry — env is written and round-trips', () => {
+  it('writes the complete entry (command, args, env) in one pass', async () => {
+    const cp = configPath();
+    const entryValue = buildAffiliateEntryValue({
+      nodePath: '/app/affiliate-mcp',
+      serverPath: '/app/server.cjs',
+      env: { ELECTRON_RUN_AS_NODE: '1' },
+    });
+    const result = await addAffiliateEntry({ configPath: cp, entryValue });
+    expect(result.action).toBe('created');
+    expect(readJSON(cp)).toEqual({
+      mcpServers: {
+        [AFFILIATE_ENTRY_KEY]: {
+          command: '/app/affiliate-mcp',
+          args: ['/app/server.cjs'],
+          env: { ELECTRON_RUN_AS_NODE: '1' },
+        },
+      },
+    });
+  });
+
+  it('treats an env-only difference as a change worth rewriting (with backup)', async () => {
+    const cp = configPath();
+    // Existing entry has the same command/args but NO env.
+    writeFileSync(
+      cp,
+      JSON.stringify({
+        mcpServers: {
+          [AFFILIATE_ENTRY_KEY]: { command: '/app/affiliate-mcp', args: ['/app/server.cjs'] },
+        },
+      }),
+    );
+    const entryValue = buildAffiliateEntryValue({
+      nodePath: '/app/affiliate-mcp',
+      serverPath: '/app/server.cjs',
+      env: { ELECTRON_RUN_AS_NODE: '1' },
+    });
+    const result = await addAffiliateEntry({ configPath: cp, entryValue, now: () => fixedDate });
+    expect(result.action).toBe('updated');
+    expect(result.backupPath).toBeDefined();
+    expect((readJSON(cp) as { mcpServers: Record<string, unknown> }).mcpServers[AFFILIATE_ENTRY_KEY]).toEqual({
+      command: '/app/affiliate-mcp',
+      args: ['/app/server.cjs'],
+      env: { ELECTRON_RUN_AS_NODE: '1' },
+    });
   });
 });
 

@@ -1,6 +1,6 @@
 {
   "name": "affiliate-networks-mcp",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "description": "Chat with your affiliate-network data in Claude or ChatGPT. Publisher and advertiser-side adapters for Awin, CJ, eBay Partner Network, Impact, Rakuten, Skimlinks, Partnerize, Tradedoubler, Sovrn Commerce, Everflow and mrge (newer networks experimental). Local-only, bring your own keys.",
   "license": "MIT",
   "repository": {
@@ -34,6 +34,7 @@
     "dev": "tsx src/index.ts",
     "typecheck": "tsc -p tsconfig.dev.json",
     "lint": "eslint \"src/**/*.ts\" \"scripts/**/*.ts\" \"tests/**/*.ts\"",
+    "lint:design": "npx --yes oxlint@latest -c design-system/adherence.oxlintrc.json desktop/renderer || true",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:live": "echo \"test:live placeholder — implemented in a later chunk\" && exit 0",
