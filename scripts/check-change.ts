@@ -9,6 +9,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { posix } from 'node:path';
 
 export interface ChangedLine {
   path: string;
@@ -60,10 +61,14 @@ export function analyseChange(input: ChangeInput): ChangeFinding[] {
       });
     }
 
-    const relativeNetworkImport = line.match(
-      /(?:from\s+|import\s*\()\s*['"]\.\.\/([a-z0-9][^/'"]*)\//,
-    );
-    if (relativeNetworkImport && relativeNetworkImport[1] !== networkMatch[1]) {
+    const relativeImport = line.match(/(?:from\s+|import\s*\(\s*)['"](\.\.\/[^'"]+)['"]/);
+    const relativeSpecifier = relativeImport?.[1];
+    const importedNetwork = relativeSpecifier
+      ? posix
+          .normalize(posix.join(posix.dirname(path), relativeSpecifier))
+          .match(/^src\/networks\/([^/]+)(?:\/|$)/)?.[1]
+      : undefined;
+    if (importedNetwork && importedNetwork !== networkMatch[1]) {
       findings.push({
         level: 'error',
         message: `${path}: network adapters must not import another network adapter`,

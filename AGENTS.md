@@ -258,8 +258,8 @@ request the maintainer instead.
   to "an error occurred". Use `buildErrorEnvelope` from `src/shared/errors.ts`.
 - **Resilience is the only path.** Every outbound HTTP call goes through
   `withResilience` (from `src/shared/resilience.ts`) via the per-network
-  `client.ts`. Never call `fetch` directly outside `client.ts`. Never retry on
-  4xx other than 429.
+  `client.ts`, except token exchange owned by `auth.ts`. Never call `fetch`
+  directly outside `client.ts` or `auth.ts`. Never retry on 4xx other than 429.
 - **Stderr-only logging.** Use `createLogger(component)` from
   `src/shared/logging.ts`. Logs go to stderr because stdout is the MCP transport.
   Never `console.log`.

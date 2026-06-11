@@ -34,6 +34,34 @@ describe('check-change guardrails', () => {
     });
   });
 
+  it('allows imports within adapter subdirectories but rejects another adapter', () => {
+    const findings = analyseChange({
+      changedFiles: [
+        'src/networks/example/endpoints/programmes.ts',
+        'tests/networks/example/adapter.test.ts',
+      ],
+      additions: 2,
+      addedLines: [
+        {
+          path: 'src/networks/example/endpoints/programmes.ts',
+          line: "import { parse } from '../parsers/programmes.js';",
+        },
+        {
+          path: 'src/networks/example/endpoints/programmes.ts',
+          line: "import { helper } from '../../other/helper.js';",
+        },
+      ],
+    });
+
+    expect(findings.filter((finding) => finding.level === 'error')).toEqual([
+      {
+        level: 'error',
+        message:
+          'src/networks/example/endpoints/programmes.ts: network adapters must not import another network adapter',
+      },
+    ]);
+  });
+
   it('requires shared changes to include shared or integration tests', () => {
     const findings = analyseChange({
       changedFiles: ['src/shared/types.ts'],
