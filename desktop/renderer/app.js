@@ -74,8 +74,24 @@ function mockApi() {
     restartClaude: () => wait({ ok: true }),
     openExternal: (url) => { window.open(url, '_blank'); return wait({ ok: true }); },
     quit: () => wait({ ok: true }),
+    // Update simulation so the design preview can exercise every button state.
+    // Real status is pushed by main; here a "check" walks checking → downloading
+    // → ready so the preview shows the click-to-update buttons end to end.
+    onUpdateStatus: (cb) => { mockUpdateCb = cb; return () => { mockUpdateCb = null; }; },
+    checkForUpdates: () => {
+      const emit = (p, ms) => setTimeout(() => mockUpdateCb && mockUpdateCb(p), ms);
+      emit({ state: 'checking' }, 0);
+      emit({ state: 'downloading', percent: 45 }, 600);
+      emit({ state: 'downloading', percent: 100 }, 1100);
+      emit({ state: 'ready', version: '0.1.1' }, 1500);
+      return wait({ ok: true });
+    },
+    restartToUpdate: () => wait({ ok: true }),
+    openUpdateDownload: () => { window.open('https://github.com/bobberrisford/affiliatemcp/releases/latest', '_blank'); return wait({ ok: true }); },
   };
 }
+/** Holds the renderer's update-status callback when running on the browser mock. */
+let mockUpdateCb = null;
 const api = window.affiliate || mockApi();
 
 /* ---- state ------------------------------------------------------------ */
@@ -90,6 +106,7 @@ const state = {
   brandSelByNet: {},     // slug -> { id: { on, nick } }
   manualByNet: {},       // slug -> [{ networkBrandId, nick }] for multi-brand nets with no list
   envEntries: {},        // FIELD -> value, accumulated across verified networks
+  update: { state: 'idle' }, // latest auto-update status from main (see setupUpdateEvents)
 };
 const app = document.getElementById('app');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -115,8 +132,10 @@ function renderWelcome() {
     <div class="trust"><span class="chip">● NO HOSTED ACCOUNT</span><span class="chip">● LOCAL-FIRST</span><span class="chip acid">OPEN SOURCE</span></div>
     <button class="btn btn-primary" id="start">get started ▸</button>
     <div class="stepno" style="margin-top:24px">~5 minutes · you’ll need your network logins</div>
+    <div id="update-card" class="update-card"></div>
   `, true);
   document.getElementById('start').onclick = () => go('networks');
+  paintUpdateCard();
 }
 
 // Network-picker view state (transient: query string + active filters). Kept
@@ -614,9 +633,11 @@ function renderDone() {
       <button class="btn btn-ghost" id="again">add another network</button>
       <button class="btn btn-primary" id="quit">done — close</button>
     </div>
+    <div id="update-card" class="update-card"></div>
   `);
   document.getElementById('again').onclick = () => go('networks');
   document.getElementById('quit').onclick = () => api.quit();
+  paintUpdateCard();
 }
 
 /* ---- router ----------------------------------------------------------- */
@@ -626,5 +647,84 @@ const SCREENS = {
 };
 function go(name) { state.screen = name; (SCREENS[name] || renderWelcome)(); }
 
+/* ---- auto-update: click-to-update buttons in the main UI -------------- */
+/* The main process pushes status over `onUpdateStatus`; the user can also
+   re-check with `checkForUpdates`. We render the latest state.update into an
+   `#update-card` slot that the welcome + done screens include. The browser mock
+   has no bridge, so the card stays empty there. Setup never waits on any of this.
+   States: idle | checking | downloading | ready | manual | current. */
+
+// Build the card's contents (status + an optional click-to-update button) for
+// the current state.update.
+function updateCardHTML() {
+  const u = state.update || { state: 'idle' };
+  let dot = '';
+  let text = '';
+  let btn = null; // { id, label, cls }
+  switch (u.state) {
+    case 'checking':
+      dot = 'dot-pending'; text = 'checking for updates…'; break;
+    case 'downloading': {
+      dot = 'dot-pending';
+      const pct = typeof u.percent === 'number' && u.percent > 0 ? ` ${u.percent}%` : '';
+      text = `downloading update${pct}…`; break;
+    }
+    case 'ready':
+      dot = 'dot-pos';
+      text = `update${u.version ? ` v${u.version}` : ''} ready to install`;
+      btn = { id: 'u-restart', label: 'restart & install ▸', cls: 'btn-primary' };
+      break;
+    case 'manual':
+      dot = 'dot-neg';
+      text = `a new version${u.version ? ` (v${u.version})` : ''} is available`;
+      btn = { id: 'u-dl', label: 'download ▸', cls: 'btn-primary' };
+      break;
+    case 'current':
+      dot = 'dot-pos'; text = 'you’re on the latest version';
+      btn = { id: 'u-check', label: 'check again', cls: 'btn-ghost' };
+      break;
+    default: // idle: no status yet — just offer the check.
+      btn = { id: 'u-check', label: 'check for updates', cls: 'btn-ghost' };
+  }
+  const status = text ? `<span class="status"><span class="dot ${dot}"></span> ${esc(text)}</span>` : '';
+  const button = btn ? `<button class="btn ${btn.cls}" id="${btn.id}">${esc(btn.label)}</button>` : '';
+  return status + button;
+}
+
+// Render state.update into the #update-card slot of the current screen (if it
+// has one) and wire whichever button is present. Safe to call from any screen.
+function paintUpdateCard() {
+  const card = document.getElementById('update-card');
+  if (!card) return; // current screen doesn't show the update card.
+  card.innerHTML = updateCardHTML();
+  const check = document.getElementById('u-check');
+  if (check) check.onclick = onCheckForUpdates;
+  const restart = document.getElementById('u-restart');
+  if (restart && api.restartToUpdate) restart.onclick = () => api.restartToUpdate();
+  const dl = document.getElementById('u-dl');
+  if (dl && api.openUpdateDownload) dl.onclick = () => api.openUpdateDownload();
+}
+
+// "Check for updates" click: optimistically show "checking…" then ask main.
+// Progress arrives back over onUpdateStatus.
+function onCheckForUpdates() {
+  if (!api.checkForUpdates) return;
+  state.update = { state: 'checking' };
+  paintUpdateCard();
+  api.checkForUpdates();
+}
+
+// Subscribe once at boot. Each status event becomes the new state.update and
+// repaints the card on whatever screen is mounted.
+function setupUpdateEvents() {
+  if (!api.onUpdateStatus) return; // browser preview / mock: no updates.
+  api.onUpdateStatus((s) => {
+    if (!s || !s.state) return;
+    state.update = s;
+    paintUpdateCard();
+  });
+}
+
 /* boot: the app is free — start straight at the welcome screen */
+setupUpdateEvents();
 go('welcome');

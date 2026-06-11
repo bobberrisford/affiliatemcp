@@ -101,6 +101,41 @@ test('openExternal refuses non-allowlisted and non-https URLs', async () => {
   expect(garbage.ok).toBe(false);
 });
 
+test('preload exposes the auto-update bridge (subscribe + the two actions)', async () => {
+  // The renderer's update banner depends on these three members existing on the
+  // real bridge. We assert the contract only — invoking restartToUpdate would
+  // quit the app and openUpdateDownload would open a browser. In dev the main
+  // process never starts the updater (it's gated on app.isPackaged), so this is
+  // purely the IPC surface, not a live update check.
+  const surface = await page.evaluate(() => ({
+    onUpdateStatus: typeof window.affiliate.onUpdateStatus,
+    checkForUpdates: typeof window.affiliate.checkForUpdates,
+    restartToUpdate: typeof window.affiliate.restartToUpdate,
+    openUpdateDownload: typeof window.affiliate.openUpdateDownload,
+  }));
+  expect(surface.onUpdateStatus).toBe('function');
+  expect(surface.checkForUpdates).toBe('function');
+  expect(surface.restartToUpdate).toBe('function');
+  expect(surface.openUpdateDownload).toBe('function');
+});
+
+test('the welcome update card round-trips a check (dev build reports up to date)', async () => {
+  // The welcome screen shows a "check for updates" button. Clicking it round-trips
+  // through the real update:check IPC. In the unpackaged e2e build there's no
+  // signed feed, so main reports "current" and the card settles on "latest
+  // version" with a "check again" button — it must NOT hang on "checking…".
+  // This exercises the full button → IPC → onUpdateStatus → repaint loop.
+  await page.waitForSelector('#update-card #u-check', { timeout: 5_000 });
+  await page.click('#update-card #u-check');
+  await page.waitForFunction(
+    () => /latest version/i.test(document.getElementById('update-card')?.textContent || ''),
+    null,
+    { timeout: 5_000 },
+  );
+  const hasCheckAgain = await page.locator('#update-card #u-check').count();
+  expect(hasCheckAgain).toBe(1);
+});
+
 test('discoverBrands returns an array for a multi-brand network with no list endpoint', async () => {
   // cj-advertiser is multi-brand but has no enumeration endpoint, so listBrands
   // throws NotImplementedError and the facade returns []. The brands screen

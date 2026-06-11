@@ -13,9 +13,15 @@
  * the Electron path — if the bundle is missing we fail loudly.
  */
 const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('node:path');
 const fs = require('node:fs');
 const { execFile } = require('node:child_process');
+
+/** Fixed, trusted destination for the manual-update fallback banner. */
+const RELEASES_PAGE = 'https://github.com/bobberrisford/affiliatemcp/releases/latest';
+/** GitHub API for the latest published release — read only by the fallback check. */
+const LATEST_RELEASE_API = 'https://api.github.com/repos/bobberrisford/affiliatemcp/releases/latest';
 
 // Single-instance: a second launch hands off to the running instance, which
 // focuses its window rather than starting a duplicate setup process.
@@ -109,19 +115,139 @@ function createWindow() {
   win.webContents.on('will-navigate', (event, url) => {
     if (url !== win.webContents.getURL()) event.preventDefault();
   });
+  return win;
 }
+
+/** The app's single window — held so update events can be pushed to it. */
+let mainWindow = null;
 
 if (gotInstanceLock) {
   app.whenReady().then(() => {
-    createWindow();
+    mainWindow = createWindow();
+    // Check for updates once the window exists so we can surface progress to it.
+    // The download runs in the background while the user does setup; install
+    // happens on quit (electron-updater default). Never blocks the UI.
+    initAutoUpdates();
     app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+      if (BrowserWindow.getAllWindows().length === 0) mainWindow = createWindow();
     });
   });
 }
 
 // Launch-and-quit: closing the window ends the app (no tray for v1).
 app.on('window-all-closed', () => app.quit());
+
+/* ------------------------------------------------------------------ */
+/* Auto-update — electron-updater (Squirrel.Mac) + GitHub Releases.    */
+/*                                                                     */
+/* The app is launch-and-quit, so the ideal shape is check-on-launch / */
+/* download-in-background / install-on-quit. electron-updater does all */
+/* three by default (autoDownload + autoInstallOnAppQuit). We kick off  */
+/* the check and relay its events to the renderer, which shows the      */
+/* state as click-to-update buttons in the main UI ("restart & install" */
+/* when ready) plus a user-triggered "check for updates" (update:check).*/
+/*                                                                     */
+/* Security: only updates whose signature + notarisation Squirrel.Mac  */
+/* validates are installed (built in for Developer-ID apps), the feed  */
+/* is HTTPS GitHub Releases, and version comparison only moves forward */
+/* — no silent downgrade. See the auto-update decision doc.            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Push an update-status message to the renderer. The shape is a small tagged
+ * union the renderer switches on; see `renderer/app.js` (`onUpdateStatus`).
+ * @param {{ state: string, [k: string]: unknown }} payload
+ */
+function sendUpdateStatus(payload) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update:status', payload);
+  }
+}
+
+/**
+ * Wire electron-updater and start the launch-time check.
+ *
+ * Only runs in the packaged, signed app — `autoUpdater` has no valid feed in
+ * `electron .` dev and would throw. On any updater failure (download, signature,
+ * unreachable feed) we fall back to a lightweight GitHub Releases version check
+ * so the worst case is a "new version available → download" button, never a
+ * silent dead end. The renderer's own "check for updates" button re-triggers
+ * this same flow via the `update:check` IPC below.
+ */
+function initAutoUpdates() {
+  if (!app.isPackaged) return; // dev build: no signed feed to check against.
+
+  autoUpdater.autoDownload = true; // background download while the user sets up.
+  autoUpdater.autoInstallOnAppQuit = true; // install-on-quit; no forced restart.
+
+  autoUpdater.on('checking-for-update', () => {
+    sendUpdateStatus({ state: 'checking' });
+  });
+  autoUpdater.on('update-available', (info) => {
+    sendUpdateStatus({ state: 'downloading', version: info?.version });
+  });
+  autoUpdater.on('update-not-available', () => {
+    sendUpdateStatus({ state: 'current' });
+  });
+  autoUpdater.on('download-progress', (p) => {
+    sendUpdateStatus({ state: 'downloading', percent: Math.round(p?.percent ?? 0) });
+  });
+  autoUpdater.on('update-downloaded', (info) => {
+    // Ready to install. We don't force it — the user finishes setup, and the
+    // update installs when they quit. The UI offers an immediate restart button.
+    sendUpdateStatus({ state: 'ready', version: info?.version });
+  });
+  autoUpdater.on('error', (err) => {
+    // Squirrel/feed failure. Degrade to the manual-download button rather than
+    // failing silently. We swallow the error here because it's been handled.
+    void checkManualFallback();
+  });
+
+  autoUpdater.checkForUpdates().catch(() => checkManualFallback());
+}
+
+/**
+ * Fallback when electron-updater can't self-update: ask the GitHub Releases API
+ * whether a newer version exists and, if so, surface a manual "download" button
+ * pointing at the releases page. Best-effort — any failure here is swallowed so
+ * a flaky network never disrupts setup.
+ */
+async function checkManualFallback() {
+  try {
+    const res = await fetch(LATEST_RELEASE_API, {
+      headers: { Accept: 'application/vnd.github+json' },
+    });
+    if (!res.ok) return;
+    const body = await res.json();
+    const latest = extractVersion(typeof body?.tag_name === 'string' ? body.tag_name : '');
+    if (latest && isNewer(latest, app.getVersion())) {
+      sendUpdateStatus({ state: 'manual', version: latest });
+    }
+  } catch {
+    // Offline or rate-limited: stay quiet. The user can still update by hand.
+  }
+}
+
+/** Pull a bare `x.y.z` out of a tag that may be prefixed (e.g. `desktop-0.1.1`). */
+function extractVersion(tag) {
+  const m = /(\d+)\.(\d+)\.(\d+)/.exec(tag);
+  return m ? `${m[1]}.${m[2]}.${m[3]}` : '';
+}
+
+/**
+ * True when semver `a` is strictly greater than `b` (major.minor.patch only).
+ * Deliberately tiny — we have no semver dependency and only need forward-moves.
+ */
+function isNewer(a, b) {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    const da = pa[i] || 0;
+    const db = pb[i] || 0;
+    if (da !== db) return da > db;
+  }
+  return false;
+}
 
 /* ------------------------------------------------------------------ */
 /* IPC — the core facade surface, wired to the built core.             */
@@ -383,5 +509,37 @@ handle('claude:restart', async () => {
 
 handle('app:quit', async () => {
   app.quit();
+  return { ok: true };
+});
+
+// ---- Auto-update actions ---------------------------------------------------
+
+// User-triggered "check for updates". Re-runs the same flow as the launch check;
+// progress comes back over `update:status` events, not this return value. In dev
+// (no signed feed) we report "up to date" so the button settles instead of
+// hanging on "checking…".
+handle('update:check', async () => {
+  if (!app.isPackaged) {
+    sendUpdateStatus({ state: 'current' });
+    return { ok: true, dev: true };
+  }
+  sendUpdateStatus({ state: 'checking' });
+  autoUpdater.checkForUpdates().catch(() => checkManualFallback());
+  return { ok: true };
+});
+
+// Install the already-downloaded update now. electron-updater quits the app and
+// relaunches into the new version. Only meaningful after an `update-downloaded`
+// event (state: 'ready'); a no-op otherwise.
+handle('update:restart', async () => {
+  autoUpdater.quitAndInstall();
+  return { ok: true };
+});
+
+// Manual-fallback affordance: open the fixed releases page so the user can grab
+// the new .dmg by hand when self-update couldn't run. The URL is a constant —
+// the renderer can't influence where this points.
+handle('update:openDownload', async () => {
+  await shell.openExternal(RELEASES_PAGE);
   return { ok: true };
 });
