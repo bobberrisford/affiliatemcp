@@ -21,3 +21,12 @@ scratch/
 
 # Local submission notes — not for the repo
 SUBMISSION.md
+
+# Apple signing assets and built desktop bundles — never committed.
+/apple-signing/
+desktop/build/core.cjs
+desktop/build/server.cjs
+
+# Playwright (desktop E2E) output.
+desktop/test-results/
+desktop/playwright-report/

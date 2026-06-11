@@ -10,12 +10,57 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
+      - run: npm run check:change -- --base origin/main
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+  # Bundle + load-smoke the desktop app's self-contained CJS bundles. The
+  # packaged Electron app ships no node_modules, so this catches the ESM /
+  # unbundled-dep breakage that the root `build` job cannot see. Only esbuild +
+  # node are needed (the bundle + smoke never launch Electron), so we skip the
+  # Electron binary download to keep the job fast.
+  desktop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          # Electron 42 + its toolchain (node-abi, @electron/get) require Node
+          # >= 22.12. The root build job stays on 20 (the MCP server supports it).
+          node-version: '24'
+          cache: 'npm'
+      - run: npm ci
+      - name: Install desktop deps (no Electron binary)
+        run: npm ci --prefix desktop
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      - run: npm --prefix desktop run verify:desktop
+
+  # End-to-end smoke: launch the REAL Electron main process and drive it through
+  # the REAL preload bridge (window.affiliate.*). Catches runtime-only bugs the
+  # browser mock can't — e.g. an un-awaited async IPC handler. Runs on macOS so
+  # Electron has native windowing (no xvfb) and matches the only shipping target;
+  # the Electron binary IS needed here, so it is not skipped.
+  desktop-e2e:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          # Electron 42's postinstall require()s @electron/get (now ESM), which
+          # only works on Node >= 22.12 (also node-abi's floor). Node 20 fails
+          # the binary install, so this job must run on a newer Node.
+          node-version: '24'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm ci --prefix desktop
+      - run: npm --prefix desktop run test:e2e

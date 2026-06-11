@@ -1,0 +1,158 @@
+/* ============================================================================
+   affiliate-mcp desktop — APP layout only.
+   Components (buttons, cards, terminals, chips, status) come from the design
+   system (../../design-system/components.css). This file is window chrome and
+   screen scaffolding ONLY — it must not re-define any design-system component.
+   ========================================================================== */
+
+html, body { margin: 0; height: 100%; }
+body.amcp {
+  background:
+    radial-gradient(var(--ink-soft) 2.4px, transparent 2.7px) 0 0 / 13px 13px,
+    var(--ink);
+  color: var(--paper);
+  overflow: hidden;
+}
+
+/* ---- window chrome (custom titlebar; drag region on mac) -------------- */
+.titlebar {
+  -webkit-app-region: drag;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 0 14px 0 84px; /* leave room for mac traffic lights */
+  background: var(--ink);
+  border-bottom: 1px solid var(--line-invert);
+}
+.titlebar .mark { width: 18px; height: 18px; border-radius: 3px; }
+.titlebar .t { font-family: var(--font-mono); font-weight: 700; font-size: .72rem; letter-spacing: .08em; color: var(--fg-invert-mut); }
+.titlebar .t b { color: var(--paper); }
+
+/* ---- auto-update card (in-screen, on welcome + done) ------------------ */
+/* A centred status + click-to-update action, composed from design-system
+   .status / .btn — this is layout only (gap + spacing), not a re-style of
+   those components. Empty (no status, no button) collapses to nothing. */
+.update-card { display: flex; align-items: center; justify-content: center; gap: var(--s-3); flex-wrap: wrap; margin-top: var(--s-5); min-height: 34px; }
+.update-card:empty { display: none; margin-top: 0; }
+
+/* ---- app stage: a centred paper "screen" on the ink desktop ---------- */
+.stage { height: calc(100% - 38px); display: flex; align-items: center; justify-content: center; padding: var(--s-6); box-sizing: border-box; }
+/* #app must fill the stage so .screen's max-height:100% has a bounded parent to
+   resolve against. Without this, #app collapses to content height (it's a
+   non-stretched flex item) and .screen can grow taller than the window with no
+   way to scroll to the footer actions. It also centres each screen card. */
+#app { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+.screen {
+  width: 100%; max-width: 720px; max-height: 100%;
+  background: var(--paper); color: var(--ink);
+  border: var(--rule) solid var(--ink);
+  box-shadow: 10px 10px 0 0 var(--blue);
+  border-radius: var(--r-sm);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+/* flex: 1 + min-height:0 is what makes this a bounded, scrollable region inside
+   the capped-height .screen card. Without min-height:0 the flex item refuses to
+   shrink below its content, so overflow-y never engages and the footer actions
+   (back / verify) get clipped by the card's overflow:hidden with no scrollbar. */
+.screen .scroll { flex: 1 1 auto; min-height: 0; padding: var(--s-7); overflow-y: auto; }
+.screen.center .scroll { text-align: center; padding: var(--s-8) var(--s-7); }
+
+/* ---- step rail -------------------------------------------------------- */
+.steps { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-5); }
+.steps .stepno { font-family: var(--font-mono); font-weight: 700; font-size: var(--t-micro); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-muted); white-space: nowrap; }
+.steps .seg { height: 6px; flex: 1; background: var(--paper-2); border: 1px solid var(--line); }
+.steps .seg.on { background: var(--blue); border-color: var(--blue-deep); }
+
+h2.scr { font-family: var(--font-display); font-weight: 800; text-transform: lowercase; letter-spacing: -.02em; line-height: 1; margin: 0 0 var(--s-3); font-size: var(--t-h2); }
+.scr-lead { color: var(--fg-muted); max-width: 56ch; margin: 0 0 var(--s-5); line-height: 1.5; }
+
+/* ---- footer actions --------------------------------------------------- */
+.actions { display: flex; align-items: center; justify-content: space-between; margin-top: var(--s-6); padding-top: var(--s-5); border-top: var(--rule) solid var(--ink); }
+
+/* ---- welcome / centred screens --------------------------------------- */
+.bigmark { width: 76px; height: 76px; border-radius: 12px; box-shadow: var(--shadow); margin: 0 auto var(--s-5); display: block; }
+.welcome-h { font-family: var(--font-display); font-weight: 800; text-transform: lowercase; letter-spacing: -.03em; line-height: .96; font-size: var(--t-h1); margin: 0 0 var(--s-4); }
+.trust { display: flex; gap: var(--s-2); justify-content: center; flex-wrap: wrap; margin: var(--s-5) 0 var(--s-6); }
+
+/* ---- network picker --------------------------------------------------- */
+/* The picker is its own three-band layout INSIDE the .screen card: a fixed
+   header (rail + heading + search/filters), a single scrolling band that holds
+   ONLY the tile grid, and a pinned footer bar. The card itself doesn't scroll,
+   so the bar is always visible and the grid scrolls within a capped height. */
+.screen.picker { display: flex; flex-direction: column; }
+.picker-head { padding: var(--s-7) var(--s-7) var(--s-5); flex: none; border-bottom: var(--rule) solid var(--ink); }
+.picker-head .scr-lead { margin-bottom: var(--s-4); }
+.picker-scroll { flex: 1 1 auto; overflow-y: auto; padding: var(--s-5) var(--s-7); max-height: 46vh; }
+.picker-bar { flex: none; display: flex; align-items: center; justify-content: space-between; padding: var(--s-4) var(--s-7); border-top: var(--rule) solid var(--ink); background: var(--paper); }
+
+/* search + filter row */
+.picker-controls { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.picker-search { flex: 1 1 240px; min-width: 200px; }
+.chips { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; }
+.chip-toggle {
+  font-family: var(--font-mono); font-weight: 700; font-size: var(--t-mono-lbl);
+  letter-spacing: var(--tracking-lbl); text-transform: uppercase;
+  background: var(--paper); color: var(--ink);
+  border: var(--rule) solid var(--ink); border-radius: var(--r-xs);
+  padding: 8px 12px; cursor: pointer;
+  transition: box-shadow .08s steps(2), transform .08s steps(2);
+}
+.chip-toggle:hover { box-shadow: var(--shadow); }
+.chip-toggle.on { background: var(--ink); color: var(--paper); box-shadow: var(--shadow-acid); }
+.chip-toggle.chip-sel.on { box-shadow: var(--shadow-mag); }
+
+/* empty state when search/filters match nothing */
+.grid.empty { display: block; }
+.net-empty { border: var(--rule) dashed var(--line-strong); border-radius: var(--r-xs); padding: var(--s-6); text-align: center; }
+.net-empty .ne-h { font-family: var(--font-mono); font-weight: 800; font-size: .95rem; }
+.net-empty .ne-b { font-family: var(--font-mono); font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; color: var(--fg-muted); margin-top: 8px; }
+
+/* ---- network grid ----------------------------------------------------- */
+.grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-3); }
+.net { border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: 14px; background: var(--paper); position: relative; cursor: pointer; transition: box-shadow .08s steps(2); }
+.net:hover { box-shadow: var(--shadow); }
+.net .nm { font-family: var(--font-mono); font-weight: 800; font-size: .95rem; }
+.net .mt { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .04em; color: var(--fg-muted); text-transform: uppercase; margin-top: 6px; }
+.net.sel { background: var(--ink); color: var(--paper); box-shadow: var(--shadow-acid); }
+.net.sel .mt { color: var(--blue-bright); }
+.net .tick { position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; background: var(--blue); color: #fff; display: none; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 800; font-size: 13px; border-radius: 3px; }
+.net.sel .tick { display: flex; }
+
+/* ---- credential fields ------------------------------------------------ */
+.field { margin-bottom: var(--s-5); }
+.field .fl { font-family: var(--font-mono); font-weight: 700; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; display: block; margin-bottom: 6px; }
+.help { background: var(--paper-2); border-left: var(--rule-heavy) solid var(--blue); padding: 12px 14px; font-size: .9rem; line-height: 1.5; color: var(--fg-muted); margin-bottom: 10px; border-radius: 0 4px 4px 0; }
+.deeplink { font-family: var(--font-mono); font-weight: 700; font-size: .76rem; letter-spacing: .04em; text-transform: uppercase; color: var(--blue); border: 1px dashed var(--blue); padding: 5px 10px; border-radius: 4px; display: inline-flex; gap: 6px; align-items: center; margin-top: 8px; text-decoration: none; cursor: pointer; }
+.kv { display: flex; align-items: stretch; border: var(--rule) solid var(--ink); border-radius: var(--r-xs); overflow: hidden; }
+.kv .pre { font-family: var(--font-mono); font-weight: 700; background: var(--ink); color: var(--blue-bright); padding: 12px; font-size: .8rem; display: flex; align-items: center; }
+.kv input { border: 0; flex: 1; font-family: var(--font-mono); font-size: .9rem; padding: 12px; outline: none; color: var(--ink); background: var(--paper); }
+.verify-row { margin-top: 10px; min-height: 22px; }
+
+/* ---- brand rows ------------------------------------------------------- */
+.brow { display: flex; align-items: center; gap: 14px; border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: 12px 14px; margin-bottom: 10px; cursor: pointer; }
+.brow .cb { width: 20px; height: 20px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 800; font-size: 13px; flex: none; background: var(--blue); color: #fff; }
+.brow.off .cb { background: var(--paper); border: var(--rule) solid var(--ink); color: transparent; }
+.brow .bn { font-family: var(--font-mono); font-weight: 800; }
+.brow .nick { margin-left: auto; }
+.brow .nick input { font-family: var(--font-mono); font-size: .82rem; padding: 7px 9px; border: var(--rule) solid var(--ink); border-radius: 3px; width: 130px; outline: none; }
+
+/* Manual brand entry (multi-brand networks with no list endpoint, e.g. CJ). */
+.mrow { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.mrow input { font-family: var(--font-mono); font-size: .82rem; padding: 8px 10px; border: var(--rule) solid var(--ink); border-radius: 3px; outline: none; }
+.mrow input[data-mid] { flex: 1 1 auto; min-width: 0; }
+.mrow input[data-mnick] { flex: none; width: 160px; }
+.mrow-del { flex: none; }
+
+/* ---- connect detect row ---------------------------------------------- */
+.detect { display: flex; align-items: center; gap: 14px; border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: 16px 18px; box-shadow: var(--shadow); }
+.detect .ico { width: 40px; height: 40px; background: var(--ink); color: var(--blue-bright); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 800; font-size: 18px; border-radius: 4px; flex: none; }
+.detect .meta { flex: 1; } .detect .meta .a { font-weight: 700; } .detect .meta .b { font-size: .8rem; color: var(--fg-muted); font-family: var(--font-mono); }
+
+/* ---- example query rows (done) --------------------------------------- */
+.q { display: flex; align-items: center; gap: 12px; background: var(--ink); color: var(--paper); border-radius: var(--r-xs); padding: 13px 15px; margin-bottom: 10px; font-family: var(--font-mono); font-size: .88rem; }
+.q .p { color: var(--blue-bright); font-weight: 800; }
+
+.fade { animation: fade .18s steps(3) both; }
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
