@@ -32,11 +32,13 @@
       {
         "provider": "github",
         "owner": "bobberrisford",
-        "repo": "affiliatemcp"
+        "repo": "affiliatemcp",
+        "tagNamePrefix": "desktop-v"
       }
     ],
     "files": [
       "main.js",
+      "update-channel.js",
       "preload.js",
       "renderer/**"
     ],

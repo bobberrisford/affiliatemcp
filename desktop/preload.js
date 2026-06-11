@@ -21,7 +21,8 @@ contextBridge.exposeInMainWorld('affiliate', {
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
   quit: () => ipcRenderer.invoke('app:quit'),
   // Auto-update. `onUpdateStatus` subscribes to main→renderer progress events
-  // ({ state: 'checking' | 'downloading' | 'ready' | 'manual' | 'current', … });
+  // ({ state: 'checking' | 'downloading' | 'ready' | 'manual' | 'current' |
+  //    'unavailable', … });
   // the actions check for updates, install a downloaded update, or open the
   // manual download page.
   onUpdateStatus: (cb) => {

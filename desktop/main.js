@@ -17,11 +17,15 @@ const { autoUpdater } = require('electron-updater');
 const path = require('node:path');
 const fs = require('node:fs');
 const { execFile } = require('node:child_process');
+const {
+  compareVersions,
+  desktopReleaseFeed,
+  desktopReleasePage,
+  selectLatestDesktopRelease,
+} = require('./update-channel');
 
-/** Fixed, trusted destination for the manual-update fallback banner. */
-const RELEASES_PAGE = 'https://github.com/bobberrisford/affiliatemcp/releases/latest';
-/** GitHub API for the latest published release — read only by the fallback check. */
-const LATEST_RELEASE_API = 'https://api.github.com/repos/bobberrisford/affiliatemcp/releases/latest';
+/** Mixed server + desktop releases; desktop tags are selected explicitly. */
+const RELEASES_API = 'https://api.github.com/repos/bobberrisford/affiliatemcp/releases?per_page=100';
 
 // Single-instance: a second launch hands off to the running instance, which
 // focuses its window rather than starting a duplicate setup process.
@@ -120,6 +124,8 @@ function createWindow() {
 
 /** The app's single window — held so update events can be pushed to it. */
 let mainWindow = null;
+/** @type {{ tag: string, version: string } | null} */
+let latestDesktopRelease = null;
 
 if (gotInstanceLock) {
   app.whenReady().then(() => {
@@ -197,56 +203,59 @@ function initAutoUpdates() {
     // update installs when they quit. The UI offers an immediate restart button.
     sendUpdateStatus({ state: 'ready', version: info?.version });
   });
-  autoUpdater.on('error', (err) => {
+  autoUpdater.on('error', () => {
     // Squirrel/feed failure. Degrade to the manual-download button rather than
     // failing silently. We swallow the error here because it's been handled.
     void checkManualFallback();
   });
 
-  autoUpdater.checkForUpdates().catch(() => checkManualFallback());
+  void checkForDesktopUpdates();
 }
 
 /**
- * Fallback when electron-updater can't self-update: ask the GitHub Releases API
- * whether a newer version exists and, if so, surface a manual "download" button
- * pointing at the releases page. Best-effort — any failure here is swallowed so
- * a flaky network never disrupts setup.
+ * Find the latest `desktop-v*` release and use that release's asset directory as
+ * the feed. This repository also publishes independently-versioned MCP server
+ * releases (`v*`), so the GitHub provider's repository-wide `/releases/latest`
+ * endpoint is not a valid desktop update channel.
  */
-async function checkManualFallback() {
+async function checkForDesktopUpdates() {
   try {
-    const res = await fetch(LATEST_RELEASE_API, {
+    const res = await fetch(RELEASES_API, {
       headers: { Accept: 'application/vnd.github+json' },
     });
-    if (!res.ok) return;
-    const body = await res.json();
-    const latest = extractVersion(typeof body?.tag_name === 'string' ? body.tag_name : '');
-    if (latest && isNewer(latest, app.getVersion())) {
-      sendUpdateStatus({ state: 'manual', version: latest });
+    if (!res.ok) throw new Error(`GitHub releases request failed: ${res.status}`);
+    const releases = await res.json();
+    latestDesktopRelease = selectLatestDesktopRelease(Array.isArray(releases) ? releases : []);
+    if (!latestDesktopRelease || !isNewer(latestDesktopRelease.version, app.getVersion())) {
+      sendUpdateStatus({ state: 'current' });
+      return;
     }
-  } catch {
-    // Offline or rate-limited: stay quiet. The user can still update by hand.
-  }
-}
 
-/** Pull a bare `x.y.z` out of a tag that may be prefixed (e.g. `desktop-0.1.1`). */
-function extractVersion(tag) {
-  const m = /(\d+)\.(\d+)\.(\d+)/.exec(tag);
-  return m ? `${m[1]}.${m[2]}.${m[3]}` : '';
+    autoUpdater.setFeedURL({
+      provider: 'generic',
+      url: desktopReleaseFeed(latestDesktopRelease.tag),
+    });
+    await autoUpdater.checkForUpdates();
+  } catch {
+    checkManualFallback();
+  }
 }
 
 /**
- * True when semver `a` is strictly greater than `b` (major.minor.patch only).
- * Deliberately tiny — we have no semver dependency and only need forward-moves.
+ * Fallback after a desktop release was discovered but its update feed could not
+ * be used. The download button opens that exact desktop release, never the
+ * repository-wide latest release.
  */
-function isNewer(a, b) {
-  const pa = a.split('.').map(Number);
-  const pb = b.split('.').map(Number);
-  for (let i = 0; i < 3; i++) {
-    const da = pa[i] || 0;
-    const db = pb[i] || 0;
-    if (da !== db) return da > db;
+function checkManualFallback() {
+  if (latestDesktopRelease && isNewer(latestDesktopRelease.version, app.getVersion())) {
+    sendUpdateStatus({ state: 'manual', version: latestDesktopRelease.version });
+  } else {
+    sendUpdateStatus({ state: 'unavailable' });
   }
-  return false;
+}
+
+function isNewer(a, b) {
+  return compareVersions(a, b) > 0;
 }
 
 /* ------------------------------------------------------------------ */
@@ -524,7 +533,7 @@ handle('update:check', async () => {
     return { ok: true, dev: true };
   }
   sendUpdateStatus({ state: 'checking' });
-  autoUpdater.checkForUpdates().catch(() => checkManualFallback());
+  void checkForDesktopUpdates();
   return { ok: true };
 });
 
@@ -536,10 +545,13 @@ handle('update:restart', async () => {
   return { ok: true };
 });
 
-// Manual-fallback affordance: open the fixed releases page so the user can grab
-// the new .dmg by hand when self-update couldn't run. The URL is a constant —
-// the renderer can't influence where this points.
+// Manual-fallback affordance: open the exact discovered desktop release so the
+// user can grab the new .dmg by hand. The renderer cannot influence the tag or
+// URL; both are selected and validated in the main process.
 handle('update:openDownload', async () => {
-  await shell.openExternal(RELEASES_PAGE);
+  if (!latestDesktopRelease) {
+    return { ok: false, error: 'No desktop update release is available.' };
+  }
+  await shell.openExternal(desktopReleasePage(latestDesktopRelease.tag));
   return { ok: true };
 });

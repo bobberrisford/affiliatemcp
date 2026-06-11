@@ -683,6 +683,10 @@ function updateCardHTML() {
       dot = 'dot-pos'; text = 'you’re on the latest version';
       btn = { id: 'u-check', label: 'check again', cls: 'btn-ghost' };
       break;
+    case 'unavailable':
+      dot = 'dot-neg'; text = 'couldn’t check for updates';
+      btn = { id: 'u-check', label: 'try again', cls: 'btn-ghost' };
+      break;
     default: // idle: no status yet — just offer the check.
       btn = { id: 'u-check', label: 'check for updates', cls: 'btn-ghost' };
   }
