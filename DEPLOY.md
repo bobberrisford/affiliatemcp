@@ -20,10 +20,13 @@ Two artefacts ship, both MIT and both free:
 | **Desktop `.dmg`** | The local-first, launch-and-quit **setup app** (Electron). Writes credentials + the Claude Desktop config, then quits. It does **not** run the MCP server | New |
 
 **Trust posture.** Local-first, no telemetry. The desktop app holds no affiliate
-credentials beyond what it writes to the user's own machine. The only outbound
-calls it makes are OS-level: opening network dashboards in the browser and
-restarting Claude Desktop via `osascript`/`open`. Nothing is hosted; nothing
-phones home.
+credentials beyond what it writes to the user's own machine. Its outbound calls
+are: OS-level actions (opening network dashboards in the browser, restarting
+Claude Desktop via `osascript`/`open`) and an **update check against GitHub
+Releases on launch** (`electron-updater`, plus a fallback hit to the GitHub
+Releases API if self-update can't run). The update feed is the only network call
+the app itself makes; it carries no identifying payload. Nothing else is hosted;
+nothing phones home.
 
 ---
 
@@ -36,13 +39,18 @@ npm run build
 # 2) Build the desktop app
 cd desktop
 npm install
-npm run dist        # = prebuild:core (npm --prefix .. run build) + electron-builder --mac dmg
+npm run dist        # = prebuild:core (npm --prefix .. run build) + electron-builder --mac
 ```
 
-- `npm run dist` rebuilds the core first, then runs electron-builder.
-- **Artefact:** `"desktop/dist/affiliate-mcp-<version>-<arch>.dmg"` — e.g.
-  `"desktop/dist/affiliate-mcp-0.1.0-arm64.dmg"` (version from `desktop/package.json`;
-  arch is the build host's, arm64 on Apple Silicon).
+- `npm run dist` rebuilds the core first, then runs electron-builder for **all
+  mac targets** (`dmg` + `zip`).
+- **Artefacts:** the installer `"desktop/dist/affiliate-mcp-<version>-<arch>.dmg"`,
+  the **`zip` that `electron-updater` updates from**
+  `"desktop/dist/affiliate-mcp-<version>-<arch>-mac.zip"`, and the update manifest
+  `"desktop/dist/latest-mac.yml"` (version from `desktop/package.json`; arch is the
+  build host's, arm64 on Apple Silicon).
+- The `zip` and `latest-mac.yml` exist **for auto-update** (Squirrel.Mac downloads
+  the zip; the yml is the feed). All three must be published together — see §4.
 - `npm run bundle` (run by `npm run dist`) esbuilds two self-contained CommonJS
   files into `desktop/build/`: `core.cjs` (the facade the UI drives) and
   `server.cjs` (the MCP server entrypoint). The packaged app ships **no
@@ -145,21 +153,58 @@ The hardened runtime is on (`build.mac.hardenedRuntime: true`) with
 
 ---
 
-## 4. Distribution
+## 4. Distribution + publishing the update feed
 
 - Ship the signed, notarised `.dmg` as a **direct download on GitHub Releases**
-  (D5 / D7).
+  (D5 / D7), **alongside the `-mac.zip` and `latest-mac.yml`** that drive
+  auto-update.
 - **Not** the Mac App Store — the app is incompatible with the MAS sandbox (it
   writes outside the container, spawns its own binary as the MCP server, and
   restarts Claude via `osascript`/`open`).
-- **Out of scope for this release (Phase 2):** Homebrew Cask, a Windows build, and
-  `electron-updater` auto-updates. Releases are manual `.dmg` downloads for now.
+
+**Publishing (required for auto-update to work).** Desktop releases share the
+repository with independently-versioned MCP server releases, so the desktop
+channel is isolated by the `desktop-v` tag prefix (configured under
+`build.publish` in `desktop/package.json`). The app discovers only stable
+`desktop-v*` releases and uses that exact release's asset directory as its feed.
+Each desktop release must carry `latest-mac.yml` + the `-mac.zip` + the `.dmg`.
+Let electron-builder publish them in one pass:
+
+```sh
+# Release machine, with signing + notarisation env set (§3, §5) AND a GH token.
+export GH_TOKEN=<personal-access-token with repo scope>
+cd desktop
+npm run prebuild:core && npm run bundle
+electron-builder --mac --publish always   # builds dmg+zip, uploads them + latest-mac.yml
+```
+
+- `--publish always` uploads the artefacts and generated `latest-mac.yml` to a
+  draft `desktop-v<version>` GitHub Release. Server `v<version>` releases are a
+  separate stream and must never be used as the desktop update feed.
+- Notarise + staple the draft release's `.dmg` per §3, replace the uploaded
+  `.dmg`, then publish the GitHub Release. Drafts are deliberately invisible to
+  installed apps.
+- **Version bumps move forward only.** electron-updater never downgrades; bump
+  `desktop/package.json` `version` before each release or the feed won't advertise
+  the new build.
+- If you build without `--publish` (e.g. local testing), no feed is written and
+  installed apps simply won't see the release — expected.
+
+**Failure fallback.** If a user's app discovers a newer desktop release but
+can't self-update (download or signature failure), it does **not** fail silently:
+it shows a quiet "new version → download" banner that opens that exact
+`desktop-v*` release. So a broken feed degrades to manual download, never to a
+server release or a stranded user.
+
+- **Out of scope for this release (Phase 2):** Homebrew Cask and a Windows build
+  (NSIS + `electron-updater` Windows feed). macOS auto-update ships now.
 
 ---
 
 ## 5. Secrets / credentials checklist
 
-Only the macOS signing/notarisation creds are needed — there is no backend.
+The macOS signing/notarisation creds plus a GitHub token for publishing the
+update feed — there is no backend.
 
 | Name | Where it's set | What it's for |
 |---|---|---|
@@ -168,6 +213,7 @@ Only the macOS signing/notarisation creds are needed — there is no backend.
 | `APPLE_ID` | env (release machine) | Apple Developer account email (notarisation) |
 | `APPLE_APP_SPECIFIC_PASSWORD` | env (release machine) | App-specific password (notarisation) |
 | `APPLE_TEAM_ID` | env (release machine) | Developer Team ID (notarisation) |
+| `GH_TOKEN` | env (release machine) | GitHub PAT (repo scope) — lets `electron-builder --publish` upload the `.dmg`, `-mac.zip`, and `latest-mac.yml` to Releases |
 
 ---
 

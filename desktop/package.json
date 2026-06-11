@@ -14,7 +14,10 @@
     "smoke": "node scripts/smoke.mjs",
     "test:e2e": "npm run prebuild:core && npm run bundle && playwright test",
     "verify:desktop": "npm run prebuild:core && npm run bundle && npm run smoke",
-    "dist": "npm run prebuild:core && npm run bundle && electron-builder --mac dmg"
+    "dist": "npm run prebuild:core && npm run bundle && electron-builder --mac"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",
@@ -25,16 +28,17 @@
   "build": {
     "appId": "com.affiliateintelligence.affiliate-mcp",
     "productName": "affiliate-mcp",
-    "protocols": [
+    "publish": [
       {
-        "name": "affiliate-mcp",
-        "schemes": [
-          "affiliate-mcp"
-        ]
+        "provider": "github",
+        "owner": "bobberrisford",
+        "repo": "affiliatemcp",
+        "tagNamePrefix": "desktop-v"
       }
     ],
     "files": [
       "main.js",
+      "update-channel.js",
       "preload.js",
       "renderer/**"
     ],
@@ -56,7 +60,8 @@
       "category": "public.app-category.productivity",
       "icon": "build/icon.icns",
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ],
       "hardenedRuntime": true,
       "gatekeeperAssess": false,

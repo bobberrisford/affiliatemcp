@@ -23,13 +23,14 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const buildDir = path.join(here, '..', 'build');
 const corePath = path.join(buildDir, 'core.cjs');
 const serverPath = path.join(buildDir, 'server.cjs');
+const updateChannelPath = path.join(here, '..', 'update-channel.js');
 
 function fail(msg) {
   console.error(`[smoke] FAIL: ${msg}`);
   process.exit(1);
 }
 
-for (const p of [corePath, serverPath]) {
+for (const p of [corePath, serverPath, updateChannelPath]) {
   if (!existsSync(p)) fail(`missing ${path.relative(process.cwd(), p)} — run \`npm run bundle\` first.`);
 }
 
@@ -61,7 +62,24 @@ if (!Array.isArray(networks) || networks.length === 0) {
   fail('core.listNetworks() returned no networks — the registry was not wired in.');
 }
 
-// 3) server.cjs must be a loadable CJS bundle. `node --check` parses without
+// 3) Mixed server + desktop releases must resolve only the desktop channel.
+const updateChannel = require(updateChannelPath);
+const latestDesktop = updateChannel.selectLatestDesktopRelease([
+  { tag_name: 'v9.0.0', draft: false, prerelease: false },
+  { tag_name: 'desktop-v0.1.2', draft: false, prerelease: false },
+  { tag_name: 'desktop-v0.2.0', draft: true, prerelease: false },
+]);
+if (latestDesktop?.tag !== 'desktop-v0.1.2') {
+  fail('desktop update channel selected a server, draft, or wrong desktop release.');
+}
+if (!updateChannel.desktopReleaseFeed(latestDesktop.tag).endsWith('/releases/download/desktop-v0.1.2/')) {
+  fail('desktop update feed is not pinned to the selected desktop release.');
+}
+if (!updateChannel.desktopReleasePage(latestDesktop.tag).endsWith('/releases/tag/desktop-v0.1.2')) {
+  fail('manual fallback is not pinned to the selected desktop release.');
+}
+
+// 4) server.cjs must be a loadable CJS bundle. `node --check` parses without
 //    executing main() (which would start the stdio server and block).
 try {
   execFileSync(process.execPath, ['--check', serverPath], { stdio: 'pipe', timeout: 30_000 });

@@ -13,9 +13,19 @@
  * the Electron path — if the bundle is missing we fail loudly.
  */
 const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('node:path');
 const fs = require('node:fs');
 const { execFile } = require('node:child_process');
+const {
+  compareVersions,
+  desktopReleaseFeed,
+  desktopReleasePage,
+  selectLatestDesktopRelease,
+} = require('./update-channel');
+
+/** Mixed server + desktop releases; desktop tags are selected explicitly. */
+const RELEASES_API = 'https://api.github.com/repos/bobberrisford/affiliatemcp/releases?per_page=100';
 
 // Single-instance: a second launch hands off to the running instance, which
 // focuses its window rather than starting a duplicate setup process.
@@ -109,19 +119,144 @@ function createWindow() {
   win.webContents.on('will-navigate', (event, url) => {
     if (url !== win.webContents.getURL()) event.preventDefault();
   });
+  return win;
 }
+
+/** The app's single window — held so update events can be pushed to it. */
+let mainWindow = null;
+/** @type {{ tag: string, version: string } | null} */
+let latestDesktopRelease = null;
 
 if (gotInstanceLock) {
   app.whenReady().then(() => {
-    createWindow();
+    mainWindow = createWindow();
+    // Check for updates once the window exists so we can surface progress to it.
+    // The download runs in the background while the user does setup; install
+    // happens on quit (electron-updater default). Never blocks the UI.
+    initAutoUpdates();
     app.on('activate', () => {
-      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+      if (BrowserWindow.getAllWindows().length === 0) mainWindow = createWindow();
     });
   });
 }
 
 // Launch-and-quit: closing the window ends the app (no tray for v1).
 app.on('window-all-closed', () => app.quit());
+
+/* ------------------------------------------------------------------ */
+/* Auto-update — electron-updater (Squirrel.Mac) + GitHub Releases.    */
+/*                                                                     */
+/* The app is launch-and-quit, so the ideal shape is check-on-launch / */
+/* download-in-background / install-on-quit. electron-updater does all */
+/* three by default (autoDownload + autoInstallOnAppQuit). We kick off  */
+/* the check and relay its events to the renderer, which shows the      */
+/* state as click-to-update buttons in the main UI ("restart & install" */
+/* when ready) plus a user-triggered "check for updates" (update:check).*/
+/*                                                                     */
+/* Security: only updates whose signature + notarisation Squirrel.Mac  */
+/* validates are installed (built in for Developer-ID apps), the feed  */
+/* is HTTPS GitHub Releases, and version comparison only moves forward */
+/* — no silent downgrade. See the auto-update decision doc.            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Push an update-status message to the renderer. The shape is a small tagged
+ * union the renderer switches on; see `renderer/app.js` (`onUpdateStatus`).
+ * @param {{ state: string, [k: string]: unknown }} payload
+ */
+function sendUpdateStatus(payload) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update:status', payload);
+  }
+}
+
+/**
+ * Wire electron-updater and start the launch-time check.
+ *
+ * Only runs in the packaged, signed app — `autoUpdater` has no valid feed in
+ * `electron .` dev and would throw. On any updater failure (download, signature,
+ * unreachable feed) we fall back to a lightweight GitHub Releases version check
+ * so the worst case is a "new version available → download" button, never a
+ * silent dead end. The renderer's own "check for updates" button re-triggers
+ * this same flow via the `update:check` IPC below.
+ */
+function initAutoUpdates() {
+  if (!app.isPackaged) return; // dev build: no signed feed to check against.
+
+  autoUpdater.autoDownload = true; // background download while the user sets up.
+  autoUpdater.autoInstallOnAppQuit = true; // install-on-quit; no forced restart.
+
+  autoUpdater.on('checking-for-update', () => {
+    sendUpdateStatus({ state: 'checking' });
+  });
+  autoUpdater.on('update-available', (info) => {
+    sendUpdateStatus({ state: 'downloading', version: info?.version });
+  });
+  autoUpdater.on('update-not-available', () => {
+    sendUpdateStatus({ state: 'current' });
+  });
+  autoUpdater.on('download-progress', (p) => {
+    sendUpdateStatus({ state: 'downloading', percent: Math.round(p?.percent ?? 0) });
+  });
+  autoUpdater.on('update-downloaded', (info) => {
+    // Ready to install. We don't force it — the user finishes setup, and the
+    // update installs when they quit. The UI offers an immediate restart button.
+    sendUpdateStatus({ state: 'ready', version: info?.version });
+  });
+  autoUpdater.on('error', () => {
+    // Squirrel/feed failure. Degrade to the manual-download button rather than
+    // failing silently. We swallow the error here because it's been handled.
+    void checkManualFallback();
+  });
+
+  void checkForDesktopUpdates();
+}
+
+/**
+ * Find the latest `desktop-v*` release and use that release's asset directory as
+ * the feed. This repository also publishes independently-versioned MCP server
+ * releases (`v*`), so the GitHub provider's repository-wide `/releases/latest`
+ * endpoint is not a valid desktop update channel.
+ */
+async function checkForDesktopUpdates() {
+  try {
+    const res = await fetch(RELEASES_API, {
+      headers: { Accept: 'application/vnd.github+json' },
+    });
+    if (!res.ok) throw new Error(`GitHub releases request failed: ${res.status}`);
+    const releases = await res.json();
+    latestDesktopRelease = selectLatestDesktopRelease(Array.isArray(releases) ? releases : []);
+    if (!latestDesktopRelease || !isNewer(latestDesktopRelease.version, app.getVersion())) {
+      sendUpdateStatus({ state: 'current' });
+      return;
+    }
+
+    autoUpdater.setFeedURL({
+      provider: 'generic',
+      url: desktopReleaseFeed(latestDesktopRelease.tag),
+    });
+    await autoUpdater.checkForUpdates();
+  } catch {
+    checkManualFallback();
+  }
+}
+
+/**
+ * Fallback after a desktop release was discovered but its update feed could not
+ * be used. The download button opens that exact desktop release, never the
+ * repository-wide latest release.
+ */
+function checkManualFallback() {
+  if (latestDesktopRelease && isNewer(latestDesktopRelease.version, app.getVersion())) {
+    sendUpdateStatus({ state: 'manual', version: latestDesktopRelease.version });
+  } else {
+    sendUpdateStatus({ state: 'unavailable' });
+  }
+}
+
+function isNewer(a, b) {
+  return compareVersions(a, b) > 0;
+}
 
 /* ------------------------------------------------------------------ */
 /* IPC — the core facade surface, wired to the built core.             */
@@ -383,5 +518,40 @@ handle('claude:restart', async () => {
 
 handle('app:quit', async () => {
   app.quit();
+  return { ok: true };
+});
+
+// ---- Auto-update actions ---------------------------------------------------
+
+// User-triggered "check for updates". Re-runs the same flow as the launch check;
+// progress comes back over `update:status` events, not this return value. In dev
+// (no signed feed) we report "up to date" so the button settles instead of
+// hanging on "checking…".
+handle('update:check', async () => {
+  if (!app.isPackaged) {
+    sendUpdateStatus({ state: 'current' });
+    return { ok: true, dev: true };
+  }
+  sendUpdateStatus({ state: 'checking' });
+  void checkForDesktopUpdates();
+  return { ok: true };
+});
+
+// Install the already-downloaded update now. electron-updater quits the app and
+// relaunches into the new version. Only meaningful after an `update-downloaded`
+// event (state: 'ready'); a no-op otherwise.
+handle('update:restart', async () => {
+  autoUpdater.quitAndInstall();
+  return { ok: true };
+});
+
+// Manual-fallback affordance: open the exact discovered desktop release so the
+// user can grab the new .dmg by hand. The renderer cannot influence the tag or
+// URL; both are selected and validated in the main process.
+handle('update:openDownload', async () => {
+  if (!latestDesktopRelease) {
+    return { ok: false, error: 'No desktop update release is available.' };
+  }
+  await shell.openExternal(desktopReleasePage(latestDesktopRelease.tag));
   return { ok: true };
 });

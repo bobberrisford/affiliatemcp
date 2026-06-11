@@ -20,4 +20,17 @@ contextBridge.exposeInMainWorld('affiliate', {
   restartClaude: () => ipcRenderer.invoke('claude:restart'),
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
   quit: () => ipcRenderer.invoke('app:quit'),
+  // Auto-update. `onUpdateStatus` subscribes to main→renderer progress events
+  // ({ state: 'checking' | 'downloading' | 'ready' | 'manual' | 'current' |
+  //    'unavailable', … });
+  // the actions check for updates, install a downloaded update, or open the
+  // manual download page.
+  onUpdateStatus: (cb) => {
+    const listener = (_e, payload) => cb(payload);
+    ipcRenderer.on('update:status', listener);
+    return () => ipcRenderer.removeListener('update:status', listener);
+  },
+  checkForUpdates: () => ipcRenderer.invoke('update:check'),
+  restartToUpdate: () => ipcRenderer.invoke('update:restart'),
+  openUpdateDownload: () => ipcRenderer.invoke('update:openDownload'),
 });

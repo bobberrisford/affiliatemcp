@@ -29,6 +29,13 @@ body.amcp {
 .titlebar .t { font-family: var(--font-mono); font-weight: 700; font-size: .72rem; letter-spacing: .08em; color: var(--fg-invert-mut); }
 .titlebar .t b { color: var(--paper); }
 
+/* ---- auto-update card (in-screen, on welcome + done) ------------------ */
+/* A centred status + click-to-update action, composed from design-system
+   .status / .btn — this is layout only (gap + spacing), not a re-style of
+   those components. Empty (no status, no button) collapses to nothing. */
+.update-card { display: flex; align-items: center; justify-content: center; gap: var(--s-3); flex-wrap: wrap; margin-top: var(--s-5); min-height: 34px; }
+.update-card:empty { display: none; margin-top: 0; }
+
 /* ---- app stage: a centred paper "screen" on the ink desktop ---------- */
 .stage { height: calc(100% - 38px); display: flex; align-items: center; justify-content: center; padding: var(--s-6); box-sizing: border-box; }
 /* #app must fill the stage so .screen's max-height:100% has a bounded parent to
