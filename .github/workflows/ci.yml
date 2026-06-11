@@ -10,11 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: 'npm'
       - run: npm ci
+      - run: npm run check:change -- --base origin/main
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test

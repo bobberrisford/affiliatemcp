@@ -219,7 +219,8 @@ automatically rejected, but its description must explain why splitting would
 make the change harder to understand or validate.
 
 Use the repo-local `prepare-for-review` skill before opening, updating, or
-requesting review on a PR. It is available to Claude Code and Codex. Only one
+requesting review on a PR. Use the repo-local `review-pr` skill for independent
+review and re-review. Both are available to Claude Code and Codex. Only one
 PR at a time may actively await `@offmann`'s review. Other work may continue in
 draft. A PR is review-ready only when:
 
@@ -229,6 +230,11 @@ draft. A PR is review-ready only when:
 - no product or architecture decision needed for this PR remains unresolved;
 - the complete diff has been inspected by the coding agent;
 - the PR has one coherent outcome and an explicit split rationale when large.
+
+The coding agent owns CI failures caused by its branch and should diagnose and
+repair them before requesting review. Reviewers may repair or rerun CI when
+explicitly asked to unblock the PR, but should keep the fix on the existing
+branch and report the exact proof.
 
 Request `@offmann` for changes involving shared/public contracts,
 cross-network semantics, authentication or security, write actions or consent,
@@ -273,6 +279,7 @@ request the maintainer instead.
 | `npm run typecheck` | `tsc -p tsconfig.dev.json` (no emit; includes tests). |
 | `npm run lint` | ESLint over `src`, `scripts`, `tests`. |
 | `npm run build` | Compile `src/` to `dist/`. |
+| `npm run check:change -- --base origin/main` | Check newly changed lines and paths for architecture and review-scope risks. |
 | `npm run dev` | Run the MCP server via `tsx` (stdio transport). |
 | `npm run validate:network -- <slug>` | Validate `network.json` and run the live diagnostic if the adapter is registered. |
 | `npm run generate:readme` | Regenerate the network table in README.md from each adapter's `network.json`. |
