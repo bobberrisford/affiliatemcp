@@ -1,0 +1,203 @@
+{
+  "plugins": [
+    "react",
+    "import"
+  ],
+  "rules": {
+    "react/forbid-elements": [
+      "warn",
+      {
+        "forbid": []
+      }
+    ],
+    "no-restricted-imports": [
+      "warn",
+      {
+        "patterns": [
+          {
+            "group": [
+              "ui_kits/landing/**",
+              "ui_kits/terminal/**"
+            ],
+            "message": "Import design-system components from 'index.js', not component internals."
+          }
+        ]
+      }
+    ],
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+        "message": "Raw hex color — use a design-system color token via var()."
+      },
+      {
+        "selector": "Literal[value=/\\b\\d+px\\b/]",
+        "message": "Raw px value — use a design-system spacing token via var()."
+      },
+      {
+        "selector": "Literal[value=/font-family\\s*:\\s*(?!['\\\"]?(?:Bricolage Grotesque|Space Grotesk|JetBrains Mono))/i]",
+        "message": "Font not provided by the design system. Available: Bricolage Grotesque, Space Grotesk, JetBrains Mono."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/index.js"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "x-omelette": {
+    "components": {},
+    "tokens": [
+      "--accent",
+      "--accent-2",
+      "--accent-on",
+      "--acid",
+      "--acid-deep",
+      "--bg",
+      "--bg-invert",
+      "--bg-panel",
+      "--blue",
+      "--blue-bright",
+      "--blue-deep",
+      "--fg",
+      "--fg-invert",
+      "--fg-invert-mut",
+      "--fg-muted",
+      "--font-display",
+      "--font-mono",
+      "--font-sans",
+      "--hair",
+      "--ink",
+      "--ink-soft",
+      "--lh-body",
+      "--lh-snug",
+      "--lh-tight",
+      "--line",
+      "--line-invert",
+      "--line-strong",
+      "--link",
+      "--magenta",
+      "--neg",
+      "--paper",
+      "--paper-2",
+      "--pending",
+      "--pos",
+      "--pos-hi",
+      "--r-0",
+      "--r-pill",
+      "--r-sm",
+      "--r-xs",
+      "--riso",
+      "--rule",
+      "--rule-heavy",
+      "--s-1",
+      "--s-10",
+      "--s-2",
+      "--s-3",
+      "--s-4",
+      "--s-5",
+      "--s-6",
+      "--s-7",
+      "--s-8",
+      "--s-9",
+      "--shadow",
+      "--shadow-acid",
+      "--shadow-lg",
+      "--shadow-mag",
+      "--shadow-soft",
+      "--smudge",
+      "--smudge-dk",
+      "--t-body",
+      "--t-h1",
+      "--t-h2",
+      "--t-h3",
+      "--t-h4",
+      "--t-mega",
+      "--t-micro",
+      "--t-mono-lbl",
+      "--t-small",
+      "--tracking-lbl"
+    ],
+    "tokenKinds": {
+      "--ink": "color",
+      "--ink-soft": "color",
+      "--paper": "color",
+      "--paper-2": "color",
+      "--smudge": "color",
+      "--smudge-dk": "color",
+      "--blue": "color",
+      "--blue-deep": "color",
+      "--blue-bright": "color",
+      "--magenta": "color",
+      "--riso": "color",
+      "--acid": "color",
+      "--acid-deep": "color",
+      "--bg": "color",
+      "--bg-panel": "color",
+      "--bg-invert": "color",
+      "--fg": "color",
+      "--fg-muted": "color",
+      "--fg-invert": "color",
+      "--fg-invert-mut": "color",
+      "--accent": "color",
+      "--accent-on": "color",
+      "--accent-2": "color",
+      "--link": "color",
+      "--pos": "color",
+      "--pos-hi": "color",
+      "--neg": "color",
+      "--pending": "color",
+      "--line": "color",
+      "--line-strong": "color",
+      "--line-invert": "color",
+      "--hair": "spacing",
+      "--rule": "spacing",
+      "--rule-heavy": "spacing",
+      "--r-0": "spacing",
+      "--r-xs": "spacing",
+      "--r-sm": "spacing",
+      "--r-pill": "spacing",
+      "--shadow": "shadow",
+      "--shadow-lg": "shadow",
+      "--shadow-acid": "shadow",
+      "--shadow-mag": "shadow",
+      "--shadow-soft": "shadow",
+      "--s-1": "spacing",
+      "--s-2": "spacing",
+      "--s-3": "spacing",
+      "--s-4": "spacing",
+      "--s-5": "spacing",
+      "--s-6": "spacing",
+      "--s-7": "spacing",
+      "--s-8": "spacing",
+      "--s-9": "spacing",
+      "--s-10": "spacing",
+      "--font-display": "font",
+      "--font-sans": "font",
+      "--font-mono": "font",
+      "--t-mega": "other",
+      "--t-h1": "other",
+      "--t-h2": "other",
+      "--t-h3": "spacing",
+      "--t-h4": "spacing",
+      "--t-body": "spacing",
+      "--t-small": "spacing",
+      "--t-micro": "spacing",
+      "--t-mono-lbl": "spacing",
+      "--lh-tight": "other",
+      "--lh-snug": "other",
+      "--lh-body": "other",
+      "--tracking-lbl": "font"
+    },
+    "fontFamilies": [
+      "Bricolage Grotesque",
+      "JetBrains Mono",
+      "Space Grotesk"
+    ]
+  }
+}

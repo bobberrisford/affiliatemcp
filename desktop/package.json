@@ -1,0 +1,68 @@
+{
+  "name": "affiliate-mcp-desktop",
+  "productName": "affiliate-mcp",
+  "version": "0.1.0",
+  "description": "The local-first setup app for affiliate-mcp — get connected to Claude Desktop without a terminal.",
+  "license": "MIT",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "prebuild:core": "npm --prefix .. run build",
+    "bundle": "esbuild ../dist/core/app-entry.js --bundle --platform=node --format=cjs --outfile=build/core.cjs && esbuild ../dist/index.js --bundle --platform=node --format=cjs --outfile=build/server.cjs",
+    "smoke": "node scripts/smoke.mjs",
+    "test:e2e": "npm run prebuild:core && npm run bundle && playwright test",
+    "verify:desktop": "npm run prebuild:core && npm run bundle && npm run smoke",
+    "dist": "npm run prebuild:core && npm run bundle && electron-builder --mac dmg"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "electron": "^42.0.0",
+    "electron-builder": "^26.0.0",
+    "esbuild": "^0.28.0"
+  },
+  "build": {
+    "appId": "com.affiliateintelligence.affiliate-mcp",
+    "productName": "affiliate-mcp",
+    "protocols": [
+      {
+        "name": "affiliate-mcp",
+        "schemes": [
+          "affiliate-mcp"
+        ]
+      }
+    ],
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**"
+    ],
+    "extraResources": [
+      {
+        "from": "build/core.cjs",
+        "to": "core.cjs"
+      },
+      {
+        "from": "build/server.cjs",
+        "to": "server.cjs"
+      },
+      {
+        "from": "../design-system",
+        "to": "design-system"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.icns",
+      "target": [
+        "dmg"
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": true
+    }
+  }
+}

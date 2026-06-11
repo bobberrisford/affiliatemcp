@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>affiliate-mcp desktop — onboarding mockup</title>
+<link rel="icon" href="assets/mark.svg" />
+<link rel="stylesheet" href="colors_and_type.css" />
+<style>
+  /* ---- page scaffold ------------------------------------------------- */
+  body { margin: 0; background: var(--ink); }
+  .page {
+    background:
+      radial-gradient(var(--ink-soft) 2.4px, transparent 2.7px) 0 0 / 13px 13px,
+      var(--ink);
+    min-height: 100vh;
+    padding: var(--s-8) var(--s-5) var(--s-10);
+    color: var(--paper);
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  /* ---- page header --------------------------------------------------- */
+  .masthead { display: flex; align-items: center; gap: var(--s-4); margin-bottom: var(--s-3); flex-wrap: wrap; }
+  .masthead img { width: 52px; height: 52px; display: block; box-shadow: var(--shadow); }
+  .masthead .wordmark { font-family: var(--font-display); font-weight: 800; font-size: 2rem; letter-spacing: -0.02em; color: var(--paper); }
+  .masthead .tab { background: var(--blue); color: #fff; padding: 0 .35em; border-radius: 4px; }
+  .sub { color: var(--fg-invert-mut); max-width: 64ch; font-size: var(--t-body); line-height: 1.5; }
+  .sub b { color: var(--paper); }
+  .stamp-row { display: flex; gap: var(--s-3); flex-wrap: wrap; margin: var(--s-5) 0 var(--s-7); }
+
+  /* ---- the app window ------------------------------------------------ */
+  .screen { margin: 0 0 var(--s-8); }
+  .screen-tag { font-family: var(--font-mono); font-weight: 800; letter-spacing: var(--tracking-lbl); text-transform: uppercase; font-size: var(--t-mono-lbl); color: var(--blue-bright); margin-bottom: var(--s-3); display: flex; gap: var(--s-3); align-items: baseline; }
+  .screen-tag .n { color: var(--paper); background: var(--blue); padding: 2px 8px; border-radius: 3px; }
+  .screen-tag .note { color: var(--fg-invert-mut); font-weight: 500; letter-spacing: .04em; text-transform: none; }
+
+  .win {
+    background: var(--paper); color: var(--ink);
+    border: var(--rule) solid var(--ink);
+    box-shadow: 10px 10px 0 0 var(--blue);
+    border-radius: var(--r-sm);
+    overflow: hidden;
+    max-width: 860px;
+  }
+  .titlebar { display: flex; align-items: center; gap: var(--s-3); background: var(--ink); color: var(--paper); padding: 10px 14px; }
+  .lights { display: flex; gap: 6px; }
+  .lights i { width: 11px; height: 11px; display: block; border-radius: 2px; }
+  .lights i:nth-child(1){ background: var(--magenta); }
+  .lights i:nth-child(2){ background: var(--pending); }
+  .lights i:nth-child(3){ background: var(--blue-bright); }
+  .titlebar .t { font-family: var(--font-mono); font-weight: 700; font-size: .8rem; letter-spacing: .06em; color: var(--fg-invert-mut); }
+  .titlebar .t b { color: var(--paper); }
+
+  .body { padding: var(--s-7) var(--s-7) var(--s-6); }
+  .body.tight { padding: var(--s-6) var(--s-7); }
+
+  /* step rail */
+  .steps { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-5); }
+  .seg { height: 6px; flex: 1; background: var(--paper-2); border: 1px solid var(--line); }
+  .seg.on { background: var(--blue); border-color: var(--blue-deep); }
+  .stepno { font-family: var(--font-mono); font-weight: 700; font-size: var(--t-micro); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-muted); white-space: nowrap; }
+
+  h2.scr { font-family: var(--font-display); font-weight: 800; text-transform: lowercase; letter-spacing: -0.02em; line-height: 1.0; margin: 0 0 var(--s-3); }
+  .scr-lead { color: var(--fg-muted); max-width: 56ch; margin: 0 0 var(--s-5); line-height: 1.5; }
+
+  /* footer / actions */
+  .actions { display: flex; align-items: center; justify-content: space-between; margin-top: var(--s-6); padding-top: var(--s-5); border-top: var(--rule) solid var(--ink); }
+  .btn { font-family: var(--font-mono); font-weight: 700; font-size: .85rem; letter-spacing: .06em; text-transform: uppercase; padding: 12px 20px; border: var(--rule) solid var(--ink); background: var(--paper); color: var(--ink); border-radius: var(--r-xs); cursor: default; box-shadow: var(--shadow); }
+  .btn.primary { background: var(--blue); color: #fff; border-color: var(--blue-deep); }
+  .btn.ghost { box-shadow: none; background: transparent; border-color: var(--line-strong); }
+  .btn .k { opacity: .6; margin-left: 8px; font-weight: 500; }
+
+  /* chips / status */
+  .dot { width: 9px; height: 9px; border-radius: 999px; display: inline-block; }
+  .dot.blue { background: var(--blue); } .dot.amber { background: var(--pending); } .dot.grey { background: var(--smudge); } .dot.mag { background: var(--magenta); }
+  .status { font-family: var(--font-mono); font-weight: 700; font-size: .8rem; letter-spacing: .04em; display: inline-flex; align-items: center; gap: 8px; }
+
+  /* welcome screen */
+  .welcome { text-align: center; padding: var(--s-7) var(--s-5) var(--s-6); }
+  .welcome .mark { width: 76px; height: 76px; margin: 0 auto var(--s-5); display: block; box-shadow: var(--shadow); border-radius: 12px; }
+  .welcome h1 { font-family: var(--font-display); font-weight: 800; text-transform: lowercase; letter-spacing: -0.03em; font-size: clamp(2.2rem,5vw,3.4rem); line-height: .96; margin: 0 0 var(--s-4); }
+  .welcome p { margin: 0 auto var(--s-6); max-width: 46ch; color: var(--fg-muted); }
+  .trust { display: flex; gap: var(--s-2); justify-content: center; flex-wrap: wrap; margin-bottom: var(--s-6); }
+
+  /* network grid */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
+  .net { border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: 14px; display: flex; flex-direction: column; gap: 8px; background: var(--paper); position: relative; }
+  .net .nm { font-family: var(--font-mono); font-weight: 800; font-size: .95rem; }
+  .net .mt { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .04em; color: var(--fg-muted); text-transform: uppercase; }
+  .net.sel { background: var(--ink); color: var(--paper); box-shadow: var(--shadow-acid); }
+  .net.sel .mt { color: var(--blue-bright); }
+  .net .tick { position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; background: var(--blue); color: #fff; display: none; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 800; font-size: 13px; border-radius: 3px; }
+  .net.sel .tick { display: flex; }
+
+  /* credential form */
+  .field { margin-bottom: var(--s-5); }
+  .field label.fl { font-family: var(--font-mono); font-weight: 700; font-size: .8rem; letter-spacing: .06em; text-transform: uppercase; display: block; margin-bottom: 6px; }
+  .help { background: var(--paper-2); border-left: var(--rule-heavy) solid var(--blue); padding: 12px 14px; font-size: .9rem; line-height: 1.5; color: var(--fg-muted); margin-bottom: 10px; border-radius: 0 4px 4px 0; }
+  .help a { color: var(--ink); font-weight: 700; }
+  .deeplink { font-family: var(--font-mono); font-weight: 700; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; color: var(--blue); border: 1px dashed var(--blue); padding: 5px 10px; border-radius: 4px; display: inline-flex; gap: 6px; align-items: center; margin-top: 6px; }
+  .input { display: flex; align-items: center; border: var(--rule) solid var(--ink); border-radius: var(--r-xs); overflow: hidden; }
+  .input .pre { font-family: var(--font-mono); font-weight: 700; background: var(--ink); color: var(--blue-bright); padding: 12px 12px; font-size: .82rem; }
+  .input input { border: 0; flex: 1; font-family: var(--font-mono); font-size: .9rem; padding: 12px; outline: none; color: var(--ink); background: var(--paper); letter-spacing: .02em; }
+  .verify { margin-top: 10px; }
+  .shot { border: var(--rule) dashed var(--line-strong); border-radius: 4px; padding: 10px; display: flex; gap: 10px; align-items: center; color: var(--fg-muted); font-size: .82rem; font-family: var(--font-mono); margin-top: 10px; background: var(--paper); }
+  .shot .ph { width: 64px; height: 42px; background: repeating-linear-gradient(45deg, var(--paper-2), var(--paper-2) 6px, #e7e9f0 6px, #e7e9f0 12px); border: 1px solid var(--line-strong); flex: none; border-radius: 2px; }
+
+  /* brand rows */
+  .brow { display: flex; align-items: center; gap: 14px; border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: 12px 14px; margin-bottom: 10px; }
+  .brow .cb { width: 20px; height: 20px; background: var(--blue); color:#fff; border-radius: 3px; display:flex; align-items:center; justify-content:center; font-family: var(--font-mono); font-weight: 800; font-size: 13px; flex:none; }
+  .brow .cb.off { background: var(--paper); border: var(--rule) solid var(--ink); color: transparent; }
+  .brow .bn { font-family: var(--font-mono); font-weight: 800; }
+  .brow .nick { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .brow .nick input { font-family: var(--font-mono); font-size: .82rem; padding: 7px 9px; border: var(--rule) solid var(--ink); border-radius: 3px; width: 130px; outline: none; }
+  .brow .nick .lab { font-family: var(--font-mono); font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: var(--fg-muted); }
+
+  /* connect screen */
+  .detect { display: flex; align-items: center; gap: 14px; border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: 16px 18px; margin-bottom: var(--s-4); box-shadow: var(--shadow); }
+  .detect .ico { width: 40px; height: 40px; background: var(--ink); color: var(--blue-bright); display:flex; align-items:center; justify-content:center; font-family: var(--font-mono); font-weight: 800; font-size: 20px; border-radius: 4px; flex:none; }
+  .detect .meta { flex: 1; } .detect .meta .a { font-weight: 700; } .detect .meta .b { font-size: .82rem; color: var(--fg-muted); font-family: var(--font-mono); }
+
+  /* done screen */
+  .q { display: flex; align-items: center; gap: 12px; background: var(--ink); color: var(--paper); border-radius: var(--r-xs); padding: 13px 15px; margin-bottom: 10px; font-family: var(--font-mono); font-size: .88rem; }
+  .q .p { color: var(--blue-bright); font-weight: 800; } .q .cp { margin-left: auto; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--fg-invert-mut); border: 1px solid var(--line-invert); padding: 4px 8px; border-radius: 3px; }
+
+  /* tray popover */
+  .tray { max-width: 320px; }
+  .tray .titlebar { background: var(--ink); }
+  .tray .trow { display: flex; align-items: center; gap: 10px; padding: 11px 16px; border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: .82rem; }
+  .tray .trow:last-child { border-bottom: 0; }
+  .tray .trow .nm { font-weight: 700; } .tray .trow .rt { margin-left: auto; color: var(--fg-muted); font-size: .72rem; }
+  .tray .foot { padding: 11px 16px; background: var(--paper-2); font-family: var(--font-mono); font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--fg-muted); display: flex; justify-content: space-between; }
+
+  .two { display: grid; grid-template-columns: 1fr 340px; gap: var(--s-6); align-items: start; }
+  @media (max-width: 760px){ .grid { grid-template-columns: repeat(2,1fr);} .two{ grid-template-columns: 1fr; } .win{ max-width: none; } }
+
+  .footnote { color: var(--fg-invert-mut); font-family: var(--font-mono); font-size: .76rem; letter-spacing: .04em; margin-top: var(--s-3); }
+</style>
+</head>
+<body class="amcp">
+<div class="page">
+<div class="wrap">
+
+  <!-- masthead -->
+  <div class="masthead">
+    <img src="assets/mark.svg" alt="affiliate-mcp mark" />
+    <div class="wordmark">affiliate<span class="tab">mcp</span> <span style="font-size:1.1rem;color:var(--fg-invert-mut);font-family:var(--font-mono);font-weight:700;">desktop</span></div>
+  </div>
+  <p class="sub"><b>onboarding mockup</b> — the local-first app that removes the terminal. bring your own keys, no telemetry, the maintainer never sees your data. these are the six screens a non-technical user walks, from download to first question. design system applied verbatim.</p>
+  <div class="stamp-row">
+    <span class="chip blue">LOCAL-FIRST</span>
+    <span class="chip">NO TELEMETRY</span>
+    <span class="chip">MIT LICENCE</span>
+    <span class="chip mag">YOUR KEYS · YOUR MACHINE</span>
+  </div>
+
+  <!-- 1. WELCOME -->
+  <section class="screen">
+    <div class="screen-tag"><span class="n">01</span> welcome <span class="note">— first launch, signed &amp; notarised, no scary warning</span></div>
+    <div class="win">
+      <div class="titlebar"><span class="lights"><i></i><i></i><i></i></span><span class="t"><b>affiliate-mcp</b> · setup</span></div>
+      <div class="welcome">
+        <img class="mark" src="assets/mark.svg" alt="" />
+        <h1>chat with your<br>affiliate data.</h1>
+        <p>connect the networks you already use, then ask Claude in plain English. it all runs on this machine — your keys never leave it.</p>
+        <div class="trust">
+          <span class="chip blue">● NO HOSTED ACCOUNT</span>
+          <span class="chip">● NO TELEMETRY</span>
+          <span class="chip">● OPEN SOURCE</span>
+        </div>
+        <span class="btn primary">get started <span class="k">↵</span></span>
+        <div style="margin-top:var(--s-5)" class="stepno">~5 minutes · you'll need your network logins</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. NETWORK PICKER -->
+  <section class="screen">
+    <div class="screen-tag"><span class="n">02</span> pick your networks <span class="note">— rendered from the adapter registry</span></div>
+    <div class="win">
+      <div class="titlebar"><span class="lights"><i></i><i></i><i></i></span><span class="t"><b>affiliate-mcp</b> · setup</span></div>
+      <div class="body">
+        <div class="steps"><span class="stepno">step 1 / 5</span><span class="seg on"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span></div>
+        <h2 class="scr">which networks do you use?</h2>
+        <p class="scr-lead">pick any number. we'll walk you through each one, one at a time. publisher or brand side — both work.</p>
+        <div class="grid">
+          <div class="net sel"><span class="tick">✓</span><span class="nm">CJ</span><span class="mt">~3 min · publisher</span></div>
+          <div class="net sel"><span class="tick">✓</span><span class="nm">Awin</span><span class="mt">~3 min · brand</span></div>
+          <div class="net sel"><span class="tick">✓</span><span class="nm">Impact</span><span class="mt">~4 min · publisher</span></div>
+          <div class="net"><span class="tick">✓</span><span class="nm">Rakuten</span><span class="mt">~3 min</span></div>
+          <div class="net"><span class="tick">✓</span><span class="nm">eBay</span><span class="mt">~2 min</span></div>
+          <div class="net"><span class="tick">✓</span><span class="nm">Skimlinks</span><span class="mt">~3 min</span></div>
+          <div class="net"><span class="tick">✓</span><span class="nm">Partnerize</span><span class="mt">~4 min</span></div>
+          <div class="net"><span class="tick">✓</span><span class="nm">Tradedoubler</span><span class="mt">~3 min · approval</span></div>
+          <div class="net"><span class="tick">✓</span><span class="nm">Everflow</span><span class="mt">~3 min</span></div>
+        </div>
+        <div class="actions">
+          <span class="btn ghost">back</span>
+          <span class="btn primary">3 selected — continue <span class="k">↵</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. CREDENTIAL FORM — the long pole / hero screen -->
+  <section class="screen">
+    <div class="screen-tag"><span class="n">03</span> the credential screen <span class="note">— ★ the long pole. where onboarding is won or lost.</span></div>
+    <div class="win">
+      <div class="titlebar"><span class="lights"><i></i><i></i><i></i></span><span class="t"><b>affiliate-mcp</b> · setup · CJ</span></div>
+      <div class="body">
+        <div class="steps"><span class="stepno">step 2 / 5</span><span class="seg on"></span><span class="seg on"></span><span class="seg"></span><span class="seg"></span><span class="seg"></span></div>
+        <h2 class="scr">connect CJ</h2>
+        <p class="scr-lead">CJ uses a personal access token. here's exactly where to find it — no API knowledge needed.</p>
+
+        <div class="field">
+          <label class="fl">Personal access token</label>
+          <div class="help">
+            in the CJ dashboard, open <a>Account → Web Services</a> and copy your <b>Personal Access Token</b>. it's a long string starting with a few letters.
+            <div><a class="deeplink" href="#">↗ open the exact CJ page</a></div>
+          </div>
+          <div class="shot"><span class="ph"></span> screenshot: the CJ token panel, token highlighted</div>
+          <div class="input" style="margin-top:10px"><span class="pre">token</span><input value="by_kf93••••••••••••••••••••••••••••3a1" /></div>
+          <div class="verify"><span class="status"><span class="dot blue"></span> verified as <b>Acme Media</b> · publisher id 7283190</span></div>
+        </div>
+
+        <div class="field">
+          <label class="fl">Website id <span style="color:var(--fg-muted);font-weight:500;text-transform:none;letter-spacing:0">(optional — we found it for you)</span></label>
+          <div class="input"><span class="pre">site</span><input value="7283190  ·  derived from your token" style="color:var(--fg-muted)"/></div>
+        </div>
+
+        <div class="actions">
+          <span class="btn ghost">back</span>
+          <span class="btn primary">CJ connected — next: Awin <span class="k">↵</span></span>
+        </div>
+      </div>
+    </div>
+    <p class="footnote">// help text comes from the adapter's own setupSteps(). deep-link + screenshot live as open data in the repo (decision D8) — networks &amp; community fill them in.</p>
+  </section>
+
+  <!-- 4. BRAND DISCOVERY -->
+  <section class="screen">
+    <div class="screen-tag"><span class="n">04</span> brands <span class="note">— only for brand-side / multi-brand networks (reuses runBrandDiscovery)</span></div>
+    <div class="win">
+      <div class="titlebar"><span class="lights"><i></i><i></i><i></i></span><span class="t"><b>affiliate-mcp</b> · setup · Awin</span></div>
+      <div class="body">
+        <div class="steps"><span class="stepno">step 3 / 5</span><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg"></span><span class="seg"></span></div>
+        <h2 class="scr">which brands can these keys reach?</h2>
+        <p class="scr-lead">your Awin credentials see 3 advertiser accounts. pick the ones you manage and give each a nickname you'll use when you ask questions.</p>
+        <div class="brow"><span class="cb">✓</span><span class="bn">Acme Outdoors</span><span class="status" style="margin-left:14px"><span class="dot blue"></span> active</span><span class="nick"><span class="lab">nickname</span><input value="acme"/></span></div>
+        <div class="brow"><span class="cb">✓</span><span class="bn">Northwind Home</span><span class="status" style="margin-left:14px"><span class="dot blue"></span> active</span><span class="nick"><span class="lab">nickname</span><input value="northwind"/></span></div>
+        <div class="brow"><span class="cb off">✓</span><span class="bn">Globex Trial</span><span class="status" style="margin-left:14px"><span class="dot amber"></span> pending</span><span class="nick"><span class="lab">nickname</span><input placeholder="—" style="color:var(--fg-muted)"/></span></div>
+        <div class="actions">
+          <span class="btn ghost">back</span>
+          <span class="btn primary">save 2 brands — continue <span class="k">↵</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. CONNECT TO CLAUDE -->
+  <section class="screen">
+    <div class="screen-tag"><span class="n">05</span> connect to Claude <span class="note">— detectClients() + addAffiliateEntry(), then restart</span></div>
+    <div class="win">
+      <div class="titlebar"><span class="lights"><i></i><i></i><i></i></span><span class="t"><b>affiliate-mcp</b> · connect</span></div>
+      <div class="body">
+        <div class="steps"><span class="stepno">step 4 / 5</span><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg on"></span><span class="seg"></span></div>
+        <h2 class="scr">hook it up to Claude.</h2>
+        <p class="scr-lead">we found Claude Desktop on this Mac and added affiliate-mcp to its tools — your existing config was backed up first.</p>
+        <div class="detect">
+          <span class="ico">&gt;_</span>
+          <span class="meta"><div class="a">Claude Desktop</div><div class="b">/Applications/Claude.app · config backed up ✓</div></span>
+          <span class="status"><span class="dot blue"></span> connected</span>
+        </div>
+        <div class="help" style="border-left-color:var(--magenta)">Claude only loads new tools on restart. one click does it.</div>
+        <div class="actions">
+          <span class="btn ghost">back</span>
+          <span class="btn primary">restart Claude &amp; finish <span class="k">↵</span></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. DONE + TRAY -->
+  <section class="screen">
+    <div class="screen-tag"><span class="n">06</span> done <span class="note">— first question + the menu-bar status that lives on after</span></div>
+    <div class="two">
+      <div class="win">
+        <div class="titlebar"><span class="lights"><i></i><i></i><i></i></span><span class="t"><b>affiliate-mcp</b> · ready</span></div>
+        <div class="body">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:var(--s-4)"><span class="stamp" style="color:var(--blue)">ALL SET</span><span class="status"><span class="dot blue"></span> 3 networks · 2 brands connected</span></div>
+          <h2 class="scr">ask Claude anything.</h2>
+          <p class="scr-lead">switch to Claude and try one of these. tap to copy.</p>
+          <div class="q"><span class="p">&gt;</span> what did I earn across all networks last month? <span class="cp">copy</span></div>
+          <div class="q"><span class="p">&gt;</span> any programmes with transactions pending past 90 days? <span class="cp">copy</span></div>
+          <div class="q"><span class="p">&gt;</span> how is acme performing this quarter vs last? <span class="cp">copy</span></div>
+          <div class="actions">
+            <span class="btn ghost">add another network</span>
+            <span class="btn primary">open Claude <span class="k">↵</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- tray popover -->
+      <div>
+        <div class="screen-tag" style="margin-bottom:var(--s-3)"><span class="note" style="color:var(--fg-invert-mut)">menu-bar / tray</span></div>
+        <div class="win tray">
+          <div class="titlebar"><span class="lights"><i></i><i></i><i></i></span><span class="t"><b>affiliate-mcp</b></span></div>
+          <div class="trow"><span class="dot blue"></span><span class="nm">CJ</span><span class="rt">verified 2m ago</span></div>
+          <div class="trow"><span class="dot blue"></span><span class="nm">Awin</span><span class="rt">2 brands · ok</span></div>
+          <div class="trow"><span class="dot amber"></span><span class="nm">Impact</span><span class="rt">re-auth needed</span></div>
+          <div class="trow"><span class="dot grey"></span><span class="nm">+ add a network</span></div>
+          <div class="foot"><span>LOCAL · NO TELEMETRY</span><span>v1.0</span></div>
+        </div>
+        <p class="footnote">tray = the only persistent surface. status, re-verify, add. no dashboard — that's the point.</p>
+      </div>
+    </div>
+  </section>
+
+  <p class="footnote" style="margin-top:var(--s-7);font-size:.8rem">affiliate-mcp desktop · mockup built with the affiliate-mcp design system · riso blue #2B2BFF + ink · free · open · yours</p>
+
+</div>
+</div>
+</body>
+</html>
