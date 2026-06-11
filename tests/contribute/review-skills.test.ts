@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, '..', '..');
 
-const REVIEW_SKILLS = ['prepare-for-review', 'review-pr'] as const;
+const REVIEW_SKILLS = ['delivery-steward', 'prepare-for-review', 'review-pr'] as const;
 
 describe('collaboration review skills', () => {
   for (const skill of REVIEW_SKILLS) {
@@ -46,5 +46,16 @@ describe('collaboration review skills', () => {
     expect(content).toMatch(/follow-up/);
     expect(content).toMatch(/When asked to fix or unblock the PR/i);
     expect(content).toMatch(/Re-review/);
+  });
+
+  it('delivery steward advances work but keeps a human merge gate', () => {
+    const content = readFileSync(
+      join(repoRoot, '.claude', 'skills', 'delivery-steward', 'SKILL.md'),
+      'utf8',
+    );
+    expect(content).toMatch(/repair branch/i);
+    expect(content).toMatch(/Preserve its remote branch/i);
+    expect(content).toMatch(/Do not merge until the user explicitly approves/i);
+    expect(content).toMatch(/Refresh branches just in time/i);
   });
 });
