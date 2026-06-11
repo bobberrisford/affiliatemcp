@@ -1,0 +1,4 @@
+interface:
+  display_name: "Delivery Steward"
+  short_description: "Triage, repair, review, and prepare PRs for human-approved merge"
+  default_prompt: "Triage the open PR queue, advance the highest-value PR, and keep a human approval gate before merge."
