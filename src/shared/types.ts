@@ -74,7 +74,7 @@ export interface NetworkMeta {
    * Adapter-side parsing contract: when an adapter declares this, it MUST use
    * this zone to interpret naïve upstream timestamps into canonical UTC before
    * emitting them via `toISOString()`. Consumers cannot recover the original
-   * instant after the fact — a UTC timestamp parsed in the host timezone is
+   * instant after the fact — a naïve timestamp parsed in the host timezone is
    * already lossy — so the conversion is the adapter's responsibility, not a
    * hint for consumers to reinterpret returned timestamps.
    *
