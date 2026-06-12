@@ -1,6 +1,6 @@
 {
   "name": "affiliate-networks-mcp",
-  "version": "0.6.4",
+  "version": "0.6.6",
   "description": "Chat with your affiliate-network data in Claude. Publisher and advertiser-side adapters for 80+ networks across the US, EU, Nordics, APAC and LatAm — including Awin, CJ, eBay Partner Network, Impact, Rakuten, Commission Factory, Hotmart, ValueCommerce and Coupang Partners (newer networks experimental).",
   "author": {
     "name": "Robert Berrisford",

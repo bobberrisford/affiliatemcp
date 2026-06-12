@@ -41,6 +41,8 @@ jobs:
       - if: steps.check.outputs.publish == 'true'
         run: npm run build
       - if: steps.check.outputs.publish == 'true'
+        run: npm run build:mcpb
+      - if: steps.check.outputs.publish == 'true'
         run: npm publish
       - name: Ensure a GitHub release exists for this version
         env:
@@ -53,3 +55,10 @@ jobs:
           else
             gh release create "$TAG" --title "$TAG" --target "$GITHUB_SHA" --generate-notes
           fi
+      - name: Attach the Claude Desktop MCP Bundle
+        if: steps.check.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          gh release upload "v$VERSION" ".artifacts/affiliate-networks-mcp-$VERSION.mcpb" --clobber

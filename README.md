@@ -86,6 +86,25 @@ deeplinks and week-on-week drops are surfaced by the packaged skills.
 
 ## Getting started
 
+Choose the install path for the AI workspace you already use.
+
+**Claude Desktop — no Terminal or Node.js required:**
+
+1. Download `affiliate-networks-mcp-<version>.mcpb` from the latest
+   [GitHub release](https://github.com/bobberrisford/affiliatemcp/releases/latest).
+2. In Claude Desktop, open **Settings → Extensions → Advanced settings →
+   Install Extension…** and select the downloaded file.
+3. Add credentials for the networks you use, then ask Claude
+   **"What affiliate networks do you have access to?"**
+
+The native extension currently offers secure setup fields for Awin, CJ, Impact,
+and Partnerize. It runs the complete server, so an existing
+`~/.affiliate-mcp/.env` continues to enable every other adapter. A portable
+browser setup flow for the remaining networks is planned; until then, use the
+CLI setup path below when adding them.
+
+**CLI and other AI clients:**
+
 You'll need Node.js 20 or newer installed. If you don't have it, use the
 [Node.js download page](https://nodejs.org/).
 
