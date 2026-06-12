@@ -90,6 +90,17 @@ test('saveEnv writes to the sandboxed config dir and returns ok', async () => {
   expect(readFileSync(res.path, 'utf8')).toContain('E2E_SMOKE_KEY');
 });
 
+test('telemetry consent is explicit and persisted separately from credentials', async () => {
+  const initial = await page.evaluate(() => window.affiliate.getTelemetryConsent());
+  expect(initial.consent).toBe('unset');
+  const enabled = await page.evaluate(() => window.affiliate.setTelemetryConsent(true));
+  expect(enabled).toMatchObject({ ok: true, enabled: true });
+  expect(existsSync(path.join(configDir, 'telemetry.json'))).toBe(true);
+  expect(readFileSync(path.join(configDir, 'telemetry.json'), 'utf8')).not.toContain('E2E_SMOKE_KEY');
+  const disabled = await page.evaluate(() => window.affiliate.setTelemetryConsent(false));
+  expect(disabled).toMatchObject({ ok: true, enabled: false });
+});
+
 test('openExternal refuses non-allowlisted and non-https URLs', async () => {
   const offHost = await page.evaluate(() => window.affiliate.openExternal('https://evil.example.com/phish'));
   expect(offHost.ok).toBe(false);

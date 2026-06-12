@@ -30,6 +30,12 @@ import { getPrompter, type Prompter } from './wizard/prompts.js';
 import { resolveConfigPaths } from './wizard/paths.js';
 import { filterOutKeys, mergeEnv, readEnv, writeEnv } from './wizard/envfile.js';
 import { runBrandDiscovery } from './wizard/brand-discovery.js';
+import {
+  recordTelemetry,
+  setTelemetryConsent,
+  telemetryConsent,
+  telemetryConsentPromptText,
+} from '../shared/telemetry.js';
 
 function out(line = ''): void {
   process.stdout.write(line.endsWith('\n') ? line : `${line}\n`);
@@ -138,8 +144,18 @@ export async function runSetup(opts: SetupOptions = {}): Promise<number> {
   out(`Wrote ${paths.envFile}.`);
   out('You are set up. Test with `affiliate-networks-mcp test`.');
 
+  await offerTelemetryConsent(prompter);
+  recordTelemetry('lifecycle', 'setup_complete', 'success');
   await offerConnectToClaude(prompter);
   return 0;
+}
+
+async function offerTelemetryConsent(prompter: Prompter): Promise<void> {
+  if (telemetryConsent() !== 'unset') return;
+  out('');
+  const enabled = await prompter.confirm(telemetryConsentPromptText(), { defaultYes: false });
+  setTelemetryConsent(enabled);
+  out(enabled ? 'Anonymous usage telemetry enabled.' : 'Anonymous usage telemetry remains disabled.');
 }
 
 /**

@@ -13,7 +13,7 @@
 
 // Everything main.js calls as `facade.*`:
 //   listNetworks, setupSteps, validateField, verifyAuth, discoverBrands,
-//   saveEnv, saveBrands, connectClaudeDesktop, detectClients.
+//   saveEnv, saveBrands, connectClaudeDesktop, detectClients, telemetry consent.
 export * from './facade.js';
 
 // Config symbols main.js may reference as `config.*`:

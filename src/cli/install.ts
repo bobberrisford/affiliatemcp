@@ -33,6 +33,7 @@ import {
   resolveCodexConfigPath,
   type CodexEditResult,
 } from './install/codex.js';
+import { recordTelemetry } from '../shared/telemetry.js';
 
 export type InstallTarget = 'auto' | 'desktop' | 'code' | 'codex' | 'all' | 'cowork';
 
@@ -270,6 +271,7 @@ export async function runInstall(opts: InstallOptions = {}): Promise<number> {
       out('Then ask Claude: "What affiliate networks do you have access to?"');
     }
   }
+  recordTelemetry('lifecycle', 'install_complete', 'success');
   return 0;
 }
 

@@ -8,7 +8,8 @@
  * thin wrapper around it.
  *
  * Design constraints honoured here:
- *   - Local-first, no telemetry, no network at module load. The ONLY load-time
+ *   - Local-first, no network at module load. Optional telemetry remains off
+ *     until explicit consent. The ONLY load-time
  *     side-effect is importing `../networks/index.js` so the adapter registry
  *     is populated (it is empty until something triggers the registration
  *     side-effects). Every other function is lazy and explicit.
@@ -35,6 +36,11 @@ import { detectClients as detectClientsImpl } from '../cli/install/detect.js';
 import { NotImplementedError } from '../shared/types.js';
 import type { CredentialValidationResult } from '../shared/types.js';
 import { CREDENTIAL_HELP } from './credential-help.js';
+import {
+  recordTelemetry,
+  setTelemetryConsent,
+  telemetryConsent,
+} from '../shared/telemetry.js';
 
 // ---------------------------------------------------------------------------
 // Public DTOs — all plain, structured-clone-safe shapes (no functions).
@@ -73,6 +79,21 @@ export type VerifyAuthResult =
 // Re-export the install/detect surfaces the GUI consumes verbatim.
 export { detectClientsImpl as detectClients };
 export type { DesktopEditResult };
+
+export function getTelemetryConsent(): 'enabled' | 'disabled' | 'unset' {
+  return telemetryConsent();
+}
+
+export function saveTelemetryConsent(enabled: boolean): { ok: true; enabled: boolean } {
+  setTelemetryConsent(enabled);
+  if (enabled) recordTelemetry('lifecycle', 'desktop_consent_enabled', 'success');
+  return { ok: true, enabled };
+}
+
+export function recordDesktopInstallComplete(): void {
+  recordTelemetry('lifecycle', 'setup_complete', 'success');
+  recordTelemetry('lifecycle', 'install_complete', 'success');
+}
 
 // ---------------------------------------------------------------------------
 // listNetworks

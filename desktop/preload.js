@@ -15,6 +15,8 @@ contextBridge.exposeInMainWorld('affiliate', {
   verifyAuth: (slug, values) => ipcRenderer.invoke('networks:verifyAuth', { slug, values }),
   discoverBrands: (slug) => ipcRenderer.invoke('networks:discoverBrands', slug),
   saveEnv: (entries) => ipcRenderer.invoke('config:saveEnv', entries),
+  getTelemetryConsent: () => ipcRenderer.invoke('telemetry:getConsent'),
+  setTelemetryConsent: (enabled) => ipcRenderer.invoke('telemetry:setConsent', enabled),
   saveBrands: (network, selections) => ipcRenderer.invoke('claude:saveBrands', { network, selections }),
   connectClaude: () => ipcRenderer.invoke('claude:connect'),
   restartClaude: () => ipcRenderer.invoke('claude:restart'),

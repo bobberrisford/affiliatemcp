@@ -11,8 +11,9 @@ connected to Claude Desktop **without a terminal**, then quit. It does not run
 the MCP server — Claude Desktop spawns that over stdio, exactly as today. This
 app only writes the credentials and the Claude config.
 
-The app is **free and open source (MIT)** — no licence gate, no in-app
-purchase, no backend. See
+The app is **free and open source (MIT)** — no licence gate and no in-app
+purchase. Optional anonymous usage telemetry is off by default and uses the
+project's first-party telemetry backend; see [`PRIVACY.md`](../PRIVACY.md). See
 [`docs/product/desktop-app-plan.md`](../docs/product/desktop-app-plan.md) for
 the full plan and
 [`docs/decisions/2026-06-09-desktop-app-free.md`](../docs/decisions/2026-06-09-desktop-app-free.md)

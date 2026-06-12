@@ -29,6 +29,11 @@ import { generateAllTools, type ToolDefinition } from './tools/generate.js';
 import { getPrompt, listPrompts } from './prompts/generate.js';
 import { isErrorEnvelope, NetworkError, toErrorEnvelope } from './shared/errors.js';
 import { createLogger } from './shared/logging.js';
+import {
+  flushTelemetry,
+  recordTelemetry,
+  telemetryOutcomeFromErrorType,
+} from './shared/telemetry.js';
 
 // Side-effect import: registers every network adapter with the shared registry.
 // Must precede any code path that calls `getAdapters()` / `getAdapter()`.
@@ -42,6 +47,8 @@ const SERVER_INFO = {
 } as const;
 
 export async function startServer(): Promise<void> {
+  void flushTelemetry();
+  recordTelemetry('lifecycle', 'server_start', 'success');
   const tools = generateAllTools();
   const toolMap = new Map<string, ToolDefinition>(tools.map((t) => [t.name, t]));
 
@@ -84,6 +91,7 @@ export async function startServer(): Promise<void> {
 
     try {
       const result = await tool.handle(args);
+      recordTelemetry(extractNetwork(name), extractOperation(name), 'success');
       return {
         content: [
           {
@@ -100,6 +108,11 @@ export async function startServer(): Promise<void> {
             ? err
             : toErrorEnvelope(err, { network: extractNetwork(name), operation: name });
       log.warn({ tool: name, envelope }, 'tool invocation failed');
+      recordTelemetry(
+        extractNetwork(name),
+        extractOperation(name),
+        telemetryOutcomeFromErrorType(envelope.type),
+      );
       return {
         isError: true,
         content: [
@@ -137,4 +150,10 @@ function extractNetwork(toolName: string): string {
   const parts = toolName.split('_');
   if (parts.length >= 3 && parts[0] === 'affiliate') return parts[1] ?? 'unknown';
   return 'meta';
+}
+
+function extractOperation(toolName: string): string {
+  const parts = toolName.split('_');
+  if (parts.length < 3 || parts[0] !== 'affiliate') return 'unknown';
+  return parts.slice(2).join('_') || 'unknown';
 }
