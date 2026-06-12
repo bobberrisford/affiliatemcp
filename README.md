@@ -135,7 +135,9 @@ claude plugin install affiliate-networks-mcp@affiliatemcp
 ```
 
 Registers the MCP server and bundled skills in one step. (Or use the
-`install` command above — it detects Claude Code too.)
+`install` command above — it detects Claude Code too.) Already inside a
+Claude Code session? Just ask it to install the affiliate-mcp plugin and it
+runs these commands for you; no terminal juggling needed.
 
 **Codex (OpenAI, terminal or IDE extension):**
 
