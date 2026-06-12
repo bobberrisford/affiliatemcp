@@ -1,6 +1,6 @@
 {
   "name": "affiliate-networks-mcp",
-  "version": "0.6.5",
+  "version": "0.6.6",
   "description": "Chat with your affiliate-network data in Claude or ChatGPT. Publisher and advertiser-side adapters for Awin, CJ, eBay Partner Network, Impact, Rakuten, Skimlinks, Partnerize, Tradedoubler, Sovrn Commerce, Everflow and mrge (newer networks experimental). Local-only, bring your own keys.",
   "license": "MIT",
   "repository": {
@@ -29,6 +29,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "build:mcpb": "npm run build && tsx scripts/build-mcpb.ts",
     "verify": "npm run typecheck && npm run lint && npm test && npm run build",
     "prepublishOnly": "npm run build",
     "dev": "tsx src/index.ts",
@@ -40,6 +41,7 @@
     "test:watch": "vitest",
     "test:live": "echo \"test:live placeholder — implemented in a later chunk\" && exit 0",
     "smoke:mcp": "node scripts/smoke-mcp.mjs",
+    "verify:mcpb": "npm run build:mcpb && node scripts/smoke-mcp.mjs --entry .artifacts/mcpb/server/index.cjs --server-only",
     "scaffold:network": "tsx scripts/scaffold-network.ts",
     "validate:network": "tsx scripts/validate-network-json.ts",
     "generate:readme": "tsx scripts/generate-readme-table.ts",
@@ -52,9 +54,11 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@anthropic-ai/mcpb": "^2.1.2",
     "@types/node": "^20.14.10",
     "@typescript-eslint/eslint-plugin": "^7.16.0",
     "@typescript-eslint/parser": "^7.16.0",
+    "esbuild": "0.28.0",
     "eslint": "^8.57.0",
     "pino-pretty": "^11.2.2",
     "prettier": "^3.3.3",

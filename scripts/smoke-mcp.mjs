@@ -7,12 +7,17 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, '..');
-const entry = path.join(repoRoot, 'dist', 'index.js');
+const entryArgIndex = process.argv.indexOf('--entry');
+const entry =
+  entryArgIndex >= 0 && process.argv[entryArgIndex + 1]
+    ? path.resolve(repoRoot, process.argv[entryArgIndex + 1])
+    : path.join(repoRoot, 'dist', 'index.js');
+const serverOnly = process.argv.includes('--server-only');
 
 // Dispatch guard: prove the `cowork-mirror` subcommand is wired and its flag
 // parser runs. Using a bogus flag keeps this hermetic — it errors in
 // parseCoworkMirrorFlags before any GitHub/network work happens.
-{
+if (!serverOnly) {
   const res = spawnSync('node', [entry, 'cowork-mirror', '--bogus'], { encoding: 'utf8' });
   const text = `${res.stdout ?? ''}${res.stderr ?? ''}`;
   if (res.status !== 2 || !text.includes('Unknown flag for cowork-mirror')) {

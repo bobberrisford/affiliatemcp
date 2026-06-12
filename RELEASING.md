@@ -10,6 +10,7 @@ tools travel through two different channels, so both have to be checked.
 | --- | --- | --- |
 | npm (`affiliate-networks-mcp`) | the MCP **server** (tools only) | `npx … setup`, `claude mcp add`, `codex mcp add` |
 | Plugin marketplace (this repo) | **skills + the server registration** | `claude plugin install`, `cowork-mirror` |
+| MCP Bundle (`.mcpb` on the GitHub release) | self-contained local server + Claude Desktop setup fields | Claude Desktop Settings → Extensions |
 
 Skills do not ship over npm. A user who only adds the bare MCP server gets
 tools but no skills. Anything that depends on a skill must go through the
@@ -22,6 +23,7 @@ plugin path.
       the validated set, and the manifest checks in
       `tests/governance/plugin.test.ts`.
 - [ ] `npm run typecheck` and `npm run lint` pass.
+- [ ] `npm run verify:mcpb` builds and validates the Claude Desktop bundle.
 - [ ] If a skill was added or renamed, it is registered in
       `tests/skills/skills-exist.test.ts` (SKILLS or AGENCY_SKILLS). The guard
       will have failed already if not.
@@ -48,6 +50,8 @@ of the user release.
 
 - [ ] `npm publish` (the server channel).
 - [ ] Tag and push the release so the plugin marketplace source is current.
+- [ ] Confirm the publish workflow attached
+      `affiliate-networks-mcp-<version>.mcpb` to the GitHub release.
 
 ## After publishing: refresh Cowork mirrors
 
