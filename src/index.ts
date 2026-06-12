@@ -55,7 +55,7 @@ function printHelp(): void {
   write('  --cowork           Set up for Claude Cowork (private GitHub mirror)');
   write('  --all              Target Desktop + Code + Codex + Copilot, no prompt');
   write('  --dry-run          Show what would change without writing');
-  write('  --force-overwrite  Rewrite a malformed Claude Desktop config (backs up first)');
+  write('  --force-overwrite  Rewrite a malformed Claude Desktop / Copilot config (backs up first)');
   write('');
   write('cowork-mirror flags:');
   write('  [name]             Repo name to create (default: affiliatemcp-internal)');

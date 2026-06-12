@@ -17,6 +17,14 @@
  *
  * Unlike Claude Desktop, VS Code is supported on Linux, so
  * `resolveCopilotConfigPath` returns a path on all three platforms.
+ *
+ * Note: VS Code treats `mcp.json` as JSONC (comments / trailing commas are
+ * legal). We parse it as strict JSON — a freshly-created file is plain JSON, so
+ * the common case is fine, but a hand-commented file will hit the malformed-
+ * config path and require `--force-overwrite` (which backs up first). We prefer
+ * erroring loudly over silently rewriting and dropping the user's comments. The
+ * `code --add-mcp '{...}'` CLI is the JSONC-safe manual alternative, but it is
+ * add-only (no remove / dry-run), so it can't back the uninstall path.
  */
 
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';

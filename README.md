@@ -162,8 +162,14 @@ npx affiliate-networks-mcp install --copilot
 
 This adds the local stdio MCP server to VS Code's user `mcp.json` (the file you
 get from the **MCP: Open User Configuration** command), under the top-level
-`servers` key, alongside anything you already have. Manual setup — create or
-edit that file:
+`servers` key, alongside anything you already have. The simplest manual
+alternative is VS Code's own CLI:
+
+```
+code --add-mcp '{"name":"affiliate","type":"stdio","command":"npx","args":["-y","affiliate-networks-mcp"]}'
+```
+
+Or edit `mcp.json` directly:
 
 ```jsonc
 {
