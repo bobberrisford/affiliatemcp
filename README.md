@@ -89,7 +89,8 @@ deeplinks and week-on-week drops are surfaced by the packaged skills.
 **Optional local result cache.** Persistent caching is off by default. Set
 `AFFILIATE_MCP_CACHE=on` in `~/.affiliate-mcp/.env` to cache selected programme
 inventory and closed reporting windows locally with owner-only permissions.
-Open and current windows always go live. Run
+Open and current windows always go live. On a shared machine where you cannot
+rely on file permissions, leave caching off. Run
 `affiliate-networks-mcp cache clear` to remove cached results; see
 [`PRIVACY.md`](./PRIVACY.md) for the storage and retention contract.
 
