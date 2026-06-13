@@ -84,6 +84,13 @@ telemetry. The networks see the same API calls they'd see from their dashboard.
 **Catches what dashboards bury.** Stale transactions, inactive programmes, dead
 deeplinks and week-on-week drops are surfaced by the packaged skills.
 
+**Optional local result cache.** Persistent caching is off by default. Set
+`AFFILIATE_MCP_CACHE=on` in `~/.affiliate-mcp/.env` to cache selected programme
+inventory and closed reporting windows locally with owner-only permissions.
+Open and current windows always go live. Run
+`affiliate-networks-mcp cache clear` to remove cached results; see
+[`PRIVACY.md`](./PRIVACY.md) for the storage and retention contract.
+
 ## Getting started
 
 Choose the install path for the AI workspace you already use.

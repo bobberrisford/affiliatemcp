@@ -24,8 +24,13 @@ that the maintainer never sees your data.
   directly with the affiliate networks you have configured.
 - Affiliate data (earnings, transactions, programme performance, etc.) is
   fetched live from each network's official API at the moment you ask a
-  question, processed locally, and is not stored or forwarded anywhere by this
-  tool.
+  question and processed locally. It is not forwarded anywhere by this tool.
+  Persistent result caching is off by default. Setting
+  `AFFILIATE_MCP_CACHE=on` stores selected programme inventory and closed
+  reporting-window results locally under `~/.affiliate-mcp/cache/`, including
+  raw upstream data. The cache directory uses mode `0700`, entry files use
+  `0600`, open or current reporting windows always go live, and expired
+  entries are deleted during later cache access.
 
 ## Who your data is shared with
 
@@ -47,6 +52,7 @@ network's own privacy policy governs the data it returns.
 Because everything is local and bring-your-own-keys, you are in full control:
 
 - Remove a network by deleting its keys from `~/.affiliate-mcp/.env`.
+- Delete locally cached results with `affiliate-networks-mcp cache clear`.
 - Uninstall entirely with `npx affiliate-networks-mcp uninstall` (or
   `claude plugin uninstall affiliate-networks-mcp`), then delete the
   `~/.affiliate-mcp/` directory.

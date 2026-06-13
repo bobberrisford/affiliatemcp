@@ -1,16 +1,36 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { existsSync, mkdtempSync, readdirSync, rmSync, statSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import {
   cacheDir,
+  cacheEnabled,
   cacheKey,
   clearCache,
   credentialHashFor,
   pickTtl,
+  sweepExpiredEntries,
   withCache,
 } from '../../src/shared/cache.js';
+
+const originalCacheSetting = process.env['AFFILIATE_MCP_CACHE'];
+
+beforeEach(() => {
+  process.env['AFFILIATE_MCP_CACHE'] = 'on';
+});
+
+afterEach(() => {
+  if (originalCacheSetting === undefined) delete process.env['AFFILIATE_MCP_CACHE'];
+  else process.env['AFFILIATE_MCP_CACHE'] = originalCacheSetting;
+});
 
 describe('cacheDir honours AFFILIATE_MCP_CONFIG_DIR', () => {
   let tmp: string;
@@ -48,21 +68,35 @@ describe('cacheKey + credentialHashFor', () => {
       network: 'awin',
       operation: 'listTransactions',
       args: { from: '2025-01-01', to: '2025-01-31' },
+      adapterVersion: '1.0.0',
       credentialHash: 'abc',
     });
     const b = cacheKey({
       network: 'awin',
       operation: 'listTransactions',
       args: { to: '2025-01-31', from: '2025-01-01' },
+      adapterVersion: '1.0.0',
       credentialHash: 'abc',
     });
     expect(a).toBe(b);
   });
 
   it('produces a different key when the credential hash differs', () => {
-    const a = cacheKey({ network: 'awin', operation: 'listProgrammes', args: {}, credentialHash: 'x' });
-    const b = cacheKey({ network: 'awin', operation: 'listProgrammes', args: {}, credentialHash: 'y' });
+    const a = cacheKey({ network: 'awin', operation: 'listProgrammes', args: {}, adapterVersion: '1.0.0', credentialHash: 'x' });
+    const b = cacheKey({ network: 'awin', operation: 'listProgrammes', args: {}, adapterVersion: '1.0.0', credentialHash: 'y' });
     expect(a).not.toBe(b);
+  });
+
+  it('produces a different key when the adapter version differs', () => {
+    const input = {
+      network: 'awin',
+      operation: 'listProgrammes',
+      args: {},
+      credentialHash: 'x',
+    };
+    expect(cacheKey({ ...input, adapterVersion: '1.0.0' })).not.toBe(
+      cacheKey({ ...input, adapterVersion: '1.1.0' }),
+    );
   });
 
   it('credentialHashFor changes when a credential value changes', () => {
@@ -91,6 +125,11 @@ describe('pickTtl', () => {
   it('caches programme inventory for 24h', () => {
     expect(pickTtl('listProgrammes', {})).toBe(24 * 60 * 60);
     expect(pickTtl('getProgramme', { programmeId: '1' })).toBe(24 * 60 * 60);
+  });
+
+  it('explicitly refuses to cache advertiser-side operations', () => {
+    expect(pickTtl('listProgrammes', {}, new Date(), true)).toBe(0);
+    expect(pickTtl('listTransactions', { to: '2020-01-01' }, new Date(), true)).toBe(0);
   });
 
   it('refuses to cache a transactions call with no `to` (window includes now)', () => {
@@ -134,6 +173,7 @@ describe('withCache round-trip', () => {
       network: 'awin',
       operation: 'listProgrammes',
       args: {},
+      adapterVersion: '1.0.0',
       credentialHash: 'h',
     });
     const a = await withCache(key, 3600, fetcher);
@@ -143,12 +183,30 @@ describe('withCache round-trip', () => {
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
 
+  it('does not read or write cache unless explicitly enabled', async () => {
+    delete process.env['AFFILIATE_MCP_CACHE'];
+    expect(cacheEnabled()).toBe(false);
+    const fetcher = vi.fn(async () => ({ value: 42 }));
+    const key = cacheKey({
+      network: 'awin',
+      operation: 'listProgrammes',
+      args: {},
+      adapterVersion: '1.0.0',
+      credentialHash: 'h',
+    });
+    await withCache(key, 3600, fetcher);
+    await withCache(key, 3600, fetcher);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(existsSync(path.join(tmp, 'cache'))).toBe(false);
+  });
+
   it('skips the cache when ttlSeconds is 0', async () => {
     const fetcher = vi.fn(async () => ({ value: 'fresh' }));
     const key = cacheKey({
       network: 'awin',
       operation: 'verifyAuth',
       args: {},
+      adapterVersion: '1.0.0',
       credentialHash: 'h',
     });
     await withCache(key, 0, fetcher);
@@ -167,6 +225,7 @@ describe('withCache round-trip', () => {
       network: 'awin',
       operation: 'listProgrammes',
       args: { search: 'x' },
+      adapterVersion: '1.0.0',
       credentialHash: 'h',
     });
     // 0-second TTL after the write — effectively expired on next read.
@@ -192,6 +251,7 @@ describe('withCache round-trip', () => {
       network: 'awin',
       operation: 'listProgrammes',
       args: {},
+      adapterVersion: '1.0.0',
       credentialHash: 'h',
     });
     await expect(withCache(key, 3600, fetcher)).rejects.toThrow('upstream boom');
@@ -206,6 +266,7 @@ describe('withCache round-trip', () => {
       network: 'awin',
       operation: 'listProgrammes',
       args: {},
+      adapterVersion: '1.0.0',
       credentialHash: 'h',
     });
     await withCache(key, 3600, fetcher);
@@ -218,6 +279,25 @@ describe('withCache round-trip', () => {
       expect(dirMode).toBe(0o700);
       expect(fileMode).toBe(0o600);
     }
+  });
+
+  it('opportunistically deletes every expired entry', async () => {
+    const dir = path.join(tmp, 'cache');
+    const fetcher = vi.fn(async () => ({ v: 1 }));
+    const key = cacheKey({
+      network: 'awin',
+      operation: 'listProgrammes',
+      args: {},
+      adapterVersion: '1.0.0',
+      credentialHash: 'h',
+    });
+    await withCache(key, 3600, fetcher);
+    writeFileSync(
+      path.join(dir, `${'a'.repeat(64)}.json`),
+      JSON.stringify({ fetchedAt: '2020-01-01T00:00:00.000Z', ttlSeconds: 1, result: {} }),
+    );
+    expect(sweepExpiredEntries(new Date('2030-01-01T00:00:00.000Z'))).toBe(2);
+    expect(readdirSync(dir)).toHaveLength(0);
   });
 });
 
@@ -241,20 +321,21 @@ describe('clearCache', () => {
     expect(clearCache().removed).toBe(0);
   });
 
-  it('removes every .json file but preserves the directory', async () => {
+  it('removes cache-owned JSON entries but preserves the directory and unrelated files', async () => {
     const fetcher = vi.fn(async () => ({ v: 1 }));
     for (const op of ['listProgrammes', 'getProgramme']) {
       await withCache(
-        cacheKey({ network: 'awin', operation: op, args: { op }, credentialHash: 'h' }),
+        cacheKey({ network: 'awin', operation: op, args: { op }, adapterVersion: '1.0.0', credentialHash: 'h' }),
         3600,
         fetcher,
       );
     }
     const dir = path.join(tmp, 'cache');
-    expect(readdirSync(dir)).toHaveLength(2);
+    writeFileSync(path.join(dir, 'notes.json'), '{"keep":true}');
+    expect(readdirSync(dir)).toHaveLength(3);
     const { removed } = clearCache();
     expect(removed).toBe(2);
     expect(existsSync(dir)).toBe(true);
-    expect(readdirSync(dir)).toHaveLength(0);
+    expect(readdirSync(dir)).toEqual(['notes.json']);
   });
 });

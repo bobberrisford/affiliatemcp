@@ -14,17 +14,22 @@ import type { NetworkAdapter } from '../../src/shared/types.js';
 
 let tmp: string;
 let originalConfigDir: string | undefined;
+let originalCacheSetting: string | undefined;
 
 beforeEach(() => {
   _clearRegistry();
   tmp = mkdtempSync(path.join(tmpdir(), 'amcp-tool-gen-'));
   originalConfigDir = process.env['AFFILIATE_MCP_CONFIG_DIR'];
+  originalCacheSetting = process.env['AFFILIATE_MCP_CACHE'];
   process.env['AFFILIATE_MCP_CONFIG_DIR'] = tmp;
+  process.env['AFFILIATE_MCP_CACHE'] = 'on';
 });
 
 afterEach(() => {
   if (originalConfigDir === undefined) delete process.env['AFFILIATE_MCP_CONFIG_DIR'];
   else process.env['AFFILIATE_MCP_CONFIG_DIR'] = originalConfigDir;
+  if (originalCacheSetting === undefined) delete process.env['AFFILIATE_MCP_CACHE'];
+  else process.env['AFFILIATE_MCP_CACHE'] = originalCacheSetting;
 });
 
 /**
@@ -428,6 +433,28 @@ describe('tool handler cache integration', () => {
     await tool.handle({ from: '2020-01-01', to: '2020-02-01' });
     await tool.handle({ from: '2020-01-01', to: '2020-02-01' });
     expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT cache advertiser-side operations at v1', async () => {
+    const adapter = fakeAdapter('imp-adv', 'Impact Advertiser');
+    (adapter as { meta: { side: string; credentialScope: string } }).meta.side = 'advertiser';
+    (adapter as { meta: { side: string; credentialScope: string } }).meta.credentialScope =
+      'multi-brand';
+    adapter.listBrands = async () => [];
+    const spy = vi.fn(async () => []);
+    adapter.listProgrammes = spy;
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [{ network: 'imp-adv', credentialId: 'default', networkBrandId: 'IA-1' }],
+      },
+    });
+    const tool = generateToolsFor(adapter).find(
+      (t) => t.name === 'affiliate_imp-adv_list_programmes',
+    )!;
+    await tool.handle({ brand: 'acme' });
+    await tool.handle({ brand: 'acme' });
+    expect(spy).toHaveBeenCalledTimes(2);
   });
 
   it('rotating credentials invalidates the cache (different cred hash → different key)', async () => {

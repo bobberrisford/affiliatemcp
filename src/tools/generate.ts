@@ -265,7 +265,7 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
           // applied, unknown fields stripped) rather than whatever the caller
           // happened to pass through.
           const parsedArgs = spec.schema.parse(args ?? {}) as unknown;
-          const ttl = pickTtl(spec.op, parsedArgs);
+          const ttl = pickTtl(spec.op, parsedArgs, new Date(), false);
           if (ttl <= 0) {
             return spec.invoke(adapter, parsedArgs);
           }
@@ -273,6 +273,7 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
             network: adapter.slug,
             operation: spec.op,
             args: parsedArgs,
+            adapterVersion: adapter.meta.adapterVersion,
             credentialHash: credentialHashFor(adapter.slug),
           });
           return withCache(key, ttl, () => spec.invoke(adapter, parsedArgs));
@@ -302,7 +303,7 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
         const ctx = buildAdapterCallContext(parsed.brand, adapter.slug);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { brand: _brand, ...rest } = parsed;
-        const ttl = pickTtl(spec.op, rest);
+        const ttl = pickTtl(spec.op, rest, new Date(), true);
         if (ttl <= 0) {
           return spec.invoke(adapter, rest, ctx);
         }
@@ -312,6 +313,7 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
           // Include the resolved networkBrandId so two brands sharing the
           // same credential set get separate cache entries.
           args: { ...rest, __networkBrandId: ctx.networkBrandId },
+          adapterVersion: adapter.meta.adapterVersion,
           credentialHash: credentialHashFor(adapter.slug),
         });
         return withCache(key, ttl, () => spec.invoke(adapter, rest, ctx));

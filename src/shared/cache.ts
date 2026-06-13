@@ -3,7 +3,8 @@
  *
  * Saves API responses to `~/.affiliate-mcp/cache/` so the same question
  * within a TTL window doesn't pay another round-trip. One JSON file per
- * cache entry, filename is sha256 of (network + operation + args + credential hash).
+ * cache entry, filename is sha256 of the cache format, adapter version,
+ * network, operation, args, and credential hash.
  *
  * Scope (deliberately narrow):
  *   - No LRU, no size cap. Users delete the directory or run `cache clear`.
@@ -28,6 +29,12 @@ import path from 'node:path';
 import { createLogger } from './logging.js';
 
 const log = createLogger('cache');
+export const CACHE_FORMAT_VERSION = 1;
+
+/** Persistent caching is explicitly opt-in. Missing or any other value means off. */
+export function cacheEnabled(): boolean {
+  return process.env['AFFILIATE_MCP_CACHE']?.trim().toLowerCase() === 'on';
+}
 
 /**
  * Resolve the cache directory, honouring `AFFILIATE_MCP_CONFIG_DIR` the same
@@ -66,12 +73,15 @@ export interface CacheKeyInput {
   network: string;
   operation: string;
   args: unknown;
+  adapterVersion: string;
   /** Hash of the credentials in effect; rotates the cache when keys change. */
   credentialHash: string;
 }
 
 export function cacheKey(input: CacheKeyInput): string {
   const payload = JSON.stringify({
+    v: CACHE_FORMAT_VERSION,
+    av: input.adapterVersion,
     n: input.network,
     o: input.operation,
     a: canonicalise(input.args ?? {}),
@@ -102,6 +112,10 @@ function entryPath(key: string): string {
   return path.join(cacheDir(), `${key}.json`);
 }
 
+function isCacheEntryName(name: string): boolean {
+  return /^[a-f0-9]{64}\.json$/.test(name);
+}
+
 function readEntry<T>(key: string): CacheEntry<T> | undefined {
   const file = entryPath(key);
   if (!existsSync(file)) return undefined;
@@ -123,6 +137,27 @@ function isFresh(entry: CacheEntry<unknown>, now: Date): boolean {
   const fetchedAt = Date.parse(entry.fetchedAt);
   if (Number.isNaN(fetchedAt)) return false;
   return fetchedAt + entry.ttlSeconds * 1000 > now.getTime();
+}
+
+/** Best-effort retention sweep. Expired entries are deleted and never served. */
+export function sweepExpiredEntries(now: Date = new Date()): number {
+  const dir = cacheDir();
+  if (!existsSync(dir)) return 0;
+  let removed = 0;
+  for (const name of readdirSync(dir)) {
+    if (!isCacheEntryName(name)) continue;
+    const file = path.join(dir, name);
+    try {
+      const parsed = JSON.parse(readFileSync(file, 'utf8')) as CacheEntry<unknown>;
+      if (!isFresh(parsed, now)) {
+        rmSync(file);
+        removed += 1;
+      }
+    } catch (err) {
+      log.debug({ err: (err as Error).message, file }, 'cache expiry sweep skipped entry');
+    }
+  }
+  return removed;
 }
 
 function writeEntry<T>(key: string, ttlSeconds: number, result: T, now: Date): void {
@@ -160,8 +195,9 @@ export async function withCache<T>(
   ttlSeconds: number,
   fetcher: () => Promise<T>,
 ): Promise<T> {
-  if (ttlSeconds <= 0) return fetcher();
+  if (!cacheEnabled() || ttlSeconds <= 0) return fetcher();
   const now = new Date();
+  sweepExpiredEntries(now);
   const existing = readEntry<T>(key);
   if (existing && isFresh(existing, now)) {
     log.debug({ key }, 'cache hit');
@@ -184,7 +220,7 @@ export function clearCache(): { removed: number; dir: string } {
   if (!existsSync(dir)) return { removed: 0, dir };
   let removed = 0;
   for (const name of readdirSync(dir)) {
-    if (!name.endsWith('.json')) continue;
+    if (!isCacheEntryName(name)) continue;
     try {
       rmSync(path.join(dir, name));
       removed += 1;
@@ -235,7 +271,13 @@ function isClosedPastWindow(args: unknown, now: Date): boolean {
  *   set and at least `SETTLEMENT_MARGIN_HOURS` ago. Otherwise no cache —
  *   the user is asking for current data and we must not lie about it.
  */
-export function pickTtl(operation: string, args: unknown, now: Date = new Date()): number {
+export function pickTtl(
+  operation: string,
+  args: unknown,
+  now: Date = new Date(),
+  advertiserSide = false,
+): number {
+  if (advertiserSide) return 0;
   switch (operation) {
     case 'listProgrammes':
     case 'getProgramme':
