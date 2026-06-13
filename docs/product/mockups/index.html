@@ -108,7 +108,16 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--ink);color:va
 .tab{font-family:var(--font-mono);font-weight:700;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;padding:8px 14px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);cursor:pointer}.tab.on{background:var(--ink);color:var(--acid)}
 .cmd{display:flex;align-items:center;gap:12px;background:var(--ink);border-radius:8px;padding:15px 17px;font-family:var(--font-mono);font-size:.92rem;color:var(--paper);border:2px solid var(--ink)}.cmd+.cmd{margin-top:10px}.cmd .pr{color:var(--acid);font-weight:700}
 .cmd .copy{margin-left:auto;border:1px solid var(--line-invert);background:transparent;color:var(--fg-invert-mut);font-family:var(--font-mono);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;padding:6px 9px;border-radius:4px;cursor:pointer}.cmd .copy:hover{border-color:var(--acid);color:var(--acid)}
-@media(max-width:900px){.hero-grid,.dual-grid{grid-template-columns:1fr}.net-grid{grid-template-columns:repeat(2,1fr)}}
+.ways{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:6px 0 34px}
+.way{display:flex;flex-direction:column;border:2px solid var(--ink);border-radius:8px;padding:22px;background:var(--paper);box-shadow:var(--shadow)}
+.way.feat{background:var(--ink);color:var(--paper);box-shadow:6px 6px 0 var(--blue)}
+.way h3{font-family:var(--font-display);font-weight:800;font-size:1.5rem;text-transform:lowercase;letter-spacing:-.02em;margin:12px 0 8px}
+.way .why{font-size:.96rem;margin:0 0 10px}.way.feat .why{color:#E9E9F4}
+.way .how{font-size:.85rem;line-height:1.45;color:var(--smudge-dk);margin:0 0 16px}.way.feat .how{color:var(--fg-invert-mut)}
+.way .meta{font-family:var(--font-mono);font-size:.64rem;letter-spacing:.07em;text-transform:uppercase;color:var(--smudge-dk);margin:0 0 18px}.way.feat .meta{color:var(--fg-invert-mut)}
+.way .btn{margin-top:auto;align-self:flex-start}
+.way .tag-soft{font-family:var(--font-mono);font-size:.78rem;color:var(--smudge-dk);margin-top:10px}
+@media(max-width:900px){.hero-grid,.dual-grid{grid-template-columns:1fr}.net-grid{grid-template-columns:repeat(2,1fr)}.ways{grid-template-columns:1fr}}
 </style>
 </head>
 <body data-page="how">
@@ -132,7 +141,7 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--ink);color:va
   <div class="halftone-bg"></div>
   <div class="wrap hero-grid">
     <div>
-      <div class="kicker"><span class="chip acid">FREE &amp; OPEN · MIT</span><span class="chip">NO TELEMETRY</span><span class="stamp">v0.5.0</span></div>
+      <div class="kicker"><span class="chip acid">FREE &amp; OPEN · MIT</span><span class="chip">NO TELEMETRY</span><span class="stamp">v0.6.6</span></div>
       <h1 class="h-mega">automate the<br>affiliate grind.</h1>
       <p class="h-sub">Connect every network to the AI you already use. Ask in plain english, then let it run the repetitive checks. <b>You approve anything that acts.</b> Your data, your machine.</p>
       <div class="kicker" style="margin-bottom:18px"><div class="seg" id="seg"><button class="on" data-aud="pub">publisher</button><button data-aud="brand">brand / agency</button></div></div>
@@ -187,12 +196,46 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--ink);color:va
   </div>
 </div></section>
 
-<section class="install"><div class="wrap">
-  <div class="sec-label">install · bring your own keys</div>
+<section class="install" id="install"><div class="wrap">
+  <div class="sec-label">install · three ways in</div>
   <h2>five minutes. <span class="hl">no account.</span></h2>
-  <div class="tabs" id="tabs"><button class="tab on" data-tab="desktop">Claude Desktop</button><button class="tab" data-tab="code">Claude Code</button><button class="tab" data-tab="codex">Codex</button></div>
-  <div id="cmds"></div>
-  <p class="small muted" style="margin-top:16px">Keys live in <code>~/.affiliate-mcp/.env</code> on your machine, mode 0600. Nothing is hosted. Nothing phones home.</p>
+  <p class="lead muted" style="max-width:60ch;margin:0 0 26px">Pick the path that matches how you work. All three run the same local server with your own keys — nothing is hosted, nothing phones home.</p>
+
+  <div class="ways">
+    <div class="way feat">
+      <span class="chip acid">easiest · recommended</span>
+      <h3>claude desktop extension</h3>
+      <p class="why"><b>Why:</b> the fastest way in for Claude Desktop. Claude owns the runtime and stores your keys in secure credential fields — no Node.js, no terminal, no config files to edit.</p>
+      <p class="how"><b>How:</b> download the <code>.mcpb</code>, then in Claude Desktop open <b>Settings → Extensions → Advanced → Install Extension…</b> and pick the file. Native setup fields cover Awin, CJ, Impact &amp; Partnerize; every other network reads your existing config.</p>
+      <p class="meta">macOS + Windows · no Node.js · one-click install</p>
+      <a class="btn p" href="https://github.com/bobberrisford/affiliatemcp/releases/latest">get the Claude extension ▸</a>
+    </div>
+
+    <div class="way">
+      <span class="chip">mac · guided wizard</span>
+      <h3>macOS setup app</h3>
+      <p class="why"><b>Why:</b> a visual wizard for setting up several networks in one sitting. It walks each network login, stores your keys locally, wires up Claude Desktop, then quits — you ask your questions in Claude, not the app.</p>
+      <p class="how"><b>How:</b> download the signed <code>.dmg</code>, drag to Applications, and follow the steps. Best on Apple Silicon Macs; on Windows or Intel, use the extension or the command line.</p>
+      <p class="meta">apple silicon · signed &amp; notarised · no terminal</p>
+      <a class="btn d" href="https://github.com/bobberrisford/affiliatemcp/releases/download/desktop-v0.1.1/affiliate-mcp-0.1.1-arm64.dmg">download the macOS app ▸</a>
+    </div>
+
+    <div class="way">
+      <span class="chip">all clients &amp; platforms</span>
+      <h3>command line</h3>
+      <p class="why"><b>Why:</b> the most flexible path — works with Claude Desktop, Claude Code and Codex, on any OS, with every network. This is what powers Claude Code and Codex.</p>
+      <p class="how"><b>How:</b> run the <code>npx</code> wizard below to add your keys, then the install command for your client. Needs Node.js 20+.</p>
+      <p class="meta">node 20+ · claude desktop · claude code · codex</p>
+      <a class="btn ghost" href="#cmds-block">see the commands ▾</a>
+    </div>
+  </div>
+
+  <div id="cmds-block">
+    <div class="sec-label">command line · pick your client</div>
+    <div class="tabs" id="tabs"><button class="tab on" data-tab="desktop">Claude Desktop</button><button class="tab" data-tab="code">Claude Code</button><button class="tab" data-tab="codex">Codex</button></div>
+    <div id="cmds"></div>
+    <p class="small muted" style="margin-top:16px">Keys live in <code>~/.affiliate-mcp/.env</code> on your machine, mode 0600. The Claude extension and the macOS app store credentials the same local-first way. Nothing is hosted. Nothing phones home.</p>
+  </div>
 </div></section>
 
 <footer class="foot"><div class="wrap">
