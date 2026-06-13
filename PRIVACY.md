@@ -83,7 +83,10 @@ result caching is off by default. Setting `AFFILIATE_MCP_CACHE=on` stores
 selected programme inventory and closed reporting-window results locally under
 `~/.affiliate-mcp/cache/`, including raw upstream data. The cache directory uses
 mode `0700`, entry files use `0600`, open or current reporting windows always go
-live, and expired entries are deleted during later cache access.
+live, and expired entries are deleted during later cache access. On a shared
+machine where you cannot rely on file permissions to keep other users out of
+your home directory, leave caching off so transaction-level results are never
+written to disk.
 
 Remove a network by deleting its keys from `~/.affiliate-mcp/.env`. Delete
 locally cached results with `affiliate-networks-mcp cache clear`. To remove
