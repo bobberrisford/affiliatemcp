@@ -121,6 +121,14 @@ const META: NetworkMeta = {
   setupRequiresApproval: false,
   side: 'publisher',
   credentialScope: 'single-brand',
+  // Awin's /transactions endpoint reports against a reporting timezone (we
+  // request `timezone=Europe/London`, Awin's default — see listTransactions).
+  // The transaction fixtures show NAIVE timestamps (no `Z`, no offset), so the
+  // adapter must interpret them in this zone and convert to canonical UTC
+  // itself: a naïve string parsed in the host timezone is already lossy, and
+  // per the `NetworkMeta.networkTimezone` contract that conversion is the
+  // adapter's responsibility, not a hint for consumers. See `parseAwinTimestamp`.
+  networkTimezone: 'Europe/London',
 };
 
 // ---------------------------------------------------------------------------
@@ -280,6 +288,85 @@ function mapProgrammeStatus(raw: AwinProgrammeRaw): ProgrammeStatus {
 }
 
 /**
+ * Convert a naïve wall-clock timestamp (no offset) into the canonical UTC
+ * instant, interpreting the wall-clock reading in `timeZone`.
+ *
+ * Why this exists: Awin's /transactions endpoint returns naïve timestamps such
+ * as `"2024-09-01T10:00:00"` (see the fixtures) reported in Awin's reporting
+ * zone. `Date.parse` on a naïve string uses the HOST timezone, so the same
+ * payload would produce different instants on a London laptop versus a UTC CI
+ * box. That is the lossy behaviour `NetworkMeta.networkTimezone` exists to
+ * prevent, so the adapter does the conversion itself.
+ *
+ * Method: guess the instant as if the wall-clock were UTC, ask `Intl` what that
+ * instant looks like in `timeZone`, and shift by the measured offset. This
+ * handles BST/GMT (and any DST zone) without a dependency.
+ */
+function zonedNaiveToUtcIso(naive: string, timeZone: string): string | undefined {
+  const m = naive.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!m) return undefined;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  const hour = Number(m[4]);
+  const minute = Number(m[5]);
+  const second = Number(m[6] ?? '0');
+  const utcGuess = Date.UTC(year, month - 1, day, hour, minute, second);
+  if (Number.isNaN(utcGuess)) return undefined;
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+  const parts: Record<string, string> = {};
+  for (const p of dtf.formatToParts(new Date(utcGuess))) {
+    if (p.type !== 'literal') parts[p.type] = p.value;
+  }
+  // `Intl` can emit "24" for midnight in some engines; normalise to 0.
+  const seenHour = parts['hour'] === '24' ? 0 : Number(parts['hour']);
+  const asSeenInZone = Date.UTC(
+    Number(parts['year']),
+    Number(parts['month']) - 1,
+    Number(parts['day']),
+    seenHour,
+    Number(parts['minute']),
+    Number(parts['second']),
+  );
+  const offsetMs = asSeenInZone - utcGuess;
+  return new Date(utcGuess - offsetMs).toISOString();
+}
+
+/**
+ * Parse an Awin timestamp into canonical UTC ISO-8601.
+ *
+ * Awin's documented contract is ISO-8601 with the reporting-timezone offset,
+ * but the verbatim fixtures carry NAIVE timestamps (no `Z`, no `±HH:MM`). We
+ * handle both honestly:
+ *   - offset-qualified (`…Z` or `…±HH:MM`) → parse as the absolute instant it
+ *     already names;
+ *   - naïve → interpret the wall-clock in `META.networkTimezone` and convert.
+ *
+ * Either way the emitted value is canonical UTC, so consumers never have to
+ * reinterpret it. Returns `undefined` for empty or unparseable input.
+ */
+function parseAwinTimestamp(d?: string, timeZone: string = META.networkTimezone ?? 'UTC'): string | undefined {
+  if (!d) return undefined;
+  const trimmed = d.trim();
+  if (trimmed === '') return undefined;
+  const hasOffset = /[Zz]$/.test(trimmed) || /[+-]\d{2}:?\d{2}$/.test(trimmed);
+  if (hasOffset) {
+    const ts = Date.parse(trimmed);
+    return Number.isNaN(ts) ? undefined : new Date(ts).toISOString();
+  }
+  return zonedNaiveToUtcIso(trimmed, timeZone);
+}
+
+/**
  * Compute the age (in days) of a transaction at the moment this adapter
  * responded. PRD §15.9 — the unpaid-age affordance depends on this number.
  *
@@ -289,9 +376,13 @@ function mapProgrammeStatus(raw: AwinProgrammeRaw): ProgrammeStatus {
  * approved-but-not-paid", which is validationDate-relative. For a pending
  * transaction validationDate may be absent, so we fall back to the conversion
  * date.
+ *
+ * The anchor is parsed through `parseAwinTimestamp` so the age is computed
+ * against the same canonical-UTC instant the adapter emits, not a host-zone
+ * reinterpretation of a naïve string.
  */
 function computeAgeDays(raw: AwinTransactionRaw, now: Date = new Date()): number {
-  const anchor = raw.validationDate ?? raw.transactionDate;
+  const anchor = parseAwinTimestamp(raw.validationDate) ?? parseAwinTimestamp(raw.transactionDate);
   if (!anchor) return 0;
   const t = Date.parse(anchor);
   if (Number.isNaN(t)) return 0;
@@ -299,10 +390,77 @@ function computeAgeDays(raw: AwinTransactionRaw, now: Date = new Date()): number
   return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)));
 }
 
-function nullableIso(d?: string): string | undefined {
-  if (!d) return undefined;
-  const ts = Date.parse(d);
-  return Number.isNaN(ts) ? undefined : new Date(ts).toISOString();
+/**
+ * Derive a stable cross-network `merchantKey` for a programme.
+ *
+ * Rollout contract (see `Programme.merchantKey` in `src/shared/types.ts`): the
+ * key lets a consumer group "Acme on Awin" with "Acme on CJ" without matching
+ * display strings. The future brand-resolver will supply confident
+ * `resolver`-sourced keys; until that lands, an adapter populates a best-effort
+ * fallback from its own data:
+ *   - `fallback-domain`: the registrable domain (eTLD+1, lowercased) of the
+ *     merchant's `advertiserUrl`. Most reliable across networks because the
+ *     same merchant tends to use the same primary domain.
+ *   - `fallback-name`: a slugified display name, used only when no usable URL
+ *     is present.
+ *   - `none`: neither a URL nor a name was available; the key is left absent.
+ *
+ * We never claim `resolver` provenance here — that source is reserved for the
+ * resolver follow-up so consumers can weight a confident identity above a
+ * heuristic one.
+ */
+function deriveMerchantKey(
+  advertiserUrl: string | undefined,
+  name: string | undefined,
+): { merchantKey?: string; merchantKeySource: NonNullable<Programme['merchantKeySource']> } {
+  const domain = registrableDomain(advertiserUrl);
+  if (domain) return { merchantKey: domain, merchantKeySource: 'fallback-domain' };
+  const slug = slugifyName(name);
+  if (slug) return { merchantKey: slug, merchantKeySource: 'fallback-name' };
+  return { merchantKeySource: 'none' };
+}
+
+/**
+ * Extract the registrable domain (eTLD+1) from a URL, lowercased and stripped
+ * of a leading `www.`.
+ *
+ * Deliberately a heuristic, not a Public Suffix List lookup: we take the last
+ * two labels (or three for the common `co.uk` / `com.au` style two-part TLDs).
+ * That covers the overwhelming majority of merchant domains without adding a
+ * dependency. The PSL-accurate version belongs in the shared brand-resolver,
+ * not in each adapter; this fallback only has to be good enough to group the
+ * common case and is clearly marked `fallback-domain` so a confident resolver
+ * key can supersede it later.
+ */
+function registrableDomain(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  let host: string;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return undefined;
+  }
+  if (!host) return undefined;
+  if (host.startsWith('www.')) host = host.slice(4);
+  const labels = host.split('.').filter(Boolean);
+  if (labels.length <= 2) return host;
+  const twoPartTlds = new Set(['co', 'com', 'org', 'net', 'gov', 'ac']);
+  const secondLast = labels[labels.length - 2];
+  if (secondLast && twoPartTlds.has(secondLast)) {
+    return labels.slice(-3).join('.');
+  }
+  return labels.slice(-2).join('.');
+}
+
+/** Slugify a display name into a stable lowercase key. Returns undefined when empty. */
+function slugifyName(name: string | undefined): string | undefined {
+  if (!name) return undefined;
+  const slug = name
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -314,9 +472,12 @@ function toProgramme(raw: AwinProgrammeRaw): Programme {
   // We prefer `id` (set in /programmes) and fall back to `advertiserId`
   // (set in /programmedetails).
   const id = String(raw.id ?? raw.advertiserId ?? '');
+  const advertiserUrl = raw.displayUrl ?? raw.clickThroughUrl;
+  const name = raw.name ?? `Awin programme ${id}`;
+  const { merchantKey, merchantKeySource } = deriveMerchantKey(advertiserUrl, raw.name);
   return {
     id,
-    name: raw.name ?? `Awin programme ${id}`,
+    name,
     network: SLUG,
     status: mapProgrammeStatus(raw),
     currency: raw.currencyCode ?? raw.primaryRegion?.currencyCode,
@@ -334,7 +495,9 @@ function toProgramme(raw: AwinProgrammeRaw): Programme {
     categories: (raw.sectors ?? [])
       .map((s) => s.name)
       .filter((n): n is string => typeof n === 'string'),
-    advertiserUrl: raw.displayUrl ?? raw.clickThroughUrl,
+    advertiserUrl,
+    merchantKey,
+    merchantKeySource,
     rawNetworkData: raw,
   };
 }
@@ -345,9 +508,27 @@ function toTransaction(raw: AwinTransactionRaw, now: Date = new Date()): Transac
   const sale = raw.saleAmount?.amount ?? 0;
   const currency = raw.commissionAmount?.currency ?? raw.saleAmount?.currency ?? 'GBP';
 
-  const transactionDate = nullableIso(raw.transactionDate) ?? new Date(0).toISOString();
-  const clickDate = nullableIso(raw.clickDate);
-  const validationDate = nullableIso(raw.validationDate);
+  // Awin's /transactions timestamps are naïve (no offset) in the fixtures;
+  // parseAwinTimestamp interprets them in META.networkTimezone and emits UTC.
+  const transactionDate = parseAwinTimestamp(raw.transactionDate) ?? new Date(0).toISOString();
+  const clickDate = parseAwinTimestamp(raw.clickDate);
+  const validationDate = parseAwinTimestamp(raw.validationDate);
+
+  // Verbatim upstream status token before normalisation. Awin's transaction
+  // status is `commissionStatus` (pending|approved|declined); the canonical
+  // `paid` state is derived from the `paidToPublisher` flag, not a status
+  // string, so when that flag is set we record `paidToPublisher` as the raw
+  // token to keep statusRaw honest about what Awin actually returned.
+  const statusRaw =
+    raw.paidToPublisher === true && raw.commissionStatus === undefined
+      ? 'paidToPublisher'
+      : raw.commissionStatus;
+
+  // merchantKey: inherit the same cross-network identity the parent programme
+  // would carry. The transaction row exposes the merchant landing `url` and
+  // `advertiserName`, so we derive from those with the same helper used for
+  // programmes — keeping a transaction's key consistent with its programme's.
+  const { merchantKey } = deriveMerchantKey(raw.url, raw.advertiserName);
 
   return {
     id: String(raw.id ?? ''),
@@ -355,6 +536,7 @@ function toTransaction(raw: AwinTransactionRaw, now: Date = new Date()): Transac
     programmeId: String(raw.advertiserId ?? ''),
     programmeName: raw.advertiserName ?? raw.campaign ?? '',
     status,
+    statusRaw,
     amount: sale,
     currency,
     commission,
@@ -374,6 +556,7 @@ function toTransaction(raw: AwinTransactionRaw, now: Date = new Date()): Transac
       status === 'reversed'
         ? raw.declineReason ?? raw.reasonForDecline ?? undefined
         : undefined,
+    merchantKey,
     rawNetworkData: raw,
   };
 }
@@ -1050,6 +1233,11 @@ export const _internals = {
   chunkDateRange,
   formatAwinDate,
   pickAwinRelationship,
+  parseAwinTimestamp,
+  zonedNaiveToUtcIso,
+  deriveMerchantKey,
+  registrableDomain,
+  slugifyName,
 };
 
 // Silence the unused-import lint for the logger when noUnusedLocals is on.

@@ -111,6 +111,14 @@ const META: NetworkMeta = {
   setupRequiresApproval: false,
   side: 'advertiser',
   credentialScope: 'multi-brand',
+  // Awin reports against a reporting timezone (Europe/London is Awin's default,
+  // matching the publisher adapter at src/networks/awin/). The verified
+  // advertiser fixtures carry offset-qualified (`…Z`) timestamps, which
+  // parseAwinDate preserves verbatim; this declaration governs the NAIVE-input
+  // path, which parseAwinDate now interprets in this zone rather than blindly
+  // assuming UTC. Per the NetworkMeta.networkTimezone contract the naïve→UTC
+  // conversion is the adapter's responsibility, not a consumer hint.
+  networkTimezone: 'Europe/London',
 };
 
 const RESILIENCE: ResilienceConfigMap = {
@@ -298,16 +306,77 @@ function toNumber(v: string | number | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function parseAwinDate(input?: string): string | undefined {
-  if (!input || typeof input !== 'string') return undefined;
-  let candidate = input.trim();
-  if (candidate === '') return undefined;
-  if (!/[Zz]$/.test(candidate) && !/[+-]\d{2}:?\d{2}$/.test(candidate)) {
-    candidate = `${candidate}Z`;
+/**
+ * Convert a naïve wall-clock timestamp (no offset) into the canonical UTC
+ * instant, interpreting the wall-clock reading in `timeZone`. Mirrors the
+ * publisher adapter's helper (src/networks/awin/adapter.ts); each adapter owns
+ * a private copy rather than sharing through src/shared, per the
+ * one-directory-per-network boundary.
+ *
+ * Method: guess the instant as if the wall-clock were UTC, ask `Intl` what that
+ * instant looks like in `timeZone`, and shift by the measured offset. Handles
+ * BST/GMT (and any DST zone) without a dependency.
+ */
+function zonedNaiveToUtcIso(naive: string, timeZone: string): string | undefined {
+  const m = naive.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (!m) return undefined;
+  const utcGuess = Date.UTC(
+    Number(m[1]),
+    Number(m[2]) - 1,
+    Number(m[3]),
+    Number(m[4]),
+    Number(m[5]),
+    Number(m[6] ?? '0'),
+  );
+  if (Number.isNaN(utcGuess)) return undefined;
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+  const parts: Record<string, string> = {};
+  for (const p of dtf.formatToParts(new Date(utcGuess))) {
+    if (p.type !== 'literal') parts[p.type] = p.value;
   }
-  const ts = Date.parse(candidate);
-  if (Number.isNaN(ts)) return undefined;
-  return new Date(ts).toISOString();
+  const seenHour = parts['hour'] === '24' ? 0 : Number(parts['hour']);
+  const asSeenInZone = Date.UTC(
+    Number(parts['year']),
+    Number(parts['month']) - 1,
+    Number(parts['day']),
+    seenHour,
+    Number(parts['minute']),
+    Number(parts['second']),
+  );
+  return new Date(utcGuess - (asSeenInZone - utcGuess)).toISOString();
+}
+
+/**
+ * Parse an Awin timestamp into canonical UTC ISO-8601.
+ *
+ * Offset-qualified inputs (`…Z` or `…±HH:MM`) name an absolute instant and are
+ * preserved verbatim. Naïve inputs (no offset) are interpreted as wall-clock in
+ * `META.networkTimezone` and converted to UTC, rather than blindly assumed UTC:
+ * the same lossy-host-parse hazard the publisher adapter documents applies
+ * here. Returns `undefined` for empty or unparseable input.
+ */
+function parseAwinDate(
+  input?: string,
+  timeZone: string = META.networkTimezone ?? 'UTC',
+): string | undefined {
+  if (!input || typeof input !== 'string') return undefined;
+  const candidate = input.trim();
+  if (candidate === '') return undefined;
+  const hasOffset = /[Zz]$/.test(candidate) || /[+-]\d{2}:?\d{2}$/.test(candidate);
+  if (hasOffset) {
+    const ts = Date.parse(candidate);
+    return Number.isNaN(ts) ? undefined : new Date(ts).toISOString();
+  }
+  return zonedNaiveToUtcIso(candidate, timeZone);
 }
 
 function computeAgeDays(raw: AwinAdvTransactionRaw, now: Date = new Date()): number {
@@ -336,6 +405,32 @@ function readMoney(
   };
 }
 
+/**
+ * Extract the registrable domain (eTLD+1) from a URL, lowercased and stripped
+ * of a leading `www.`. Heuristic, not a Public Suffix List lookup (the
+ * PSL-accurate version belongs in the shared brand-resolver). Mirrors the
+ * publisher adapter; kept private per the one-directory-per-network boundary.
+ */
+function registrableDomain(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  let host: string;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    return undefined;
+  }
+  if (!host) return undefined;
+  if (host.startsWith('www.')) host = host.slice(4);
+  const labels = host.split('.').filter(Boolean);
+  if (labels.length <= 2) return host;
+  const twoPartTlds = new Set(['co', 'com', 'org', 'net', 'gov', 'ac']);
+  const secondLast = labels[labels.length - 2];
+  if (secondLast && twoPartTlds.has(secondLast)) {
+    return labels.slice(-3).join('.');
+  }
+  return labels.slice(-2).join('.');
+}
+
 // ---------------------------------------------------------------------------
 // Transformers
 // ---------------------------------------------------------------------------
@@ -361,12 +456,27 @@ function toTransaction(raw: AwinAdvTransactionRaw, now: Date = new Date()): Tran
     raw.commission,
     raw.currency ?? sale.currency,
   );
+  // Verbatim upstream status token before normalisation, so a consumer can
+  // re-split rows that collapsed to `other` (Awin advertiser has no derived
+  // `paid` flag — the status string is the single source, unlike the
+  // publisher adapter's paidToPublisher case).
+  const statusRaw =
+    raw.commissionStatus !== undefined ? String(raw.commissionStatus) : undefined;
+
+  // merchantKey: on the advertiser side the merchant IS the brand addressed by
+  // ctx.networkBrandId. The transaction row exposes the brand's landing `url`,
+  // whose registrable domain gives the same cross-network identity the
+  // publisher adapter derives. No advertiser display name is present on the
+  // row, so there is no fallback-name path here.
+  const merchantKey = registrableDomain(raw.url);
+
   return {
     id: String(raw.id ?? ''),
     network: SLUG,
     programmeId: String(raw.advertiserId ?? ''),
     programmeName: raw.campaign ?? raw.siteName ?? '',
     status,
+    statusRaw,
     amount: sale.amount,
     currency: sale.currency,
     commission: commission.amount,
@@ -376,6 +486,7 @@ function toTransaction(raw: AwinAdvTransactionRaw, now: Date = new Date()): Tran
     datePaid: undefined,
     ageDays: computeAgeDays(raw, now),
     reversalReason: status === 'reversed' ? raw.declineReason ?? undefined : undefined,
+    merchantKey,
     rawNetworkData: raw,
   };
 }
@@ -542,6 +653,11 @@ export class AwinAdvertiserAdapter implements NetworkAdapter {
       network: SLUG,
       status: 'joined',
       currency: 'GBP',
+      // The synthetic row carries no advertiser URL and only a placeholder name
+      // (`Awin advertiser {id}`), so there is no honest cross-network identity
+      // to derive. We mark the source `none` rather than slugify the
+      // placeholder, which would manufacture a key that matches nothing.
+      merchantKeySource: 'none',
       rawNetworkData: {
         derivedFrom:
           'synthetic per-advertiser Programme (Awin programmes are UI-configured; ' +
@@ -878,6 +994,8 @@ export const _internals = {
   mapPublisherStatus,
   mapReportRowStatus,
   parseAwinDate,
+  zonedNaiveToUtcIso,
+  registrableDomain,
   computeAgeDays,
   canonicalToAwinStatus,
 };
