@@ -12,7 +12,8 @@ aggregate npm/GitHub adoption metrics.
    `npx wrangler secret put GITHUB_TOKEN`. It needs read access to repository
    traffic statistics.
 4. Deploy with `npm run deploy`.
-5. Route `telemetry.affiliate-mcp.com` to the Worker.
+5. The Worker is served at `telemetry.agenticaffiliate.ai`, configured as a
+   `custom_domain` route in `wrangler.jsonc`; `wrangler deploy` provisions it.
 6. Protect the dashboard and `/api/dashboard` with Cloudflare Access.
 7. Keep Workers observability/logging disabled so request IPs and payloads are
    not retained by this project.
