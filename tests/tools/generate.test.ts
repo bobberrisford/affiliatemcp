@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -14,17 +14,22 @@ import type { NetworkAdapter } from '../../src/shared/types.js';
 
 let tmp: string;
 let originalConfigDir: string | undefined;
+let originalCacheSetting: string | undefined;
 
 beforeEach(() => {
   _clearRegistry();
   tmp = mkdtempSync(path.join(tmpdir(), 'amcp-tool-gen-'));
   originalConfigDir = process.env['AFFILIATE_MCP_CONFIG_DIR'];
+  originalCacheSetting = process.env['AFFILIATE_MCP_CACHE'];
   process.env['AFFILIATE_MCP_CONFIG_DIR'] = tmp;
+  process.env['AFFILIATE_MCP_CACHE'] = 'on';
 });
 
 afterEach(() => {
   if (originalConfigDir === undefined) delete process.env['AFFILIATE_MCP_CONFIG_DIR'];
   else process.env['AFFILIATE_MCP_CONFIG_DIR'] = originalConfigDir;
+  if (originalCacheSetting === undefined) delete process.env['AFFILIATE_MCP_CACHE'];
+  else process.env['AFFILIATE_MCP_CACHE'] = originalCacheSetting;
 });
 
 /**
@@ -372,5 +377,99 @@ describe('affiliate_run_diagnostic — preserves per-op claimStatus (review feed
     const ops = result.results[0]!.capabilities!.operations;
     expect(ops['getProgrammePerformance']!.claimStatus).toBe('experimental');
     expect(ops['listProgrammes']!.claimStatus).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cache integration — the handler in generateToolsFor wraps adapter calls in
+// withCache so repeat questions don't pay another round-trip. The top-level
+// beforeEach already sets AFFILIATE_MCP_CONFIG_DIR to a tmp dir, so the cache
+// for each test lands under its own isolated directory.
+// ---------------------------------------------------------------------------
+
+describe('tool handler cache integration', () => {
+  function adapterWithSpy(slug: string, name: string, method: keyof NetworkAdapter, value: unknown) {
+    const adapter = fakeAdapter(slug, name);
+    const spy = vi.fn(async () => value);
+    (adapter as unknown as Record<string, unknown>)[method] = spy;
+    return { adapter, spy };
+  }
+
+  it('caches listProgrammes (24h TTL) — second call does not re-invoke', async () => {
+    const { adapter, spy } = adapterWithSpy('demonet', 'DemoNet', 'listProgrammes', []);
+    const tools = generateToolsFor(adapter);
+    const tool = tools.find((t) => t.name === 'affiliate_demonet_list_programmes')!;
+    await tool.handle({});
+    await tool.handle({});
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT cache verifyAuth — every call invokes the adapter', async () => {
+    const { adapter, spy } = adapterWithSpy('demonet', 'DemoNet', 'verifyAuth', { ok: true });
+    const tool = generateToolsFor(adapter).find(
+      (t) => t.name === 'affiliate_demonet_verify_auth',
+    )!;
+    await tool.handle({});
+    await tool.handle({});
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it('does NOT cache listTransactions when the window includes now (no `to`)', async () => {
+    const { adapter, spy } = adapterWithSpy('demonet', 'DemoNet', 'listTransactions', []);
+    const tool = generateToolsFor(adapter).find(
+      (t) => t.name === 'affiliate_demonet_list_transactions',
+    )!;
+    await tool.handle({ from: '2025-01-01' });
+    await tool.handle({ from: '2025-01-01' });
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it('caches listTransactions for a closed past window', async () => {
+    const { adapter, spy } = adapterWithSpy('demonet', 'DemoNet', 'listTransactions', []);
+    const tool = generateToolsFor(adapter).find(
+      (t) => t.name === 'affiliate_demonet_list_transactions',
+    )!;
+    // `to` well before now — pickTtl decides to cache for 30d.
+    await tool.handle({ from: '2020-01-01', to: '2020-02-01' });
+    await tool.handle({ from: '2020-01-01', to: '2020-02-01' });
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it('does NOT cache advertiser-side operations at v1', async () => {
+    const adapter = fakeAdapter('imp-adv', 'Impact Advertiser');
+    (adapter as { meta: { side: string; credentialScope: string } }).meta.side = 'advertiser';
+    (adapter as { meta: { side: string; credentialScope: string } }).meta.credentialScope =
+      'multi-brand';
+    adapter.listBrands = async () => [];
+    const spy = vi.fn(async () => []);
+    adapter.listProgrammes = spy;
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [{ network: 'imp-adv', credentialId: 'default', networkBrandId: 'IA-1' }],
+      },
+    });
+    const tool = generateToolsFor(adapter).find(
+      (t) => t.name === 'affiliate_imp-adv_list_programmes',
+    )!;
+    await tool.handle({ brand: 'acme' });
+    await tool.handle({ brand: 'acme' });
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it('rotating credentials invalidates the cache (different cred hash → different key)', async () => {
+    process.env['DEMONET_TOKEN'] = 'first';
+    try {
+      const { adapter, spy } = adapterWithSpy('demonet', 'DemoNet', 'listProgrammes', []);
+      const tool = generateToolsFor(adapter).find(
+        (t) => t.name === 'affiliate_demonet_list_programmes',
+      )!;
+      await tool.handle({});
+      process.env['DEMONET_TOKEN'] = 'second';
+      await tool.handle({});
+      expect(spy).toHaveBeenCalledTimes(2);
+    } finally {
+      delete process.env['DEMONET_TOKEN'];
+    }
   });
 });

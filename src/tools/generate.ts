@@ -25,6 +25,7 @@ import { generateAwinTools } from '../networks/awin/tools.js';
 import { generateTradedoublerTools } from '../networks/tradedoubler/tools.js';
 import type { ToolDefinition } from './types.js';
 import { toJsonSchema } from './schema.js';
+import { cacheKey, credentialHashFor, pickTtl, withCache } from '../shared/cache.js';
 
 export type { ToolDefinition } from './types.js';
 
@@ -259,7 +260,24 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
         name: toolNameFor(adapter.slug, spec.op),
         description: spec.description(adapter.name),
         inputSchema: toJsonSchema(spec.schema),
-        handle: (args: unknown) => spec.invoke(adapter, args),
+        handle: (args: unknown) => {
+          // Parse once so the cache key uses the canonical args (defaults
+          // applied, unknown fields stripped) rather than whatever the caller
+          // happened to pass through.
+          const parsedArgs = spec.schema.parse(args ?? {}) as unknown;
+          const ttl = pickTtl(spec.op, parsedArgs, new Date(), false);
+          if (ttl <= 0) {
+            return spec.invoke(adapter, parsedArgs);
+          }
+          const key = cacheKey({
+            network: adapter.slug,
+            operation: spec.op,
+            args: parsedArgs,
+            adapterVersion: adapter.meta.adapterVersion,
+            credentialHash: credentialHashFor(adapter.slug),
+          });
+          return withCache(key, ttl, () => spec.invoke(adapter, parsedArgs));
+        },
       };
     }
 
@@ -279,11 +297,26 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
         const { buildAdapterCallContext } = await import('../shared/brand-resolver.js');
         // Throws BrandNotRegistered (config_error envelope) if the brand
         // isn't bound to this network in brands.json. Happens BEFORE any
-        // network call goes out.
+        // network call goes out — and intentionally before the cache layer
+        // so an unknown brand still surfaces correctly instead of returning
+        // a cached result for a brand the user has since removed.
         const ctx = buildAdapterCallContext(parsed.brand, adapter.slug);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { brand: _brand, ...rest } = parsed;
-        return spec.invoke(adapter, rest, ctx);
+        const ttl = pickTtl(spec.op, rest, new Date(), true);
+        if (ttl <= 0) {
+          return spec.invoke(adapter, rest, ctx);
+        }
+        const key = cacheKey({
+          network: adapter.slug,
+          operation: spec.op,
+          // Include the resolved networkBrandId so two brands sharing the
+          // same credential set get separate cache entries.
+          args: { ...rest, __networkBrandId: ctx.networkBrandId },
+          adapterVersion: adapter.meta.adapterVersion,
+          credentialHash: credentialHashFor(adapter.slug),
+        });
+        return withCache(key, ttl, () => spec.invoke(adapter, rest, ctx));
       },
     };
   });
