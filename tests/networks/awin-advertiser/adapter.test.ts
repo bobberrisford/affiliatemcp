@@ -157,6 +157,56 @@ describe('Awin advertiser transformers', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Cross-network normalisation fields (rollout: Awin advertiser reference)
+// See docs/contributing/normalisation-rollout.md for the per-field pattern.
+// ---------------------------------------------------------------------------
+
+describe('Awin advertiser normalisation fields', () => {
+  it('declares networkTimezone = Europe/London', () => {
+    expect(awinAdvertiserAdapter.meta.networkTimezone).toBe('Europe/London');
+  });
+
+  it('preserves offset-qualified timestamps and converts naïve ones via the zone', () => {
+    // Offset-qualified passthrough (also covered by the existing test).
+    expect(_internals.parseAwinDate('2026-04-15T10:00:00Z')).toBe('2026-04-15T10:00:00.000Z');
+    // Naïve input is interpreted in Europe/London, NOT blindly assumed UTC.
+    // 2026-07-01 is BST (UTC+1): naïve 10:00 → 09:00Z.
+    expect(_internals.parseAwinDate('2026-07-01T10:00:00')).toBe('2026-07-01T09:00:00.000Z');
+    // 2026-01-01 is GMT (UTC+0): naïve 10:00 → 10:00Z.
+    expect(_internals.parseAwinDate('2026-01-01T10:00:00')).toBe('2026-01-01T10:00:00.000Z');
+  });
+
+  it('populates statusRaw with the verbatim Awin commissionStatus token', () => {
+    const txns = loadFixture('transactions.json') as Array<Record<string, unknown>>;
+    expect(_internals.toTransaction(txns[0] as never).statusRaw).toBe('approved');
+    expect(_internals.toTransaction(txns[1] as never).statusRaw).toBe('pending');
+    const declined = _internals.toTransaction(txns[2] as never);
+    expect(declined.status).toBe('reversed');
+    expect(declined.statusRaw).toBe('declined');
+  });
+
+  it('derives transaction merchantKey from the brand landing url domain', () => {
+    const txns = loadFixture('transactions.json') as Array<Record<string, unknown>>;
+    // transaction[0] url = https://acme.example.com/checkout → example.com.
+    expect(_internals.toTransaction(txns[0] as never).merchantKey).toBe('example.com');
+    // transaction[1] has no url → no key (no fallback-name on advertiser rows).
+    expect(_internals.toTransaction(txns[1] as never).merchantKey).toBeUndefined();
+  });
+
+  it('marks the synthetic listProgrammes row merchantKeySource = none', async () => {
+    const r = await awinAdvertiserAdapter.listProgrammes(undefined, { networkBrandId: '100001' });
+    expect(r[0]?.merchantKey).toBeUndefined();
+    expect(r[0]?.merchantKeySource).toBe('none');
+  });
+
+  it('registrableDomain handles two-part TLDs and strips www', () => {
+    expect(_internals.registrableDomain('https://www.shop.co.uk/x')).toBe('shop.co.uk');
+    expect(_internals.registrableDomain('https://deep.sub.example.com')).toBe('example.com');
+    expect(_internals.registrableDomain('not a url')).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // listBrands — /accounts filtered to advertiser type
 // ---------------------------------------------------------------------------
 

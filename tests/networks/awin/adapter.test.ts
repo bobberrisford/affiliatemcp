@@ -124,6 +124,97 @@ describe('Awin transformers (status normalisation, raw preservation)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Cross-network normalisation fields (rollout: Awin reference)
+//
+// Five additive OPTIONAL fields land here first:
+//   - meta.networkTimezone        (NetworkMeta)
+//   - Programme.merchantKey + merchantKeySource
+//   - Transaction.statusRaw
+//   - Transaction.merchantKey
+// See docs/contributing/normalisation-rollout.md for the per-field pattern.
+// ---------------------------------------------------------------------------
+
+describe('Awin normalisation fields', () => {
+  it('declares networkTimezone = Europe/London (adapter owns naïve→UTC)', () => {
+    expect(awinAdapter.meta.networkTimezone).toBe('Europe/London');
+  });
+
+  it('converts NAIVE Awin timestamps from Europe/London to canonical UTC', () => {
+    // Fixture transaction[0] has naïve "2024-09-01T10:30:00" (BST, UTC+1) →
+    // 09:30Z; transaction[3] has naïve "2024-01-05T12:30:00" (GMT, UTC+0) →
+    // 12:30Z. A naïve parse in the host zone would drift; the adapter must not.
+    const txns = loadFixture('transactions.json') as Array<Record<string, unknown>>;
+    const bst = _internals.toTransaction(txns[0] as never);
+    expect(bst.dateConverted).toBe('2024-09-01T09:30:00.000Z');
+    // clickDate 10:00 BST → 09:00Z
+    expect(bst.dateClicked).toBe('2024-09-01T09:00:00.000Z');
+
+    const gmt = _internals.toTransaction(txns[3] as never);
+    expect(gmt.dateConverted).toBe('2024-01-05T12:30:00.000Z');
+  });
+
+  it('parseAwinTimestamp preserves an already offset-qualified instant verbatim', () => {
+    expect(_internals.parseAwinTimestamp('2024-06-01T10:00:00Z')).toBe('2024-06-01T10:00:00.000Z');
+    expect(_internals.parseAwinTimestamp('2024-06-01T10:00:00+02:00')).toBe(
+      '2024-06-01T08:00:00.000Z',
+    );
+    expect(_internals.parseAwinTimestamp(undefined)).toBeUndefined();
+    expect(_internals.parseAwinTimestamp('not-a-date')).toBeUndefined();
+  });
+
+  it('populates statusRaw with the verbatim Awin commissionStatus token', () => {
+    const txns = loadFixture('transactions.json') as Array<Record<string, unknown>>;
+    expect(_internals.toTransaction(txns[0] as never).statusRaw).toBe('approved');
+    expect(_internals.toTransaction(txns[1] as never).statusRaw).toBe('pending');
+    // declined → canonical 'reversed', but statusRaw keeps the upstream word.
+    const declined = _internals.toTransaction(txns[2] as never);
+    expect(declined.status).toBe('reversed');
+    expect(declined.statusRaw).toBe('declined');
+    // paidToPublisher overrides the canonical status; statusRaw still reports
+    // the upstream commissionStatus string Awin actually sent.
+    const paid = _internals.toTransaction(txns[3] as never);
+    expect(paid.status).toBe('paid');
+    expect(paid.statusRaw).toBe('approved');
+  });
+
+  it('derives Programme.merchantKey from the advertiser domain (eTLD+1)', () => {
+    const programmes = loadFixture('programmes.json') as Array<Record<string, unknown>>;
+    const bookshop = _internals.toProgramme(programmes[0] as never);
+    // displayUrl https://www.atolls-bookshop.example.com → example.com (eTLD+1).
+    expect(bookshop.merchantKey).toBe('example.com');
+    expect(bookshop.merchantKeySource).toBe('fallback-domain');
+  });
+
+  it('falls back to a slugified name when no advertiser URL is present', () => {
+    const { merchantKey, merchantKeySource } = _internals.deriveMerchantKey(
+      undefined,
+      'Atolls Bookshop',
+    );
+    expect(merchantKey).toBe('atolls-bookshop');
+    expect(merchantKeySource).toBe('fallback-name');
+  });
+
+  it('reports merchantKeySource none when neither URL nor name is available', () => {
+    const { merchantKey, merchantKeySource } = _internals.deriveMerchantKey(undefined, undefined);
+    expect(merchantKey).toBeUndefined();
+    expect(merchantKeySource).toBe('none');
+  });
+
+  it('inherits merchantKey onto the transaction from the merchant landing url', () => {
+    const txns = loadFixture('transactions.json') as Array<Record<string, unknown>>;
+    // transaction[0] carries url https://www.atolls-bookshop.example.com/landing
+    const t = _internals.toTransaction(txns[0] as never);
+    expect(t.merchantKey).toBe('example.com');
+  });
+
+  it('registrableDomain handles two-part TLDs and strips www', () => {
+    expect(_internals.registrableDomain('https://www.shop.co.uk/x')).toBe('shop.co.uk');
+    expect(_internals.registrableDomain('https://deep.sub.example.com')).toBe('example.com');
+    expect(_internals.registrableDomain('not a url')).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // listTransactions — unpaid-age + reversed visibility (§15.9, §15.10)
 // ---------------------------------------------------------------------------
 
