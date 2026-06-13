@@ -85,17 +85,17 @@ Cached entries contain real transaction-level data, including each record's
 
 ### Retention
 
-- TTL is the only retention mechanism at v1: 24 hours for inventory, 30 days
-  for closed windows. Expired entries are treated as misses and overwritten
-  in place on the next identical query.
-- There is **no size cap, no LRU, and no background sweep at v1**, and the
-  docs say so plainly. This is acceptable because entries are written only on
-  explicit tool calls (growth is bounded by the user's own query volume, not
-  by traffic), each entry is a single JSON response, and `cache clear` plus
-  ordinary file deletion give full manual control. Orphaned entries (expired,
-  or keyed by rotated credentials) persist on disk until cleared; that is a
-  disk-space cost, not a correctness cost, because they can never be served.
-- A size cap or LRU sweep is a deferred follow-up, to be added when there is
+- Entries carry an expiry timestamp: 24 hours for inventory, 30 days for
+  closed windows. Expired entries are never served.
+- Cache access performs a best-effort opportunistic sweep that deletes every
+  expired cache entry, not only the entry for the current query. A sweep
+  failure is logged to stderr and never breaks the live call. This makes the
+  TTL an actual data-retention bound rather than only a freshness rule.
+- There is **no size cap, no LRU, and no background process at v1**. This is
+  acceptable because entries are written only on explicit tool calls, each
+  entry expires within 30 days, opportunistic sweeps remove expired data, and
+  `cache clear` plus ordinary file deletion give full manual control.
+- A size cap or LRU policy is a deferred follow-up, to be added when there is
   evidence of real-world growth, not speculatively.
 
 ### Invalidation
@@ -122,18 +122,15 @@ Cached entries contain real transaction-level data, including each record's
 
 ### User control
 
-- **Default on (opt-out), not opt-in.** The cohorts who benefit most,
-  publishers and semi-technical operators running repeated reporting queries,
-  will not discover an opt-in flag. The freshness policy is built so the
-  default cannot mislead: only slow-moving inventory and closed, settled
-  windows are ever served from disk, and the data at rest carries the same
-  owner-only posture as the credentials file beside it. Defaulting off would
-  preserve a property (no API data on disk) that the policy already bounds
-  tightly, at the cost of the feature doing nothing for most users.
-- **Env var kill switch.** `AFFILIATE_MCP_CACHE=off` disables both reads and
-  writes; it is documented in `.env.example` and the setup docs, and the
-  setup wizard mentions it. Operators with strict data-at-rest requirements
-  set it once in `~/.affiliate-mcp/.env`.
+- **Explicit opt-in.** Persistent caching is off unless
+  `AFFILIATE_MCP_CACHE=on` is configured. The current public privacy promise
+  says affiliate data is fetched live and not stored; silently changing that
+  default would make the promise false for existing users. Setup may offer the
+  option, but it must explain that transaction-level API results, including
+  `rawNetworkData`, will persist locally before enabling it.
+- **Env var control.** `AFFILIATE_MCP_CACHE=on` enables reads and writes;
+  missing, malformed, or any other value means off. It is documented in
+  `.env.example`, the setup docs, the README, and `PRIVACY.md`.
 - **Visibility.** At v1, cached results are byte-identical to live results
   and cache hits are logged to stderr. The tool output shape is a stable
   public contract; injecting a `servedFromCache` marker into every result
@@ -145,12 +142,12 @@ Cached entries contain real transaction-level data, including each record's
 
 ## Security
 
-Transaction-level affiliate data, including raw upstream payloads, persists
-on disk between sessions. Mitigations: `0700` directory, `0600` files,
-config-directory co-location with the already-sensitive `.env`, no credential
-values in entries, an off switch, and `cache clear`. This touches shared and
-tool behaviour plus data handling, so it is a risk-based review item for
-`@offmann`.
+When explicitly enabled, transaction-level affiliate data, including raw
+upstream payloads, persists on disk between sessions. Mitigations: opt-in
+enablement, `0700` directory, `0600` files, config-directory co-location with
+the already-sensitive `.env`, no credential values in entries, opportunistic
+expiry deletion, and `cache clear`. This touches shared and tool behaviour plus
+data handling, so it is a risk-based review item for `@offmann`.
 
 ## Rejected alternatives
 
@@ -184,13 +181,14 @@ tool behaviour plus data handling, so it is a risk-based review item for
   `src/tools/generate.ts` gains a thin wrap around adapter invocation. No
   adapter, resilience, or error-envelope code changes.
 - The CLI gains a `cache` command group (`clear` at v1).
-- `.env.example` and the setup docs gain `AFFILIATE_MCP_CACHE` and a short
-  section describing what is stored, where, with what permissions, and how to
-  clear or disable it.
-- Disk usage grows with query variety until the user clears the cache; bounded
-  by usage, not by a hard cap, at v1.
-- Users on shared machines who cannot rely on file permissions must set
-  `AFFILIATE_MCP_CACHE=off`; the docs must say this explicitly.
+- `.env.example`, `PRIVACY.md`, and the setup docs gain
+  `AFFILIATE_MCP_CACHE=on` and a short section describing what is stored,
+  where, with what permissions, how expiry deletion works, and how to clear or
+  disable it.
+- Disk usage grows with query variety between opportunistic expiry sweeps;
+  bounded by usage and the 30-day maximum TTL, not by a hard size cap, at v1.
+- Users on shared machines who cannot rely on file permissions should leave
+  caching disabled; the docs must say this explicitly.
 
 ## Implementation follow-ups
 
@@ -199,15 +197,17 @@ deltas from the current #6 branch:
 
 1. add the cache format version and adapter version to the cache key
    (schema-change invalidation);
-2. add the `AFFILIATE_MCP_CACHE=off` kill switch honoured by both reads and
-   writes;
+2. require explicit `AFFILIATE_MCP_CACHE=on` opt-in, with missing or any other
+   value disabling both reads and writes;
 3. confirm advertiser-side operations resolve to TTL 0 explicitly, not just
    by falling through a default case, and fold `networkBrandId` into the key
    for any future cacheable advertiser op;
-4. document the cache in `.env.example`, the setup docs, and the README
-   (location, permissions, TTLs, `cache clear`, the off switch, and the
-   shared-machine note);
-5. rebase onto current `main` (the branch predates the Tradedoubler and
+4. add a best-effort opportunistic sweep that deletes all expired entries on
+   cache access, so TTL is an enforced retention bound;
+5. document the cache in `.env.example`, `PRIVACY.md`, the setup docs, and the
+   README (opt-in, location, permissions, TTLs, expiry deletion, `cache clear`,
+   and the shared-machine note);
+6. rebase onto current `main` (the branch predates the Tradedoubler and
    advertiser-side changes to `src/tools/generate.ts`).
 
 Keep the implementation PR draft until this decision merges. A size cap or
