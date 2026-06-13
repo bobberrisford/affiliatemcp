@@ -65,3 +65,15 @@ jobs:
       - run: npm ci
       - run: npm ci --prefix desktop
       - run: npm --prefix desktop run test:e2e
+
+  telemetry-cloudflare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: telemetry-cloudflare/package-lock.json
+      - run: npm ci --prefix telemetry-cloudflare
+      - run: npm --prefix telemetry-cloudflare run typecheck

@@ -1,61 +1,95 @@
 # Privacy Policy
 
-_Last updated: 2026-05-29_
+_Last updated: 2026-06-13_
 
-**affiliate-networks-mcp** is a local-only, open-source tool. It is designed so
-that the maintainer never sees your data.
+**affiliate-networks-mcp** is local-first and open source. Affiliate credentials,
+prompts, and affiliate-network data remain on your machine.
 
-## What we collect
+## Aggregate adoption metrics
 
-**Nothing.** The maintainer and this project collect no data of any kind:
+The project reads aggregate statistics already exposed by npm and GitHub,
+including npm package downloads, GitHub release-asset downloads, stars, forks,
+repository clones, and repository views.
 
-- No analytics, no telemetry, no usage tracking.
-- No crash reporting.
-- No account, sign-up, or registration.
-- No data is ever transmitted to the maintainer or any third-party service
-  operated by this project.
+These statistics do not come from the running MCP package and require no
+consent. npm downloads are downloads, not users: they can include repeated
+`npx` runs, CI, caches, and other automated traffic.
 
-## How your data is handled
+## Optional anonymous usage telemetry
 
-- The tool runs entirely on **your own machine**.
-- Your affiliate-network credentials are stored locally in
-  `~/.affiliate-mcp/.env`, with file permissions locked to your user account
-  (mode `0600`). They never leave your computer except to authenticate
-  directly with the affiliate networks you have configured.
-- Affiliate data (earnings, transactions, programme performance, etc.) is
-  fetched live from each network's official API at the moment you ask a
-  question and processed locally. It is not forwarded anywhere by this tool.
-  Persistent result caching is off by default. Setting
-  `AFFILIATE_MCP_CACHE=on` stores selected programme inventory and closed
-  reporting-window results locally under `~/.affiliate-mcp/cache/`, including
-  raw upstream data. The cache directory uses mode `0700`, entry files use
-  `0600`, open or current reporting windows always go live, and expired
-  entries are deleted during later cache access.
+Anonymous runtime telemetry is **off by default**. It is sent only after you
+explicitly opt in during setup, in the desktop setup app, in host-native MCPB
+settings, or with:
 
-## Who your data is shared with
+```sh
+affiliate-networks-mcp telemetry enable
+```
 
-The only outbound network connections this tool makes are to the **official
-APIs of the affiliate networks you configure**, for example:
+An opted-in installation sends at most one summary for each active day. The
+summary contains:
 
-- Awin — `api.awin.com`
-- CJ (Commission Junction) — `api.cj.com`
-- eBay Partner Network — `api.ebay.com`
-- Impact — `api.impact.com`
-- Rakuten Advertising — `api.linksynergy.com`
+- A random installation identifier that rotates every UTC month.
+- Package version and launch surface (`npm`, `mcpb`, `desktop-bundle`, or
+  `unknown`).
+- Counts by affiliate-network slug, operation name, and coarse outcome:
+  success, authentication error, rate limit, configuration error, upstream
+  error, or other error.
+- Coarse lifecycle counts such as server starts, completed setup, and completed
+  client installation.
 
-These connections use credentials **you** supply, and the networks receive only
-the same API requests they would receive from their own dashboards. Each
-network's own privacy policy governs the data it returns.
+The project never sends credentials, affiliate data, account identifiers,
+prompts, tool arguments, tool results, amounts, URLs, error messages, stack
+traces, exact timestamps, operating system, Node.js version, or locale.
+
+Cloudflare necessarily receives the request IP while routing an opted-in
+telemetry request. This project does not write that IP into telemetry storage,
+and Worker observability/request logging is disabled.
+
+## Storage and retention
+
+- Consent, the rotating identifier, and pending daily counters are stored
+  locally in `~/.affiliate-mcp/telemetry.json` with mode `0600`, separate from
+  credentials.
+- Raw opted-in summaries are stored in Cloudflare Analytics Engine for its
+  current three-month retention period.
+- Daily aggregate rollups are retained for trend analysis.
+- Rotating monthly identifiers used to estimate opted-in active installations
+  are deleted from the dashboard database after 35 days.
+- npm and GitHub aggregate adoption snapshots are retained for trend analysis.
+
+Telemetry is advisory and can be spoofed because the open-source client cannot
+safely contain an ingestion secret.
 
 ## Your control
 
-Because everything is local and bring-your-own-keys, you are in full control:
+Check or change telemetry at any time:
 
-- Remove a network by deleting its keys from `~/.affiliate-mcp/.env`.
-- Delete locally cached results with `affiliate-networks-mcp cache clear`.
-- Uninstall entirely with `npx affiliate-networks-mcp uninstall` (or
-  `claude plugin uninstall affiliate-networks-mcp`), then delete the
-  `~/.affiliate-mcp/` directory.
+```sh
+affiliate-networks-mcp telemetry status
+affiliate-networks-mcp telemetry enable
+affiliate-networks-mcp telemetry disable
+```
+
+Disabling immediately deletes the local monthly identifier and pending
+counters. Missing, malformed, or unreadable telemetry state always means
+telemetry is off. A host-managed `AFFILIATE_MCP_TELEMETRY=true` environment
+setting explicitly overrides the local preference; disable it in that host's
+settings.
+
+Credentials remain in `~/.affiliate-mcp/.env` with mode `0600`. They are sent
+only to the official APIs of networks you configure. Affiliate data is fetched
+live, processed locally, and is not forwarded to this project. Persistent
+result caching is off by default. Setting `AFFILIATE_MCP_CACHE=on` stores
+selected programme inventory and closed reporting-window results locally under
+`~/.affiliate-mcp/cache/`, including raw upstream data. The cache directory uses
+mode `0700`, entry files use `0600`, open or current reporting windows always go
+live, and expired entries are deleted during later cache access.
+
+Remove a network by deleting its keys from `~/.affiliate-mcp/.env`. Delete
+locally cached results with `affiliate-networks-mcp cache clear`. To remove
+everything, run `npx affiliate-networks-mcp uninstall` (or
+`claude plugin uninstall affiliate-networks-mcp`), then delete the
+`~/.affiliate-mcp/` directory.
 
 ## Contact
 

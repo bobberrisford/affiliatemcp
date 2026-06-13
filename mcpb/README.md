@@ -20,4 +20,5 @@ npx affiliate-networks-mcp setup
 
 Credentials and affiliate API calls remain on your machine. See the project
 [privacy policy](https://github.com/bobberrisford/affiliatemcp/blob/main/PRIVACY.md)
-for details.
+for details. Anonymous usage telemetry is optional and off by default in the
+extension settings.

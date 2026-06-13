@@ -1,0 +1,16 @@
+{
+  "name": "affiliate-mcp-telemetry-cloudflare",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "wrangler d1 migrations apply affiliate-mcp-telemetry --remote"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260612.0",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.36.0"
+  }
+}

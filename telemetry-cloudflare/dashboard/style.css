@@ -1,0 +1,62 @@
+:root {
+  color-scheme: dark;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: #0b0b0c;
+  color: #f3f3ef;
+}
+body {
+  margin: 0;
+}
+main {
+  max-width: 1100px;
+  margin: auto;
+  padding: 32px;
+}
+header,
+section {
+  margin-bottom: 32px;
+}
+h1 {
+  font-size: 32px;
+}
+h2 {
+  font-size: 18px;
+  color: #b7ff45;
+}
+p,
+footer {
+  color: #aaa;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+article {
+  border: 1px solid #333;
+  padding: 18px;
+  background: #141416;
+}
+article span {
+  display: block;
+  color: #aaa;
+}
+article strong {
+  display: block;
+  font-size: 28px;
+  margin-top: 8px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #141416;
+}
+th,
+td {
+  text-align: left;
+  padding: 10px;
+  border-bottom: 1px solid #2a2a2d;
+}
+th {
+  color: #b7ff45;
+}

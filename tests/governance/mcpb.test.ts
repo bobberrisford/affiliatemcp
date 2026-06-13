@@ -50,4 +50,15 @@ describe('MCPB distribution manifest', () => {
       '${user_config.existing_config_directory}',
     );
   });
+
+  it('offers anonymous telemetry as an optional host-managed boolean', () => {
+    expect(manifest.user_config.anonymous_telemetry).toMatchObject({
+      type: 'boolean',
+      required: false,
+    });
+    expect(manifest.server.mcp_config.env.AFFILIATE_MCP_TELEMETRY).toBe(
+      '${user_config.anonymous_telemetry}',
+    );
+    expect(manifest.server.mcp_config.env.AFFILIATE_MCP_SURFACE).toBe('mcpb');
+  });
 });

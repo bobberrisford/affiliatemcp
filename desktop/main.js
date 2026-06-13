@@ -24,6 +24,8 @@ const {
   selectLatestDesktopRelease,
 } = require('./update-channel');
 
+process.env.AFFILIATE_MCP_SURFACE = 'desktop-bundle';
+
 /** Mixed server + desktop releases; desktop tags are selected explicitly. */
 const RELEASES_API = 'https://api.github.com/repos/bobberrisford/affiliatemcp/releases?per_page=100';
 
@@ -404,6 +406,16 @@ handle('config:saveEnv', async (_e, entries) => {
   return facade.saveEnv(entries || {});
 });
 
+handle('telemetry:getConsent', async () => {
+  const { facade } = await loadCore();
+  return { ok: true, consent: facade.getTelemetryConsent() };
+});
+
+handle('telemetry:setConsent', async (_e, enabled) => {
+  const { facade } = await loadCore();
+  return facade.saveTelemetryConsent(enabled === true);
+});
+
 handle('claude:saveBrands', async (_e, { network, selections }) => {
   const { facade } = await loadCore();
   return facade.saveBrands(network, selections || []);
@@ -424,14 +436,21 @@ handle('claude:connect', async () => {
   // Dev: pass no paths so the facade falls back to `npx affiliate-networks-mcp`.
   if (!app.isPackaged) {
     const devResult = await facade.connectClaudeDesktop();
-    return assertConnected(devResult);
+    const connected = assertConnected(devResult);
+    if (connected.ok) facade.recordDesktopInstallComplete();
+    return connected;
   }
   const result = await facade.connectClaudeDesktop({
     nodePath: process.execPath, // the app's Electron executable
     serverPath: serverEntrypoint(), // bundled server.cjs
-    env: { ELECTRON_RUN_AS_NODE: '1' }, // run the bundled server as plain Node
+    env: {
+      ELECTRON_RUN_AS_NODE: '1',
+      AFFILIATE_MCP_SURFACE: 'desktop-bundle',
+    }, // run the bundled server as plain Node
   });
-  return assertConnected(result);
+  const connected = assertConnected(result);
+  if (connected.ok) facade.recordDesktopInstallComplete();
+  return connected;
 });
 
 /**

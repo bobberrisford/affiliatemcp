@@ -78,8 +78,10 @@ brand × network pair you've registered.
 views. "Last quarter, status pending, sorted by amount" is the whole prompt.
 
 **Your data, your machine.** It runs locally. Your keys live in
-`~/.affiliate-mcp/.env`, locked to your user account. No hosted account, no
-telemetry. The networks see the same API calls they'd see from their dashboard.
+`~/.affiliate-mcp/.env`, locked to your user account. There is no hosted
+account. Optional anonymous usage telemetry is off by default and never
+contains affiliate data, credentials, prompts, arguments, results, or error
+text. The networks see the same API calls they'd see from their dashboard.
 
 **Catches what dashboards bury.** Stale transactions, inactive programmes, dead
 deeplinks and week-on-week drops are surfaced by the packaged skills.
@@ -235,6 +237,23 @@ configured. If you registered any brands, also try **"list my brands"**.
 
 To disconnect later: `npx affiliate-networks-mcp uninstall`, or
 `claude plugin uninstall affiliate-networks-mcp` for the plugin path.
+
+## Anonymous telemetry
+
+The project reads aggregate npm and GitHub adoption statistics. npm downloads
+are downloads, not users: they include repeated `npx` runs, CI, caches, and
+other automated traffic.
+
+Optional runtime telemetry is explicitly opt-in and sent at most once per
+active day. It contains package version, launch surface, a random identifier
+that rotates monthly, and counts by network, operation, and coarse outcome. See
+the [privacy policy](./PRIVACY.md) for the exact contract.
+
+```sh
+affiliate-networks-mcp telemetry status
+affiliate-networks-mcp telemetry enable
+affiliate-networks-mcp telemetry disable
+```
 
 ### Troubleshooting install
 

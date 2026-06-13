@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>affiliate-mcp telemetry</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>affiliate-mcp telemetry</h1>
+        <p>Private aggregate adoption, reach, usage, and reliability.</p>
+      </header>
+      <section class="cards" id="cards"></section>
+      <section>
+        <h2>Usage and reliability, last 30 days</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Surface</th>
+              <th>Network</th>
+              <th>Operation</th>
+              <th>Outcome</th>
+              <th>Count</th>
+            </tr>
+          </thead>
+          <tbody id="usage"></tbody>
+        </table>
+      </section>
+      <section>
+        <h2>Ecosystem snapshots</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Day</th>
+              <th>Metric</th>
+              <th>Dimension</th>
+              <th>Value</th>
+            </tr>
+          </thead>
+          <tbody id="ecosystem"></tbody>
+        </table>
+      </section>
+      <footer>
+        npm downloads are downloads, not users. Approximate active installations include opted-in
+        installations only.
+      </footer>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

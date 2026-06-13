@@ -69,6 +69,8 @@ function mockApi() {
     // → []), so the preview exercises the manual-entry path; others return a list.
     discoverBrands: (slug) => wait(slug === 'cj-advertiser' ? [] : MOCK_BRANDS, 500),
     saveEnv: (_entries) => wait({ ok: true }),
+    getTelemetryConsent: () => wait({ ok: true, consent: 'unset' }),
+    setTelemetryConsent: (enabled) => wait({ ok: true, enabled }),
     saveBrands: (_network, selections) => wait({ ok: true, count: (selections || []).length }),
     connectClaude: () => wait({ ok: true, action: 'added', backupPath: '…/claude_desktop_config.json.bak' }, 500),
     restartClaude: () => wait({ ok: true }),
@@ -107,6 +109,7 @@ const state = {
   manualByNet: {},       // slug -> [{ networkBrandId, nick }] for multi-brand nets with no list
   envEntries: {},        // FIELD -> value, accumulated across verified networks
   update: { state: 'idle' }, // latest auto-update status from main (see setupUpdateEvents)
+  telemetryEnabled: false,
 };
 const app = document.getElementById('app');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -564,6 +567,8 @@ function renderBrandsError(net, slug, msg) {
 
 async function renderConnect() {
   const det = await api.detectClients();
+  const telemetry = await api.getTelemetryConsent();
+  state.telemetryEnabled = telemetry && telemetry.consent === 'enabled';
   const present = det.desktop === 'present';
   app.innerHTML = wrap(`
     ${rail('connect')}
@@ -575,6 +580,10 @@ async function renderConnect() {
       <span class="status"><span class="dot ${present ? 'dot-pos' : 'dot-idle'}"></span> ${present ? 'ready' : 'absent'}</span>
     </div>
     <div class="help" style="border-left-color:var(--magenta);margin-top:16px">Claude only loads new tools on restart — one click does it, then this app closes.</div>
+    <label class="help" style="display:block;margin-top:16px">
+      <input id="telemetry-consent" type="checkbox" ${state.telemetryEnabled ? 'checked' : ''} />
+      Share anonymous usage telemetry. Once daily this sends package version, launch surface, and counts by network, operation, and coarse outcome. Never credentials, affiliate data, prompts, arguments, results, or error text.
+    </label>
     <div class="verify-row" id="cstatus"></div>
     <div class="actions">
       <button class="btn btn-ghost" id="back">back</button>
@@ -603,6 +612,10 @@ async function renderConnect() {
     cs.innerHTML = `<span class="status"><span class="dot dot-pending"></span> writing credentials…</span>`;
     const saved = await api.saveEnv(state.envEntries);
     if (failed(saved)) return fail(`couldn’t save credentials: ${saved.error || 'unknown error'}`);
+
+    const telemetryConsent = document.getElementById('telemetry-consent').checked;
+    const telemetrySaved = await api.setTelemetryConsent(telemetryConsent);
+    if (failed(telemetrySaved)) return fail(`couldn’t save telemetry preference: ${telemetrySaved.error || 'unknown error'}`);
 
     cs.innerHTML = `<span class="status"><span class="dot dot-pending"></span> writing Claude config…</span>`;
     const connected = await api.connectClaude();

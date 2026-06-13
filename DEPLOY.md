@@ -19,7 +19,8 @@ Two artefacts ship, both MIT and both free:
 | **MCP server / CLI** | `affiliate-networks-mcp` on npm — Claude Desktop spawns it over stdio | Unchanged; not part of this release |
 | **Desktop `.dmg`** | The local-first, launch-and-quit **setup app** (Electron). Writes credentials + the Claude Desktop config, then quits. It does **not** run the MCP server | New |
 
-**Trust posture.** Local-first, no telemetry. The desktop app holds no affiliate
+**Trust posture.** Local-first. Optional anonymous usage telemetry is off by
+default and follows `PRIVACY.md`. The desktop app holds no affiliate
 credentials beyond what it writes to the user's own machine. Its outbound calls
 are: OS-level actions (opening network dashboards in the browser, restarting
 Claude Desktop via `osascript`/`open`) and an **update check against GitHub
@@ -203,8 +204,9 @@ server release or a stranded user.
 
 ## 5. Secrets / credentials checklist
 
-The macOS signing/notarisation creds plus a GitHub token for publishing the
-update feed — there is no backend.
+The macOS signing/notarisation credentials plus a GitHub token for publishing
+the update feed are listed below. The separate optional telemetry backend is
+documented under `telemetry-cloudflare/`.
 
 | Name | Where it's set | What it's for |
 |---|---|---|

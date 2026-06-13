@@ -21,6 +21,7 @@ const EXAMPLES_DIR = path.join(REPO_ROOT, 'examples');
 
 interface PackageJson {
   name: string;
+  version?: string;
   bin?: Record<string, string> | string;
 }
 
@@ -45,6 +46,12 @@ describe('package.json brand surface', () => {
     if (pkg.bin && typeof pkg.bin === 'object') {
       expect(Object.keys(pkg.bin)).not.toContain('affiliate-mcp');
     }
+  });
+
+  it('keeps the telemetry package version aligned with package.json', async () => {
+    const pkg = readPackageJson();
+    const { PACKAGE_VERSION } = await import('../../src/shared/telemetry.js');
+    expect(PACKAGE_VERSION).toBe(pkg.version);
   });
 });
 

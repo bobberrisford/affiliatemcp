@@ -22,7 +22,12 @@ const ROOT = path.resolve(HERE, '..');
 const BUILD_DIR = path.join(ROOT, '.artifacts', 'mcpb');
 const SERVER_DIR = path.join(BUILD_DIR, 'server');
 const OUTPUT_DIR = path.join(ROOT, '.artifacts');
-const MCPB_CLI = path.join(ROOT, 'node_modules', '.bin', process.platform === 'win32' ? 'mcpb.cmd' : 'mcpb');
+const MCPB_CLI = path.join(
+  ROOT,
+  'node_modules',
+  '.bin',
+  process.platform === 'win32' ? 'mcpb.cmd' : 'mcpb',
+);
 
 export const MCPB_SETUP_NETWORKS = ['awin', 'cj', 'impact', 'partnerize'] as const;
 
@@ -32,7 +37,7 @@ interface PackageJson {
 }
 
 interface McpbUserConfig {
-  type: 'string' | 'number' | 'directory';
+  type: 'string' | 'number' | 'boolean' | 'directory';
   title: string;
   description: string;
   sensitive?: boolean;
@@ -97,6 +102,13 @@ function nativeDescription(network: string, title: string, description: string):
 
 export function buildManifest(pkg: PackageJson = readPackage()): McpbManifest {
   const userConfig: Record<string, McpbUserConfig> = {
+    anonymous_telemetry: {
+      type: 'boolean',
+      title: 'Share anonymous usage telemetry',
+      description:
+        'Optional and off by default. Sends once-daily counts by network, operation, coarse outcome, package version, and launch surface. Never sends credentials, affiliate data, prompts, arguments, results, or error text.',
+      required: false,
+    },
     existing_config_directory: {
       type: 'directory',
       title: 'Existing affiliate-mcp config directory',
@@ -107,6 +119,8 @@ export function buildManifest(pkg: PackageJson = readPackage()): McpbManifest {
   };
   const env: Record<string, string> = {
     AFFILIATE_MCP_CONFIG_DIR: '${user_config.existing_config_directory}',
+    AFFILIATE_MCP_TELEMETRY: '${user_config.anonymous_telemetry}',
+    AFFILIATE_MCP_SURFACE: 'mcpb',
   };
 
   for (const network of MCPB_SETUP_NETWORKS) {
@@ -157,9 +171,7 @@ export function buildManifest(pkg: PackageJson = readPackage()): McpbManifest {
     prompts_generated: true,
     keywords: ['affiliate', 'analytics', 'publisher', 'advertiser', 'local-first'],
     license: 'MIT',
-    privacy_policies: [
-      'https://github.com/bobberrisford/affiliatemcp/blob/main/PRIVACY.md',
-    ],
+    privacy_policies: ['https://github.com/bobberrisford/affiliatemcp/blob/main/PRIVACY.md'],
     compatibility: {
       platforms: ['darwin', 'win32'],
       runtimes: { node: '>=20.0.0' },
