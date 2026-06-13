@@ -200,33 +200,27 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--ink);color:va
 <section class="install" id="install"><div class="wrap">
   <div class="sec-label">install · three ways in</div>
   <h2>five minutes. <span class="hl">no account.</span></h2>
-  <p class="lead muted" style="max-width:60ch;margin:0 0 26px">Pick the path that matches how you work. All three run the same local server with your own keys — nothing is hosted, nothing phones home.</p>
+  <p class="lead muted" style="max-width:52ch;margin:0 0 26px">Same local server, your own keys. Pick your path:</p>
 
   <div class="ways">
     <div class="way feat">
       <span class="chip acid">easiest · recommended</span>
       <h3>claude desktop extension</h3>
-      <p class="why"><b>Why:</b> the fastest way in for Claude Desktop. Claude owns the runtime and stores your keys in secure credential fields — no Node.js, no terminal, no config files to edit.</p>
-      <p class="how"><b>How:</b> download the <code>.mcpb</code>, then in Claude Desktop open <b>Settings → Extensions → Advanced → Install Extension…</b> and pick the file. Native setup fields cover Awin, CJ, Impact &amp; Partnerize; every other network reads your existing config.</p>
-      <p class="meta"><span class="osbrand">macOS</span> + Windows · no Node.js · one-click install</p>
+      <p class="why">One-click install via Settings → Extensions on <span class="osbrand">macOS</span> &amp; Windows. No Node.js or terminal — Claude runs it and stores your keys securely.</p>
       <a class="btn p" href="https://github.com/bobberrisford/affiliatemcp/releases/download/v0.6.6/affiliate-networks-mcp-0.6.6.mcpb">get the Claude extension ▸</a>
     </div>
 
     <div class="way">
       <span class="chip">mac · guided wizard</span>
       <h3><span class="osbrand">macOS</span> setup app</h3>
-      <p class="why"><b>Why:</b> a visual wizard for setting up several networks in one sitting. It walks each network login, stores your keys locally, wires up Claude Desktop, then quits — you ask your questions in Claude, not the app.</p>
-      <p class="how"><b>How:</b> download the signed <code>.dmg</code>, drag to Applications, and follow the steps. Best on Apple Silicon Macs; on Windows or Intel, use the extension or the command line.</p>
-      <p class="meta">apple silicon · signed &amp; notarised · no terminal</p>
+      <p class="why">A guided wizard: add your networks, it connects Claude Desktop, then quits. Apple Silicon.</p>
       <a class="btn d" href="https://github.com/bobberrisford/affiliatemcp/releases/download/desktop-v0.1.1/affiliate-mcp-0.1.1-arm64.dmg">download the <span class="osbrand">macOS</span> app ▸</a>
     </div>
 
     <div class="way">
       <span class="chip">all clients &amp; platforms</span>
       <h3>command line</h3>
-      <p class="why"><b>Why:</b> the most flexible path — works with Claude Desktop, Claude Code and Codex, on any OS, with every network. This is what powers Claude Code and Codex.</p>
-      <p class="how"><b>How:</b> run the <code>npx</code> wizard below to add your keys, then the install command for your client. Needs Node.js 20+.</p>
-      <p class="meta">node 20+ · claude desktop · claude code · codex</p>
+      <p class="why">Works with Claude Desktop, Code &amp; Codex on any OS. Needs Node.js 20+.</p>
       <a class="btn ghost" href="#cmds-block">see the commands ▾</a>
     </div>
   </div>
@@ -235,7 +229,7 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--ink);color:va
     <div class="sec-label">command line · pick your client</div>
     <div class="tabs" id="tabs"><button class="tab on" data-tab="desktop">Claude Desktop</button><button class="tab" data-tab="code">Claude Code</button><button class="tab" data-tab="codex">Codex</button></div>
     <div id="cmds"></div>
-    <p class="small muted" style="margin-top:16px">Keys live in <code>~/.affiliate-mcp/.env</code> on your machine, mode 0600. The Claude extension and the macOS app store credentials the same local-first way. Nothing is hosted. Nothing phones home.</p>
+    <p class="small muted" style="margin-top:16px">Keys live in <code>~/.affiliate-mcp/.env</code>, mode 0600. Nothing hosted, nothing phones home.</p>
   </div>
 </div></section>
 
