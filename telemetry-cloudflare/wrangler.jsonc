@@ -4,6 +4,7 @@
   "main": "src/index.ts",
   "compatibility_date": "2026-06-12",
   "observability": { "enabled": false },
+  "routes": [{ "pattern": "telemetry.agenticaffiliate.ai", "custom_domain": true }],
   "triggers": { "crons": ["17 3 * * *"] },
   "vars": {
     "GITHUB_REPOSITORY": "bobberrisford/affiliatemcp",

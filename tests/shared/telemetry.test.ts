@@ -12,6 +12,7 @@ import {
   telemetryConsent,
   telemetryFilePath,
   telemetryOutcomeFromErrorType,
+  TELEMETRY_ENDPOINT,
 } from '../../src/shared/telemetry.js';
 
 let tmp: string;
@@ -100,6 +101,13 @@ describe('telemetry consent and privacy boundary', () => {
     expect(telemetryOutcomeFromErrorType('auth_error')).toBe('auth_error');
     expect(telemetryOutcomeFromErrorType('network_api_error')).toBe('upstream_error');
     expect(telemetryOutcomeFromErrorType('not_implemented')).toBe('other_error');
+  });
+});
+
+describe('TELEMETRY_ENDPOINT', () => {
+  it('defaults to the first-party ingestion host when no override is set', () => {
+    if (process.env['AFFILIATE_MCP_TELEMETRY_ENDPOINT']) return;
+    expect(TELEMETRY_ENDPOINT).toBe('https://telemetry.agenticaffiliate.ai/v1/ingest');
   });
 });
 
