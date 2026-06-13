@@ -25,6 +25,6 @@
     <rect x="286" y="520" width="168" height="40" fill="#0B0B0C"/>
     <text x="304" y="547" fill="#FFFFFF" letter-spacing="2">MIT LICENCE</text>
     <rect x="470" y="520" width="208" height="40" fill="#FF2E88"/>
-    <text x="488" y="547" fill="#FFFFFF" letter-spacing="2">NO TELEMETRY</text>
+    <text x="488" y="547" fill="#FFFFFF" letter-spacing="2">OPT-IN ONLY</text>
   </g>
 </svg>

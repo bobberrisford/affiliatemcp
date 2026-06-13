@@ -3,29 +3,23 @@
 > Companion to [`website-plan.md`](./website-plan.md) and
 > [`website-copy.md`](./website-copy.md). Decisions locked: **host on GitHub
 > Pages**, **ship the current self-contained static HTML as-is** (no build
-> step). The pages live in [`mockups/`](./mockups/).
+> step). The deployable pages live in [`site/`](../../site) and use the
+> canonical apex domain **`agenticaffiliate.ai`**.
 >
-> **Status (shipped):** the site has been promoted to the top-level
-> [`site/`](../../site) directory (option B below) and points at the custom
-> apex domain **`agenticaffiliate.ai`**. All absolute URLs, `robots.txt`,
-> `sitemap.xml`, and a `site/CNAME` reflect that domain; the deploy workflow
-> reads from `site/`. The remaining manual steps are DNS records at the `.ai`
-> registrar and setting the custom domain under Settings to Pages (see §6).
-> The path-based prose below still references `docs/product/mockups/`; read it
-> as `site/`.
+> **Status:** the in-repo work is complete. The remaining go-live steps are to
+> configure DNS at the `.ai` registrar, set the custom domain under Settings
+> to Pages, deploy from `main`, and verify the live host.
 
 ## 1. What we're deploying
 
-Six self-contained HTML pages — `index.html`, `get-started.html`,
-`what-you-can-ask.html`, `networks.html`, `adopt.html`, `mission.html` — plus
-the design-system reference in [`../design-system/`](../design-system). Each
-page inlines its own CSS, nav/footer, and data, so there is **no build and no
-inter-file dependency** at runtime. The only external request is to the Google
-Fonts CDN (see §7).
+Nine self-contained public HTML pages — `index.html`, `get-started.html`,
+`what-you-can-ask.html`, `networks.html`, `adopt.html`, `mission.html`,
+`privacy.html`, `contribute.html`, and `faq.html` — plus `404.html`. Each page
+inlines its own CSS, nav/footer, and data, so there is **no build**. Fonts are
+self-hosted under `site/fonts/`.
 
-All internal links are **relative** (`networks.html`, `index.html#how`), so the
-site works unchanged whether it's served from a github.io subpath or a custom
-domain. Nothing needs rewriting for the base path.
+Internal links are **relative** (`networks.html`, `index.html#how`). Canonical,
+Open Graph, sitemap, and robots URLs use `https://agenticaffiliate.ai/`.
 
 ## 2. Approach: GitHub Pages via Actions
 
@@ -33,18 +27,8 @@ GitHub Pages is the right host: free, lives in this repo, and deploys from a
 workflow that sits next to the existing `ci.yml`/`publish.yml`. Because the site
 is static, the "build" is just packaging a folder and uploading it.
 
-Two source-layout options:
-
-- **A — deploy the folder as-is (lowest effort, recommended for now).** Point
-  the Pages workflow at `docs/product/mockups/` and upload it as the artifact.
-  The artifact root becomes the site root.
-- **B — promote to a top-level `site/` directory (tidier for a real launch).**
-  `git mv docs/product/mockups site`, so the deployable site isn't sitting under
-  a path called "mockups." Purely cosmetic; the workflow path changes to
-  `./site`. Recommended before any public announcement.
-
-This plan uses option A in the workflow below; switch the `path:` to `./site` if
-you take option B.
+The Pages workflow uploads the top-level `site/` directory. The artifact root
+becomes the site root.
 
 ## 3. The deploy workflow
 
@@ -57,7 +41,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'docs/product/mockups/**'        # use 'site/**' if you took option B
+      - 'site/**'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:                      # allow manual runs
 
@@ -81,7 +65,7 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/product/mockups      # the site root (or ./site)
+          path: site
       - id: deployment
         uses: actions/deploy-pages@v4
 ```
@@ -96,46 +80,34 @@ No Node, no install, no build — it just uploads the static folder.
 3. First run: merge the workflow to `main`, or trigger it via
    **Actions → Deploy site to GitHub Pages → Run workflow**.
 
-Default URL: `https://bobberrisford.github.io/affiliatemcp/`.
+The repository currently uses the default
+`https://bobberrisford.github.io/affiliatemcp/` URL. The intended canonical URL
+after the manual custom-domain setup is `https://agenticaffiliate.ai/`.
 
 ## 5. Go-live sequence
 
-1. **Pick the final URL** (§6) — subpath vs custom domain.
-2. **(Optional) promote `mockups/` → `site/`** (option B) and update the
-   workflow `path:`.
-3. **Add the deploy workflow** and the pre-launch polish items (§8).
-4. **Enable Pages** with the Actions source (§4).
-5. **Merge the feature branch to `main`.** The current work is on
-   `claude/website-onboarding-plan-OdrIq`; deployment triggers from `main`.
-6. **Watch the Action run**, then open the `page_url` it prints.
-7. **Verify** (§9), then announce.
+1. Configure the apex-domain DNS records and verify domain ownership (§6).
+2. Set `agenticaffiliate.ai` under **Settings → Pages → Custom domain**.
+3. Merge the site branch to `main`; deployment triggers from `main`.
+4. Watch the Action run, then open the `page_url` it prints.
+5. Enable **Enforce HTTPS** when GitHub makes it available.
+6. Verify (§9), then announce.
 
-## 6. URL / custom domain (decision needed)
+## 6. URL / custom domain
 
-- **github.io subpath** — `bobberrisford.github.io/affiliatemcp/`. Zero extra
-  setup. Fine for a first launch.
-- **Custom domain** (e.g. `affiliate-mcp.dev` or a subdomain) — add a `CNAME`
-  file to the site folder containing the domain, set the DNS record
-  (`CNAME` → `bobberrisford.github.io`, or `A`/`AAAA` records for an apex
-  domain per GitHub's docs), and set the domain under **Settings → Pages**.
-  Enable **Enforce HTTPS** once the certificate provisions.
+The selected domain is the apex `agenticaffiliate.ai`. Configure `A`/`AAAA`,
+`ALIAS`, or `ANAME` records supported by the registrar, verify the domain, and
+set it under **Settings → Pages**.
 
-Recommendation: launch on the subpath, move to a custom domain when ready —
-no code changes either way because links are relative.
+This repository publishes through a custom GitHub Actions workflow. GitHub
+ignores a `CNAME` file in the deployed artifact for this publishing mode; the
+custom domain must be configured through repository settings or the Pages API.
+Enable **Enforce HTTPS** once the certificate provisions.
 
-## 7. Fonts & the no-telemetry ethos (flag)
+## 7. Fonts and third-party requests
 
-The pages load Bricolage Grotesque / Space Grotesk / JetBrains Mono from the
-**Google Fonts CDN**. That means visitors' browsers make a request to Google.
-For a project whose whole pitch is *"no telemetry, your data stays yours,"*
-that's a small but real inconsistency, and it's worth closing before launch:
-
-- **Self-host the fonts** — download the WOFF2 files, drop them in
-  `site/fonts/`, and replace the `@import` with local `@font-face` rules. No
-  third-party request, faster first paint, and it matches the brand promise.
-
-Low effort, recommended. (The design-system README already flags fonts as a
-swap-in point.)
+Bricolage Grotesque, Space Grotesk, and JetBrains Mono are self-hosted under
+`site/fonts/`. The public pages do not load fonts from the Google Fonts CDN.
 
 ## 8. Pre-launch polish checklist
 
@@ -143,13 +115,13 @@ These aren't blockers but should land before a public link:
 
 - [ ] **Favicon + touch icon** — wire up `../design-system/assets/mark.svg` as
       the favicon on every page (`<link rel="icon" href="...mark.svg">`).
-- [ ] **Meta + Open Graph tags** — title, description, `og:title`,
+- [x] **Meta + Open Graph tags** — title, description, `og:title`,
       `og:description`, `og:image` (a social card — the design system's social
       kit has one), `twitter:card`. Drives how links unfurl on LinkedIn/Slack/X.
-- [ ] **Self-host fonts** (§7).
-- [ ] **`404.html`** — a branded not-found page (GitHub Pages serves it
+- [x] **Self-host fonts** (§7).
+- [x] **`404.html`** — a branded not-found page (GitHub Pages serves it
       automatically).
-- [ ] **`robots.txt` + `sitemap.xml`** — small, helps indexing.
+- [x] **`robots.txt` + `sitemap.xml`** — small, helps indexing.
 - [ ] **Real links** — replace any remaining placeholder `#` hrefs; confirm the
       GitHub, manifesto, and `adopt-a-network` issue links resolve.
 - [ ] **Accessibility pass** — heading order, image alt text, AA contrast,
@@ -179,7 +151,7 @@ These aren't blockers but should land before a public link:
   README auto-generates from (see `website-plan.md` §8) as part of a future
   build step — the cleanest trigger to revisit the Astro option.
 
-## 11. Open decisions for the owner
+## 11. Recorded decisions
 
 1. **URL**: ~~github.io subpath to start, or go straight to a custom domain?~~
    Resolved: custom apex domain `agenticaffiliate.ai`.
@@ -187,6 +159,5 @@ These aren't blockers but should land before a public link:
    `site/` before launch?~~ Resolved: promoted to top-level `site/`.
 3. **Fonts**: ~~self-host before launch (recommended), or accept the Google CDN
    request for v1?~~ Resolved: fonts are self-hosted under `site/fonts/`.
-4. **Scope at launch**: ship the six pages now, or hold for
-   `privacy` / `contribute` / `faq` first? (`privacy`, `contribute`, and `faq`
-   pages now exist in `site/`.)
+4. **Scope at launch**: resolved: ship all nine public pages, including
+   `privacy`, `contribute`, and `faq`.
