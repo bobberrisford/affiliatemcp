@@ -1,7 +1,7 @@
 # Action-authority layer for brand-side writes
 
 - **Date:** 2026-06-12
-- **Status:** Proposed
+- **Status:** Accepted (2026-06-13)
 - **Affects:** tool dispatch (`src/tools/generate.ts`), future authority
   primitives in shared core, audit logging, the product framing of brand-side
   writes
