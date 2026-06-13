@@ -1,7 +1,7 @@
 # Persistent adapter-result caching at the tool dispatcher
 
 - **Date:** 2026-06-12
-- **Status:** Proposed
+- **Status:** Accepted (2026-06-13)
 - **Affects:** `src/tools/generate.ts` (tool dispatcher seam), a new cache
   module, the CLI command surface (`cache clear`), `.env.example`, setup docs
 - **Depends on:** nothing merged; supersedes the triage state of the
