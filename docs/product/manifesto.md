@@ -1,5 +1,8 @@
 # Manifesto: AI-native affiliate data
 
+> Status: current product direction. Accepted decisions and shipped behaviour
+> take precedence where later work changes a product boundary.
+
 ## The problem
 
 Affiliate work is spread across network dashboards, exports, spreadsheets,

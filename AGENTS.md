@@ -5,10 +5,11 @@ This file orients AI coding agents (Claude Code and equivalents) opening
 
 ## What this project is
 
-`affiliate-mcp` is a Model Context Protocol server that exposes four affiliate
-networks — Awin, CJ Affiliate, Impact, Rakuten Advertising — to MCP-capable
-clients (Claude Desktop, Claude Code, others). The user brings their own API
-credentials; the server is local-only, with no hosted version. Optional
+`affiliate-mcp` is a Model Context Protocol server with 86 publisher-side and
+advertiser-side adapters across 72 affiliate-network families. It serves
+MCP-capable clients including Claude Desktop, Claude Code, and Codex. The user
+brings their own API credentials; the server is local-only, with no hosted
+version. Optional
 telemetry is opt-in, off by default, and aggregate-only; it conforms to
 `PRIVACY.md` and the decision record
 `docs/decisions/2026-06-13-privacy-first-telemetry.md`. UK English throughout,
@@ -79,43 +80,31 @@ under `docs/findings/` set the tone — copy that register.
 ├── AGENTS.md                          (this file)
 ├── README.md                          public-facing summary; auto-generated table
 ├── REPORT.md                          per-network capability + findings report
-├── LICENSE
+├── LICENCE
+├── CONTRIBUTING.md / PRIVACY.md       contributor and privacy contracts
+├── RELEASING.md / DEPLOY.md           release and desktop deployment runbooks
 ├── package.json
-├── tsconfig.json / tsconfig.dev.json  strict TypeScript; dev variant includes tests
-├── vitest.config.ts
-├── .eslintrc.cjs / .prettierrc
 ├── .env.example                       schema of every env var the project reads
+├── design-system/                     canonical implemented design system
+├── desktop/                           compatibility desktop setup app
 ├── docs/
+│   ├── README.md                      documentation authority and review rules
+│   ├── decisions/                     accepted and proposed cross-cutting decisions
+│   ├── product/                       direction, proposals, history, and research
 │   ├── networks/                      per-network setup walkthroughs (user-facing)
 │   └── findings/                      per-network honest findings (verifiable claims)
+├── mcpb/                              host-native Claude Desktop bundle metadata
 ├── scripts/                           generators + validators (tsx)
-│   ├── generate-readme-table.ts
-│   ├── generate-report.ts
-│   ├── generate-report-image.ts
-│   └── validate-network-json.ts       npm run validate:network <slug>
+├── skills/                            user-facing workflow skills
 ├── src/
-│   ├── index.ts                       CLI dispatch (server / setup / test / doctor)
+│   ├── index.ts                       CLI dispatch
 │   ├── server.ts                      MCP server bootstrap
-│   ├── cli/                           setup wizard, test, doctor
-│   │   ├── setup.ts / test.ts / doctor.ts
-│   │   └── wizard/                    envfile, paths, prompts
+│   ├── core/                          client-neutral application facade
+│   ├── cli/                           setup, install, test, doctor, and cache commands
 │   ├── shared/                        load-bearing primitives — STABLE; do not modify
-│   │   ├── types.ts                   the canonical contract every adapter speaks
-│   │   ├── resilience.ts              timeout + retry + circuit breaker (the only path)
-│   │   ├── errors.ts                  envelope helpers; principle 4.1 lives here
-│   │   ├── config.ts                  credential loader (~/.affiliate-mcp/.env)
-│   │   ├── registry.ts                adapter registry
-│   │   ├── diagnostic.ts              validateNetwork(slug) — the verification engine
-│   │   └── logging.ts                 pino, stderr-only
-│   ├── tools/
-│   │   └── generate.ts                turns each adapter into MCP tools (7 per network)
-│   ├── networks/
-│   │   ├── index.ts                   aggregator: importing this registers every adapter
-│   │   ├── awin/                      *** canonical reference implementation ***
-│   │   ├── cj/                        CJ Affiliate
-│   │   ├── impact/                    Impact
-│   │   └── rakuten/                   Rakuten Advertising
-│   └── skills/                        Claude Code skills for end users (not contributors)
+│   ├── tools/                         turns adapters into MCP tools
+│   ├── prompts/                       generated MCP prompts
+│   └── networks/                      one folder per adapter
 ├── templates/
 │   └── new-network/                   copy this folder to add a network adapter
 ├── tests/
@@ -367,24 +356,24 @@ CLI entry points (built or via `npm run dev`):
 
 ## External contract notes
 
-- 30 tools ship at v0.1: 7 publisher operations × 4 networks (28) + 2 meta
-  tools (`affiliate_list_networks`, `affiliate_run_diagnostic`).
-- Tool names follow `affiliate_<network>_<snake_case_op>`. Stable.
+- Each registered adapter exposes its supported canonical operations as
+  `affiliate_<network>_<snake_case_op>` tools.
+- Three meta-tools are always present: `affiliate_list_networks`,
+  `affiliate_run_diagnostic`, and `affiliate_resolve_brand`.
 - `NetworkErrorEnvelope` shape is stable; downstream MCP clients depend on its
   field names.
-- Adding a fifth network adds 7 tools automatically — no edits to
-  `src/tools/generate.ts` needed.
+- Adding an adapter registers its supported tools automatically; do not
+  hand-maintain a tool-count claim in documentation.
 
 ## Forward shape
 
-- **Tier-ready**: paid-tier scaffolding exists in `claim_status` and the
-  setup/approval fields on `NetworkMeta`. Not active at v0.1.
-- **Brand-side scaffolded**: `listPublishers` and `listPublisherSectors` are on
-  the adapter interface and throw `NotImplementedError` at v0.1. They light up
-  in v0.2 when a network claims brand support.
 - **Network claim process**: each adapter declares a `claim_status` of
   `production | partial | experimental | unsupported`. Promotion to
   `production` happens only after a live acceptance test against a real
-  publisher account; the test infrastructure is queued for a later chunk.
+  account.
+- **Brand-side growth**: advertiser-side adapters remain read-oriented unless
+  an accepted decision explicitly defines a safe write contract.
+- **Distribution**: host-native packages are the primary direction; the
+  standalone desktop app remains a compatibility fallback.
 
 When in doubt, read Awin and ask before refactoring shared types.

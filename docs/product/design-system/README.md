@@ -1,5 +1,10 @@
 # affiliate-mcp — Design System
 
+> Status: historical design brief. The implemented design-system source of
+> truth is [`../../../design-system/README.md`](../../../design-system/README.md).
+> Use this document for the original brand rationale, not component or token
+> implementation details.
+
 > **Tear up the dashboard.** A 2026 punk-rock brand system for an open-source,
 > AI-native affiliate data tool. Built for stop-motion video, LinkedIn, docs,
 > the CLI, and the open-source landing page.

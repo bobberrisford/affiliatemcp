@@ -1,18 +1,20 @@
 # affiliate-mcp Desktop — full plan, decisions, and roadmap (2026-06-07)
 
-> **Superseded in part (2026-06-09):** the desktop app now ships **free and open
+> **Historical plan, superseded in part (2026-06-09):** the desktop app now ships **free and open
 > source** — there is no licence, no Stripe issuer, and no activation gate. See
 > [`../decisions/2026-06-09-desktop-app-free.md`](../decisions/2026-06-09-desktop-app-free.md).
 > The paid-model sections below (§2A licence/Stripe, Phase 1b issuer, the £39
 > pricing) are kept for historical context only and no longer reflect what ships.
+> The accepted
+> [`host-native distribution decision`](../decisions/2026-06-12-host-native-distribution.md)
+> also makes native host installation the primary path; the desktop app is a
+> compatibility fallback.
 
 > Status: planning. Builds on
 > [`claude-desktop-app-scoping.md`](./claude-desktop-app-scoping.md).
 > North star: **easy onboarding for non-technical users.**
 > Hard constraint: **the open-source tool stays the core. Forever.**
 >
-> Mockups: [`./desktop-app-mockups/index.html`](./desktop-app-mockups/index.html)
-
 This document covers three things the scoping doc didn't:
 
 1. **The decisions we have to make now** — the one-way doors that shape
@@ -212,8 +214,7 @@ feature. Out of scope until Phase 1–2 prove reach.
 **bought in-app**. Stack stays MIT (D2). **No trial — a valid licence is
 required to run the app.**
 No legal-protection effort. Buyer = non-technical operator who won't use
-a terminal. Mockups:
-[`./desktop-app-mockups/licence.html`](./desktop-app-mockups/licence.html).
+a terminal. The original licence mockups are no longer present.
 
 ### Gate placement
 The licence is **screen 0** — first launch shows Activate *before*

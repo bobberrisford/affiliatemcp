@@ -1,8 +1,8 @@
 # Website plan: onboarding non-technical users & communicating the mission
 
-> Status: proposal / planning document. No site code exists yet — today the
-> only "homepage" is the GitHub README. This document is the blueprint for a
-> dedicated marketing + onboarding site.
+> Status: historical implementation plan. The static site now exists under
+> [`site/`](../../site); use this document for original goals and rationale,
+> not as a statement of current repository state.
 
 ## 1. Why a website
 

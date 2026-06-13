@@ -1,5 +1,8 @@
 # OpenAI parity plan
 
+> Status: current roadmap. Codex support is shipped; ChatGPT support remains a
+> separate proposal.
+
 This project should bring affiliate data to the AI workspace the user already
 uses, without changing the local-first, bring-your-own-keys stance. OpenAI
 parity needs more than one milestone because Codex and ChatGPT use different
