@@ -8,8 +8,11 @@ This file orients AI coding agents (Claude Code and equivalents) opening
 `affiliate-mcp` is a Model Context Protocol server that exposes four affiliate
 networks — Awin, CJ Affiliate, Impact, Rakuten Advertising — to MCP-capable
 clients (Claude Desktop, Claude Code, others). The user brings their own API
-credentials; the server is local-only, no hosted version, no telemetry. UK
-English throughout, including the canonical noun "programme".
+credentials; the server is local-only, with no hosted version. Optional
+telemetry is opt-in, off by default, and aggregate-only; it conforms to
+`PRIVACY.md` and the decision record
+`docs/decisions/2026-06-13-privacy-first-telemetry.md`. UK English throughout,
+including the canonical noun "programme".
 
 The project is in public beta. The full state of each network's adapter — what
 ships, what is stubbed, what is known to misbehave — is in `REPORT.md`.
@@ -339,8 +342,10 @@ CLI entry points (built or via `npm run dev`):
 
 ## What not to do
 
-- No hosted version. No OAuth proxy. No phone-home telemetry. The user's
-  credentials never leave their machine.
+- No hosted version. No OAuth proxy. The user's credentials and affiliate data
+  never leave their machine. Telemetry, where enabled, must stay opt-in (off by
+  default), aggregate-only, and conform exactly to `PRIVACY.md`: never
+  credentials, affiliate data, or account identifiers.
 - Do not modify files under `src/shared/` unless extending the contract is the
   only path forward. Open an issue first.
 - Do not modify another network's adapter. Each network owns its directory.
