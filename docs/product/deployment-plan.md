@@ -4,6 +4,15 @@
 > [`website-copy.md`](./website-copy.md). Decisions locked: **host on GitHub
 > Pages**, **ship the current self-contained static HTML as-is** (no build
 > step). The pages live in [`mockups/`](./mockups/).
+>
+> **Status (shipped):** the site has been promoted to the top-level
+> [`site/`](../../site) directory (option B below) and points at the custom
+> apex domain **`agenticaffiliate.ai`**. All absolute URLs, `robots.txt`,
+> `sitemap.xml`, and a `site/CNAME` reflect that domain; the deploy workflow
+> reads from `site/`. The remaining manual steps are DNS records at the `.ai`
+> registrar and setting the custom domain under Settings to Pages (see §6).
+> The path-based prose below still references `docs/product/mockups/`; read it
+> as `site/`.
 
 ## 1. What we're deploying
 
@@ -172,10 +181,12 @@ These aren't blockers but should land before a public link:
 
 ## 11. Open decisions for the owner
 
-1. **URL**: github.io subpath to start, or go straight to a custom domain?
-2. **Layout**: keep serving from `docs/product/mockups/`, or promote to `site/`
-   before launch?
-3. **Fonts**: self-host before launch (recommended), or accept the Google CDN
-   request for v1?
+1. **URL**: ~~github.io subpath to start, or go straight to a custom domain?~~
+   Resolved: custom apex domain `agenticaffiliate.ai`.
+2. **Layout**: ~~keep serving from `docs/product/mockups/`, or promote to
+   `site/` before launch?~~ Resolved: promoted to top-level `site/`.
+3. **Fonts**: ~~self-host before launch (recommended), or accept the Google CDN
+   request for v1?~~ Resolved: fonts are self-hosted under `site/fonts/`.
 4. **Scope at launch**: ship the six pages now, or hold for
-   `privacy` / `contribute` / `faq` first?
+   `privacy` / `contribute` / `faq` first? (`privacy`, `contribute`, and `faq`
+   pages now exist in `site/`.)
