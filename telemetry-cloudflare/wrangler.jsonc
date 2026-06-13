@@ -13,7 +13,7 @@
     {
       "binding": "DB",
       "database_name": "affiliate-mcp-telemetry",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "2cce58ad-0c1c-4314-90bb-3bd7e2148254",
       "migrations_dir": "migrations"
     }
   ],
