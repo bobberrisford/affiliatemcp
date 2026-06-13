@@ -14,8 +14,8 @@ import { resolveConfigPaths } from '../cli/wizard/paths.js';
 export const TELEMETRY_SCHEMA_VERSION = 1;
 export const TELEMETRY_ENDPOINT =
   process.env['AFFILIATE_MCP_TELEMETRY_ENDPOINT'] ??
-  'https://telemetry.affiliate-mcp.com/v1/ingest';
-export const PACKAGE_VERSION = '0.6.6';
+  'https://telemetry.agenticaffiliate.ai/v1/ingest';
+export const PACKAGE_VERSION = '0.7.1';
 
 export type TelemetrySurface = 'npm' | 'mcpb' | 'desktop-bundle' | 'unknown';
 export type TelemetryOutcome =
