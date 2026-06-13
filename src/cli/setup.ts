@@ -151,7 +151,7 @@ export async function runSetup(opts: SetupOptions = {}): Promise<number> {
 async function offerConnectToClaude(prompter: Prompter): Promise<void> {
   out('');
   const yes = await prompter.confirm(
-    'Connect this to Claude Desktop / Claude Code now?',
+    'Connect this to a local client (Claude Desktop / Claude Code / Codex / GitHub Copilot) now?',
     { defaultYes: true },
   );
   if (!yes) {

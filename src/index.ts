@@ -39,7 +39,7 @@ function printHelp(): void {
   write('Usage:');
   write('  affiliate-networks-mcp                 Start the MCP server on stdio');
   write('  affiliate-networks-mcp setup           Interactive setup wizard');
-  write('  affiliate-networks-mcp install         Connect to Claude Desktop / Claude Code / Codex');
+  write('  affiliate-networks-mcp install         Connect to Claude Desktop / Claude Code / Codex / Copilot');
   write('  affiliate-networks-mcp uninstall       Remove the affiliate entry from AI clients');
   write('  affiliate-networks-mcp test            Friendly diagnostic against configured networks');
   write('  affiliate-networks-mcp doctor          Verbose diagnostic with raw responses');
@@ -51,10 +51,11 @@ function printHelp(): void {
   write('  --desktop          Target Claude Desktop only');
   write('  --code             Target Claude Code only');
   write('  --codex            Target Codex only (OpenAI, local stdio MCP)');
+  write('  --copilot          Target GitHub Copilot only (VS Code, local stdio MCP)');
   write('  --cowork           Set up for Claude Cowork (private GitHub mirror)');
-  write('  --all              Target Desktop + Code + Codex, no prompt');
+  write('  --all              Target Desktop + Code + Codex + Copilot, no prompt');
   write('  --dry-run          Show what would change without writing');
-  write('  --force-overwrite  Rewrite a malformed Claude Desktop config (backs up first)');
+  write('  --force-overwrite  Rewrite a malformed Claude Desktop / Copilot config (backs up first)');
   write('');
   write('cowork-mirror flags:');
   write('  [name]             Repo name to create (default: affiliatemcp-internal)');
@@ -67,7 +68,7 @@ function printHelp(): void {
 }
 
 interface InstallFlags {
-  target: 'auto' | 'desktop' | 'code' | 'codex' | 'all' | 'cowork';
+  target: 'auto' | 'desktop' | 'code' | 'codex' | 'copilot' | 'all' | 'cowork';
   dryRun: boolean;
   forceOverwrite: boolean;
 }
@@ -84,6 +85,9 @@ function parseInstallFlags(rest: string[]): InstallFlags {
         break;
       case '--codex':
         flags.target = 'codex';
+        break;
+      case '--copilot':
+        flags.target = 'copilot';
         break;
       case '--cowork':
         flags.target = 'cowork';

@@ -6,7 +6,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -162,7 +162,7 @@ describe('runInstall — no clients detected', () => {
       detection: { desktop: 'absent', desktopConfigPath: path.join(tmp, 'x.json'), code: 'absent' },
     });
     expect(code).toBe(0);
-    expect(out()).toContain('No Claude or Codex client detected.');
+    expect(out()).toContain('No Claude, Codex, or Copilot client detected.');
   });
 
   it('routes to the Cowork mirror when accepted', async () => {
@@ -229,15 +229,47 @@ describe('runInstall — explicit targets', () => {
     expect(out()).not.toContain('Claude Code:');
   });
 
-  it('--all includes Codex and still excludes Cowork', async () => {
+  it('--copilot writes the VS Code mcp.json and does not require VS Code', async () => {
+    const desktopPath = path.join(tmp, 'claude_desktop_config.json');
+    const copilotPath = path.join(tmp, 'Code', 'User', 'mcp.json');
+    const code = await runInstall({
+      target: 'copilot',
+      detection: { desktop: 'present', desktopConfigPath: desktopPath, code: 'present' },
+      copilotConfigPathOverride: copilotPath,
+      spawnClaudeCode: fakeSpawn([]), // must never be called
+    });
+    expect(code).toBe(0);
+    const written = JSON.parse(readFileSync(copilotPath, 'utf8')) as {
+      servers: Record<string, unknown>;
+    };
+    expect(written.servers['affiliate']).toEqual({
+      type: 'stdio',
+      command: 'npx',
+      args: ['-y', 'affiliate-networks-mcp'],
+    });
+    expect(out()).toContain('GitHub Copilot: created');
+    expect(out()).toContain('Agent mode');
+    expect(out()).not.toContain('Claude Desktop:');
+    expect(out()).not.toContain('Claude Code:');
+  });
+
+  it('--all includes Codex and Copilot and still excludes Cowork', async () => {
     const desktopPath = path.join(tmp, 'claude_desktop_config.json');
     const codexPath = path.join(tmp, '.codex', 'config.toml');
+    const copilotPath = path.join(tmp, 'Code', 'User', 'mcp.json');
     let mirrorCalled = false;
     const code = await runInstall({
       target: 'all',
-      detection: { desktop: 'present', desktopConfigPath: desktopPath, code: 'present', codex: 'absent' },
+      detection: {
+        desktop: 'present',
+        desktopConfigPath: desktopPath,
+        code: 'present',
+        codex: 'absent',
+        copilot: 'absent',
+      },
       desktopConfigPathOverride: desktopPath,
       codexConfigPathOverride: codexPath,
+      copilotConfigPathOverride: copilotPath,
       spawnClaudeCode: fakeSpawn([ok(JSON.stringify({ mcpServers: {} })), ok('added')]),
       coworkMirror: async () => {
         mirrorCalled = true;
@@ -248,7 +280,9 @@ describe('runInstall — explicit targets', () => {
     expect(out()).toContain('Claude Desktop: created');
     expect(out()).toContain("Claude Code: added 'affiliate'");
     expect(out()).toContain('Codex: created');
+    expect(out()).toContain('GitHub Copilot: created');
     expect(readFileSync(codexPath, 'utf8')).toContain('[mcp_servers.affiliate]');
+    expect(readFileSync(copilotPath, 'utf8')).toContain('"affiliate"');
     expect(mirrorCalled).toBe(false);
   });
 
@@ -343,6 +377,31 @@ describe('runUninstall', () => {
     const after = JSON.parse(readFileSync(desktopPath, 'utf8')) as { mcpServers: Record<string, unknown> };
     expect(after.mcpServers).toEqual({ other: { command: 'x' } });
     expect(out()).toContain("Claude Code: removed 'affiliate'");
+  });
+
+  it('--copilot removes the affiliate entry and preserves siblings', async () => {
+    const copilotPath = path.join(tmp, 'Code', 'User', 'mcp.json');
+    mkdirSync(path.dirname(copilotPath), { recursive: true });
+    writeFileSync(
+      copilotPath,
+      JSON.stringify({
+        servers: {
+          other: { command: 'x' },
+          affiliate: { type: 'stdio', command: 'npx', args: ['-y', 'affiliate-networks-mcp'] },
+        },
+      }),
+    );
+    const code = await runUninstall({
+      target: 'copilot',
+      detection: { desktop: 'absent', desktopConfigPath: null, code: 'absent' },
+      copilotConfigPathOverride: copilotPath,
+    });
+    expect(code).toBe(0);
+    const after = JSON.parse(readFileSync(copilotPath, 'utf8')) as {
+      servers: Record<string, unknown>;
+    };
+    expect(after.servers).toEqual({ other: { command: 'x' } });
+    expect(out()).toContain("GitHub Copilot: removed 'affiliate'");
   });
 
   it('--cowork prints manual removal instructions', async () => {

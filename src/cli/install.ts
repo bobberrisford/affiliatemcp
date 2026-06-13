@@ -2,9 +2,9 @@
  * `affiliate-networks-mcp install` — connect this MCP server to AI clients.
  *
  * Detects which Claude clients are installed (Desktop, Code) and can also wire
- * Codex directly through its local MCP config. Desktop edits go through a
- * safe-edit module that
- * preserves any other MCP servers the user has configured and takes a
+ * Codex and GitHub Copilot (VS Code) directly through their local MCP configs.
+ * Desktop, Codex, and Copilot edits go through safe-edit modules that
+ * preserve any other MCP servers the user has configured and take a
  * timestamped backup before any write. Code edits go through the `claude mcp`
  * CLI, which manages its own storage.
  *
@@ -33,8 +33,22 @@ import {
   resolveCodexConfigPath,
   type CodexEditResult,
 } from './install/codex.js';
+import {
+  addAffiliateCopilotEntry,
+  MalformedCopilotConfigError,
+  removeAffiliateCopilotEntry,
+  resolveCopilotConfigPath,
+  type CopilotEditResult,
+} from './install/copilot.js';
 
-export type InstallTarget = 'auto' | 'desktop' | 'code' | 'codex' | 'all' | 'cowork';
+export type InstallTarget =
+  | 'auto'
+  | 'desktop'
+  | 'code'
+  | 'codex'
+  | 'copilot'
+  | 'all'
+  | 'cowork';
 
 export interface InstallOptions {
   prompter?: Prompter;
@@ -45,6 +59,7 @@ export interface InstallOptions {
   detection?: DetectionResult;
   desktopConfigPathOverride?: string;
   codexConfigPathOverride?: string;
+  copilotConfigPathOverride?: string;
   spawnClaudeCode?: import('./install/claude-code.js').SpawnFn;
   /** Override for tests — the Cowork mirror runner. */
   coworkMirror?: typeof import('./install/cowork-mirror.js').runCoworkMirror;
@@ -61,27 +76,38 @@ interface ResolvedTargets {
   code: boolean;
   cowork: boolean;
   codex: boolean;
+  copilot: boolean;
 }
+
+const NO_TARGETS: ResolvedTargets = {
+  desktop: false,
+  code: false,
+  cowork: false,
+  codex: false,
+  copilot: false,
+};
 
 async function resolveTargets(
   detection: DetectionResult,
   target: InstallTarget,
   prompter: Prompter,
 ): Promise<ResolvedTargets | null> {
-  if (target === 'desktop') return { desktop: true, code: false, cowork: false, codex: false };
-  if (target === 'code') return { desktop: false, code: true, cowork: false, codex: false };
-  if (target === 'codex') return { desktop: false, code: false, cowork: false, codex: true };
-  if (target === 'cowork') return { desktop: false, code: false, cowork: true, codex: false };
+  if (target === 'desktop') return { ...NO_TARGETS, desktop: true };
+  if (target === 'code') return { ...NO_TARGETS, code: true };
+  if (target === 'codex') return { ...NO_TARGETS, codex: true };
+  if (target === 'copilot') return { ...NO_TARGETS, copilot: true };
+  if (target === 'cowork') return { ...NO_TARGETS, cowork: true };
   if (target === 'all') {
-    // --all is the no-prompt path. Codex is included because it is a local file
-    // write and does not require Codex to be installed. Cowork is deliberately
-    // excluded: it creates a GitHub repo and is best done interactively (or via
-    // `--cowork`).
+    // --all is the no-prompt path. Codex and Copilot are included because they
+    // are local file writes and do not require the client to be installed.
+    // Cowork is deliberately excluded: it creates a GitHub repo and is best
+    // done interactively (or via `--cowork`).
     return {
       desktop: detection.desktop !== 'notSupported',
       code: true,
       cowork: false,
       codex: true,
+      copilot: true,
     };
   }
 
@@ -91,28 +117,38 @@ async function resolveTargets(
   const desktopAvailable = detection.desktop === 'present';
   const codeAvailable = detection.code === 'present';
   const codexAvailable = detection.codex === 'present';
-  const availableCount = [desktopAvailable, codeAvailable, codexAvailable].filter(Boolean).length;
+  const copilotAvailable = detection.copilot === 'present';
+  const availableCount = [
+    desktopAvailable,
+    codeAvailable,
+    codexAvailable,
+    copilotAvailable,
+  ].filter(Boolean).length;
 
   if (availableCount === 0) {
-    // No detected config-editable client. Still offer Codex because the Codex
-    // installer only writes ~/.codex/config.toml and does not need the CLI.
+    // No detected config-editable client. Still offer Codex and Copilot because
+    // their installers only write a local config file and do not need the CLI.
     const choice = await prompter.menu(
-      'No Claude Desktop, Claude Code, or Codex found. Which client should I connect?',
+      'No Claude Desktop, Claude Code, Codex, or GitHub Copilot found. Which client should I connect?',
       [
         { key: 'codex', label: 'connect to Codex (OpenAI, local MCP)' },
+        { key: 'copilot', label: 'connect to GitHub Copilot (VS Code, local MCP)' },
         { key: 'cowork', label: 'create a private GitHub mirror for Cowork' },
         { key: 'cancel', label: 'make no changes' },
       ],
     );
-    if (choice === 'codex') return { desktop: false, code: false, cowork: false, codex: true };
-    if (choice === 'cowork') return { desktop: false, code: false, cowork: true, codex: false };
+    if (choice === 'codex') return { ...NO_TARGETS, codex: true };
+    if (choice === 'copilot') return { ...NO_TARGETS, copilot: true };
+    if (choice === 'cowork') return { ...NO_TARGETS, cowork: true };
     if (detection.desktop === 'notSupported') {
       out('Claude Desktop is not supported on this platform.');
-      out('Install Claude Code (https://claude.com/claude-code), Codex, or re-run with --codex.');
+      out('Install Claude Code (https://claude.com/claude-code), Codex, VS Code +');
+      out('GitHub Copilot, or re-run with --codex / --copilot.');
     } else {
-      out('No Claude or Codex client detected.');
+      out('No Claude, Codex, or Copilot client detected.');
       out('Install Claude Desktop (https://claude.ai/download), Claude Code');
-      out('(https://claude.com/claude-code), Codex, or re-run with --codex.');
+      out('(https://claude.com/claude-code), Codex, VS Code + GitHub Copilot,');
+      out('or re-run with --codex / --copilot.');
     }
     return null;
   }
@@ -122,21 +158,36 @@ async function resolveTargets(
     if (desktopAvailable) choices.push({ key: 'desktop', label: 'Claude Desktop only' });
     if (codeAvailable) choices.push({ key: 'code', label: 'Claude Code only' });
     if (codexAvailable) choices.push({ key: 'codex', label: 'Codex only (OpenAI, local MCP)' });
+    if (copilotAvailable)
+      choices.push({ key: 'copilot', label: 'GitHub Copilot only (VS Code, local MCP)' });
     choices.push(
       { key: 'cowork', label: 'Claude Cowork (org marketplace via private mirror)' },
       { key: 'cancel', label: 'cancel — make no changes' },
     );
     const choice = await prompter.menu('Which AI client(s) should I connect?', choices);
     if (choice === 'cancel') return null;
-    if (choice === 'desktop') return { desktop: true, code: false, cowork: false, codex: false };
-    if (choice === 'code') return { desktop: false, code: true, cowork: false, codex: false };
-    if (choice === 'codex') return { desktop: false, code: false, cowork: false, codex: true };
-    if (choice === 'cowork') return { desktop: false, code: false, cowork: true, codex: false };
-    return { desktop: desktopAvailable, code: codeAvailable, cowork: false, codex: codexAvailable };
+    if (choice === 'desktop') return { ...NO_TARGETS, desktop: true };
+    if (choice === 'code') return { ...NO_TARGETS, code: true };
+    if (choice === 'codex') return { ...NO_TARGETS, codex: true };
+    if (choice === 'copilot') return { ...NO_TARGETS, copilot: true };
+    if (choice === 'cowork') return { ...NO_TARGETS, cowork: true };
+    return {
+      desktop: desktopAvailable,
+      code: codeAvailable,
+      cowork: false,
+      codex: codexAvailable,
+      copilot: copilotAvailable,
+    };
   }
 
   // Exactly one config-editable client is available.
-  return { desktop: desktopAvailable, code: codeAvailable, cowork: false, codex: codexAvailable };
+  return {
+    desktop: desktopAvailable,
+    code: codeAvailable,
+    cowork: false,
+    codex: codexAvailable,
+    copilot: copilotAvailable,
+  };
 }
 
 export async function runInstall(opts: InstallOptions = {}): Promise<number> {
@@ -156,6 +207,7 @@ export async function runInstall(opts: InstallOptions = {}): Promise<number> {
   if (detection.desktop === 'notSupported') detectedParts.push('(Claude Desktop not supported on this platform)');
   if (detection.code === 'present') detectedParts.push('Claude Code');
   if (detection.codex === 'present') detectedParts.push('Codex');
+  if (detection.copilot === 'present') detectedParts.push('GitHub Copilot');
   if (detectedParts.length === 0) detectedParts.push('none');
   out(`Detected: ${detectedParts.join(', ')}`);
   out('');
@@ -183,7 +235,7 @@ export async function runInstall(opts: InstallOptions = {}): Promise<number> {
     targets.desktop = false;
   }
 
-  if (!targets.desktop && !targets.code && !targets.codex) {
+  if (!targets.desktop && !targets.code && !targets.codex && !targets.copilot) {
     out('Nothing to do.');
     return 0;
   }
@@ -259,12 +311,40 @@ export async function runInstall(opts: InstallOptions = {}): Promise<number> {
     }
   }
 
+  if (targets.copilot) {
+    try {
+      const result = await addAffiliateCopilotEntry({
+        configPath: opts.copilotConfigPathOverride ?? resolveCopilotConfigPath(),
+        dryRun,
+        forceOverwrite,
+        onConflict: async () => {
+          return prompter.confirm(
+            "GitHub Copilot already has a different 'affiliate' entry. Overwrite?",
+            { defaultYes: true },
+          );
+        },
+      });
+      printCopilotResult(result);
+    } catch (err) {
+      if (err instanceof MalformedCopilotConfigError) {
+        out(`GitHub Copilot: ${err.message}`);
+      } else {
+        const msg = err instanceof Error ? err.message : String(err);
+        out(`GitHub Copilot: unexpected error — ${msg}`);
+      }
+      return 1;
+    }
+  }
+
   if (!opts.quiet) {
     out('');
     if (didDesktop && didRestart) {
       out('Restart Claude Desktop for changes to take effect.');
     }
-    if (targets.codex) {
+    if (targets.copilot) {
+      out('In VS Code, reload the window, open the Copilot Chat view, switch to');
+      out('Agent mode, then ask: "What affiliate networks do you have access to?"');
+    } else if (targets.codex) {
       out('Open Codex, run /mcp, then ask: "What affiliate networks do you have access to?"');
     } else {
       out('Then ask Claude: "What affiliate networks do you have access to?"');
@@ -301,7 +381,7 @@ export async function runUninstall(opts: InstallOptions = {}): Promise<number> {
     targets.desktop = false;
   }
 
-  if (!targets.desktop && !targets.code && !targets.codex) {
+  if (!targets.desktop && !targets.code && !targets.codex && !targets.copilot) {
     out('Nothing to do.');
     return 0;
   }
@@ -345,6 +425,20 @@ export async function runUninstall(opts: InstallOptions = {}): Promise<number> {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       out(`Codex: ${msg}`);
+      return 1;
+    }
+  }
+
+  if (targets.copilot) {
+    try {
+      const result = await removeAffiliateCopilotEntry({
+        configPath: opts.copilotConfigPathOverride ?? resolveCopilotConfigPath(),
+        dryRun,
+      });
+      printCopilotResult(result);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      out(`GitHub Copilot: ${msg}`);
       return 1;
     }
   }
@@ -423,6 +517,45 @@ function printCodexResult(result: CodexEditResult): void {
       break;
     case 'would-remove':
       out(`Codex (dry-run): would remove 'affiliate' from ${path}`);
+      break;
+  }
+  if (result.backupPath) {
+    out(`  Backup: ${result.backupPath}`);
+  }
+}
+
+function printCopilotResult(result: CopilotEditResult): void {
+  const path = result.path;
+  switch (result.action) {
+    case 'created':
+      out(`GitHub Copilot: created ${path}`);
+      break;
+    case 'added':
+      out(`GitHub Copilot: added 'affiliate' to ${path}`);
+      break;
+    case 'updated':
+      out(`GitHub Copilot: updated 'affiliate' in ${path}`);
+      break;
+    case 'unchanged':
+      out(`GitHub Copilot: 'affiliate' already configured in ${path} — no change`);
+      break;
+    case 'removed':
+      out(`GitHub Copilot: removed 'affiliate' from ${path}`);
+      break;
+    case 'absent':
+      out(`GitHub Copilot: 'affiliate' was not present in ${path}`);
+      break;
+    case 'would-create':
+      out(`GitHub Copilot (dry-run): would create ${path}`);
+      break;
+    case 'would-add':
+      out(`GitHub Copilot (dry-run): would add 'affiliate' to ${path}`);
+      break;
+    case 'would-update':
+      out(`GitHub Copilot (dry-run): would update 'affiliate' in ${path}`);
+      break;
+    case 'would-remove':
+      out(`GitHub Copilot (dry-run): would remove 'affiliate' from ${path}`);
       break;
   }
   if (result.backupPath) {
