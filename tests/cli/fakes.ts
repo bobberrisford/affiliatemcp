@@ -65,6 +65,10 @@ export interface FakeAdapterOpts {
   capabilities?: () => Promise<NetworkCapabilities>;
   setupTimeEstimateMinutes?: number;
   setupRequiresApproval?: boolean;
+  /** Which side of the relationship this adapter integrates with. Defaults to publisher. */
+  side?: 'publisher' | 'advertiser';
+  /** Credential scope. Defaults to single-brand. */
+  credentialScope?: 'single-brand' | 'multi-brand';
 }
 
 export function makeFakeAdapter(opts: FakeAdapterOpts): NetworkAdapter {
@@ -79,8 +83,8 @@ export function makeFakeAdapter(opts: FakeAdapterOpts): NetworkAdapter {
     supportsBrandOps: false,
     setupTimeEstimateMinutes: opts.setupTimeEstimateMinutes ?? 5,
     setupRequiresApproval: opts.setupRequiresApproval ?? false,
-    side: 'publisher',
-    credentialScope: 'single-brand',
+    side: opts.side ?? 'publisher',
+    credentialScope: opts.credentialScope ?? 'single-brand',
   };
   const resilience: ResilienceConfigMap = {
     default: {

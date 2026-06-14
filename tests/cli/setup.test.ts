@@ -308,6 +308,91 @@ describe('runSetup — derivedValues from verifyAuth', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Guided path — publisher vs advertiser/agency side selection
+// ---------------------------------------------------------------------------
+
+describe('runSetup — guided side selection', () => {
+  it('routes the advertiser/agency branch to advertiser-side networks only', async () => {
+    registerAdapter(
+      makeFakeAdapter({ slug: 'alpha', name: 'Alpha', steps: buildAlphaSteps() }),
+    );
+    registerAdapter(
+      makeFakeAdapter({
+        slug: 'beta',
+        name: 'Beta',
+        side: 'advertiser',
+        steps: buildAlphaSteps(),
+      }),
+    );
+
+    const prompter = new FakePrompter([
+      'advertiser', // side menu — agency picks the brand-side branch
+      ['beta'], // network picker (advertiser-side list)
+      'beta-tok', // ALPHA_TOKEN field on the beta fake
+      false, // decline telemetry
+      false, // decline "connect to Claude?" offer
+    ]);
+
+    const code = await runSetup({ prompter });
+    expect(code).toBe(0);
+
+    const out = stdoutText();
+    // The advertiser branch explains the per-brand mapping step.
+    expect(out).toContain('map each brand');
+
+    const text = readFileSync(path.join(tmp, '.env'), 'utf8');
+    expect(text).toMatch(/ALPHA_TOKEN=beta-tok/);
+  });
+
+  it('shows every network with side tags when the operator picks "both"', async () => {
+    registerAdapter(
+      makeFakeAdapter({ slug: 'alpha', name: 'Alpha', steps: buildAlphaSteps() }),
+    );
+    registerAdapter(
+      makeFakeAdapter({
+        slug: 'beta',
+        name: 'Beta',
+        side: 'advertiser',
+        steps: buildAlphaSteps(),
+      }),
+    );
+
+    let offered: Array<{ key: string; label: string }> = [];
+    const prompter = new FakePrompter(['both']);
+    // Capture the picker choices, then answer it.
+    prompter.selectMany = async (_label, choices) => {
+      offered = choices as Array<{ key: string; label: string }>;
+      return ['alpha'] as never;
+    };
+    prompter.enqueue('tok', false /* decline telemetry */, false /* decline connect */);
+
+    const code = await runSetup({ prompter });
+    expect(code).toBe(0);
+
+    expect(offered.map((c) => c.key).sort()).toEqual(['alpha', 'beta']);
+    expect(offered.find((c) => c.key === 'beta')?.label).toContain('[brand-side]');
+    expect(offered.find((c) => c.key === 'alpha')?.label).toContain('[publisher-side]');
+  });
+
+  it('skips the side menu when only one side is registered', async () => {
+    registerAdapter(
+      makeFakeAdapter({ slug: 'alpha', name: 'Alpha', steps: buildAlphaSteps() }),
+    );
+    // No 'menu' answer queued — proving the side menu does not run.
+    const prompter = new FakePrompter([
+      ['alpha'],
+      'tok',
+      false /* decline telemetry */,
+      false /* decline connect */,
+    ]);
+
+    const code = await runSetup({ prompter });
+    expect(code).toBe(0);
+    expect(readFileSync(path.join(tmp, '.env'), 'utf8')).toMatch(/ALPHA_TOKEN=tok/);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // §15.18 AFFILIATE_MCP_CONFIG_DIR
 // ---------------------------------------------------------------------------
 
