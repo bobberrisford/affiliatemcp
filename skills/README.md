@@ -25,6 +25,9 @@ and optional supporting files.
 - [`programme-performance-report/`](./programme-performance-report) —
   single-brand report across that brand's bound networks. Top
   publishers, status splits, period-over-period delta.
+- [`publisher-performance-review/`](./publisher-performance-review) —
+  single-publisher deep dive for a brand: clicks, conversions, EPC,
+  AOV, status split, trend, and call talking points.
 - [`agency-portfolio-rollup/`](./agency-portfolio-rollup) — portfolio
   rollup, brand-aggregated, with a "needs attention" subsection for
   brands trending down.
