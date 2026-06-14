@@ -32,5 +32,9 @@ and optional supporting files.
   week-over-week scan for revenue drops, reversal spikes, top-10
   dropouts, dead programmes. Designed to run on a schedule.
 
+A backlog of further brand/agency-side skills, organised by the concrete
+deliverables an account manager ships, lives in
+[`docs/product/agency-account-manager-deliverables.md`](../docs/product/agency-account-manager-deliverables.md).
+
 Adding a skill is one of the contribution paths in
 [`.claude/skills/contribute/SKILL.md`](../.claude/skills/contribute/SKILL.md).
