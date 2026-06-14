@@ -15,8 +15,8 @@ Pre-check via `affiliate_<slug>_get_earnings_summary({ from: "2025-06-14", to: "
 - Impact → `oldestUnpaidAgeDays: 41` — nothing past 90 days, skipped.
 
 Called `affiliate_awin_list_transactions({ status: "approved", minAgeDays: 90, from: "2025-06-14", to: "2026-06-14" })`,
-paginated to exhaustion. Kept the `approved` rows with no `datePaid` and a
-validation date 90+ days ago.
+which returned a complete transaction array. Kept the `approved` rows with no
+`datePaid` and a known validation date 90+ days ago.
 
 ## Unpaid validated commissions — ledger
 
@@ -35,7 +35,7 @@ No failed calls.
 > Hello,
 >
 > Three commissions on my Awin account (publisher 123456) were validated more
-> than 90 days ago and remain unpaid, which is past the standard payment term.
+> than the 90-day threshold I am using and remain unpaid.
 > They total £186.00. The itemised sales are attached as a CSV.
 >
 > Could you confirm a payment date for these, or let me know if anything is
