@@ -32,5 +32,9 @@ and optional supporting files.
   week-over-week scan for revenue drops, reversal spikes, top-10
   dropouts, dead programmes. Designed to run on a schedule.
 
+A capability-aware roadmap of brand/agency deliverables, including which
+outcomes should extend shipped skills rather than create new ones, lives in
+[`docs/product/agency-account-manager-deliverables.md`](../docs/product/agency-account-manager-deliverables.md).
+
 Adding a skill is one of the contribution paths in
 [`.claude/skills/contribute/SKILL.md`](../.claude/skills/contribute/SKILL.md).
