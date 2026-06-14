@@ -32,6 +32,7 @@ const SKILLS = [
 // against the generator's actual output.
 const AGENCY_SKILLS = [
   'programme-performance-report',
+  'programme-weekly-report',
   'agency-portfolio-rollup',
   'programme-anomaly-watch',
 ] as const;

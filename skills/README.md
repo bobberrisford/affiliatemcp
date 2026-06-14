@@ -25,6 +25,10 @@ and optional supporting files.
 - [`programme-performance-report/`](./programme-performance-report) —
   single-brand report across that brand's bound networks. Top
   publishers, status splits, period-over-period delta.
+- [`programme-weekly-report/`](./programme-weekly-report) — the
+  recurring weekly client update for one brand: last complete week
+  against the week before, top movers, a short paste-ready note.
+  Designed to run on a schedule.
 - [`agency-portfolio-rollup/`](./agency-portfolio-rollup) — portfolio
   rollup, brand-aggregated, with a "needs attention" subsection for
   brands trending down.
