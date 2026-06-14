@@ -1,7 +1,7 @@
 # Record per-client strategy and KPIs as local living markdown
 
 - **Date:** 2026-06-12
-- **Status:** Proposed
+- **Status:** Accepted (2026-06-14)
 - **Affects:** local config layout under `$AFFILIATE_MCP_CONFIG_DIR/clients/`;
   future agency-side skills (a client-onboarding skill, plus reader changes to
   `skills/programme-anomaly-watch`, `skills/agency-portfolio-rollup`, and
