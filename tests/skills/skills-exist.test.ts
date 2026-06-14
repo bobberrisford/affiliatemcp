@@ -26,6 +26,7 @@ const SKILLS = [
   'affiliate-earnings-report',
   'affiliate-network-status',
   'affiliate-network-setup-help',
+  'chase-unpaid-commissions',
 ] as const;
 
 // Agency-side skills (PR 4). Same tests apply; plus tool-name validation
