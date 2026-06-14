@@ -25,6 +25,8 @@ SUBMISSION.md
 
 # Apple signing assets and built desktop bundles — never committed.
 /apple-signing/
+# Licence signing keypair — never committed.
+/licence-keys/
 desktop/build/core.cjs
 desktop/build/server.cjs
 
