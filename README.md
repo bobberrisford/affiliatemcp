@@ -2,7 +2,7 @@
 
 > Integrate your affiliate networks with Claude or Codex.
 
-![release](https://img.shields.io/badge/release-0.6.2-blue) ![networks](https://img.shields.io/badge/networks-72-blue) ![adapters](https://img.shields.io/badge/adapters-86-blue) [![maintained by](https://img.shields.io/badge/maintained%20by-community%20%2F%20networks-orange)](./docs/networks)
+[![npm version](https://img.shields.io/npm/v/affiliate-networks-mcp?label=release)](https://www.npmjs.com/package/affiliate-networks-mcp) ![networks](https://img.shields.io/badge/networks-72-blue) ![adapters](https://img.shields.io/badge/adapters-86-blue) [![maintained by](https://img.shields.io/badge/maintained%20by-community%20%2F%20networks-orange)](./docs/networks)
 
 > **Network operators:** each adapter is community-built and `experimental` until your team adopts it. Find your network's adoption issue under the [`adopt-a-network`](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3Aadopt-a-network) label to verify and maintain it with live credentials.
 
@@ -697,6 +697,8 @@ If you're poking around the source, the top-level folders are:
 - [`docs/networks/`](./docs/networks) — per-network setup walkthroughs
   (dashboard navigation, credentials, common failures), publisher and
   advertiser side.
+- [`docs/README.md`](./docs/README.md) — documentation map, authority order,
+  and review rules.
 - [`templates/new-network/`](./templates/new-network) — scaffold to
   copy when adding a new network adapter.
 - [`scripts/`](./scripts) — generators and validators
@@ -743,17 +745,12 @@ npm run build
 
 ## Status
 
-Beta — available now. Every bundled network adapter is live and ready to
-use today; treat this as a public beta and expect the odd rough edge.
-Eleven publisher adapters and six brand-side adapters ship across the
-bundled networks. The four longest-standing publisher adapters — Awin, CJ,
-Impact and Rakuten — ship as `claim_status: partial`; the newer publisher
-adapters and every brand-side adapter ship as `experimental` until exercised
-against real publisher, agency or in-house brand accounts. The brand side is
-read-only and rate handling is in, but a few endpoint shapes remain
-`// TODO(verify)` until live confirmation. If you hit something odd on either
-side, open an issue — we treat every bug report as evidence about the
-underlying API.
+Beta — available now. The repository contains 86 adapters across 72 network
+families: 63 publisher-side and 23 advertiser-side. Support varies by adapter;
+check the generated network table and [`REPORT.md`](./REPORT.md) for each
+adapter's declared operations, claim status, and known limitations. Adapters
+remain `partial` or `experimental` until their behaviour is confirmed against
+real publisher, agency, or in-house brand accounts.
 
 ## Licence
 

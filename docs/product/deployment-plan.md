@@ -1,5 +1,9 @@
 # Deployment plan: the affiliate-mcp site
 
+> Status: historical implementation plan. The Pages workflow now exists at
+> [`.github/workflows/deploy-pages.yml`](../../.github/workflows/deploy-pages.yml).
+> Use the workflow and current site source as the operational truth.
+>
 > Companion to [`website-plan.md`](./website-plan.md) and
 > [`website-copy.md`](./website-copy.md). Decisions locked: **host on GitHub
 > Pages**, **ship the current self-contained static HTML as-is** (no build
@@ -113,7 +117,7 @@ Bricolage Grotesque, Space Grotesk, and JetBrains Mono are self-hosted under
 
 These aren't blockers but should land before a public link:
 
-- [ ] **Favicon + touch icon** — wire up `../design-system/assets/mark.svg` as
+- [ ] **Favicon + touch icon** — wire up `../../design-system/assets/mark.svg` as
       the favicon on every page (`<link rel="icon" href="...mark.svg">`).
 - [x] **Meta + Open Graph tags** — title, description, `og:title`,
       `og:description`, `og:image` (a social card — the design system's social

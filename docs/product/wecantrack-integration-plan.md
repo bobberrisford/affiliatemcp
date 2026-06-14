@@ -1,5 +1,8 @@
 # wecantrack Coverage Gap — Integration Plan
 
+> Status: research and integration backlog. Verify coverage and API claims
+> before implementation.
+
 **Date:** 2026-06-05
 **Goal:** Cross-reference wecantrack's integration catalogue (the public
 `wecantrack.com/affiliate-networks/` list, ~350–450 integrations) against

@@ -1,5 +1,8 @@
 # Global Coverage Research — Non-Obvious-Region Affiliate Networks with Self-Serve APIs
 
+> Status: research snapshot. Verify claims again before using them for an
+> implementation or product decision.
+
 **Author:** research task for affiliate-mcp
 **Date:** 2026-06-04
 **Goal:** Find affiliate networks / partner platforms from non-obvious regions (APAC, S/SE Asia, India, Japan, Korea, China, LatAm, MENA, Africa, CIS/Eastern Europe, Nordics, Benelux, Turkey) that expose a **current, publicly documented, self-serve API** an ordinary account holder could integrate without the network's cooperation (no NDA, no bizdev approval beyond a normal account + self-issued key/OAuth app).

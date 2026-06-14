@@ -1,6 +1,11 @@
 # Claude Desktop app — execution plan (2026-06-07)
 
-> Status: design doc, pre-implementation.
+> Status: historical implementation plan. The desktop app shipped, and the
+> accepted
+> [`host-native distribution decision`](../decisions/2026-06-12-host-native-distribution.md)
+> makes host-native installation the primary path. Use
+> [`../../desktop/README.md`](../../desktop/README.md) for current desktop
+> behaviour.
 > North star: **easy onboarding for non-technical users.** Every decision
 > below is judged against one question — does it get a non-technical
 > person from "downloaded" to "asked Claude a question and got an

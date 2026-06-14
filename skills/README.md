@@ -33,4 +33,4 @@ and optional supporting files.
   dropouts, dead programmes. Designed to run on a schedule.
 
 Adding a skill is one of the contribution paths in
-[`.claude/skills/contribute/SKILL.md`](../../.claude/skills/contribute/SKILL.md).
+[`.claude/skills/contribute/SKILL.md`](../.claude/skills/contribute/SKILL.md).

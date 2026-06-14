@@ -12,6 +12,6 @@ boots the MCP stdio transport. Subdirectories:
 - [`cli/`](./cli) — the `setup`, `test`, and `doctor` subcommands.
 - [`tools/`](./tools) — turns each registered adapter into the MCP tool
   surface Claude calls.
-- [`skills/`](./skills) — conversation patterns Claude follows for
+- [`../skills/`](../skills) — conversation patterns Claude follows for
   common publisher and brand/agency questions.
 - [`prompts/`](./prompts) — MCP prompts exposed to clients.

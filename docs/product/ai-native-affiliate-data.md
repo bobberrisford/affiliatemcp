@@ -1,5 +1,8 @@
 # AI-native affiliate data
 
+> Status: current product direction and roadmap. Accepted decisions and shipped
+> behaviour take precedence over roadmap items.
+
 This repo should make affiliate network APIs usable from the AI tools where
 affiliate professionals already work. The product is not a dashboard clone. It
 is a clean, local-first data and action layer that lets an assistant answer
