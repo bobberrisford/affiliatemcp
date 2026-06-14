@@ -19,6 +19,10 @@ and optional supporting files.
 - [`audit-affiliate-links/`](./audit-affiliate-links) — classifies the
   affiliate links in a sitemap or document by network and flags dead
   or declined programmes.
+- [`chase-unpaid-commissions/`](./chase-unpaid-commissions) — pulls
+  commissions a network validated but has not paid past a term (90
+  days by default) and drafts a per-network chase email with the
+  unpaid sales attached as a CSV.
 
 ### Brand / agency side
 
