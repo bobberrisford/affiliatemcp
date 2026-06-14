@@ -33,6 +33,7 @@ const SKILLS = [
 const AGENCY_SKILLS = [
   'programme-performance-report',
   'publisher-performance-review',
+  'programme-reversal-report',
   'agency-portfolio-rollup',
   'programme-anomaly-watch',
 ] as const;
