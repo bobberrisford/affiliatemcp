@@ -15,6 +15,8 @@ planning. They are useful context, but accepted records under
 ## Active proposals and working drafts
 
 - [`chatgpt-scoping.md`](./chatgpt-scoping.md) is a pre-implementation proposal.
+- [`agency-account-manager-deliverables.md`](./agency-account-manager-deliverables.md)
+  is the active, capability-aware backlog for agency deliverables and skills.
 - [`website-copy.md`](./website-copy.md) is working copy for the website.
 
 ## Historical and implemented plans
