@@ -542,8 +542,10 @@ Three skills are tuned for the brand side:
 The MCP tools are also callable directly from the command line, which is
 handy for quick checks, shell scripts, and CI, without going through an
 MCP client. The `call` command is a thin shell over the exact same tool
-registry the server exposes, so every operation on every configured
-network is reachable.
+registry the server exposes, so every operation on every registered
+network is reachable. Calls are explicit but may contact an upstream network;
+for example, `generate_tracking_link` can mint a link on networks that expose
+that operation.
 
 List what's available:
 

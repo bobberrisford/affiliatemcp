@@ -89,6 +89,13 @@ describe('runCall: listing', () => {
     expect(text).not.toContain('affiliate_alpha_list_programmes');
   });
 
+  it('returns 2 when --list names an unknown network', async () => {
+    registerAdapter(makeFakeAdapter({ slug: 'alpha', name: 'Alpha', steps: [] }));
+    const code = await runCall({ argv: ['--list', '--network', 'missing'] });
+    expect(code).toBe(2);
+    expect(stderr()).toContain('No tools found for network "missing"');
+  });
+
   it('groups meta tools under "meta", not under a pseudo-network from their name', async () => {
     registerAdapter(makeFakeAdapter({ slug: 'alpha', name: 'Alpha', steps: [] }));
     const code = await runCall({ argv: ['--list'] });
@@ -245,5 +252,20 @@ describe('runCall: failures', () => {
     const code = await runCall({ argv: ['alpha', 'list_transactions', '--args', '{not json'] });
     expect(code).toBe(2);
     expect(stderr()).toContain('not valid JSON');
+  });
+
+  it('rejects flags that are missing their value', async () => {
+    registerAdapter(makeFakeAdapter({ slug: 'alpha', name: 'Alpha', steps: [] }));
+    expect(await runCall({ argv: ['--network'] })).toBe(2);
+    expect(stderr()).toContain('--network requires a value');
+  });
+
+  it('rejects unexpected positionals in describe mode', async () => {
+    registerAdapter(makeFakeAdapter({ slug: 'alpha', name: 'Alpha', steps: [] }));
+    const code = await runCall({
+      argv: ['--describe', 'alpha', 'list_transactions', 'unexpected'],
+    });
+    expect(code).toBe(2);
+    expect(stderr()).toContain('Unexpected extra argument');
   });
 });

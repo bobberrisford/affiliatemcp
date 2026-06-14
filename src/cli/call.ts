@@ -88,6 +88,14 @@ interface ParsedArgs {
 
 function parse(argv: string[]): ParsedArgs {
   const parsed: ParsedArgs = { list: false, describe: false, positionals: [], kvPairs: [] };
+  const requireValue = (flag: string, index: number): string => {
+    const value = argv[index + 1];
+    if (value === undefined || value.startsWith('--')) {
+      throw new Error(`${flag} requires a value`);
+    }
+    return value;
+  };
+
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i] as string;
     switch (arg) {
@@ -98,15 +106,19 @@ function parse(argv: string[]): ParsedArgs {
       case '--describe':
         parsed.describe = true;
         break;
-      case '--network':
-        parsed.networkFilter = argv[++i];
+      case '--network': {
+        parsed.networkFilter = requireValue(arg, i);
+        i += 1;
         break;
+      }
       case '--args':
-      case '--json':
-        parsed.jsonArgs = argv[++i];
+      case '--json': {
+        parsed.jsonArgs = requireValue(arg, i);
+        i += 1;
         break;
+      }
       default:
-        if (arg.startsWith('--')) {
+        if (arg.startsWith('-')) {
           throw new Error(`Unknown flag for call: ${arg}`);
         }
         // `key=value` is an argument; a bare token is a positional (tool name,
@@ -248,7 +260,7 @@ function printList(
   tools: ToolDefinition[],
   slugs: ReadonlySet<string>,
   networkFilter?: string,
-): void {
+): boolean {
   const filtered = networkFilter
     ? tools.filter((t) => networkOf(t.name, slugs) === networkFilter)
     : tools;
@@ -259,7 +271,7 @@ function printList(
         ? `No tools found for network "${networkFilter}". Run \`call --list\` to see all networks.`
         : 'No network adapters are registered, so no tools are available.',
     );
-    return;
+    return false;
   }
 
   // Group by network for a readable listing.
@@ -288,6 +300,7 @@ function printList(
     }
   }
   out('');
+  return true;
 }
 
 function printDescribe(tool: ToolDefinition): void {
@@ -317,8 +330,7 @@ export async function runCall(opts: CallOptions): Promise<number> {
 
   // `--list` (also the default when no tool is named) prints the catalogue.
   if (parsed.list || (parsed.positionals.length === 0 && !parsed.describe)) {
-    printList(tools, slugs, parsed.networkFilter);
-    return 0;
+    return printList(tools, slugs, parsed.networkFilter) ? 0 : 2;
   }
 
   const { tool, consumed } = resolveTool(tools, parsed.positionals);
@@ -331,17 +343,17 @@ export async function runCall(opts: CallOptions): Promise<number> {
     return 2;
   }
 
-  if (parsed.describe) {
-    printDescribe(tool);
-    return 0;
-  }
-
   // Any positionals beyond the tool selector are unexpected.
   const extras = parsed.positionals.slice(consumed);
   if (extras.length > 0) {
     err(`Unexpected extra argument(s): ${extras.join(' ')}`);
     err('Pass operation parameters as key=value pairs or via --args \'<json>\'.');
     return 2;
+  }
+
+  if (parsed.describe) {
+    printDescribe(tool);
+    return 0;
   }
 
   let args: Record<string, unknown>;
