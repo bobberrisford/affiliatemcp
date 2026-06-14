@@ -28,6 +28,9 @@ and optional supporting files.
 - [`publisher-performance-review/`](./publisher-performance-review) —
   single-publisher deep dive for a brand: clicks, conversions, EPC,
   AOV, status split, trend, and call talking points.
+- [`programme-reversal-report/`](./programme-reversal-report) — why a
+  brand's commissions are being declined: reversed transactions grouped
+  by reason and publisher, value at stake, and reversal-rate trend.
 - [`agency-portfolio-rollup/`](./agency-portfolio-rollup) — portfolio
   rollup, brand-aggregated, with a "needs attention" subsection for
   brands trending down.
