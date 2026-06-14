@@ -1,11 +1,11 @@
 # Example — "Why are Acme's commissions being declined?"
 
 Acme is bound to Awin (advertiser-side) via `brands.json`. Today is 2026-06-15,
-so the default window is 2026-05-16 to 2026-06-15 (30 days).
+so the default complete-day window is 2026-05-16 to 2026-06-14 (30 days).
 
 **User**: Why are Acme's commissions being declined this month?
 
-**Assistant**: Pulling Acme's reversed transactions for 2026-05-16 to 2026-06-15 and the full set so I can show the reversal rate...
+**Assistant**: Checking Awin advertiser capabilities, then pulling Acme's reversed transactions for 2026-05-16 to 2026-06-14 and a complete full set for the reversal-rate denominator...
 
 Called `affiliate_resolve_brand` (filtered to `acme`) →
 
@@ -14,12 +14,15 @@ Called `affiliate_resolve_brand` (filtered to `acme`) →
 ```
 
 Called:
-- `affiliate_awin-advertiser_list_transactions({ brand: "acme", from: "2026-05-16", to: "2026-06-15", status: "reversed" })`
-- `affiliate_awin-advertiser_list_transactions({ brand: "acme", from: "2026-05-16", to: "2026-06-15" })`
+- `affiliate_awin-advertiser_list_transactions({ brand: "acme", from: "2026-05-16", to: "2026-06-14", status: "reversed" })`
+- `affiliate_awin-advertiser_list_transactions({ brand: "acme", from: "2026-05-16", to: "2026-06-14" })`
 
 ## Acme — reversal and decline report (Awin)
 
-Window: 2026-05-16 to 2026-06-15.
+Window: 2026-05-16 to 2026-06-14.
+
+Coverage: Awin advertiser `listTransactions` is supported. Both result sets
+were confirmed complete, so the rate is available.
 
 ### Headline
 
@@ -44,8 +47,8 @@ Window: 2026-05-16 to 2026-06-15.
 | VoucherHub | 28 | £540 | 7.1% |
 | TechReviews | 18 | £410 | 6.8% |
 
-DealFinder's reversal rate (19.2%) is well above the programme average — worth a
-direct conversation.
+DealFinder's reversal rate (19.2%) is above the programme average. Ask the
+partner and network what changed; the report does not establish the cause.
 
 ### Notable cases
 
@@ -55,8 +58,8 @@ direct conversation.
 
 ### What to do
 
-- The "duplicate order" cluster is concentrated on DealFinder; raise it with them and with the network to confirm it is not a tracking-side double-fire.
-- "Returned goods" is the largest bucket but spread across partners — likely genuine returns, not a tracking issue.
+- The "duplicate order" cluster is concentrated on DealFinder; raise it with them and with the network to investigate the cause.
+- "Returned goods" is the largest reason label and is spread across partners; ask the network how that reason is assigned before drawing a conclusion.
 - Reversal rate rose from 5.1% to 8.4% month-on-month; flag for next week's check.
 
 This report is read-only. To dispute or re-open any of these, use the Awin
