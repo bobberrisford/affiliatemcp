@@ -192,17 +192,58 @@ async function pickNetworks(
   prompter: Prompter,
   adapters: NetworkAdapter[],
 ): Promise<NetworkAdapter[]> {
-  const choices = adapters.map((a) => {
+  // Guided path. When the registry carries both publisher-side and
+  // advertiser-side adapters, ask which side the operator works on before
+  // showing the (long) network list. Brands and agencies take the advertiser
+  // branch: their networks report on the programmes they run, and any
+  // multi-brand credential set is routed through brand discovery once it
+  // verifies (see `runBrandDiscovery`). When only one side is registered —
+  // tests, or a single-side build — there is no meaningful choice, so we skip
+  // straight to the flat picker and behave exactly as before.
+  const publisherSide = adapters.filter((a) => a.meta.side === 'publisher');
+  const advertiserSide = adapters.filter((a) => a.meta.side === 'advertiser');
+
+  let candidates = adapters;
+  let tagSide = false;
+  if (publisherSide.length > 0 && advertiserSide.length > 0) {
+    const role = await prompter.menu('Which side of affiliate do you work on?', [
+      { key: 'publisher', label: 'Publisher / creator — I earn commissions promoting brands' },
+      {
+        key: 'advertiser',
+        label: 'Advertiser, brand, or agency — I run programmes and manage partners',
+      },
+      { key: 'both', label: 'Both — show me every network' },
+    ]);
+    if (role === 'publisher') {
+      candidates = publisherSide;
+    } else if (role === 'advertiser') {
+      candidates = advertiserSide;
+      out('');
+      out(
+        'Advertiser-side networks report on the programmes you run. Where one set of',
+      );
+      out(
+        'credentials spans several brands, the wizard will help you map each brand to a',
+      );
+      out('slug after your credentials verify.');
+    } else {
+      // Mixed list — tag each entry so the side is unambiguous.
+      tagSide = true;
+    }
+  }
+
+  const choices = candidates.map((a) => {
     const minutes = a.meta.setupTimeEstimateMinutes;
     const approval = a.meta.setupRequiresApproval ? ', approval required' : '';
+    const sideTag = tagSide ? (a.meta.side === 'advertiser' ? ' [brand-side]' : ' [publisher-side]') : '';
     return {
       key: a.slug,
-      label: `${a.name} — ~${minutes} min${approval}`,
+      label: `${a.name}${sideTag} — ~${minutes} min${approval}`,
     };
   });
   const slugs = await prompter.selectMany('Which networks would you like to configure?', choices);
   const set = new Set(slugs);
-  return adapters.filter((a) => set.has(a.slug));
+  return candidates.filter((a) => set.has(a.slug));
 }
 
 // ---------------------------------------------------------------------------
