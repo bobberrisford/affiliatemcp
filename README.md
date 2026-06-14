@@ -539,52 +539,24 @@ Three skills are tuned for the brand side:
 
 ## Use it from the terminal
 
-The MCP tools are also callable directly from the command line, which is
-handy for quick checks, shell scripts, and CI, without going through an
-MCP client. The `call` command is a thin shell over the exact same tool
-registry the server exposes, so every operation on every registered
-network is reachable. Calls are explicit but may contact an upstream network;
-for example, `generate_tracking_link` can mint a link on networks that expose
-that operation.
+The `call` command exposes the same registered operations as the MCP server for
+quick checks, shell scripts, and CI. Calls are explicit but may contact an
+upstream network; for example, `generate_tracking_link` can mint a link.
 
-List what's available:
-
-```
+```bash
+# Discover and inspect operations
 npx affiliate-networks-mcp call --list
 npx affiliate-networks-mcp call --list --network awin
-```
-
-Inspect a single operation's arguments:
-
-```
 npx affiliate-networks-mcp call --describe awin list_transactions
-```
 
-Invoke an operation. Use the friendly `<network> <operation>` form (or
-the full `affiliate_<network>_<operation>` tool name) and pass arguments
-as `key=value` pairs:
-
-```
+# Invoke with <network> <operation> or a full affiliate_<network>_<operation> name
 npx affiliate-networks-mcp call awin list_transactions from=2026-01-01 to=2026-02-01 limit=50
-npx affiliate-networks-mcp call awin get_earnings_summary from=2026-01-01
-npx affiliate-networks-mcp call cj generate_tracking_link programmeId=12345 destinationUrl=https://example.com/product
-```
-
-Values are coerced to the type each operation expects: numbers become
-numbers (`limit=50`), numeric-looking ids stay strings
-(`programmeId=12345`), and list fields accept a comma-separated form
-(`status=approved,pending`) or a JSON array. For anything more complex,
-pass a full JSON object with `--args`:
-
-```
 npx affiliate-networks-mcp call awin list_transactions --args '{"from":"2026-01-01","status":["approved","pending"],"limit":50}'
 ```
 
-The JSON result is printed to stdout. On failure you get the same
-`NetworkErrorEnvelope` the MCP tools return: the network, the operation,
-an HTTP status where there is one, and the verbatim upstream body. The
-envelope is printed to stderr with a non-zero exit code, so scripts can
-branch on it.
+Schema-aware `key=value` parsing preserves string ids, converts numbers, and
+accepts comma-separated or JSON arrays. Results are JSON on stdout; failures
+are `NetworkErrorEnvelope` JSON on stderr with a non-zero exit code.
 
 ## When something goes wrong
 
