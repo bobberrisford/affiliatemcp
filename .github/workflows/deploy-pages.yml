@@ -1,6 +1,6 @@
 name: Deploy site to GitHub Pages
 
-# Deploys the static site (no build step) from docs/product/mockups.
+# Deploys the static site (no build step) from site/.
 # - Auto-deploys when the site changes on the default branch.
 # - Can be run manually from any branch via "Run workflow" (preview before merge).
 
@@ -8,7 +8,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'docs/product/mockups/**'
+      - 'site/**'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
@@ -32,6 +32,6 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/product/mockups
+          path: site
       - id: deployment
         uses: actions/deploy-pages@v4

@@ -3,19 +3,19 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>affiliate-mcp — privacy</title>
-<meta name="description" content="affiliate-mcp is local-only and bring-your-own-keys. No analytics, no telemetry, no account. Your credentials never leave your machine.">
+<title>affiliate-mcp — contribute</title>
+<meta name="description" content="Four ways to help affiliate-mcp: adopt your network's adapter, add a network we don't ship yet, land a small first PR, or improve fixtures and setup docs. AI-assisted PRs welcome.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='14' fill='%232B2BFF'/%3E%3Cpolyline points='34,38 58,60 34,82' fill='none' stroke='%23fff' stroke-width='13'/%3E%3Crect x='66' y='68' width='24' height='14' fill='%23fff'/%3E%3C/svg%3E">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="affiliate-mcp">
-<meta property="og:title" content="affiliate-mcp — privacy">
-<meta property="og:description" content="Local-only and bring-your-own-keys. No analytics, no telemetry, no account. Your credentials never leave your machine.">
-<meta property="og:url" content="https://bobberrisford.github.io/affiliatemcp/privacy.html">
-<meta property="og:image" content="https://bobberrisford.github.io/affiliatemcp/og.svg">
+<meta property="og:title" content="affiliate-mcp — contribute">
+<meta property="og:description" content="Four ways to help: adopt your network's adapter, add a network, land a small first PR, or improve fixtures and docs. AI-assisted PRs welcome.">
+<meta property="og:url" content="https://agenticaffiliate.ai/contribute.html">
+<meta property="og:image" content="https://agenticaffiliate.ai/og.svg">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="affiliate-mcp — privacy">
-<meta name="twitter:description" content="Local-only and bring-your-own-keys. No analytics, no telemetry, no account.">
-<meta name="twitter:image" content="https://bobberrisford.github.io/affiliatemcp/og.svg">
+<meta name="twitter:title" content="affiliate-mcp — contribute">
+<meta name="twitter:description" content="Four ways to help: adopt your adapter, add a network, land a small first PR, or improve docs.">
+<meta name="twitter:image" content="https://agenticaffiliate.ai/og.svg">
 <style>
 @font-face{font-family:'Bricolage Grotesque';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/bricolage-grotesque-700.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
 @font-face{font-family:'Bricolage Grotesque';font-style:normal;font-weight:800;font-display:swap;src:url(fonts/bricolage-grotesque-800.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
@@ -23,7 +23,7 @@
 @font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/jetbrains-mono-700.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
 @font-face{font-family:'Space Grotesk';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/space-grotesk-400.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
 @font-face{font-family:'Space Grotesk';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/space-grotesk-700.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
-:root{--ink:#0B0B0C;--paper:#FFFFFF;--paper-2:#F2F3F7;--smudge:#8B8FA0;--smudge-dk:#565A6B;--blue:#2B2BFF;--blue-bright:#5A78FF;--magenta:#FF2E88;--acid:var(--blue-bright);--pending:#E8A317;--fg-invert-mut:#9A9DAC;--line:rgba(11,11,12,0.14);--line-strong:rgba(11,11,12,0.85);--line-invert:rgba(255,255,255,0.16);--shadow:4px 4px 0 0 var(--ink);--font-display:'Bricolage Grotesque','Arial Black',system-ui,sans-serif;--font-sans:'Space Grotesk',system-ui,-apple-system,sans-serif;--font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;}
+:root{--ink:#0B0B0C;--paper:#FFFFFF;--paper-2:#F2F3F7;--smudge:#8B8FA0;--smudge-dk:#565A6B;--blue:#2B2BFF;--blue-bright:#5A78FF;--magenta:#FF2E88;--acid:var(--blue-bright);--pending:#E8A317;--fg-invert-mut:#9A9DAC;--line:rgba(11,11,12,0.14);--line-strong:rgba(11,11,12,0.85);--line-invert:rgba(255,255,255,0.16);--shadow:4px 4px 0 0 var(--ink);--shadow-lg:6px 6px 0 0 var(--ink);--font-display:'Bricolage Grotesque','Arial Black',system-ui,sans-serif;--font-sans:'Space Grotesk',system-ui,-apple-system,sans-serif;--font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;}
 *,*::before,*::after{box-sizing:border-box}html,body{margin:0}
 body{background:var(--paper);color:var(--ink);font-family:var(--font-sans);font-size:1.0625rem;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 h1,h2,h3{margin:0;font-family:var(--font-display);text-transform:lowercase}p{margin:0 0 1em;max-width:64ch}
@@ -32,22 +32,27 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
 .chip{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);font-weight:700;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;background:var(--ink);color:var(--paper);padding:6px 10px;border-radius:3px}.chip.acid{background:var(--blue);color:var(--paper)}.chip.mag{background:var(--magenta);color:var(--paper)}
 .hl{background:var(--blue);color:var(--paper);padding:.02em .18em}
 .sec-label{font-family:var(--font-mono);font-weight:700;font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--smudge-dk);display:flex;align-items:center;gap:10px;margin-bottom:26px}.sec-label::before{content:"";width:26px;height:2px;background:var(--ink)}
-.btn{font-family:var(--font-mono);font-weight:700;font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;padding:11px 17px;border:2px solid var(--ink);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;background:var(--paper);color:var(--ink);text-decoration:none}
-.btn.p{background:var(--blue);color:var(--paper);box-shadow:var(--shadow)}.btn.d{background:var(--ink);color:var(--paper);box-shadow:4px 4px 0 var(--magenta)}.btn.sm{padding:8px 12px;font-size:.72rem}.btn.ghost{background:var(--paper)}
+.btn{font-family:var(--font-mono);font-weight:700;font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;padding:11px 17px;border:2px solid var(--ink);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;background:var(--paper);color:var(--ink);text-decoration:none;transition:transform .08s steps(2),box-shadow .08s steps(2)}
+.btn.p{background:var(--blue);color:var(--paper);box-shadow:var(--shadow)}.btn.p:active{transform:translate(4px,4px);box-shadow:0 0 0}.btn.d{background:var(--ink);color:var(--paper);box-shadow:4px 4px 0 var(--magenta)}.btn.sm{padding:8px 12px;font-size:.72rem}.btn.ghost{background:var(--paper)}
 .nav{position:sticky;top:0;z-index:50;background:var(--paper);border-bottom:2px solid var(--ink)}.nav .wrap{display:flex;align-items:center;gap:22px;height:64px}
 .brand{display:flex;align-items:center;gap:10px}.brand svg{width:34px;height:34px;display:block}.brand .wm{font-family:var(--font-display);font-weight:800;font-size:1.32rem;letter-spacing:-.03em;line-height:1}.brand .wm .mcp{background:var(--blue);color:var(--paper);padding:0 5px;border-radius:3px}
 .nav .links{display:flex;gap:18px;margin-left:14px}.nav .links a{font-family:var(--font-mono);font-size:.78rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase}.nav .links a.on{background:var(--blue);color:var(--paper);padding:0 4px}.nav .links a:hover{background:var(--blue);color:var(--paper)}.nav .right{margin-left:auto;display:flex;align-items:center;gap:12px}
-.phead{padding:60px 0 26px}.phead h1{font-family:var(--font-display);font-weight:800;font-size:clamp(2.6rem,6vw,4.6rem);line-height:.92;letter-spacing:-.03em;text-transform:lowercase}.phead .lead{margin-top:20px;max-width:54ch;color:var(--ink)}.phead .lead b{font-weight:700}
-.card{background:var(--paper);border:2px solid var(--ink);border-radius:8px;padding:24px;box-shadow:var(--shadow)}
+.phead{padding:60px 0 26px}.phead h1{font-family:var(--font-display);font-weight:800;font-size:clamp(2.6rem,6vw,4.6rem);line-height:.92;letter-spacing:-.03em;text-transform:lowercase}.phead .lead{margin-top:20px;max-width:56ch;color:var(--ink)}.phead .lead b{font-weight:700}
 .foot{background:var(--ink);color:var(--paper);padding:56px 0 38px}.foot .big{font-family:var(--font-display);font-weight:800;font-size:clamp(2.6rem,8vw,6rem);line-height:.86;letter-spacing:-.04em;text-transform:lowercase;margin:0 0 26px}.foot .big .mcp{background:var(--blue);color:var(--paper);padding:0 .1em;border-radius:8px}.foot .stamps{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}.foot .rows{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;border-top:1px solid var(--line-invert);padding-top:22px}.foot a{color:var(--paper);font-family:var(--font-mono);font-size:.8rem}.foot a:hover{color:var(--acid)}.foot .cols{display:flex;gap:18px;flex-wrap:wrap}
 @media(max-width:900px){.nav .links{display:none}}
 
-.bignope{font-family:var(--font-display);font-weight:800;text-transform:lowercase;font-size:clamp(3rem,9vw,6.5rem);letter-spacing:-.04em;line-height:.9;margin:0}
-.bignope .hl{background:var(--magenta);color:#fff;padding:0 .08em}
-.rowgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:760px){.rowgrid{grid-template-columns:1fr}}
-.plist{list-style:none;padding:0;margin:14px 0 0}.plist li{padding:12px 0;border-top:1px solid var(--line);display:flex;gap:12px;align-items:flex-start}.plist li:last-child{border-bottom:1px solid var(--line)}.plist .mk{color:var(--blue);font-family:var(--font-mono);font-weight:800;flex:none}.plist .x{color:var(--magenta);font-weight:800;flex:none;font-family:var(--font-mono)}
-.api{font-family:var(--font-mono);font-size:.92rem;display:grid;grid-template-columns:160px 1fr;gap:6px 18px;margin-top:6px}.api .n{color:var(--ink);font-weight:700}.api .h{color:var(--smudge-dk)}
-.sec{padding:34px 0;border-top:2px solid var(--ink)}.sec h2{font-family:var(--font-display);font-weight:800;font-size:1.7rem;text-transform:lowercase;letter-spacing:-.02em;margin-bottom:12px}
+.ways{display:flex;flex-direction:column}
+.way{display:grid;grid-template-columns:64px 1fr auto;gap:24px;align-items:start;padding:28px 0;border-top:2px solid var(--ink)}
+.way:last-child{border-bottom:2px solid var(--ink)}
+.way .n{font-family:var(--font-mono);font-weight:800;font-size:1.5rem;color:var(--blue);line-height:1}
+.way h2{font-family:var(--font-display);font-weight:800;font-size:1.6rem;text-transform:lowercase;letter-spacing:-.02em;margin:0 0 6px}
+.way p{margin:0;color:var(--smudge-dk);max-width:60ch;font-size:.98rem}
+.way .go{align-self:center}
+.way .lbl{display:inline-block;font-family:var(--font-mono);font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:var(--paper-2);color:var(--smudge-dk);border-radius:3px;padding:3px 7px;margin-top:10px}
+@media(max-width:760px){.way{grid-template-columns:40px 1fr;gap:14px}.way .go{grid-column:2;justify-self:start;margin-top:6px}.way .n{font-size:1.1rem}}
+.note{margin-top:40px;padding:24px;border:2px dashed var(--line-strong);border-radius:8px;background:var(--paper-2)}
+.note h3{font-family:var(--font-display);font-weight:800;font-size:1.3rem;text-transform:lowercase;margin-bottom:8px}
+.bars{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
 </style>
 </head>
 <body data-page="">
@@ -59,56 +64,68 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
 </div></nav>
 
 <header class="phead"><div class="wrap">
-  <div class="sec-label">privacy</div>
-  <h1>your data,<br>your machine.</h1>
-  <p class="lead">affiliate-mcp is a local-only, open-source tool, built so the maintainer <b>never sees your data</b>. Here's exactly what that means.</p>
+  <div class="sec-label">contribute</div>
+  <h1>four ways<br>to help.</h1>
+  <p class="lead">It's open source, MIT, and built to be easy to review. Pick the one that fits — each links to live work on GitHub. <b>You don't need Claude Code to contribute</b>; everything here can be done by hand.</p>
 </div></header>
 
-<section style="padding:6px 0 10px"><div class="wrap">
-  <div class="sec-label">what we collect</div>
-  <p class="bignope"><span class="hl">nothing.</span></p>
-  <ul class="plist" style="max-width:760px">
-    <li><span class="x">✕</span> No analytics, no telemetry, no usage tracking.</li>
-    <li><span class="x">✕</span> No crash reporting.</li>
-    <li><span class="x">✕</span> No account, sign-up, or registration.</li>
-    <li><span class="x">✕</span> No data is ever transmitted to the maintainer or any third-party service run by this project.</li>
-  </ul>
-</div></section>
-
-<section class="sec"><div class="wrap">
-  <h2>how your data is handled</h2>
-  <ul class="plist" style="max-width:820px">
-    <li><span class="mk">→</span> The tool runs entirely on <b>your own machine</b>.</li>
-    <li><span class="mk">→</span> Credentials are stored locally in <code>~/.affiliate-mcp/.env</code>, locked to your user account (mode <code>0600</code>). They never leave your computer except to authenticate directly with the networks you configure.</li>
-    <li><span class="mk">→</span> Affiliate data is fetched live and processed locally. Optional persistent caching is off by default; when explicitly enabled, selected closed-window results are stored locally with owner-only permissions and bounded expiry.</li>
-  </ul>
-</div></section>
-
-<section class="sec"><div class="wrap">
-  <h2>who it's shared with</h2>
-  <p class="muted" style="max-width:60ch">The only outbound connections are to the <b style="color:var(--ink)">official APIs of the networks you configure</b> — using credentials you supply. They receive the same requests they'd get from their own dashboard. For example:</p>
-  <div class="api">
-    <span class="n">Awin</span><span class="h">api.awin.com</span>
-    <span class="n">CJ Affiliate</span><span class="h">api.cj.com</span>
-    <span class="n">eBay Partner</span><span class="h">api.ebay.com</span>
-    <span class="n">Impact</span><span class="h">api.impact.com</span>
-    <span class="n">Rakuten</span><span class="h">api.linksynergy.com</span>
+<section style="padding:10px 0 0"><div class="wrap">
+  <div class="ways">
+    <div class="way">
+      <div class="n">01</div>
+      <div>
+        <h2>adopt your network's adapter</h2>
+        <p>If you work for a network we ship today, take ownership of its adapter — you know your API better than the community can guess. It's the canonical path, and it can cover publisher, advertiser, or both.</p>
+        <span class="lbl">highest impact</span>
+      </div>
+      <a class="btn p go" href="adopt.html">adopt yours ▸</a>
+    </div>
+    <div class="way">
+      <div class="n">02</div>
+      <div>
+        <h2>add a network we don't ship yet</h2>
+        <p>The wanted-networks list flags verified gaps with public APIs. Pick one, open a tracking issue, send a PR scaffolded around the seven canonical operations.</p>
+        <span class="lbl">new adapter</span>
+      </div>
+      <a class="btn ghost go" href="https://github.com/bobberrisford/affiliatemcp#wanted">wanted list ▸</a>
+    </div>
+    <div class="way">
+      <div class="n">03</div>
+      <div>
+        <h2>land a small first PR</h2>
+        <p>Browse the <code>good-first-pr</code> queue — fixture refreshes, setup-doc screenshots, code TODOs scoped to ≤50 lines. Each issue has a file path, acceptance bullets, and a how-to-test line.</p>
+        <span class="lbl">good first issue</span>
+      </div>
+      <a class="btn ghost go" href="https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3Agood-first-pr">good-first-pr ▸</a>
+    </div>
+    <div class="way">
+      <div class="n">04</div>
+      <div>
+        <h2>improve fixtures or setup docs</h2>
+        <p>Document dashboard paths, common setup failures, and real affiliate workflows that should become skills or prompts. Clearer screenshots and scrubbed fixtures both count.</p>
+        <span class="lbl">docs &amp; fixtures</span>
+      </div>
+      <a class="btn ghost go" href="https://github.com/bobberrisford/affiliatemcp/blob/main/CONTRIBUTING.md">contributing guide ▸</a>
+    </div>
   </div>
-  <p class="small muted" style="margin-top:14px">Each network's own privacy policy governs the data it returns.</p>
-</div></section>
 
-<section class="sec"><div class="wrap">
-  <h2>your control</h2>
-  <ul class="plist" style="max-width:820px">
-    <li><span class="mk">→</span> Remove a network by deleting its keys from <code>~/.affiliate-mcp/.env</code>.</li>
-    <li><span class="mk">→</span> Uninstall entirely with <code>npx affiliate-networks-mcp uninstall</code>, then delete the <code>~/.affiliate-mcp/</code> directory.</li>
-  </ul>
-  <p style="margin-top:22px"><a class="btn ghost" href="https://github.com/bobberrisford/affiliatemcp/blob/main/PRIVACY.md">read the full privacy policy ▸</a></p>
+  <div class="note">
+    <h3>ai-assisted prs are welcome</h3>
+    <p style="margin:0 0 6px">This repo ships a <code>contribute</code> skill so Claude Code can do the legwork — scaffolding an adapter, wiring tests, drafting setup docs. We don't mind how a PR was written; we care that it meets the bar:</p>
+    <div class="bars">
+      <span class="chip">SEVEN CANONICAL OPS</span>
+      <span class="chip">NO FAKE SUPPORT</span>
+      <span class="chip">SCRUBBED FIXTURES</span>
+      <span class="chip acid">CI GREEN</span>
+    </div>
+  </div>
+
+  <p class="small muted" style="margin:28px 0 70px"><b style="color:var(--ink)">Review SLA:</b> first reply on external PRs within 24 hours on weekdays. If none of these fit, <a href="https://github.com/bobberrisford/affiliatemcp/issues" style="border-bottom:2px solid var(--blue)">open an issue</a> describing what you want to do.</p>
 </div></section>
 
 <footer class="foot"><div class="wrap">
   <div class="big">affiliate<span class="mcp">mcp</span></div>
-  <div class="stamps"><span class="chip acid">FREE &amp; OPEN</span><span class="chip">MIT LICENCE</span><span class="chip">LOCAL-FIRST</span><span class="chip mag">NO TELEMETRY</span><span class="chip">UK ENGLISH</span></div>
+  <div class="stamps"><span class="chip acid">FREE &amp; OPEN</span><span class="chip">MIT LICENCE</span><span class="chip">LOCAL-FIRST</span><span class="chip mag">OPT-IN ONLY</span><span class="chip">UK ENGLISH</span></div>
   <div class="rows"><div class="cols"><a href="get-started.html">get started</a><a href="networks.html">networks</a><a href="adopt.html">adopt your adapter</a><a href="contribute.html">contribute</a><a href="faq.html">faq</a><a href="privacy.html">privacy</a><a href="mission.html">manifesto</a><a href="https://github.com/bobberrisford/affiliatemcp">github</a></div>
   <div style="font-family:var(--font-mono);font-size:.74rem;color:var(--fg-invert-mut)">built from the open-source repo · free · open · yours</div></div>
 </div></footer>
