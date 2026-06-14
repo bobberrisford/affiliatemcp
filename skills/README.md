@@ -29,6 +29,10 @@ and optional supporting files.
   recurring weekly client update for one brand: last complete week
   against the week before, top movers, a short paste-ready note.
   Designed to run on a schedule.
+- [`programme-qbr/`](./programme-qbr) — Quarterly Business Review for
+  one brand: month-by-month trend, partner mix, wins and risks, and a
+  quarter-over-quarter narrative the account manager presents to the
+  client.
 - [`agency-portfolio-rollup/`](./agency-portfolio-rollup) — portfolio
   rollup, brand-aggregated, with a "needs attention" subsection for
   brands trending down.
