@@ -12,10 +12,11 @@
     "listClicks: the Monetizze API does not expose click-level data; the operation throws NotImplementedError.",
     "generateTrackingLink: Monetizze affiliate links are generated inside the panel, not via a documented deterministic public endpoint; the operation throws NotImplementedError.",
     "listTransactions advanced-filter query parameter names (date window, status) are unconfirmed against the live interactive docs; the adapter sends dataInicio/dataFim and also filters client-side as a safeguard.",
+    "Monetizze sale timestamps omit a timezone marker. The adapter interprets these timestamps as UTC for deterministic output; the upstream reporting timezone has not been verified against a live account.",
     "Authentication uses a two-step token exchange (x_consumer_key header then a token header); the token-response field name and token lifetime are unconfirmed, so the adapter reads the token field defensively and uses a conservative cache TTL."
   ],
   "claim_status": "experimental",
-  "adapter_version": "0.1.0",
+  "adapter_version": "0.1.1",
   "last_verified": "2026-06-04",
   "supports_brand_ops": false,
   "side": "publisher",

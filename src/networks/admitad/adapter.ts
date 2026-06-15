@@ -90,7 +90,7 @@ const META: NetworkMeta = {
   baseUrl: 'https://api.admitad.com',
   authModel: 'oauth2',
   docsUrl: 'https://developers.admitad.com/',
-  adapterVersion: '0.1.0',
+  adapterVersion: '0.1.1',
   lastVerified: '2026-06-04',
   claimStatus: 'experimental',
   knownLimitations: [
@@ -99,6 +99,7 @@ const META: NetworkMeta = {
     "listProgrammes / getProgramme are mapped from /advcampaigns/ and require the OAuth scope 'advcampaigns'. Admitad's programme connection status is per-website; the adapter reports the campaign-level status it can read and preserves the raw payload in rawNetworkData.",
     'generateTrackingLink calls the Admitad deeplink generator (GET /deeplink/{website_id}/advcampaign/{campaign_id}/?ulp=...), which requires the OAuth scope deeplink_generator, a connected ad space, and ADMITAD_WEBSITE_ID. A deeplink can only be generated for a campaign your ad space is connected to; otherwise the API returns an error which surfaces verbatim.',
     "Admitad action statuses are normalised: 'pending' -> pending; 'approved' / 'approved_but_stalled' -> approved; 'declined' -> reversed; the separate payment_status flag (1 = paid) maps to paid. Unknown statuses map to 'other' and the raw value is preserved.",
+    'Admitad action timestamps omit a timezone marker. The adapter interprets these timestamps as UTC for deterministic output; the upstream reporting timezone has not been verified against a live account.',
     'OAuth2 access tokens have a limited lifetime; the adapter caches the token in memory and re-fetches on expiry. Cached tokens are lost on process restart.',
   ],
   supportsBrandOps: false,
@@ -290,11 +291,13 @@ function computeAgeDays(raw: AdmitadActionRaw, now: Date = new Date()): number {
  */
 function parseAdmitadDate(value: string): number | undefined {
   if (!value) return undefined;
-  const direct = Date.parse(value);
+  const trimmed = value.trim();
+  const normalised = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(trimmed)
+    ? `${trimmed.replace(' ', 'T')}Z`
+    : trimmed;
+  const direct = Date.parse(normalised);
   if (!Number.isNaN(direct)) return direct;
-  const iso = value.includes(' ') ? `${value.replace(' ', 'T')}Z` : value;
-  const t = Date.parse(iso);
-  return Number.isNaN(t) ? undefined : t;
+  return undefined;
 }
 
 function nullableIso(d?: string | null): string | undefined {

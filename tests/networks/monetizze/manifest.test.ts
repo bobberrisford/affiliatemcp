@@ -42,7 +42,7 @@ describe('Monetizze network.json', () => {
     expect(raw.supports_brand_ops).toBe(false);
     expect(raw.setup_requires_approval).toBe(false);
     expect(raw.claim_status).toBe('experimental');
-    expect(raw.adapter_version).toBe('0.1.0');
+    expect(raw.adapter_version).toBe('0.1.1');
     expect(raw.last_verified).toBe('2026-06-04');
     expect(raw.docs_url).toBe('https://api.monetizze.com.br/2.1/apidoc/');
     expect(raw.env_vars).toContain('MONETIZZE_API_KEY');

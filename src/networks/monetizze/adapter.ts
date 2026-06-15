@@ -99,7 +99,7 @@ const META: NetworkMeta = {
   baseUrl: 'https://api.monetizze.com.br/2.1',
   authModel: 'custom',
   docsUrl: 'https://api.monetizze.com.br/2.1/apidoc/',
-  adapterVersion: '0.1.0',
+  adapterVersion: '0.1.1',
   lastVerified: '2026-06-04',
   claimStatus: 'experimental',
   knownLimitations: [
@@ -108,6 +108,7 @@ const META: NetworkMeta = {
     'listClicks: the Monetizze API does not expose click-level data; the operation throws NotImplementedError.',
     'generateTrackingLink: Monetizze affiliate links are generated inside the panel, not via a documented deterministic public endpoint; the operation throws NotImplementedError.',
     'listTransactions advanced-filter query parameter names (date window, status) are unconfirmed against the live interactive docs; the adapter sends dataInicio/dataFim and also filters client-side as a safeguard.',
+    'Monetizze sale timestamps omit a timezone marker. The adapter interprets these timestamps as UTC for deterministic output; the upstream reporting timezone has not been verified against a live account.',
     'Authentication uses a two-step token exchange (x_consumer_key header -> token); the token-response field name and token lifetime are unconfirmed, so the adapter reads the token field defensively and uses a conservative cache TTL.',
   ],
   supportsBrandOps: false,
@@ -279,11 +280,13 @@ function computeAgeDays(raw: MonetizzeSaleRaw, now: Date = new Date()): number {
  */
 function parseMonetizzeDate(d?: string | null): number | undefined {
   if (!d) return undefined;
-  const direct = Date.parse(d);
+  const trimmed = d.trim();
+  const normalised = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(trimmed)
+    ? `${trimmed.replace(' ', 'T')}Z`
+    : trimmed;
+  const direct = Date.parse(normalised);
   if (!Number.isNaN(direct)) return direct;
-  const iso = `${d.trim().replace(' ', 'T')}Z`;
-  const ts = Date.parse(iso);
-  return Number.isNaN(ts) ? undefined : ts;
+  return undefined;
 }
 
 function nullableIso(d?: string | null): string | undefined {
