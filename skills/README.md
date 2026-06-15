@@ -28,7 +28,10 @@ and optional supporting files.
 
 - [`programme-performance-report/`](./programme-performance-report) —
   single-brand report across that brand's bound networks. Top
-  publishers, status splits, period-over-period delta.
+  publishers, status splits, period-over-period delta. Also the one
+  reporting workflow behind the cadence deliverables: daily snapshot,
+  weekly client note, month-close, and quarterly business review (QBR)
+  output profiles.
 - [`publisher-performance-review/`](./publisher-performance-review) —
   single-publisher deep dive for a brand: clicks, conversions, EPC,
   AOV, status split, trend, and call talking points.
