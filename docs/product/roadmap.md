@@ -2,6 +2,8 @@
 
 > Status: current product and technical roadmap.
 >
+> Repository assessment date: 2026-06-15.
+>
 > This document recommends direction and sequencing. Accepted records under
 > [`../decisions/`](../decisions) and shipped behaviour remain authoritative.
 > Recommendations that change architecture, public contracts, privacy,
@@ -482,8 +484,9 @@ treated as an already accepted production direction.
   cache identity.
 - The delivery system in `AGENTS.md` and `.claude/skills/` is unusually clear
   about ownership, decisions, review, and small coherent outcomes.
-- The test suite is extensive: the reviewed baseline produced 3,481 passing
-  tests out of 3,483.
+- The test suite is extensive. At the 2026-06-15 assessment baseline, 3,465
+  tests passed; CI also verifies the timezone-sensitive Admitad and Monetizze
+  suites under UTC and `Europe/Paris`.
 
 ### Where coherence is weakening
 
@@ -542,9 +545,12 @@ documentation layers rather than branch domain behaviour.
 
 #### Test portability
 
-Running `npm test` under `Europe/Paris` produced two timezone-dependent failures
-in Admitad and Monetizze date parsing. This is a concrete portability defect and
-contradicts the repository statement that the baseline is green.
+The initial assessment reproduced two timezone-dependent failures in Admitad
+and Monetizze date parsing under `Europe/Paris`. PR
+[#202](https://github.com/bobberrisford/affiliatemcp/pull/202) resolved the
+defect, documented the remaining uncertainty about upstream timezone semantics,
+and added UTC and `Europe/Paris` CI proof. That proof should remain part of the
+release baseline.
 
 ### Architecture recommendation
 
@@ -625,7 +631,7 @@ implementation.
 | Verified-outcome scorecard | Track verified networks, successful setup journeys, and workflow coverage instead of leading with adapter count | Users, maintainers, networks | High | Medium | Medium | Must-have |
 | Workflow contract audit | Repair stale skills, prompts, and examples and define ownership between them | Publishers, agencies, client users | High | Medium | Low | Must-have |
 | Two-track onboarding | Present one non-technical and one technical setup journey | New users, support | High | Low | Low | Must-have |
-| Green release baseline | Fix timezone failures and make portability part of release proof | Maintainers, contributors | Medium | Low | Low | Must-have |
+| Maintain green release baseline | Keep timezone and platform portability proof in release checks | Maintainers, contributors | Medium | Low | Low | Must-have |
 
 ### Next: adoption and useful workflows
 
@@ -652,7 +658,8 @@ implementation.
 
 ### Sequence 1: establish a trustworthy baseline
 
-1. Restore a green test baseline across timezones.
+1. Maintain the green timezone-independent baseline and broaden portability
+   proof when a demonstrated failure class justifies it.
 2. Add semantic validation for every shipped skill, MCP prompt, and example.
 3. Define adapter promotion and live-verification evidence.
 4. Reconcile product, package, plugin, server, and telemetry version sources.
@@ -800,17 +807,25 @@ risk-based work so only one PR actively awaits Othman's review.
   direction.
 - **Suggested owner type:** product and docs; Rob leads product truth.
 
-### 2. P0: Restore a green, timezone-independent release baseline
+### 2. P0: Maintain a green, timezone-independent release baseline
+
+- **Status:** completed foundation via issue
+  [#200](https://github.com/bobberrisford/affiliatemcp/issues/200) and PR
+  [#202](https://github.com/bobberrisford/affiliatemcp/pull/202); retain as a
+  release requirement.
 
 - **Customer outcome:** releases behave consistently regardless of maintainer
   or user timezone.
-- **Problem:** Admitad and Monetizze date tests fail under `Europe/Paris`.
-- **Proposed scope:** fix date parsing or tests according to documented network
-  semantics; add timezone-matrix proof.
+- **Problem:** the initial assessment found Admitad and Monetizze date tests
+  failing under `Europe/Paris`; that defect is resolved, but the portability
+  proof must not regress.
+- **Proposed scope:** retain the focused timezone-matrix proof and apply the
+  same approach when another demonstrated portability defect appears.
 - **Out of scope:** broad adapter refactors or unrelated flaky tests.
 - **Owning layer:** affected adapters and CI.
 - **Dependencies:** none.
-- **Risks:** incorrectly assuming upstream timezone semantics.
+- **Risks:** losing focused CI proof or incorrectly assuming upstream timezone
+  semantics.
 - **Acceptance criteria:** `npm run verify` passes in UTC and a non-UTC
   timezone; findings or limitations state any remaining upstream ambiguity.
 - **Decision-first:** no, unless fixing it requires changing canonical date
