@@ -1,6 +1,6 @@
 # affiliate-mcp Report — the state of affiliate-network APIs in June 2026
 
-_Date-stamped: 2026-06-06._
+_Date-stamped: 2026-06-15._
 
 This report describes the state of four affiliate-network APIs as observed
 during the construction of the affiliate-mcp MCP server: Awin, CJ Affiliate,
@@ -35,7 +35,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | AccessTrade | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Adcell | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Addrevenue | 5 | no | 7 / 7 | 2 | experimental | 0.1.0 | 2026-06-05 |
-| Admitad | 15 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
+| Admitad | 15 | no | 6 / 7 | 8 | experimental | 0.1.1 | 2026-06-04 |
 | Admitad (advertiser) | 12 | no | 7 / 7 | 5 | experimental | 0.1.0 | 2026-06-04 |
 | Adrecord | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | Adservice | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
@@ -84,7 +84,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Levanta | 5 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | LinkConnector | 5 | no | 6 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | Lomadee | 15 | no | 6 / 7 | 7 | experimental | 0.1.0 | 2026-06-04 |
-| Monetizze | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
+| Monetizze | 5 | no | 6 / 7 | 7 | experimental | 0.1.1 | 2026-06-04 |
 | mrge | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-05-28 |
 | NetRefer | 15 | yes (~5 days) | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-05 |
 | Offer18 | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
@@ -283,7 +283,7 @@ _No findings document was supplied at `docs/findings/addrevenue.md`._
 - **Setup time estimate**: 15 minutes
 - **Approval required**: no
 - **Claim status**: experimental
-- **Adapter version**: 0.1.0
+- **Adapter version**: 0.1.1
 - **Last verified**: 2026-06-04
 - **Documentation**: https://developers.admitad.com/
 
@@ -307,6 +307,7 @@ _No findings document was supplied at `docs/findings/addrevenue.md`._
 - generateTrackingLink calls the Admitad deeplink generator (GET /deeplink/{website_id}/advcampaign/{campaign_id}/?ulp=...), which requires the OAuth scope 'deeplink_generator', a connected ad space, and ADMITAD_WEBSITE_ID. A deeplink can only be generated for a campaign your ad space is connected to; otherwise the API returns an error which surfaces verbatim.
 - Admitad action statuses are normalised: 'pending' -> pending; 'approved' / 'approved_but_stalled' -> approved; 'declined' -> reversed; the separate payment_status flag (1 = paid) maps to paid. Unknown statuses map to 'other' and the raw value is preserved.
 - The statistics/actions and statistics/dates endpoints require the OAuth scope 'statistics'; /me/ requires 'private_data'. The adapter requests all required scopes in a single client_credentials token exchange.
+- Admitad action timestamps omit a timezone marker. The adapter interprets these timestamps as UTC for deterministic output; the upstream reporting timezone has not been verified against a live account.
 - OAuth2 access tokens have a limited lifetime; the adapter caches the token in memory and re-fetches on expiry. Cached tokens are lost on process restart.
 
 ### Findings
@@ -3173,7 +3174,7 @@ _No findings document was supplied at `docs/findings/lomadee.md`._
 - **Setup time estimate**: 5 minutes
 - **Approval required**: no
 - **Claim status**: experimental
-- **Adapter version**: 0.1.0
+- **Adapter version**: 0.1.1
 - **Last verified**: 2026-06-04
 - **Documentation**: https://api.monetizze.com.br/2.1/apidoc/
 
@@ -3196,6 +3197,7 @@ _No findings document was supplied at `docs/findings/lomadee.md`._
 - listClicks: the Monetizze API does not expose click-level data; the operation throws NotImplementedError.
 - generateTrackingLink: Monetizze affiliate links are generated inside the panel, not via a documented deterministic public endpoint; the operation throws NotImplementedError.
 - listTransactions advanced-filter query parameter names (date window, status) are unconfirmed against the live interactive docs; the adapter sends dataInicio/dataFim and also filters client-side as a safeguard.
+- Monetizze sale timestamps omit a timezone marker. The adapter interprets these timestamps as UTC for deterministic output; the upstream reporting timezone has not been verified against a live account.
 - Authentication uses a two-step token exchange (x_consumer_key header then a token header); the token-response field name and token lifetime are unconfirmed, so the adapter reads the token field defensively and uses a conservative cache TTL.
 
 ### Findings
@@ -5947,4 +5949,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-06 16:09 UTC._
+_Last regenerated 2026-06-15 08:17 UTC._

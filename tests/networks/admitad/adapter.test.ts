@@ -135,6 +135,8 @@ describe('Admitad transformers (status normalisation, raw preservation)', () => 
     expect(space).toBe(Date.parse('2024-01-20T12:00:00Z'));
     const iso = _internals.parseAdmitadDate('2026-04-01T10:15:00Z');
     expect(iso).toBe(Date.parse('2026-04-01T10:15:00Z'));
+    const offset = _internals.parseAdmitadDate('2026-04-01T10:15:00-04:00');
+    expect(offset).toBe(Date.parse('2026-04-01T10:15:00-04:00'));
     expect(_internals.parseAdmitadDate('not-a-date')).toBeUndefined();
   });
 

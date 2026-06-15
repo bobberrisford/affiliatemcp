@@ -21,6 +21,10 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+      - name: Verify timezone-sensitive adapter tests
+        run: |
+          TZ=UTC npx vitest run tests/networks/admitad/adapter.test.ts tests/networks/monetizze/adapter.test.ts
+          TZ=Europe/Paris npx vitest run tests/networks/admitad/adapter.test.ts tests/networks/monetizze/adapter.test.ts
       - run: npm run build
       - run: npm run verify:mcpb
 

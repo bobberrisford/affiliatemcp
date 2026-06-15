@@ -13,10 +13,11 @@
     "generateTrackingLink calls the Admitad deeplink generator (GET /deeplink/{website_id}/advcampaign/{campaign_id}/?ulp=...), which requires the OAuth scope 'deeplink_generator', a connected ad space, and ADMITAD_WEBSITE_ID. A deeplink can only be generated for a campaign your ad space is connected to; otherwise the API returns an error which surfaces verbatim.",
     "Admitad action statuses are normalised: 'pending' -> pending; 'approved' / 'approved_but_stalled' -> approved; 'declined' -> reversed; the separate payment_status flag (1 = paid) maps to paid. Unknown statuses map to 'other' and the raw value is preserved.",
     "The statistics/actions and statistics/dates endpoints require the OAuth scope 'statistics'; /me/ requires 'private_data'. The adapter requests all required scopes in a single client_credentials token exchange.",
+    "Admitad action timestamps omit a timezone marker. The adapter interprets these timestamps as UTC for deterministic output; the upstream reporting timezone has not been verified against a live account.",
     "OAuth2 access tokens have a limited lifetime; the adapter caches the token in memory and re-fetches on expiry. Cached tokens are lost on process restart."
   ],
   "claim_status": "experimental",
-  "adapter_version": "0.1.0",
+  "adapter_version": "0.1.1",
   "last_verified": "2026-06-04",
   "supports_brand_ops": false,
   "side": "publisher",
