@@ -628,7 +628,7 @@ implementation.
 | Item | Description and why it matters | Who it serves | Product impact | Complexity | Risk | Priority |
 | --- | --- | --- | --- | --- | --- | --- |
 | Canonical product story | Reconcile README, package, website, and product-doc claims around local-first, supported clients, and verified versus experimental networks | Everyone | High | Low | Low | Must-have |
-| Verified-outcome scorecard | Track verified networks, successful setup journeys, and workflow coverage instead of leading with adapter count | Users, maintainers, networks | High | Medium | Medium | Must-have |
+| Verified-outcome scorecard | After adapter promotion gates are accepted, track verified networks, successful setup journeys, and workflow coverage instead of leading with adapter count | Users, maintainers, networks | High | Medium | Medium | Must-have |
 | Workflow contract audit | Repair stale skills, prompts, and examples and define ownership between them | Publishers, agencies, client users | High | Medium | Low | Must-have |
 | Two-track onboarding | Present one non-technical and one technical setup journey | New users, support | High | Low | Low | Must-have |
 | Maintain green release baseline | Keep timezone and platform portability proof in release checks | Maintainers, contributors | Medium | Low | Low | Must-have |
@@ -737,7 +737,7 @@ collaboration, or specialised service, not for unlocking a user's own data.
 | --- | --- | --- | --- | --- | --- |
 | Support contracts | Agencies, brands, and networks pay for response times, integration help, and maintenance | Core remains inspectable and self-service | Support may distort roadmap toward a few customers | Stable support policy and verified baseline | Near-term |
 | Managed agency setup | Agencies pay for credential onboarding, brand mapping, workflow configuration, and training | Users can still do it themselves | Handling customer environments or credentials carelessly | Clear access boundaries and runbooks | Near-term |
-| Network-certified adapters | Networks pay for verification, ownership, compatibility testing, and certification | Adapter code and evidence remain public | Pay-to-play perception or misleading certification | Transparent promotion criteria and independence rules | Near-term |
+| Network-certified adapter services | Networks pay for verification work, maintenance, compatibility testing, or certification without payment affecting reliability claims | Adapter code and evidence remain public | Pay-to-play perception or misleading certification | Accepted promotion criteria and independence rules; focused commercial decision | Mid-term |
 | Premium packaged skills | Agencies or brands pay for specialised workflow packs, templates, or maintained vertical expertise | Open core tools and essential workflows remain available | Artificially withholding basic workflows | Portable packaging and clear value boundary | Mid-term |
 | Hosted remote MCP gateway | Teams pay for stable HTTPS access, auth, uptime, audit, and operations | Local deployment remains free and complete | Credentials/data leave local machine; high security burden | Remote architecture, auth, audit, compliance, operations | Mid-term |
 | Team or organisation layer | Agencies and enterprises pay for shared config, policy, roles, audit, and deployment | Individual local use remains open | Centralisation can weaken local-first promise | Identity, tenancy, policy, audit, secure secret handling | Mid-term |
@@ -747,12 +747,14 @@ collaboration, or specialised service, not for unlocking a user's own data.
 | Cloud config sync | Teams pay for safe config portability | Local config remains supported | Secret leakage and account compromise | Encryption, identity, recovery, threat model | Long-term |
 | Enterprise version | Enterprises pay for deployment, policy, support, and compliance | Open core remains the technical foundation | Feature fragmentation and open-core resentment | Proven enterprise demand and clean product boundary | Long-term |
 
-**Recommended monetisation order:** support contracts, managed agency setup,
-and network-certified adapters first. These monetise expertise and assurance
-without changing the privacy model. A hosted remote gateway or team layer can
-follow only after explicit demand and a reviewed security architecture.
+**Recommended monetisation order:** support contracts and managed agency setup
+first. These monetise expertise without changing the privacy model.
+Network-certified adapter services may follow only after accepted promotion
+gates and a focused commercial decision preserve the independence of
+reliability claims. A hosted remote gateway or team layer can follow only after
+explicit demand and a reviewed security architecture.
 
-## 12. Recommended decisions
+## 12. Recommended decisions (advisory until recorded)
 
 1. **Primary install path:** Claude Desktop `.mcpb` for non-technical users.
 2. **Secondary install path:** `npx affiliate-networks-mcp setup`, then
@@ -764,9 +766,9 @@ follow only after explicit demand and a reviewed security architecture.
    persona-centred workflows that orchestrate tools into outcomes.
 5. **AI of choice in the next three months:** tested portable local MCP across
    Claude Desktop, Claude Code, Codex, VS Code, and generic MCP clients.
-6. **AI of choice in the next twelve months:** add an optional, secure remote
-   HTTPS MCP path for ChatGPT and managed use while keeping local-first
-   complete.
+6. **AI of choice in the next twelve months:** pursue an optional, secure remote
+   HTTPS MCP path for ChatGPT and managed use only if demand and a reviewed
+   security architecture justify it, while keeping local-first complete.
 7. **Do not build yet:** more speculative adapters, broad autonomous writes,
    general browser automation, rich dashboards, or hosted credential storage.
 8. **Before adding more networks:** standardise verification evidence,
@@ -844,7 +846,8 @@ risk-based work so only one PR actively awaits Othman's review.
   network adoption affects claims.
 - **Out of scope:** verifying every adapter in one issue.
 - **Owning layer:** product governance and contribution workflow.
-- **Dependencies:** roadmap claim reconciliation.
+- **Dependencies:** roadmap claim reconciliation. The verified-outcome
+  scorecard remains blocked until this decision is accepted.
 - **Risks:** standards that are impossible for community contributors or too
   weak to build trust.
 - **Acceptance criteria:** a maintainer and contributor can consistently decide
@@ -1017,7 +1020,9 @@ risk-based work so only one PR actively awaits Othman's review.
 - **Out of scope:** feature gates, enterprise forks, hosted credential storage,
   or premiumising essential workflows.
 - **Owning layer:** product and commercial discovery.
-- **Dependencies:** adapter verification gates and clear onboarding.
+- **Dependencies:** accepted adapter verification gates, clear onboarding, and
+  a focused decision preserving the independence of reliability claims before
+  any paid certification product launches.
 - **Risks:** pay-to-play trust, roadmap distortion, and support commitments
   exceeding maintainer capacity.
 - **Acceptance criteria:** evidence identifies who pays, for what, at what
