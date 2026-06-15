@@ -1,5 +1,9 @@
 # Example: Claude Desktop config for affiliate-mcp
 
+> **Technical fallback.** New non-technical Claude Desktop users should install
+> the host-native `.mcpb` from the latest GitHub release. Use this example when
+> you deliberately want to manage the local stdio configuration yourself.
+
 JSON does not support comments, so this file is the prose companion to
 [`claude-desktop-config.json`](./claude-desktop-config.json). It explains what
 each field does and how to adapt the example to your own setup.
@@ -48,7 +52,7 @@ Restart Claude Desktop after editing the file.
   server loads that file at startup. The `env` block is useful only if you
   want to override or scope credentials to this single MCP client.
 
-## The recommended flow
+## The technical manual-config flow
 
 1. Run `npx affiliate-networks-mcp setup` once. The wizard validates each credential
    against the live network and writes `~/.affiliate-mcp/.env`.

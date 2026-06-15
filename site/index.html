@@ -112,7 +112,7 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--ink);color:va
 .tab{font-family:var(--font-mono);font-weight:700;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;padding:8px 14px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);cursor:pointer}.tab.on{background:var(--ink);color:var(--acid)}
 .cmd{display:flex;align-items:center;gap:12px;background:var(--ink);border-radius:8px;padding:15px 17px;font-family:var(--font-mono);font-size:.92rem;color:var(--paper);border:2px solid var(--ink)}.cmd+.cmd{margin-top:10px}.cmd .pr{color:var(--acid);font-weight:700}
 .cmd .copy{margin-left:auto;border:1px solid var(--line-invert);background:transparent;color:var(--fg-invert-mut);font-family:var(--font-mono);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;padding:6px 9px;border-radius:4px;cursor:pointer}.cmd .copy:hover{border-color:var(--acid);color:var(--acid)}
-.ways{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:6px 0 34px}
+.ways{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin:6px 0 34px}
 .way{display:flex;flex-direction:column;border:2px solid var(--ink);border-radius:8px;padding:22px;background:var(--paper);box-shadow:var(--shadow)}
 .way.feat{background:var(--ink);color:var(--paper);box-shadow:6px 6px 0 var(--blue)}
 .way h3{font-family:var(--font-display);font-weight:800;font-size:1.5rem;text-transform:lowercase;letter-spacing:-.02em;margin:12px 0 8px}
@@ -138,7 +138,7 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--ink);color:va
   </div>
   <div class="right">
     <a class="btn d sm" href="https://github.com/bobberrisford/affiliatemcp">★ github</a>
-    <a class="btn p sm" href="get-started.html">npx setup ▸</a>
+    <a class="btn p sm" href="get-started.html">get started ▸</a>
   </div>
 </div></nav>
 
@@ -150,9 +150,9 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--ink);color:va
       <h1 class="h-mega">automate the<br>affiliate grind.</h1>
       <p class="h-sub">Connect every network to the AI you already use.</p>
       <div class="kicker" style="margin-bottom:18px"><div class="seg" id="seg"><button class="on" data-aud="pub">publisher</button><button data-aud="brand">brand / agency</button></div></div>
-      <div class="h-cta"><a class="btn p" href="get-started.html">npx setup ▸</a><a class="btn ghost" href="mission.html">read the manifesto</a></div>
-      <div class="h-note">claude desktop, claude code, codex · 5-min wizard</div>
-      <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><a class="btn d sm" href="https://github.com/bobberrisford/affiliatemcp/releases/latest/download/affiliate-networks-mcp.mcpb">get the Claude extension ▸</a><a class="btn d sm" href="https://github.com/bobberrisford/affiliatemcp/releases/download/desktop-v0.1.1/affiliate-mcp-0.1.1-arm64.dmg">download the <span class="osbrand">macOS</span> app ▸</a><span style="font-family:var(--font-mono);font-size:.72rem;color:var(--smudge-dk)">free · local-first · no terminal needed</span></div>
+      <div class="h-cta"><a class="btn p" href="get-started.html">get started ▸</a><a class="btn ghost" href="mission.html">read the manifesto</a></div>
+      <div class="h-note">two setup tracks · local-first · bring your own keys</div>
+      <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><a class="btn d sm" href="https://github.com/bobberrisford/affiliatemcp/releases/latest/download/affiliate-networks-mcp.mcpb">download the Claude extension ▸</a><span style="font-family:var(--font-mono);font-size:.72rem;color:var(--smudge-dk)">free · local-first · no terminal needed</span></div>
     </div>
     <div class="demo">
       <div class="cl-top"><svg viewBox="0 0 24 24"><g fill="#D97757"><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3"></rect><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(45 12 12)"></rect><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(90 12 12)"></rect><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(135 12 12)"></rect></g></svg><span class="cl-name">Claude</span><span class="cl-conn"><span class="ast">✳</span> affiliate · connected</span></div>
@@ -202,36 +202,29 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--ink);color:va
 </div></section>
 
 <section class="install" id="install"><div class="wrap">
-  <div class="sec-label">install · three ways in</div>
-  <h2>five minutes. <span class="hl">no account.</span></h2>
-  <p class="lead muted" style="max-width:52ch;margin:0 0 26px">Same local server, your own keys. Pick your path:</p>
+  <div class="sec-label">install · two primary tracks</div>
+  <h2>two tracks. <span class="hl">one local server.</span></h2>
+  <p class="lead muted" style="max-width:58ch;margin:0 0 26px">Same local server, your own keys. Choose the non-technical Claude Desktop track or the technical local stdio track.</p>
 
   <div class="ways">
     <div class="way feat">
-      <span class="chip acid">easiest · recommended</span>
-      <h3>claude desktop extension</h3>
-      <p class="why">For <span class="osbrand">macOS</span> &amp; Windows. No Node.js or terminal — Claude runs it and stores your keys securely. Download the file, then in Claude Desktop open <b>Settings → Extensions</b> and drop it in.</p>
+      <span class="chip acid">non-technical · primary</span>
+      <h3>claude desktop <code>.mcpb</code></h3>
+      <p class="why">One-click install via Settings → Extensions on <span class="osbrand">macOS</span> &amp; Windows. No Node.js or terminal — Claude runs it and stores your keys securely.</p>
       <a class="btn p" href="https://github.com/bobberrisford/affiliatemcp/releases/latest/download/affiliate-networks-mcp.mcpb">download the Claude extension ▸</a>
-      <p class="small muted" style="margin:10px 0 0">Need the steps? <a href="get-started.html#extension" style="border-bottom:2px solid var(--blue)">how to install it ▾</a></p>
     </div>
 
     <div class="way">
-      <span class="chip">mac · guided wizard</span>
-      <h3><span class="osbrand">macOS</span> setup app</h3>
-      <p class="why">A guided wizard: add your networks, it connects Claude Desktop, then quits. Apple Silicon.</p>
-      <a class="btn d" href="https://github.com/bobberrisford/affiliatemcp/releases/download/desktop-v0.1.1/affiliate-mcp-0.1.1-arm64.dmg">download the <span class="osbrand">macOS</span> app ▸</a>
-    </div>
-
-    <div class="way">
-      <span class="chip">all clients &amp; platforms</span>
-      <h3>command line</h3>
-      <p class="why">Works with Claude Desktop, Code &amp; Codex on any OS. Needs Node.js 20+.</p>
+      <span class="chip">technical · primary</span>
+      <h3>cli + local stdio</h3>
+      <p class="why">Complete credential setup, diagnostics, and host-native or config installation for Claude Desktop, Claude Code, and Codex. Needs Node.js 20+.</p>
       <a class="btn ghost" href="#cmds-block">see the commands ▾</a>
     </div>
   </div>
+  <p class="small muted" style="margin-top:16px">The standalone Electron/DMG setup app remains a fixes-only compatibility fallback for existing macOS users. Cursor, VS Code, generic MCP clients, and ChatGPT do not yet have a tested first-party onboarding journey. <a href="get-started.html">See support states ▸</a></p>
 
   <div id="cmds-block">
-    <div class="sec-label">command line · pick your client</div>
+    <div class="sec-label">technical track · pick your shipped client</div>
     <div class="tabs" id="tabs"><button class="tab on" data-tab="desktop">Claude Desktop</button><button class="tab" data-tab="code">Claude Code</button><button class="tab" data-tab="codex">Codex</button></div>
     <div id="cmds"></div>
     <p class="small muted" style="margin-top:16px">Keys live in <code>~/.affiliate-mcp/.env</code>, mode 0600. Nothing hosted, nothing phones home.</p>

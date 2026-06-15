@@ -54,14 +54,14 @@ question that fans out across networks and brands, and surfaces what
 the dashboards bury: publishers trending down, reversal spikes, dead
 links, programmes drifting toward zero.
 
-Either way, you do **not** need to know what an API is. You do not
-need to write code. You need:
+Either way, you do **not** need to know what an API is or write code. The
+non-technical Claude Desktop track needs:
 
 - Your existing logins to the affiliate networks you already work with.
-- Five minutes to run the setup wizard.
-- Claude Desktop, Claude Code, or Codex installed.
+- Claude Desktop installed.
 
-That is the whole list.
+The technical track uses a terminal, Node.js 20 or newer, and Claude Desktop,
+Claude Code, Codex, or another compatible local stdio MCP client; check the support states below before relying on an untested client journey.
 
 **And if you work for an affiliate network**, this is also for you. The
 bundled adapters are placeholders until each network adopts its own. See
@@ -96,9 +96,12 @@ rely on file permissions, leave caching off. Run
 
 ## Getting started
 
-Choose the install path for the AI workspace you already use.
+Choose one of two primary tracks. Both run the same local MCP server and keep your credentials on your machine.
 
-**Claude Desktop — no Terminal or Node.js required:**
+### Track 1: non-technical, Claude Desktop
+
+Use the host-native Claude Desktop `.mcpb`. No Terminal, Node.js, or manual
+configuration is required.
 
 1. Download `affiliate-networks-mcp-<version>.mcpb` from the latest
    [GitHub release](https://github.com/bobberrisford/affiliatemcp/releases/latest).
@@ -111,9 +114,14 @@ The native extension currently offers secure setup fields for Awin, CJ, Impact,
 and Partnerize. It runs the complete server, so an existing
 `~/.affiliate-mcp/.env` continues to enable every other adapter. A portable
 browser setup flow for the remaining networks is planned; until then, use the
-CLI setup path below when adding them.
+technical track below when adding them.
 
-**CLI and other AI clients:**
+The standalone Electron/DMG setup app is a **fixes-only compatibility
+fallback** for existing macOS users. It is not a third primary onboarding
+track. See [`desktop/README.md`](./desktop/README.md) for its remaining use
+case.
+
+### Track 2: technical and semi-technical, CLI plus local stdio
 
 You'll need Node.js 20 or newer installed. If you don't have it, use the
 [Node.js download page](https://nodejs.org/).
@@ -140,10 +148,11 @@ npx affiliate-networks-mcp test
 You should see one line per network: `ok` for everything that's healthy,
 `error — <reason>` for anything that isn't.
 
-**3. Connect it to Claude or Codex.** Pick the path that matches your client.
-The setup wizard offers this at the end automatically.
+**3. Connect it to your local MCP client.** Use a host-native package, the CLI
+installer, or local stdio configuration. The setup wizard offers the shipped
+CLI installer targets at the end automatically.
 
-**Claude Desktop (Mac/Windows app) — most users:**
+**Claude Desktop (Mac/Windows app):**
 
 ```
 npx affiliate-networks-mcp install
@@ -231,6 +240,30 @@ Add the `affiliate` entry inside `mcpServers` — keep any siblings:
 Restart Claude Desktop after saving.
 
 </details>
+
+For another local stdio MCP client, configure the server command
+`npx -y affiliate-networks-mcp`. These clients are compatible in principle,
+not yet tested first-party journeys. Draft PR
+[#49](https://github.com/bobberrisford/affiliatemcp/pull/49) is the existing
+VS Code/Copilot installer candidate.
+
+### Client support states
+
+These labels describe the onboarding journey, not whether every network
+adapter is live-verified. "Tested" below means repository-owned automated
+validation, not live proof against every host version. See
+[`REPORT.md`](./REPORT.md) for adapter maturity.
+
+| Client or path | Support state | What that means |
+| --- | --- | --- |
+| Claude Desktop `.mcpb` | **Shipped and release-tested** | Primary non-technical path. CI builds and smoke-tests the bundle. Secure setup fields currently cover Awin, CJ, Impact, and Partnerize. |
+| Claude Desktop CLI/manual config | **Shipped and tested** | Technical local stdio path. Installer/config behaviour has automated coverage. |
+| Claude Code plugin and CLI registration | **Shipped and tested** | Technical path with packaged skills and local MCP registration. |
+| Codex CLI and IDE extension | **Shipped and tested** | Technical path using the shared local Codex MCP configuration. This is not ChatGPT connector support. |
+| Claude Cowork private mirror | **Partially shipped** | Requires a private mirror and org-admin follow-through; it is not a simple individual setup path. |
+| Cursor, VS Code, and generic local MCP clients | **Possible, not yet a tested first-party journey** | The local stdio server is compatible in principle. Client-specific setup, packaging, and support ownership are tracked in [#207](https://github.com/bobberrisford/affiliatemcp/issues/207). |
+| Portable browser credential setup | **Planned, not shipped** | Intended to make all network credentials available without a terminal. Its security and DMG-retirement decision is tracked in [#206](https://github.com/bobberrisford/affiliatemcp/issues/206). |
+| ChatGPT connector or remote HTTPS MCP | **Planned, not shipped** | ChatGPT cannot use this local stdio server directly. The separate remote architecture decision is tracked in [#208](https://github.com/bobberrisford/affiliatemcp/issues/208). |
 
 **Check it worked.** In a new Claude conversation, ask **"What affiliate
 networks do you have access to?"** — you should see every network you

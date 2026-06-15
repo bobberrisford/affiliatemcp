@@ -2,14 +2,15 @@
 
 > **Compatibility fallback.** New Claude Desktop users should install the
 > host-native `.mcpb` extension from the latest GitHub release. This Electron
-> setup app remains available while the portable browser setup flow is built,
-> but receives fixes rather than new product scope. See
+> setup app and its DMG remain available for existing macOS users while the
+> portable browser setup flow is built, but receive fixes rather than new
+> product scope. It is not a primary onboarding track. See
 > [`docs/decisions/2026-06-12-host-native-distribution.md`](../docs/decisions/2026-06-12-host-native-distribution.md).
 
-The local-first **setup app**. Its one job (v1): get a non-technical user
-connected to Claude Desktop **without a terminal**, then quit. It does not run
-the MCP server — Claude Desktop spawns that over stdio, exactly as today. This
-app only writes the credentials and the Claude config.
+The local-first **compatibility setup app**. Its one job (v1): get a
+non-technical user connected to Claude Desktop **without a terminal**, then
+quit. It does not run the MCP server; Claude Desktop spawns that over stdio,
+exactly as today. This app only writes the credentials and the Claude config.
 
 The app is **free and open source (MIT)** — no licence gate and no in-app
 purchase. Optional anonymous usage telemetry is off by default and uses the
