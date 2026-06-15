@@ -7,10 +7,15 @@ planning. They are useful context, but accepted records under
 ## Current direction
 
 - [`manifesto.md`](./manifesto.md) describes the product mission and principles.
+- [`roadmap.md`](./roadmap.md) is the canonical current product and technical
+  roadmap. It recommends direction and sequencing; accepted decisions and
+  shipped behaviour remain authoritative.
 - [`ai-native-affiliate-data.md`](./ai-native-affiliate-data.md) describes the
-  intended product shape and roadmap.
+  intended AI-native product shape and is supporting context for the canonical
+  roadmap.
 - [`openai-parity.md`](./openai-parity.md) records the current split between
-  shipped Codex support and future ChatGPT support.
+  shipped Codex support and future ChatGPT support. The canonical roadmap owns
+  cross-client sequencing.
 
 ## Active proposals and working drafts
 
