@@ -28,7 +28,7 @@ If you cannot classify a link, list it under "could not classify — please conf
 
 ## Step 2 — extract the programme identifier
 
-Each network encodes the programme id (or advertiser id) in the URL differently. The reliable approach: do not hand-parse. Instead, call `affiliate_list_networks` first to see which networks are wired up, then for each candidate URL:
+Each network encodes the programme id (or advertiser id) in the URL differently. The reliable approach: do not hand-parse. Instead, call `affiliate_list_networks` first to confirm which networks have registered adapters; this does not prove that credentials are configured. Then, for each candidate URL:
 
 1. Match the URL to a network by host.
 2. Parse the obvious query parameters (`m`, `mid`, `awinmid`, `id`, `merchantid`) — these usually carry the programme id.
@@ -54,10 +54,10 @@ When a link is **broken** *and* the network supports link generation, offer to r
 1. Confirm with the user that they want to regenerate (don't surprise them).
 2. Ask for the destination URL if you do not already have it from the original link.
 3. Find an equivalent active programme they have joined — call `affiliate_<slug>_list_programmes` with `status: 'joined'` and a `search` term derived from the broken merchant's domain or name.
-4. Once a replacement programme id is confirmed, call `affiliate_<slug>_generate_link` with `programmeId` and `destinationUrl`.
+4. Once a replacement programme id is confirmed, call `affiliate_<slug>_generate_tracking_link` with `programmeId` and `destinationUrl`.
 5. Return the new tracking URL.
 
-Only Awin and Rakuten reliably expose link generation at v0.1; for CJ and Impact, fall back to telling the user to regenerate in the network dashboard.
+Not every network exposes programmatic link generation. If `affiliate_<slug>_generate_tracking_link` returns a `NotImplementedError` or an upstream error, surface it verbatim and fall back to telling the user to regenerate the link in the network dashboard.
 
 ## Constraints
 

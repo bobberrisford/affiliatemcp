@@ -16,11 +16,14 @@ attached. You draft; the user sends. Never send anything yourself.
 `approved` and which has no `datePaid`. `pending` is not yet validated and is
 out of scope; `reversed` and `paid` are excluded.
 
-## Step 1 — discover the wired networks
+## Step 1 — identify the configured networks
 
-Call `affiliate_list_networks`. The response is a `NetworkMeta[]`. If the list
-is empty, tell the user no networks are configured and suggest
-`affiliate-networks-mcp setup`. Stop.
+Use publisher networks the user named or confirmed they configured. If none are
+known, ask which networks to include. Call `affiliate_list_networks` only to
+confirm that this server has a registered adapter for each named network; it
+does not prove that credentials are configured. When credential state is
+uncertain, recommend `affiliate-networks-mcp doctor <slug>` or attempt the
+requested operation and surface its verbatim error.
 
 Only publisher-side networks (`side === 'publisher'`) are in scope — chasing is
 a publisher action. Skip any `side === 'advertiser'` entries and say so. Inspect
