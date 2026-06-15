@@ -61,4 +61,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="$(node -p "require('./package.json').version")"
+          # Versioned asset: archival, and lets anyone pin a specific release.
           gh release upload "v$VERSION" ".artifacts/affiliate-networks-mcp-$VERSION.mcpb" --clobber
+          # Stable-named copy: the marketing site links to
+          # releases/latest/download/affiliate-networks-mcp.mcpb, which always
+          # resolves to the newest release, so the download link never goes stale.
+          cp ".artifacts/affiliate-networks-mcp-$VERSION.mcpb" ".artifacts/affiliate-networks-mcp.mcpb"
+          gh release upload "v$VERSION" ".artifacts/affiliate-networks-mcp.mcpb" --clobber
