@@ -187,10 +187,34 @@ generated names that do not explain the work.
 
 Start each change from one user outcome. Before implementation, identify:
 
+- the intended customer journey and which target cohort benefits;
 - the architectural layer that owns the behaviour;
 - any PRs or decisions it depends on;
 - any public MCP, domain, CLI, or client contract it changes;
 - the failure modes and deliberately excluded scope.
+
+Use the repo-local `delivery-steward` skill for implementation, documentation,
+and delivery work. It is the operational workflow for turning one user outcome
+into a small, validated, reviewable change. Use `prepare-for-review` before
+opening, updating, or requesting review on a PR. Use `review-pr` for independent
+review and re-review.
+
+For routine implementation choices, inspect the owning files, follow existing
+patterns, make a sensible decision, and record it briefly in the final summary
+or PR brief. Escalate only when the work needs a genuinely product-sensitive,
+architecture-sensitive, security-sensitive, irreversible, or public-contract
+decision. When escalating, recommend a direction, explain the material
+trade-offs, and propose the next step.
+
+Othman (`@offmann`) steers technical architecture and product trade-offs. Rob
+(`@bobberrisford`) steers affiliate-domain truth, product direction, and
+industry/customer judgement. Agents implement, validate, review, summarise, and
+recommend; they do not silently settle major decisions owned by either human.
+
+Project assumptions may evolve as requirements, usage evidence, architecture,
+or product direction change. Question an assumption when that change materially
+affects the current outcome or contract. Do not repeatedly challenge settled
+assumptions during routine work without new evidence.
 
 Keep provider-neutral domain behaviour in shared core and MCP layers. Claude,
 Codex, Desktop, CLI, and other client integrations should remain thin clients
@@ -210,11 +234,8 @@ stay with their feature. A PR over 1,000 additions or 20 changed files is not
 automatically rejected, but its description must explain why splitting would
 make the change harder to understand or validate.
 
-Use the repo-local `prepare-for-review` skill before opening, updating, or
-requesting review on a PR. Use the repo-local `review-pr` skill for independent
-review and re-review. Both are available to Claude Code and Codex. Only one
-PR at a time may actively await `@offmann`'s review. Other work may continue in
-draft. A PR is review-ready only when:
+Only one PR at a time may actively await `@offmann`'s review. Other work may
+continue in draft. A PR is review-ready only when:
 
 - it is conflict-free and based on its intended foundation;
 - CI is green;
@@ -235,6 +256,21 @@ product-direction decisions with implementation consequences. Routine isolated
 changes do not require this risk-based review gate. A PR author must never be
 requested to review their own PR; when `@offmann` authors a risk-based change,
 request the maintainer instead.
+
+### Agent skill system
+
+- `AGENTS.md` is the always-on repository contract. Keep invariants and human
+  governance here.
+- `.claude/skills/` is the canonical source for repo-local coding-agent
+  workflows. `.agents/skills/` exposes the shared delivery and review skills to
+  Codex through relative symlinks; do not create copied mirrors.
+- Use `delivery-steward` for implementation, docs, and delivery progress;
+  `prepare-for-review` for PR readiness and handoff; `review-pr` for independent
+  review; and `contribute` for the specialised external-contributor flows it
+  lists.
+- Evolve an existing skill when its responsibility already fits. Add or split a
+  skill only when the workflow has a distinct trigger and operational steps.
+  Update the relevant structural tests when changing the system.
 
 ## Conventions
 

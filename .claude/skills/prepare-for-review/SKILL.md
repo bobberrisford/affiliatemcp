@@ -35,6 +35,7 @@ ready for review.
 Classify and record:
 
 - one user outcome;
+- intended customer journey and affected cohort;
 - the owning architectural layer;
 - dependencies and whether they are merged;
 - public contracts changed;
@@ -94,8 +95,11 @@ The body must state:
 
 - the user outcome and exact reviewer decision or focus;
 - mode: `decision`, `implementation`, or `ready-to-merge`;
+- intended customer journey and any changed product assumption;
 - owning layer, contracts changed, and dependencies;
 - risk domains, failure modes, out-of-scope items, and split rationale;
+- documentation, examples, tool descriptions, roadmap status, or release notes
+  checked or updated;
 - verification commands and results;
 - what the coding agent inspected and what remains uncertain;
 - exact questions or decisions for the reviewer, especially around abstraction,
