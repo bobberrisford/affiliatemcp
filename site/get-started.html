@@ -35,6 +35,7 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
 .hl{background:var(--blue);color:var(--paper);padding:.02em .18em}
 .sec-label{font-family:var(--font-mono);font-weight:700;font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--smudge-dk);display:flex;align-items:center;gap:10px;margin-bottom:26px}.sec-label::before{content:"";width:26px;height:2px;background:var(--ink)}
 .btn{font-family:var(--font-mono);font-weight:700;font-size:.82rem;letter-spacing:.04em;text-transform:uppercase;padding:11px 17px;border:2px solid var(--ink);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;background:var(--paper);color:var(--ink);text-decoration:none;transition:transform .08s steps(2),box-shadow .08s steps(2)}
+.osbrand{text-transform:none}
 .btn.p{background:var(--blue);color:var(--paper);box-shadow:var(--shadow)}.btn.p:active{transform:translate(4px,4px);box-shadow:0 0 0}.btn.d{background:var(--ink);color:var(--paper);box-shadow:4px 4px 0 var(--magenta)}.btn.sm{padding:8px 12px;font-size:.72rem}
 .card{background:var(--paper);border:2px solid var(--ink);border-radius:8px;padding:24px;box-shadow:var(--shadow)}
 .nav{position:sticky;top:0;z-index:50;background:var(--paper);border-bottom:2px solid var(--ink)}.nav .wrap{display:flex;align-items:center;gap:22px;height:64px}
@@ -65,7 +66,7 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
 <body data-page="">
 
 <nav class="nav"><div class="wrap">
-  <a class="brand" href="index.html"><svg viewBox="0 0 120 120"><rect width="120" height="120" rx="14" fill="#2B2BFF"></rect><polyline points="34,38 58,60 34,82" fill="none" stroke="#fff" stroke-width="13"></polyline><rect x="66" y="68" width="24" height="14" fill="#fff"></rect></svg><span class="wm">affiliate<span class="mcp">mcp</span></span></a>
+  <a class="brand" href="index.html"><svg viewBox="0 0 120 120"><rect width="120" height="120" rx="14" fill="#2B2BFF"></rect><polyline points="34,38 58,60 34,82" fill="none" stroke="#fff" stroke-width="13"></polyline><rect x="66" y="68" width="24" height="14" fill="#fff"></rect></svg><span class="wm">agentic <span class="mcp">affiliate</span></span></a>
   <div class="links"><a href="index.html#how">how it works</a><a href="networks.html">networks</a><a href="adopt.html">adopt your adapter</a><a href="what-you-can-ask.html">what you can ask</a><a href="mission.html">mission</a></div>
   <div class="right"><a class="btn d sm" href="https://github.com/bobberrisford/affiliatemcp">★ github</a><a class="btn p sm" href="get-started.html">npx setup ▸</a></div>
 </div></nav>
@@ -76,10 +77,22 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
   <p class="lead">You do <b>not</b> need to know what an API is. If you can copy and paste one line at a time, you can do this. Here's the whole thing.</p>
 </div></header>
 
-<section style="padding:28px 0 0"><div class="wrap">
-  <div class="card" style="display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap">
-    <div><h3 style="margin:0 0 4px">prefer not to touch a terminal?</h3><p style="margin:0">Install the local Claude Desktop extension. Claude owns the runtime, configuration, and secure credential fields — no Node.js or separate setup app required.</p></div>
-    <a class="btn d" href="https://github.com/bobberrisford/affiliatemcp/releases/latest">get the Claude extension ▸</a>
+<section style="padding:28px 0 0" id="extension"><div class="wrap">
+  <div class="card">
+    <div style="display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap">
+      <div><h3 style="margin:0 0 4px">prefer not to touch a terminal?</h3><p style="margin:0">Install the local Claude Desktop extension. Claude owns the runtime, configuration, and secure credential fields — no Node.js required. On <span class="osbrand">macOS</span> you can also use the native setup app.</p></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <a class="btn d" href="https://github.com/bobberrisford/affiliatemcp/releases/latest/download/affiliate-networks-mcp.mcpb">download the Claude extension ▸</a>
+        <a class="btn d" href="https://github.com/bobberrisford/affiliatemcp/releases/download/desktop-v0.1.1/affiliate-mcp-0.1.1-arm64.dmg">download the <span class="osbrand">macOS</span> app ▸</a>
+      </div>
+    </div>
+    <ol style="margin:18px 0 0;padding-left:20px;line-height:1.7">
+      <li><b>Download the file.</b> The button above saves <code>affiliate-networks-mcp.mcpb</code> to your Downloads folder.</li>
+      <li><b>Open Claude Desktop</b> and go to <b>Settings → Extensions</b>.</li>
+      <li><b>Install it.</b> Drag the <code>.mcpb</code> file into the Extensions pane, or double-click the file and Claude Desktop will offer to install it.</li>
+      <li><b>Add your keys.</b> The extension shows a field for each network. Paste the logins for the networks you use — <a href="https://github.com/bobberrisford/affiliatemcp#per-network-setup-notes" style="border-bottom:2px solid var(--blue)">where to find each one</a>. Leave the rest blank.</li>
+      <li><b>Ask a question.</b> Start a chat and try <i>"show my affiliate earnings this month"</i>. That's it — your keys never leave your machine.</li>
+    </ol>
   </div>
 </div></section>
 
@@ -149,7 +162,7 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
 </div></section>
 
 <footer class="foot"><div class="wrap">
-  <div class="big">affiliate<span class="mcp">mcp</span></div>
+  <div class="big">agentic <span class="mcp">affiliate</span></div>
   <div class="stamps"><span class="chip acid">FREE &amp; OPEN</span><span class="chip">MIT LICENCE</span><span class="chip">LOCAL-FIRST</span><span class="chip mag">OPT-IN ONLY</span><span class="chip">UK ENGLISH</span></div>
   <div class="rows"><div class="cols"><a href="get-started.html">get started</a><a href="networks.html">networks</a><a href="adopt.html">adopt your adapter</a><a href="contribute.html">contribute</a><a href="faq.html">faq</a><a href="privacy.html">privacy</a><a href="mission.html">manifesto</a><a href="https://github.com/bobberrisford/affiliatemcp">github</a></div>
   <div style="font-family:var(--font-mono);font-size:.74rem;color:var(--fg-invert-mut)">built from the open-source repo · free · open · yours</div></div>

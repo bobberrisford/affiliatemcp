@@ -8,9 +8,9 @@
     <polyline points="24,27 41,42 24,57" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="square"/>
     <rect x="46" y="48" width="17" height="10" fill="#fff"/>
   </g>
-  <text x="184" y="128" font-size="40" font-weight="800" fill="#0B0B0C" letter-spacing="-1">affiliate<tspan dx="2" fill="#FFFFFF" stroke="none"> </tspan><tspan fill="#FFFFFF">mcp</tspan></text>
-  <rect x="372" y="92" width="118" height="48" rx="6" fill="#2B2BFF"/>
-  <text x="386" y="128" font-size="40" font-weight="800" fill="#FFFFFF" letter-spacing="-1">mcp</text>
+  <text x="184" y="128" font-size="40" font-weight="800" fill="#0B0B0C" letter-spacing="-1">agentic<tspan dx="2" fill="#FFFFFF" stroke="none"> </tspan><tspan fill="#FFFFFF">affiliate</tspan></text>
+  <rect x="350" y="92" width="186" height="48" rx="6" fill="#2B2BFF"/>
+  <text x="364" y="128" font-size="40" font-weight="800" fill="#FFFFFF" letter-spacing="-1">affiliate</text>
 
   <!-- headline -->
   <text x="80" y="330" font-size="118" font-weight="800" fill="#0B0B0C" letter-spacing="-4">automate the</text>
