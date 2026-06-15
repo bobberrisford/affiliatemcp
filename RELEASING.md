@@ -29,8 +29,25 @@ plugin path.
       will have failed already if not.
 - [ ] Regenerate derived docs if network data changed:
       `npm run generate:readme` and `npm run generate:report`.
-- [ ] Bump the version in `package.json` and `.claude-plugin/plugin.json` so
-      the npm package and the plugin manifest agree.
+- [ ] Bump the server release version in **all five** touch-points. A release
+      needs every one of these; missing any will fail CI:
+  - [ ] `package.json` (npm + `.mcpb` source of truth).
+  - [ ] `.claude-plugin/plugin.json` (must equal `package.json`).
+  - [ ] `package-lock.json` root `version`.
+  - [ ] `package-lock.json` `packages[""].version`. Easiest by re-running
+        `npm install` after bumping `package.json`, which rewrites both lockfile
+        fields.
+  - [ ] `src/shared/telemetry.ts` `PACKAGE_VERSION`. `tests/shared/telemetry.test.ts`
+        pins this to `package.json`, so a stale value fails CI.
+- [ ] Confirm `desktop/package.json` is left alone. It is **not** bumped for a
+      server release; the desktop app ships on its own `desktop-v*` version
+      stream.
+- [ ] Because `PACKAGE_VERSION` lives under `src/shared/`, the `check:change`
+      guardrail (`scripts/check-change.ts`, run by the CI `build` job) blocks the
+      change unless the same diff also touches a test under `tests/shared/` or
+      `tests/integration/`. Bump `PACKAGE_VERSION` alongside a real edit to
+      `tests/shared/telemetry.test.ts`, keeping the existing version-sync
+      assertions meaningful, as releases 0.7.0 and 0.7.1 did.
 
 ## Verify the artifact, not the working tree
 
