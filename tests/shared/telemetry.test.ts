@@ -120,4 +120,13 @@ describe('PACKAGE_VERSION', () => {
     ) as { version: string };
     expect(PACKAGE_VERSION).toBe(pkg.version);
   });
+
+  it('stays in sync with the plugin manifest so npm and the plugin channel agree', async () => {
+    const { PACKAGE_VERSION } = await import('../../src/shared/telemetry.js');
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const plugin = JSON.parse(
+      readFileSync(path.resolve(here, '..', '..', '.claude-plugin', 'plugin.json'), 'utf8'),
+    ) as { version: string };
+    expect(plugin.version).toBe(PACKAGE_VERSION);
+  });
 });
