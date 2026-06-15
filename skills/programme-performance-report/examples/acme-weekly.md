@@ -24,7 +24,8 @@ Called:
 
 Week 2026-06-08 to 2026-06-14 vs prior week 2026-06-01 to 2026-06-07 (Impact).
 
-Revenue up 12.4% week-on-week, driven mainly by two cashback partners; clicks broadly flat.
+Revenue up 12.4% week-on-week, driven mainly by CashbackCo and VoucherHub;
+clicks broadly flat.
 
 | Metric | This week | Last week | Delta |
 | --- | --- | --- | --- |
@@ -45,13 +46,10 @@ Revenue up 12.4% week-on-week, driven mainly by two cashback partners; clicks br
 - LoyaltyApp — £1,640 vs £2,180 (−£540)
 - StudentPerks — £980 vs £1,300 (−£320)
 
-### Watch items
-
-- None this week.
-
 ---
 
 This is the concise weekly profile: a one-line verdict, headline table, and top
-movers. For the full per-publisher rollup and status split, run the full
+movers. There is no watch-items line because nothing needs a heads-up. For the
+full per-publisher rollup and status split, run the full
 `programme-performance-report` (Steps 1 to 4). For the whole book at once, use
 `agency-portfolio-rollup`.

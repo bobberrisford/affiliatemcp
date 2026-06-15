@@ -32,9 +32,9 @@ Period: Q1 2026 (2026-01-01 to 2026-03-31) vs Q4 2025 (2025-10-01 to 2025-12-31)
 
 Q1 closed at £452,800 gross sale (£45,280 commission, 12,940 conversions), up
 9.6% on Q4's £413,100. Growth was front-loaded: a strong January carried the
-quarter while March softened. Two cashback partners drove most of the gain; the
-voucher segment was flat. Roster health is steady, with three dormant partners
-worth reactivating.
+quarter while March softened. CashbackCo and TechReviews drove most of the
+gain. The current roster includes three inactive partners that generated sales
+in Q4 but none in Q1.
 
 ### Monthly trend
 
@@ -46,7 +46,7 @@ worth reactivating.
 
 ### Partner mix and top contributors
 
-Roster: 38 active, 4 pending, 19 inactive.
+Current roster: 38 active, 4 pending, 19 inactive, 2 unknown.
 
 | Partner | Q1 gross sale | Share |
 | --- | --- | --- |
@@ -61,17 +61,17 @@ CashbackCo is above 30% of revenue — a concentration risk worth noting.
 ### Wins
 
 - CashbackCo grew 24% QoQ and was the single biggest contributor to the increase.
-- TechReviews, onboarded in November, reached the top three in its first full quarter.
+- TechReviews grew into the top three contributors this quarter.
 
 ### Risks and watch items
 
 - Revenue concentration: CashbackCo at 31.5%. A change to their placement would move the whole programme.
 - March softness: gross sale fell 20% from January. Worth confirming it is seasonal, not tracking.
-- Three previously active cashback partners recorded zero conversions all quarter.
+- Three currently inactive partners generated sales in Q4 but recorded none in Q1.
 
 ### Recommended next quarter
 
-- Reactivate the three dormant cashback partners; they converted in Q4.
+- Review reactivation opportunities with the three currently inactive partners that generated sales in Q4 but none in Q1.
 - Diversify beyond CashbackCo to reduce concentration before peak season.
 - Confirm March's drop is seasonal by checking April's first two weeks.
 
