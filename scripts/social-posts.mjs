@@ -1,43 +1,69 @@
 // Post definitions for scripts/social-video.mjs. One entry per LinkedIn post,
-// built to the six-beat structure in docs/product/social-video-playbook.md.
-// All data is scrubbed: placeholder brands (Acme / CashbackCo) and round demo
-// numbers only. Never real account names, IDs, or totals.
+// built to the six-beat structure in docs/product/social-video-playbook.md and
+// composed entirely from design-system classes (.mega, .h1, .label, .lead,
+// .hl/.hl-mag, .term, .data-table, .status, .card, .btn). All data is scrubbed:
+// placeholder brands (Acme / CashbackCo) and round demo numbers only.
 
+// A Claude-style terminal block (the design system's "product surface").
+const term = (title, bodyHtml) => `
+  <div class="term" style="font-size:1.05rem">
+    <div class="bar">
+      <i style="background:var(--smudge)"></i>
+      <i style="background:var(--blue)"></i>
+      <i style="background:var(--magenta)"></i>
+      <span class="t">${title}</span>
+    </div>
+    <div class="body">${bodyHtml}</div>
+  </div>`;
+
+const ask = (q) => term('claude · affiliate-mcp', `<span class="pr">&gt;</span> ${q}`);
+
+// Standard CTA beat: website-style buttons on paper.
 const cta = (start, end) => ({
   id: 'cta', start, end, bg: 'paper',
-  html: `<span class="kicker">Free &amp; open source</span>
-    <div class="cta">Try it on your<br>own data.</div>
-    <div class="sub" style="font-size:36px">Setup takes about five minutes. No code.</div>
-    <div class="url">Link in the first comment ↓</div>`,
+  html: `<span class="label">free &amp; open source</span>
+    <h2 class="h1">try it on your own data.</h2>
+    <p class="lead muted">setup takes about five minutes. no code.</p>
+    <div class="btns">
+      <span class="btn btn-primary">Claude extension</span>
+      <span class="btn btn-dark">Desktop app</span>
+    </div>
+    <p class="mono small" style="color:var(--blue)">link in the first comment ↓</p>`,
 });
 
 const end = (start, endT) => ({
   id: 'end', start, end: endT, bg: 'ink', wrap: 'endwrap',
-  html: `<div class="cta" style="font-size:96px">Agentic<br>affiliate.</div>
-    <div class="sub" style="font-size:34px;color:#9A9DAC">Your data stays on your machine.</div>
+  html: `<h1 class="mega">agentic<br>affiliate.</h1>
+    <span class="label muted">your data stays on your machine</span>
     {{MARK}}`,
 });
+
+// A data-table row with a status dot.
+const row = (net, amt, dot, status) =>
+  `<tr><td class="net">${net}</td><td class="num">${amt}</td>
+    <td><span class="status"><span class="dot ${dot}"></span>${status}</span></td></tr>`;
 
 export const POSTS = {
   'chase-unpaid-commissions': {
     scenes: [
       { id: 'hook', start: 0, end: 3.2, bg: 'ink',
-        html: `<span class="kicker">For publishers</span>
-          <h1><span class="blue">Approved.</span><br>Still <span class="pink">not paid?</span></h1>` },
+        html: `<span class="label">for publishers</span>
+          <h1 class="mega">approved.<br>still <span class="hl-mag">not paid?</span></h1>` },
       { id: 'problem', start: 3.2, end: 7.4, bg: 'ink',
-        html: `<div class="sub">A network validated your commission 90+ days ago.</div>
-          <div class="sub">It is still sitting unpaid, across every network you work with.</div>` },
+        html: `<span class="label">the problem</span>
+          <p class="lead">a network validated your commission 90+ days ago.</p>
+          <p class="lead muted">it is still sitting unpaid, across every network you work with.</p>` },
       { id: 'ask', start: 7.4, end: 16.6, bg: 'ink',
-        html: `<span class="kicker">Ask in plain English</span>
-          <div class="bubble user"><span class="who">You</span>Which approved sales haven't been paid in 90 days?</div>` },
+        html: `<span class="label">ask in plain english</span>
+          ${ask("Which approved sales haven't been paid in 90 days?")}` },
       { id: 'result', start: 16.6, end: 27.6, bg: 'ink',
-        html: `<span class="kicker">Across every network</span>
-          <div class="rows">
-            <div class="row"><span class="net">Network A</span><span class="amt">£1,240 · 18 sales</span></div>
-            <div class="row"><span class="net">Network B</span><span class="amt">£860 · 11 sales</span></div>
-            <div class="row"><span class="net">Network C</span><span class="amt">£430 · 6 sales</span></div>
-          </div>
-          <div class="note">+ a drafted chase email per network. It drafts. You send.</div>` },
+        html: `<span class="label">across every network</span>
+          <table class="data-table" style="font-size:1.05rem">
+            ${row('Network A', '£1,240 · 18 sales', 'dot-pending', 'unpaid')}
+            ${row('Network B', '£860 · 11 sales', 'dot-pending', 'unpaid')}
+            ${row('Network C', '£430 · 6 sales', 'dot-pending', 'unpaid')}
+          </table>
+          <p class="mono" style="color:var(--pending)">+ a drafted chase email per network. it drafts. you send.</p>` },
       cta(27.6, 33.4),
       end(33.4, 36.4),
     ],
@@ -46,22 +72,26 @@ export const POSTS = {
   'programme-performance-report': {
     scenes: [
       { id: 'hook', start: 0, end: 3.2, bg: 'ink',
-        html: `<span class="kicker">For brands &amp; agencies</span>
-          <h1>The weekly.<br><span class="blue">Across every<br>network.</span></h1>` },
+        html: `<span class="label">for brands &amp; agencies</span>
+          <h1 class="mega">the weekly.<br><span class="hl">across every<br>network.</span></h1>` },
       { id: 'problem', start: 3.2, end: 7.4, bg: 'ink',
-        html: `<div class="sub">Your client wants the number by 9am.</div>
-          <div class="sub">It lives in six dashboards, behind six logins.</div>` },
+        html: `<span class="label">the problem</span>
+          <p class="lead">your client wants the number by 9am.</p>
+          <p class="lead muted">it lives in six dashboards, behind six logins.</p>` },
       { id: 'ask', start: 7.4, end: 16.0, bg: 'ink',
-        html: `<span class="kicker">Ask in plain English</span>
-          <div class="bubble user"><span class="who">You</span>How did Acme do this week?</div>` },
+        html: `<span class="label">ask in plain english</span>
+          ${ask('How did Acme do this week?')}` },
       { id: 'result', start: 16.0, end: 27.6, bg: 'ink',
-        html: `<span class="kicker">Acme · this week vs last</span>
-          <div class="big-num">+14%</div>
-          <div class="rows">
-            <div class="row"><span class="net">Top publisher</span><span class="amt">£12,400</span></div>
-            <div class="row"><span class="net">Approved</span><span class="amt">82%</span></div>
-            <div class="row"><span class="net">Pending</span><span class="amt">15%</span></div>
-          </div>` },
+        html: `<span class="label">acme · this week vs last</span>
+          <div class="card">
+            <div class="top"><span class="sub">net commission</span><span class="delta">▲ 14% vs last week</span></div>
+            <div class="amt">£48.2k</div>
+          </div>
+          <table class="data-table" style="font-size:1.05rem">
+            ${row('Top publisher', '£12,400', 'dot-pos', 'approved')}
+            ${row('Approved', '82%', 'dot-pos', 'paid soon')}
+            ${row('Pending', '15%', 'dot-pending', 'pending')}
+          </table>` },
       cta(27.6, 33.4),
       end(33.4, 36.4),
     ],
@@ -70,22 +100,23 @@ export const POSTS = {
   'programme-reversal-report': {
     scenes: [
       { id: 'hook', start: 0, end: 3.2, bg: 'ink',
-        html: `<span class="kicker">For brands &amp; agencies</span>
-          <h1>Where's the<br>commission<br><span class="pink">leaking?</span></h1>` },
+        html: `<span class="label">for brands &amp; agencies</span>
+          <h1 class="mega">where's the<br>commission<br><span class="hl-mag">leaking?</span></h1>` },
       { id: 'problem', start: 3.2, end: 7.4, bg: 'ink',
-        html: `<div class="sub">Conversions keep getting declined.</div>
-          <div class="sub">Nobody can say exactly why, or how much it's costing.</div>` },
+        html: `<span class="label">the problem</span>
+          <p class="lead">conversions keep getting declined.</p>
+          <p class="lead muted">nobody can say exactly why, or how much it is costing.</p>` },
       { id: 'ask', start: 7.4, end: 16.0, bg: 'ink',
-        html: `<span class="kicker">Ask in plain English</span>
-          <div class="bubble user"><span class="who">You</span>Why are Acme's commissions being declined?</div>` },
+        html: `<span class="label">ask in plain english</span>
+          ${ask("Why are Acme's commissions being declined?")}` },
       { id: 'result', start: 16.0, end: 27.6, bg: 'ink',
-        html: `<span class="kicker">Reversals by reason · value at stake</span>
-          <div class="rows">
-            <div class="row"><span class="net">Cancelled order</span><span class="amt">£2,100</span></div>
-            <div class="row"><span class="net">Duplicate</span><span class="amt">£640</span></div>
-            <div class="row"><span class="net">Out of policy</span><span class="amt">£380</span></div>
-          </div>
-          <div class="note">Surfaces the leak. It does not change any transaction.</div>` },
+        html: `<span class="label">reversals by reason · value at stake</span>
+          <table class="data-table" style="font-size:1.05rem">
+            ${row('Cancelled order', '£2,100', 'dot-neg', 'reversed')}
+            ${row('Duplicate', '£640', 'dot-neg', 'reversed')}
+            ${row('Out of policy', '£380', 'dot-neg', 'reversed')}
+          </table>
+          <p class="mono" style="color:var(--pending)">surfaces the leak. it does not change any transaction.</p>` },
       cta(27.6, 33.4),
       end(33.4, 36.4),
     ],
@@ -94,22 +125,23 @@ export const POSTS = {
   'publisher-performance-review': {
     scenes: [
       { id: 'hook', start: 0, end: 3.2, bg: 'ink',
-        html: `<span class="kicker">For brands &amp; agencies</span>
-          <h1>Partner call<br>in <span class="blue">10 minutes.</span></h1>` },
+        html: `<span class="label">for brands &amp; agencies</span>
+          <h1 class="mega">partner call<br>in <span class="hl">10 minutes.</span></h1>` },
       { id: 'problem', start: 3.2, end: 7.4, bg: 'ink',
-        html: `<div class="sub">You need the numbers and the story behind them.</div>
-          <div class="sub">Not a CSV export you have to read in the lift.</div>` },
+        html: `<span class="label">the problem</span>
+          <p class="lead">you need the numbers and the story behind them.</p>
+          <p class="lead muted">not a csv export you read in the lift.</p>` },
       { id: 'ask', start: 7.4, end: 16.0, bg: 'ink',
-        html: `<span class="kicker">Ask in plain English</span>
-          <div class="bubble user"><span class="who">You</span>Prep me for the call with CashbackCo on Acme.</div>` },
+        html: `<span class="label">ask in plain english</span>
+          ${ask('Prep me for the call with CashbackCo on Acme.')}` },
       { id: 'result', start: 16.0, end: 27.6, bg: 'ink',
-        html: `<span class="kicker">CashbackCo on Acme · last 30 days</span>
-          <div class="rows">
-            <div class="row"><span class="net">EPC</span><span class="amt">£0.48</span></div>
-            <div class="row"><span class="net">Avg order value</span><span class="amt">£72</span></div>
-            <div class="row"><span class="net">Conversions</span><span class="amt">↑ 9% vs prior</span></div>
-          </div>
-          <div class="note">+ talking points for the call.</div>` },
+        html: `<span class="label">cashbackco on acme · last 30 days</span>
+          <table class="data-table" style="font-size:1.05rem">
+            ${row('EPC', '£0.48', 'dot-pos', 'up')}
+            ${row('Avg order value', '£72', 'dot-pos', 'steady')}
+            ${row('Conversions', '↑ 9% vs prior', 'dot-pos', 'up')}
+          </table>
+          <p class="mono" style="color:var(--blue-bright)">+ talking points for the call.</p>` },
       cta(27.6, 33.4),
       end(33.4, 36.4),
     ],

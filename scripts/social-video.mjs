@@ -1,12 +1,14 @@
 // Social video generator. Not shipped; a working tool for producing
-// LinkedIn-ready 4:5 posts from the design system, per
-// docs/product/social-video-playbook.md. Renders branded 1080x1350 frames,
-// exports each beat as a PNG, and records the animated sequence to MP4.
+// LinkedIn-ready 4:5 posts from the canonical design system, per
+// docs/product/social-video-playbook.md. It embeds design-system/colors_and_type.css
+// and design-system/components.css verbatim and composes scenes from their
+// classes (.mega, .label, .hl, .term, .data-table, .status, .card, .btn, .halftone).
+// The only local CSS is the poster canvas, safe-area, and scene timeline.
 //
 // Run: node scripts/social-video.mjs <post-id>
 // Posts are defined in scripts/social-posts.mjs.
 
-import { mkdirSync, writeFileSync, rmSync, readdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, rmSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
@@ -16,12 +18,16 @@ import { POSTS } from './social-posts.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const FONTS = path.join(ROOT, 'design-system', 'fonts');
-const MARK = path.join(ROOT, 'design-system', 'assets', 'mark.svg');
+const DS = path.join(ROOT, 'design-system');
+const FONTS = path.join(DS, 'fonts');
+const MARK = path.join(DS, 'assets', 'mark.svg');
 
 const W = 1080;
 const H = 1350;
 const FPS = 30;
+// Poster root size: design-system components are rem-based and tuned for the
+// web. Scaling the root up renders the same components at poster size.
+const ROOT_PX = 34;
 
 const postId = process.argv[2];
 const post = POSTS[postId];
@@ -33,115 +39,95 @@ if (!post) {
 const OUT = path.join(ROOT, 'docs', 'product', 'social-assets', postId);
 mkdirSync(OUT, { recursive: true });
 
-const fontUrl = (f) =>
-  'data:font/woff2;base64,' + readFileSync(path.join(FONTS, f)).toString('base64');
+// --- Design-system CSS, embedded verbatim --------------------------------
+// The bundled woff2 files load reliably as data URIs without a format() hint
+// in headless Chromium, so we strip the stylesheet's own @font-face blocks
+// (which use file paths + format('woff2')) and supply data-URI faces instead.
+const fontFace = (family, weights, file) =>
+  `@font-face{font-family:'${family}';font-weight:${weights};font-display:swap;` +
+  `src:url('data:font/woff2;base64,${readFileSync(path.join(FONTS, file)).toString('base64')}');}`;
+
+const FONT_CSS = [
+  fontFace('Bricolage Grotesque', '600 800', 'bricolage-grotesque.woff2'),
+  fontFace('Space Grotesk', '400 700', 'space-grotesk.woff2'),
+  fontFace('JetBrains Mono', '400 800', 'jetbrains-mono.woff2'),
+].join('\n');
+
+const COLORS_CSS = readFileSync(path.join(DS, 'colors_and_type.css'), 'utf8')
+  .replace(/@font-face\s*\{[^}]*\}/g, '');
+const COMPONENTS_CSS = readFileSync(path.join(DS, 'components.css'), 'utf8');
+
 const markDataUri =
   'data:image/svg+xml;base64,' + readFileSync(MARK).toString('base64');
+const MARK_HTML = `<div class="mark"><img src="${markDataUri}" alt=""><span class="h3">agentic affiliate</span></div>`;
 
-// Total timeline is the end of the last scene plus a short tail.
-const TOTAL = post.scenes[post.scenes.length - 1].end + 0.4;
+// --- Poster layout (presentation only; no brand tokens redefined) ---------
+const LAYOUT_CSS = `
+html{font-size:${ROOT_PX}px;}
+html,body{width:${W}px;height:${H}px;margin:0;overflow:hidden;background:var(--ink);}
+.stage{position:relative;width:${W}px;height:${H}px;}
+.scene{position:absolute;inset:0;
+  /* safe area: clear of LinkedIn's top, bottom, and right UI */
+  padding:150px 120px 220px 120px;
+  display:flex;flex-direction:column;justify-content:center;gap:var(--s-5);}
+.scene.on-ink{background:var(--ink);color:var(--fg-invert);}
+.scene.on-paper{background:var(--paper);color:var(--fg);}
+/* light-dot halftone for ink scenes (the .halftone utility is dark-on-light) */
+.scene.on-ink.tex{background-image:radial-gradient(rgba(255,255,255,0.05) 2.2px,transparent 2.5px);background-size:26px 26px;background-color:var(--ink);}
+.scene.on-paper.tex{background-image:radial-gradient(rgba(11,11,12,0.06) 2.2px,transparent 2.5px);background-size:26px 26px;background-color:var(--paper);}
+.scene.on-ink .muted{color:var(--fg-invert-mut);}
+/* .card is a paper surface; keep its text ink even on a dark scene */
+.scene .card{color:var(--fg);}
+.scene .label{color:var(--blue-bright);}
+.scene.on-paper .label{color:var(--blue);}
+.btns{display:flex;gap:var(--s-4);flex-wrap:wrap;}
+.mark{position:absolute;left:120px;bottom:150px;display:flex;align-items:center;gap:var(--s-4);}
+.mark img{width:78px;height:78px;}
+.mark .h3{color:var(--fg-invert);}
+.endwrap{justify-content:center;align-items:flex-start;}
+`;
 
 function sceneKeyframes() {
-  // Each scene fades+rises in over 0.45s, holds, fades out over 0.35s.
   return post.scenes
     .map((s, i) => {
       const inA = (s.start / TOTAL) * 100;
       const inB = ((s.start + 0.45) / TOTAL) * 100;
       const outA = ((s.end - 0.35) / TOTAL) * 100;
       const outB = (s.end / TOTAL) * 100;
-      return `
-@keyframes scene${i} {
-  0%, ${inA.toFixed(3)}% { opacity: 0; transform: translateY(26px); }
-  ${inB.toFixed(3)}%, ${outA.toFixed(3)}% { opacity: 1; transform: translateY(0); }
-  ${outB.toFixed(3)}%, 100% { opacity: 0; transform: translateY(-18px); }
-}`;
+      return `@keyframes scene${i}{0%,${inA.toFixed(3)}%{opacity:0;transform:translateY(26px);}` +
+        `${inB.toFixed(3)}%,${outA.toFixed(3)}%{opacity:1;transform:translateY(0);}` +
+        `${outB.toFixed(3)}%,100%{opacity:0;transform:translateY(-18px);}}`;
     })
     .join('\n');
 }
+
+const TOTAL = post.scenes[post.scenes.length - 1].end + 0.4;
 
 function html({ still = null } = {}) {
   const scenesHtml = post.scenes
     .map((s, i) => {
       const animated =
         still === null
-          ? `animation: scene${i} ${TOTAL}s linear forwards;`
+          ? `animation:scene${i} ${TOTAL}s linear forwards;`
           : still === i
-            ? 'opacity:1; transform:none;'
+            ? 'opacity:1;transform:none;'
             : 'opacity:0;';
       const body = s.html.replace('{{MARK}}', MARK_HTML);
-      return `<section class="scene ${s.bg === 'paper' ? 'on-paper' : 'on-ink'} ${s.wrap || ''}" style="${animated}">
-        ${body}
-      </section>`;
+      const cls = `scene tex ${s.bg === 'paper' ? 'on-paper' : 'on-ink'} ${s.wrap || ''}`;
+      return `<section class="${cls}" style="${animated}">${body}</section>`;
     })
     .join('\n');
 
   return `<!doctype html><html><head><meta charset="utf-8"><style>
-@font-face { font-family:'Bricolage Grotesque'; font-weight:600 800; src:url('${fontUrl('bricolage-grotesque.woff2')}') ; }
-@font-face { font-family:'Space Grotesk'; font-weight:400 700; src:url('${fontUrl('space-grotesk.woff2')}') ; }
-@font-face { font-family:'JetBrains Mono'; font-weight:400 800; src:url('${fontUrl('jetbrains-mono.woff2')}') ; }
-:root{
-  --ink:#0B0B0C; --ink-soft:#16161B; --paper:#fff; --paper-2:#F2F3F7;
-  --smudge:#8B8FA0; --smudge-dk:#565A6B; --blue:#2B2BFF; --blue-bright:#5A78FF;
-  --magenta:#FF2E88; --amber:#E8A317;
-}
-*{margin:0;padding:0;box-sizing:border-box;}
-html,body{width:${W}px;height:${H}px;overflow:hidden;}
-body{font-family:'Space Grotesk',sans-serif;background:var(--ink);}
-.stage{position:relative;width:${W}px;height:${H}px;background:var(--ink);}
-.scene{
-  position:absolute;inset:0;
-  /* safe area: keep meaning clear of LinkedIn UI */
-  padding:150px 120px 220px 120px;
-  display:flex;flex-direction:column;justify-content:center;gap:34px;
-}
-.scene.on-ink{background:
-  radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1.4px, transparent 1.6px) 0 0/26px 26px,
-  var(--ink);color:var(--paper);}
-.scene.on-paper{background:
-  radial-gradient(circle at 1px 1px, rgba(11,11,12,0.06) 1.4px, transparent 1.6px) 0 0/26px 26px,
-  var(--paper);color:var(--ink);}
-.kicker{font-family:'JetBrains Mono',monospace;font-weight:800;font-size:30px;
-  letter-spacing:2px;text-transform:uppercase;color:var(--blue-bright);}
-.on-paper .kicker{color:var(--blue);}
-h1{font-family:'Bricolage Grotesque';font-weight:800;font-size:104px;line-height:0.98;
-  letter-spacing:-2px;}
-h1 .blue{color:var(--blue-bright);} .on-paper h1 .blue{color:var(--blue);}
-h1 .pink{color:var(--magenta);}
-.sub{font-size:42px;line-height:1.22;font-weight:500;color:#D7D9E4;}
-.on-paper .sub{color:var(--smudge-dk);}
-.chip{display:inline-block;font-family:'JetBrains Mono',monospace;font-weight:800;
-  font-size:26px;letter-spacing:1px;padding:12px 20px;border:3px solid var(--blue-bright);
-  color:var(--blue-bright);text-transform:uppercase;align-self:flex-start;}
-.on-paper .chip{border-color:var(--blue);color:var(--blue);}
-.bubble{background:var(--ink-soft);border:2px solid #2a2a33;border-radius:22px;
-  padding:34px 38px;font-size:40px;line-height:1.25;}
-.bubble.user{border-color:var(--blue);background:#10101e;}
-.bubble .who{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:800;
-  letter-spacing:1px;color:var(--smudge);text-transform:uppercase;margin-bottom:14px;display:block;}
-.rows{display:flex;flex-direction:column;gap:18px;}
-.row{display:flex;justify-content:space-between;align-items:baseline;
-  border-bottom:2px solid #23232b;padding-bottom:16px;font-size:38px;}
-.on-paper .row{border-color:#e3e4ec;}
-.row .net{font-family:'JetBrains Mono',monospace;font-weight:700;}
-.row .amt{font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--blue-bright);}
-.on-paper .row .amt{color:var(--blue);}
-.note{font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:700;color:var(--amber);}
-.big-num{font-family:'Bricolage Grotesque';font-weight:800;font-size:160px;
-  line-height:0.9;color:var(--blue-bright);letter-spacing:-3px;}
-.on-paper .big-num{color:var(--blue);}
-.cta{font-family:'Bricolage Grotesque';font-weight:800;font-size:78px;line-height:1.02;}
-.url{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:34px;color:var(--blue-bright);}
-.mark{position:absolute;left:120px;bottom:150px;display:flex;align-items:center;gap:22px;}
-.mark img{width:74px;height:74px;}
-.mark .word{font-family:'Bricolage Grotesque';font-weight:800;font-size:46px;}
-.endwrap{align-items:flex-start;justify-content:center;}
+${FONT_CSS}
+${COLORS_CSS}
+${COMPONENTS_CSS}
+${LAYOUT_CSS}
 ${still === null ? sceneKeyframes() : ''}
 </style></head><body>
-<div class="stage">${scenesHtml}</div>
+<div class="amcp stage">${scenesHtml}</div>
 </body></html>`;
 }
-
-const MARK_HTML = `<div class="mark"><img src="${markDataUri}" alt=""><span class="word">Agentic affiliate</span></div>`;
 
 async function main() {
   const browser = await chromium.launch(
@@ -177,10 +163,9 @@ async function main() {
   await browser.close();
 
   const webm = readdirSync(tmp).find((f) => f.endsWith('.webm'));
-  const webmPath = path.join(tmp, webm);
   const mp4Path = path.join(OUT, `${postId}.mp4`);
   execFileSync(ffmpegPath, [
-    '-y', '-i', webmPath,
+    '-y', '-i', path.join(tmp, webm),
     '-vf', `fps=${FPS},scale=${W}:${H}:flags=lanczos`,
     '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
     '-r', String(FPS),
