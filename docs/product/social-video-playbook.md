@@ -78,6 +78,36 @@ Pull straight from the design system so every post looks like us:
 - Aesthetic is the website's: photocopy / riso / gig-poster, heavy ink, two
   electric accents. Anti-dashboard.
 
+## Scrub the data in every product shot
+
+Any video that shows real tool output is a screen recording of live affiliate
+data. Before it is filmed or exported, replace anything that identifies a real
+account or partner:
+
+- Brand and publisher names: use obvious placeholders (Acme, CashbackCo).
+- Publisher IDs, advertiser IDs, order and transaction IDs: never on screen.
+- Commission and revenue figures: use round, clearly demonstrative numbers, not
+  a real account's totals.
+
+This is the same hard rule the codebase follows for fixtures (see `AGENTS.md`:
+never real credentials, publisher IDs, advertiser IDs, order IDs, or
+account-specific secrets). A public video is the most exposed surface we have, so
+the rule is strictest here. If you cannot scrub a shot, rebuild the beat as a
+designed frame with placeholder data.
+
+## Honesty in a short cut
+
+Several skills are partial or read-only and carry coverage caveats. They will not
+fit in a 30-second cut without killing the pace, so:
+
+- The video shows **only what the skill actually does**. Do not imply a fuller
+  capability than ships.
+- Caveats (partial coverage, read-only, "it drafts, you send", "you take it up
+  with the network") go in the **caption**, not crammed into the frames.
+- One honest on-screen line is enough where a beat would otherwise overclaim, for
+  example "It drafts. You send." or "It surfaces the leak; it does not change any
+  transaction."
+
 ## Captions are not optional
 
 Most of the feed plays muted. Two things, always:
