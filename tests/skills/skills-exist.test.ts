@@ -37,6 +37,7 @@ const AGENCY_SKILLS = [
   'programme-reversal-report',
   'agency-portfolio-rollup',
   'programme-anomaly-watch',
+  'client-onboarding',
 ] as const;
 
 /** Crude but adequate YAML frontmatter parser — captures the leading `---` block. */
