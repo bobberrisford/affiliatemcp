@@ -17,6 +17,16 @@ Call `affiliate_resolve_brand`. If the user named a network, pass `{ network: "<
 
 The response is an array of `{ brand, network, networkBrandId }`. Reduce it to the bindings whose `brand` matches the user's brand. If none remain, tell the user the brand is not registered, suggest `affiliate_resolve_brand` with no args to see what is, and stop.
 
+## Step 1b - load the client's plan (strategy and KPIs)
+
+Call `affiliate_get_client_strategy({ brand })`. This returns the operator's recorded `strategy` (prose) and `kpi` (`{ present, targets, parseErrors, ... }`). It is **advisory context**: it changes how you read and frame the numbers; it never authorises any action and never changes what the data says.
+
+- **No strategy recorded** (`strategy.present` and `kpi.present` both false): this is normal, not an error. Produce the report exactly as you would today on bare deltas, and add one short line offering to record a plan: "No strategy is recorded for [brand]. I can set one up so future reports judge against its targets." Then carry on.
+- **Orphan** (`orphan: true`): a plan exists but the slug has no binding. Use the prose for framing, but say plainly that the strategy directory has no registered brand binding; do not invent network data for it.
+- **Parse errors** (`kpi.parseErrors` non-empty): report each malformed target line verbatim ("KPI line ignored: ...") and exclude it from every verdict. Never guess what a malformed target meant.
+- **Targets** (`kpi.targets`): each is `{ metric, comparator, value, unit?, period? }`. Use them in Step 4 to turn deltas into verdicts. Metrics map onto the data as: `revenue` -> total grossSale, `commission` -> total commission, `conversions` -> total conversions, `epc` -> commission / clicks when clicks are nonzero, `aov` -> grossSale / conversions when conversions are nonzero, `reversal_rate`/`approval_rate` -> from the status split. If a denominator is zero, report that the derived metric is unavailable rather than inventing zero.
+- **Unsupported per network**: if a target names a metric a bound network cannot supply (for example a network with no `get_programme_performance`), say so for that network and exclude it from that network's verdict. Do not substitute zero, and do not blend it into a cross-network total without naming the gap.
+
 ## Step 2 — pick the windows
 
 Default period: the last 30 days, ending today. Honour explicit user windows ("Q1", "last month", named dates).
@@ -37,14 +47,17 @@ If a call fails, surface the verbatim error (network, operation, message, httpSt
 
 ## Step 4 — present the report
 
-Output in this order:
+When a plan is recorded (Step 1b), **open with a verdict against the plan**: lead with whether the brand is on track, behind, or ahead of its KPI targets, and the **pace to target**. When a target has a period, project the current run-rate to the end of that period and compare to the target ("GBP 280k of the GBP 400k quarterly target with 38% of the quarter left, slightly behind pace"). When a target has no period, compare the current-window total to the target and say that no period was recorded. State each comparison in the target's own currency and period; never blend currencies or invent an FX rate. If a target's metric is unsupported on a bound network, say so for that network and leave it out of the verdict rather than guess. With no plan recorded, skip the verdict and lead with the windows.
+
+Then output in this order:
 
 1. **Windows**: current `from YYYY-MM-DD to YYYY-MM-DD` and comparison `from YYYY-MM-DD to YYYY-MM-DD` (each with day count).
-2. **Headline per network**: total `grossSale`, total `commission`, total `conversions`, total `clicks`. Show the comparison-window figure and the delta in both absolute currency and percent. If a brand-network binding produced rows in more than one currency, list each currency separately — do not invent an FX rate.
-3. **Status split**: per network, sum `grossSale` and `commission` by `status` (`pending` / `approved` / `reversed`). Call out a status that has flipped to >50% reversed compared to the comparison window.
+2. **Headline per network**: total `grossSale`, total `commission`, total `conversions`, total `clicks`. Show the comparison-window figure and the delta in both absolute currency and percent. Where a KPI target covers one of these, annotate it against the target (for example "GBP 92k this week, on pace for the GBP 400k quarter"). If a brand-network binding produced rows in more than one currency, list each currency separately; do not invent an FX rate.
+3. **Status split**: per network, sum `grossSale` and `commission` by `status` (`pending` / `approved` / `reversed`). Compute reversal rate and approval rate and, where a `reversal_rate` or `approval_rate` KPI target is set, flag a breach with the actual number ("reversals 11% this month, over the 8% limit"). Call out a status that has flipped to >50% reversed compared to the comparison window.
 4. **Top 10 publishers** by current-period `grossSale` (descending). For each: publisher name, conversions, gross sale, commission, and the same per-publisher delta vs. the comparison window.
-5. **Anomalies**: anything that looks broken — a publisher with zero clicks but historical clicks, a programme with 100% reversed status this window, a publisher that contributed >25% of last period's revenue and 0% this period.
-6. **Failures (if any)**: per-network verbatim error from the envelope.
+5. **Partner mix vs strategy** (only when the strategy names partner preferences): compare the top contributors against the preferred and deprioritised partner types in `Strategy.md` only when the available rows or publisher names make the partner type evident. If partner type is not available, say so rather than guessing. Flag visible tension plainly ("Strategy prefers premium content and avoids coupon/incentive, but a coupon partner drove 60% of revenue this period"). This is an observation, not an instruction to change anything.
+6. **Anomalies**: anything that looks broken — a publisher with zero clicks but historical clicks, a programme with 100% reversed status this window, a publisher that contributed >25% of last period's revenue and 0% this period.
+7. **Failures (if any)**: per-network verbatim error from the envelope.
 
 Matter-of-fact tone, UK spelling. Keep tables compact.
 
@@ -85,10 +98,17 @@ they only asked "how is [brand] doing", use the full report above.
 Every profile has the same `get_programme_performance` basis as Step 3; only the
 dates, comparison, supporting reads, and depth of the written output change.
 The currency, no-invented-figures, failure, and per-network rules apply to all
-of them.
+of them. So does the recorded plan: when `Strategy.md` names a reporting voice,
+audience, cadence, or escalation threshold, shape the output to it: lead the
+weekly note in the recorded voice for the named reader, and surface anything
+that crosses a recorded escalation threshold ("flag any drop over 20%
+immediately") at the top, whatever the profile.
 
 ## Constraints
 
+- Strategy and KPIs are **advisory**: they frame the verdict and the narrative; they never authorise a write, change a limit, or override what the data shows.
+- A KPI target on a metric a bound network cannot supply is reported as unsupported for that network and left out of its verdict: never zero-filled, never silently merged into a cross-network total.
+- Malformed KPI lines (`kpi.parseErrors`) are reported verbatim and excluded from verdicts; never guess their meaning.
 - Never invent figures. If a row is missing, say "no data" — don't backfill zeros.
 - Currency: respect the per-row `currency`. If a single binding spans multiple currencies, output each currency separately.
 - Don't normalise across networks. Per-network totals stay in their own currency.
