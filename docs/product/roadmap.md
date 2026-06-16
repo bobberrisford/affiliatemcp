@@ -103,9 +103,11 @@ surface.
 ### MCP tools and prompts
 
 - [`src/tools/generate.ts`](../../src/tools/generate.ts) generates the
-  canonical operations for each registered adapter and three meta-tools:
-  `affiliate_list_networks`, `affiliate_run_diagnostic`, and
-  `affiliate_resolve_brand`.
+  canonical operations for each registered adapter and six meta-tools:
+  `affiliate_list_networks`, `affiliate_run_diagnostic`,
+  `affiliate_resolve_brand`, and the advisory client-strategy tools
+  `affiliate_get_client_strategy`, `affiliate_set_client_strategy`, and
+  `affiliate_list_client_strategies`.
 - Publisher adapters receive seven canonical operations. Advertiser adapters
   additionally expose `listMediaPartners` and `getProgrammePerformance`, and
   their tools require a logical `brand` argument.

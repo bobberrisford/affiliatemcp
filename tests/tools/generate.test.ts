@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mkdtempSync } from 'node:fs';
+import { existsSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
@@ -9,6 +9,7 @@ import {
 } from '../../src/tools/generate.js';
 import { _clearRegistry } from '../../src/shared/registry.js';
 import { saveBrands } from '../../src/shared/brands.js';
+import { resolveKpiFile, resolveStrategyFile } from '../../src/shared/client-strategy.js';
 import { BrandNotRegistered } from '../../src/shared/errors.js';
 import type { NetworkAdapter } from '../../src/shared/types.js';
 
@@ -81,22 +82,28 @@ function fakeAdapter(slug: string, name: string): NetworkAdapter {
 }
 
 describe('tool generator', () => {
-  it('always emits the three meta tools', () => {
+  it('always emits the meta tools', () => {
     const meta = generateMetaTools();
     const names = meta.map((t) => t.name).sort();
     expect(names).toEqual([
+      'affiliate_get_client_strategy',
+      'affiliate_list_client_strategies',
       'affiliate_list_networks',
       'affiliate_resolve_brand',
       'affiliate_run_diagnostic',
+      'affiliate_set_client_strategy',
     ]);
   });
 
   it('with no adapters registered, only meta tools are present', () => {
     const all = generateAllTools();
     expect(all.map((t) => t.name).sort()).toEqual([
+      'affiliate_get_client_strategy',
+      'affiliate_list_client_strategies',
       'affiliate_list_networks',
       'affiliate_resolve_brand',
       'affiliate_run_diagnostic',
+      'affiliate_set_client_strategy',
     ]);
   });
 
@@ -187,6 +194,141 @@ describe('affiliate_resolve_brand meta-tool', () => {
     const rows = (await tool.handle({ network: 'impact-advertiser' })) as Array<{ network: string }>;
     expect(rows).toHaveLength(1);
     expect(rows[0]!.network).toBe('impact-advertiser');
+  });
+});
+
+describe('affiliate_get_client_strategy meta-tool', () => {
+  const get = () => generateMetaTools().find((t) => t.name === 'affiliate_get_client_strategy')!;
+  const set = () => generateMetaTools().find((t) => t.name === 'affiliate_set_client_strategy')!;
+
+  it('reports absent files without error', async () => {
+    const result = (await get().handle({ brand: 'acme' })) as {
+      brand: string;
+      orphan: boolean;
+      strategy: { present: boolean };
+      kpi: { present: boolean; targets: unknown[]; parseErrors: unknown[] };
+    };
+    expect(result).toMatchObject({
+      brand: 'acme',
+      orphan: false,
+      strategy: { present: false },
+      kpi: { present: false, targets: [], parseErrors: [] },
+    });
+  });
+
+  it('returns parsed targets after a valid write', async () => {
+    await set().handle({
+      brand: 'acme',
+      strategyMarkdown: 'Premium partners preferred.',
+      kpiMarkdown: '```kpi\nversion: 1\nrevenue: >= 400000 GBP per quarter\n```',
+    });
+    const result = (await get().handle({ brand: 'acme' })) as {
+      strategy: { present: boolean; markdown?: string };
+      kpi: {
+        present: boolean;
+        markdown?: string;
+        version?: number;
+        targets: unknown[];
+        parseErrors: unknown[];
+      };
+    };
+    expect(result.strategy.markdown).toMatch(/Premium partners/);
+    expect(result.kpi).toMatchObject({ present: true, version: 1, parseErrors: [] });
+    expect(result.kpi.markdown).toBeUndefined();
+    expect(result.kpi.targets).toContainEqual({
+      metric: 'revenue',
+      comparator: '>=',
+      value: 400000,
+      unit: 'GBP',
+      period: 'quarter',
+    });
+  });
+
+  it('surfaces parse errors for an already-written malformed block', async () => {
+    // A direct hand-edit could leave a malformed block on disk; the reader must
+    // surface it rather than crash or guess.
+    const { saveKpi } = await import('../../src/shared/client-strategy.js');
+    saveKpi('acme', '```kpi\nrevenue: >= 100 GBP\n```'); // missing version
+    const result = (await get().handle({ brand: 'acme' })) as {
+      kpi: { parseErrors: Array<{ reason: string }> };
+    };
+    expect(result.kpi.parseErrors[0]?.reason).toMatch(/version: 1/);
+  });
+});
+
+describe('affiliate_set_client_strategy meta-tool', () => {
+  const set = () => generateMetaTools().find((t) => t.name === 'affiliate_set_client_strategy')!;
+
+  it('writes both files and reports what was written', async () => {
+    const result = (await set().handle({
+      brand: 'acme',
+      strategyMarkdown: 'Prose.',
+      kpiMarkdown: '```kpi\nversion: 1\nconversions: >= 1200 per month\n```',
+    })) as { written: boolean; wrote: { strategy: boolean; kpi: boolean } };
+    expect(result).toMatchObject({ written: true, wrote: { strategy: true, kpi: true } });
+    expect(existsSync(resolveStrategyFile('acme'))).toBe(true);
+    expect(existsSync(resolveKpiFile('acme'))).toBe(true);
+  });
+
+  it('rejects a malformed KPI block without writing anything', async () => {
+    const result = (await set().handle({
+      brand: 'acme',
+      kpiMarkdown: '```kpi\nversion: 1\nmargin: >= 20%\n```', // unknown metric
+    })) as { written: boolean; parseErrors: Array<{ reason: string }> };
+    expect(result.written).toBe(false);
+    expect(result.parseErrors[0]?.reason).toMatch(/unknown metric "margin"/);
+    expect(existsSync(resolveKpiFile('acme'))).toBe(false);
+  });
+
+  it('rejects malformed KPI before writing a paired strategy update', async () => {
+    const result = (await set().handle({
+      brand: 'acme',
+      strategyMarkdown: 'Do not persist this when KPI is invalid.',
+      kpiMarkdown: '```kpi\nversion: 1\nmargin: >= 20%\n```',
+    })) as { written: boolean; parseErrors: Array<{ reason: string }> };
+    expect(result.written).toBe(false);
+    expect(result.parseErrors[0]?.reason).toMatch(/unknown metric "margin"/);
+    expect(existsSync(resolveStrategyFile('acme'))).toBe(false);
+    expect(existsSync(resolveKpiFile('acme'))).toBe(false);
+  });
+
+  it('rejects an invalid brand slug without writing', async () => {
+    const result = (await set().handle({ brand: 'Bad Slug!', strategyMarkdown: 'x' })) as {
+      written: boolean;
+      reason: string;
+    };
+    expect(result.written).toBe(false);
+    expect(result.reason).toMatch(/invalid brand slug/i);
+  });
+
+  it('requires at least one of strategyMarkdown or kpiMarkdown', async () => {
+    await expect(set().handle({ brand: 'acme' })).rejects.toThrow();
+  });
+});
+
+describe('affiliate_list_client_strategies meta-tool', () => {
+  const list = () =>
+    generateMetaTools().find((t) => t.name === 'affiliate_list_client_strategies')!;
+
+  it('returns [] when nothing is registered or on disk', async () => {
+    expect(await list().handle({})).toEqual([]);
+  });
+
+  it('flags a registered brand with no strategy recorded', async () => {
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [{ network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-1' }],
+      },
+    });
+    const rows = (await list().handle({})) as Array<{
+      slug: string;
+      hasStrategy: boolean;
+      registered: boolean;
+    }>;
+    expect(rows).toContainEqual(
+      expect.objectContaining({ slug: 'acme', hasStrategy: false, registered: true }),
+    );
   });
 });
 
