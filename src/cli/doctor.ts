@@ -17,6 +17,7 @@ import { getAdapter, getAdapters } from '../shared/registry.js';
 import { resolveConfigPaths } from './wizard/paths.js';
 import { parseEnvFile } from '../shared/config.js';
 import { listBrandsForNetwork } from '../shared/brands.js';
+import { listClientStrategies } from '../shared/client-strategy.js';
 import type { NetworkAdapter, ResilienceConfigMap } from '../shared/types.js';
 
 function out(line: string): void {
@@ -54,6 +55,18 @@ export interface DoctorReport {
      */
     brands?: Array<{ slug: string; networkBrandId: string; credentialId: string }>;
   }>;
+  /**
+   * Advisory client-strategy health. `missing` lists registered brands with no
+   * strategy recorded (the gap the onboarding skill fills); `orphans` lists
+   * clients/<slug>/ directories whose slug has no brand binding. Orphans are
+   * reported, not deleted; cleanup is manual (remove the directory), matching
+   * the brands.json no-compaction stance.
+   */
+  clientStrategies: {
+    recorded: number;
+    missing: string[];
+    orphans: string[];
+  };
   diagnostic: Awaited<ReturnType<typeof runDiagnostic>>;
 }
 
@@ -75,6 +88,20 @@ export async function buildReport(opts: DoctorOptions = {}): Promise<DoctorRepor
     : getAdapters();
 
   const diagnostic = await runDiagnostic(opts.slug);
+
+  // Advisory client-strategy health is book-level (network-agnostic), so it is
+  // reported whether or not a single network slug was requested.
+  let clientStrategies = { recorded: 0, missing: [] as string[], orphans: [] as string[] };
+  try {
+    const rows = listClientStrategies();
+    clientStrategies = {
+      recorded: rows.filter((r) => r.hasStrategy || r.hasKpi).length,
+      missing: rows.filter((r) => r.registered && !r.hasStrategy && !r.hasKpi).map((r) => r.slug),
+      orphans: rows.filter((r) => r.orphan).map((r) => r.slug),
+    };
+  } catch {
+    // brands.json or the clients dir unreadable: surface gracefully as empty.
+  }
 
   return {
     generatedAt: new Date().toISOString(),
@@ -107,6 +134,7 @@ export async function buildReport(opts: DoctorOptions = {}): Promise<DoctorRepor
       }
       return { ...base, brands };
     }),
+    clientStrategies,
     diagnostic,
   };
 }
