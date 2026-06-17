@@ -39,9 +39,10 @@ Each step says what works today and what is still coming.
 2. **Analyse** · `Available now`
    Ask across every network at once: earnings, pending commissions, reversals,
    dead links. In plain English, no filters or exports.
-3. **Strategy & KPIs** · `Coming`
-   Set the targets you care about. It tracks where you stand against them, not
-   just what already happened.
+3. **Strategy & KPIs** · `Available now`
+   Record the targets you care about with client-onboarding. Reports, anomaly
+   watches, and portfolio rollups use them as advisory context, not authority to
+   change network data.
 4. **Approvals** · `Coming`
    Decide what runs on its own and what waits for your sign-off.
 5. **Automation** · `Coming`
@@ -66,13 +67,15 @@ Each step says what works today and what is still coming.
   hosted account. Networks see the same calls as your own dashboard.
 - **Automation only does what you've approved.** Nothing acts without your
   sign-off.
-- **No telemetry.** Nothing is tracked or sent anywhere.
+- **Privacy-first opt-in telemetry.** Runtime telemetry is off by default,
+  aggregate-only, and never includes affiliate data, credentials, prompts,
+  arguments, results, or error text.
 - **Open source, MIT licensed.** Read the code, or contribute to it.
 
 ### Things dashboards don't surface
 Transactions stuck pending, dead links across your site, reversal spikes,
 week-on-week drops, programmes trending to zero. Ask for any of these now, or
-set it to watch for them (coming).
+run the scheduled-watch skills in a host that supports scheduling.
 
 ### Mission teaser
 We're building toward affiliate work that runs itself, with you in control of
@@ -114,8 +117,8 @@ Hero directions considered (kept for reference):
 - "Chat with your affiliate data in the AI you already use." Dropped once the
   goal was clarified as automation rather than chat.
 
-The `72 networks` figure and network counts must be pulled from the same data
-the README auto-generates (see `website-plan.md` §8), never hand-typed.
+Network and adapter counts must be pulled from the same data the README
+auto-generates (see `website-plan.md` §8), never hand-typed.
 
 ## To draft next
 - `/get-started` — the non-technical onboarding page.

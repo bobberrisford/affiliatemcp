@@ -55,10 +55,11 @@ surface a queue for the AM to action in the network dashboard; it must not
 imply that a write is available unless the relevant write contract and
 approval gate are implemented.
 
-The accepted client-strategy decision also provides a future advisory context
-layer. Once its implementation follow-ups ship, reporting skills may judge
-results against a client's recorded strategy and KPIs. Strategy and KPIs never
-authorise writes.
+The client-strategy stack now provides advisory local context through
+`affiliate_get_client_strategy`, `affiliate_set_client_strategy`,
+`affiliate_list_client_strategies`, the `client-onboarding` skill, and
+strategy-aware reporting skills. Reports may judge results against a client's
+recorded strategy and KPIs. Strategy and KPIs never authorise writes.
 
 ## Recurring performance reports (the cadence stack)
 
@@ -91,8 +92,8 @@ narrative, and the quarter-over-quarter comparison.
 - Triggers: "Prepare Acme's QBR.", "Build the Q2 review for Acme."
 - Tools: multi-period `get_programme_performance`, `list_media_partners` for the partner mix, and synthesised commentary.
 - Delivery shape: a presentation-oriented profile of
-  `programme-performance-report`, later enriched by advisory client strategy
-  and KPIs.
+  `programme-performance-report`, enriched by advisory client strategy and
+  KPIs when a plan is recorded.
 
 ### 5. Single-brand performance report (ad hoc) — SHIPPED
 The general-purpose "how is this brand doing" report. The cadence reports above

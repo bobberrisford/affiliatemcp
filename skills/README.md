@@ -1,9 +1,14 @@
 # `skills/`
 
-User-facing Claude skills — pre-written conversation patterns Claude
-picks up automatically when a user asks the right kind of question.
+User-facing workflow skills — pre-written conversation patterns Claude-style
+hosts can pick up automatically when a user asks the right kind of question.
 Each skill is a folder with a `SKILL.md` (YAML frontmatter + prose)
 and optional supporting files.
+
+These are not network adapters and they are not MCP prompts. Adapters expose
+typed per-network operations through the MCP server. Skills compose those tools
+into affiliate jobs such as reports, setup help, anomaly checks, and client
+onboarding. MCP prompts currently ship separately and are Awin-specific.
 
 ### Publisher side
 

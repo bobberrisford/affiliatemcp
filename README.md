@@ -4,16 +4,16 @@
 
 [![npm version](https://img.shields.io/npm/v/affiliate-networks-mcp?label=release)](https://www.npmjs.com/package/affiliate-networks-mcp) ![networks](https://img.shields.io/badge/networks-72-blue) ![adapters](https://img.shields.io/badge/adapters-86-blue) [![maintained by](https://img.shields.io/badge/maintained%20by-community%20%2F%20networks-orange)](./docs/networks)
 
-> **Network operators:** each adapter is community-built and `experimental` until your team adopts it. Find your network's adoption issue under the [`adopt-a-network`](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3Aadopt-a-network) label to verify and maintain it with live credentials.
+> **Network operators:** most adapters are community-built and `experimental`. Adoption gives your team ownership and a verification path; promotion to `partial` or `production` still requires current evidence and maintainer review. Find your network's issue under the [`adopt-this-network`](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3Aadopt-this-network) label.
 
 Affiliate networks have two sides — and neither has a first-class AI workspace integration.
 
 **Publishers** earn commissions from the programmes they join.
 **Brands** (and the agencies who manage them) run those programmes
 and pay the commissions out. I wanted to chat to my own affiliate
-data in the AI workspace I already use; none of the networks had shipped an integration
-for either side, so I built one that covers both. Well, for the
-biggest networks.
+data in the AI workspace I already use; none of the networks had shipped an
+integration for either side, so I built a broad beta set that covers both
+publisher and advertiser-side work.
 
 If you're a **publisher**, you can ask:
 
@@ -70,9 +70,9 @@ bundled adapters are placeholders until each network adopts its own. See
 ## Why bother?
 
 **One question, every network and every brand.** "Show me earnings by
-programme" hits Awin, CJ, eBay, Impact and Rakuten in parallel. On the brand
+programme" hits your configured publisher networks in parallel. On the brand
 side, "show me revenue across all my clients this week" fans out across every
-brand × network pair you've registered.
+brand and network pair you've registered.
 
 **Plain English, not filters.** No more clicking through date pickers and saved
 views. "Last quarter, status pending, sorted by amount" is the whole prompt.
@@ -340,16 +340,17 @@ type.
 - **"Any anomalies in the affiliate data this week?"** — week-over-week
   scan for revenue drops, reversal spikes, top-10 dropouts, dead
   programmes. Designed to run on a schedule via Claude's own scheduling.
+- **"Set up Acme's strategy and KPIs"** — bind the brand during setup, record
+  advisory context with `client-onboarding`, then reports, anomaly watches, and
+  portfolio rollups use it to frame verdicts. It never authorises a network
+  write or changes the figures.
 
 ## Networks
 
-Five network families are bundled today. Three of them — **Awin**,
-**CJ Affiliate**, and **Impact** — ship adapters for both the
-publisher and the advertiser side, so the same network appears on
-two rows. **eBay Partner Network** is publisher-only (eBay is the
-sole advertiser on its own network — no brand-side product to
-integrate with). **Rakuten Advertising** is publisher-only at v0.1;
-the brand-side has a more complex auth model and we skipped it.
+The repository currently ships 86 adapters across 72 network families. The
+breadth is real, but maturity varies; most adapters are `experimental`. Check
+the table below and [`REPORT.md`](./REPORT.md) before relying on one for
+production work.
 
 <!-- AFFILIATE_MCP_NETWORK_TABLE_START -->
 | Network | Setup time | Approval required | Supported ops | Notes |
@@ -687,15 +688,14 @@ click for credentials, and common stumbling blocks:
 
 ## For the curious (or technical)
 
-`affiliate-mcp` is a Model Context Protocol server. MCP is the protocol
-Claude uses to talk to outside tools. Each configured network becomes
-a set of tool calls Claude can invoke, named
-`affiliate_<network>_<operation>` — for example
-`affiliate_awin_list_transactions` for the publisher side or
-`affiliate_impact-advertiser_get_programme_performance` for the
-brand side. Six meta-tools are always present: `affiliate_list_networks`,
-`affiliate_run_diagnostic`, `affiliate_resolve_brand`,
-`affiliate_get_client_strategy`, `affiliate_set_client_strategy`, and `affiliate_list_client_strategies`.
+`affiliate-mcp` has five practical layers. **Adapters** under `src/networks/`
+handle each network's auth, API quirks, normalisation, and capability metadata.
+**MCP tools** expose typed operations such as `affiliate_awin_list_transactions`;
+six meta-tools cover listing, diagnostics, brand resolution, and advisory client
+strategy. **Skills and workflows** compose tools into affiliate jobs. **MCP
+prompts** are reusable templates and currently Awin-specific. **Setup paths**
+connect the same local server to Claude Desktop, Claude Code, Codex, Cowork, or
+another compatible local stdio MCP client.
 
 The packaged skills under [`skills/`](./skills) are the
 conversation patterns Claude follows for common requests:
@@ -740,15 +740,14 @@ If you're poking around the source, the top-level folders are:
   runs against verbatim fixtures.
 - [`examples/`](./examples) — Claude Desktop config snippet.
 
-Each folder has its own short README explaining what lives there.
-
 ## Adding a network
 
 **If you work for an affiliate network**, the canonical path is in
 [`CONTRIBUTING.md`](./CONTRIBUTING.md) under "Adopting your network".
-You can take ownership via `.github/CODEOWNERS`, claim
-`claim_status: production` directly, and cover both publisher and
-advertiser sides — whichever your API exposes.
+You can take ownership via `.github/CODEOWNERS`, verify the adapter with live
+evidence, and cover whichever sides your API exposes. Adoption does not
+automatically grant `production`; promotion follows the same evidence,
+freshness, and maintainer-review gates as every adapter.
 
 If your favourite network isn't in the table and you don't work for
 it, you can add it anyway — and you don't necessarily need to be a

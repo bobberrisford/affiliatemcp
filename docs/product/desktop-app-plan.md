@@ -45,9 +45,10 @@ licence. The entire onboarding experience is open and auditable.
 
 Why it's a one-way door: if you ship the app **closed**, you can never
 credibly re-open it, and you've quietly contradicted *"no hosted
-account, no telemetry, the maintainer never sees your data"* — because
+account, opt-in telemetry, the maintainer never sees your data"* — because
 nobody can verify a closed binary. Shipping it **open** means anyone can
-read the code and confirm it phones home to nothing. For a brand whose
+read the code and confirm the telemetry contract is narrow and consent-gated.
+For a brand whose
 entire pitch is trust, the app must be as open as the server it wraps.
 
 ### D3 — The open-core boundary, drawn *before* there's anything to gate ✅
@@ -296,9 +297,9 @@ Not a vibe — a set of enforced commitments:
    onboards people is itself open.
 2. **The free path is never crippled to upsell (D3).** Core does
    everything promised, standalone, forever. Commercial = our-infra-only.
-3. **No telemetry, provably (D4).** Stated on the welcome screen, true
+3. **Opt-in telemetry, provably (D4).** Stated on the welcome screen, true
    in the code, verifiable because the code is open. "Open" is what
-   makes "no phone-home" *credible* rather than a claim.
+   makes the consent gate credible rather than a claim.
 4. **Reproducible, signed builds.** Publish build instructions; let
    anyone rebuild the released binary. Trust through verifiability.
 5. **Community contributes adapters *and* help content (D8)** through
