@@ -23,6 +23,12 @@ and optional supporting files.
   commissions a network validated but has not paid past a term (90
   days by default) and drafts a per-network chase email with the
   unpaid sales attached as a CSV.
+- [`affiliate-publisher-workflows/`](./affiliate-publisher-workflows) —
+  single-network publisher depth workflows (performance brief, offer
+  finder, link builder, transaction investigation, programme
+  opportunity scan). Runs on the shared surface for any configured
+  network and uses richer network-specific tools (currently Awin's)
+  where they exist.
 
 ### Brand / agency side
 
