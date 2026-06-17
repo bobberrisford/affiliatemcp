@@ -17,20 +17,28 @@ Accept any of:
 - A pasted markdown / HTML document — extract every `<a href>` or `[text](url)`.
 - A sitemap URL or path — read it and extract `<loc>` entries.
 
-Filter the extracted URLs down to *affiliate* links by host. The networks this server supports use these host patterns:
+Filter the extracted URLs down to *affiliate* links by host. The server
+supports many networks (`affiliate_list_networks` is the authoritative list);
+these four have well-known, stable host patterns you can classify by host alone:
 
 - `awin1.com`, `awin.com`, `*.awin1.com` — Awin.
 - `*.dpbolvw.net`, `*.kqzyfj.com`, `*.tkqlhce.com`, `anrdoezrs.net`, `*.cj.com`, `*.cjlinks.com` — CJ Affiliate.
 - `*.impact.com`, `goto.target.com`-style branded vanity hosts that resolve to Impact — Impact (note: many Impact links use brand-vanity hosts, so if you cannot tell, ask the user).
 - `click.linksynergy.com`, `*.linksynergy.com`, `*.rakutenmarketing.com` — Rakuten Advertising.
 
-If you cannot classify a link, list it under "could not classify — please confirm".
+Links from the other supported networks will not match a pattern above. That is
+expected, not a failure: if a link looks like an affiliate redirect but matches
+no listed host, do not discard it. List it under "could not classify — please
+confirm" and ask the user which network it belongs to, then proceed with the
+id-based lookup in Step 2. Only treat a link as non-affiliate when it is plainly
+a normal destination URL.
 
 ## Step 2 — extract the programme identifier
 
 Each network encodes the programme id (or advertiser id) in the URL differently. The reliable approach: do not hand-parse. Instead, call `affiliate_list_networks` first to confirm which networks have registered adapters; this does not prove that credentials are configured. Then, for each candidate URL:
 
-1. Match the URL to a network by host.
+1. Match the URL to a network by host, or use the user's confirmed network for
+   a recognised affiliate link whose host is not in the list above.
 2. Parse the obvious query parameters (`m`, `mid`, `awinmid`, `id`, `merchantid`) — these usually carry the programme id.
 3. Call `affiliate_<slug>_get_programme` with that id.
 4. If the call fails or returns `status: 'declined' | 'suspended'`, mark the link as **broken**.
