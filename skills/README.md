@@ -44,6 +44,11 @@ and optional supporting files.
 - [`programme-anomaly-watch/`](./programme-anomaly-watch) —
   week-over-week scan for revenue drops, reversal spikes, top-10
   dropouts, dead programmes. Designed to run on a schedule.
+- [`client-onboarding/`](./client-onboarding) — capture and maintain a
+  client's advisory strategy and KPI targets from a pasted brief, an
+  interview, or a vertical template. Confirms in plain English before
+  saving, and edits through chat thereafter. Recorded targets let the
+  reporting skills judge a delta against the client's own plan.
 
 A capability-aware roadmap of brand/agency deliverables, including which
 outcomes should extend shipped skills rather than create new ones, lives in
