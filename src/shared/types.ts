@@ -577,3 +577,83 @@ export interface BrandsFile {
   version: 1;
   brands: Record<string, BrandBinding[]>;
 }
+
+// ---------------------------------------------------------------------------
+// clients/<slug>/ — per-client advisory strategy and KPI files
+// ---------------------------------------------------------------------------
+// See docs/decisions/2026-06-12-client-strategy-recording.md and the grammar
+// addendum docs/decisions/2026-06-16-client-strategy-kpi-grammar-and-tools.md.
+// These files are advisory context for reporting; they never authorise a
+// network write.
+
+/** Comparator in a KPI target line. */
+export type KpiComparator = '>=' | '<=' | '>' | '<' | '=';
+
+/**
+ * Known KPI metrics. Closed enum: an unrecognised metric is a parse error, never
+ * a guess. `revenue`/`commission` are monetary; `epc`/`aov` are monetary
+ * per-unit; `reversal_rate`/`approval_rate` are percentages; `conversions` is a
+ * count.
+ */
+export type KpiMetric =
+  | 'revenue'
+  | 'conversions'
+  | 'commission'
+  | 'epc'
+  | 'aov'
+  | 'reversal_rate'
+  | 'approval_rate';
+
+/** Period a target is measured over. */
+export type KpiPeriod = 'day' | 'week' | 'month' | 'quarter' | 'year';
+
+/**
+ * One parsed target from the fenced `kpi` block:
+ * `metric: comparator value [unit] [per period]`.
+ * `unit` is a currency code for monetary metrics, `%` for rate metrics, or
+ * undefined when omitted. `period` is undefined when the line names no period.
+ */
+export interface KpiTarget {
+  metric: KpiMetric;
+  comparator: KpiComparator;
+  value: number;
+  unit?: string;
+  period?: KpiPeriod;
+}
+
+/**
+ * A line the parser could not accept. Carries the verbatim source line and a
+ * human-readable reason. Parse errors are reported and excluded from verdicts;
+ * the reader never guesses a malformed line's meaning.
+ */
+export interface KpiParseError {
+  line: number;
+  text: string;
+  reason: string;
+}
+
+/** Result of parsing the fenced `kpi` block in a `KPI.md` file. */
+export interface KpiParseResult {
+  /** Present when a `version:` marker was found and recognised. */
+  version?: number;
+  targets: KpiTarget[];
+  errors: KpiParseError[];
+}
+
+/** A single client-strategy markdown file (`Strategy.md` or `KPI.md`). */
+export interface ClientStrategyFile {
+  present: boolean;
+  markdown?: string;
+}
+
+/**
+ * The advisory strategy context for one client, keyed by the brand slug from
+ * `brands.json`. `orphan` is true when a `clients/<slug>/` directory exists but
+ * the slug has no brand binding. Missing files are normal, not an error.
+ */
+export interface ClientStrategy {
+  brand: string;
+  orphan: boolean;
+  strategy: ClientStrategyFile;
+  kpi: ClientStrategyFile & { parsed?: KpiParseResult };
+}
