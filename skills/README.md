@@ -23,6 +23,10 @@ and optional supporting files.
   commissions a network validated but has not paid past a term (90
   days by default) and drafts a per-network chase email with the
   unpaid sales attached as a CSV.
+- [`affiliate-awin-workflows/`](./affiliate-awin-workflows) — Awin-only
+  depth workflows (daily brief, offer finder, link builder, transaction
+  investigation, programme opportunity scan) that give the shipped
+  `awin_*` MCP prompts and Awin custom tools a discoverable home.
 
 ### Brand / agency side
 
