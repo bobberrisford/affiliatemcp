@@ -3,7 +3,8 @@
  *
  * Produces the MCP tool definitions from the adapter registry:
  *   - 7 publisher tools per registered adapter (one per publisher operation).
- *   - 2 meta tools: `affiliate_run_diagnostic`, `affiliate_list_networks`.
+ *   - 6 meta tools: network discovery/diagnostics, brand resolution, and
+ *     advisory client-strategy read/write/list.
  *
  * Tool descriptions follow PRD §5.5 — three sentences:
  *   1. WHAT the tool does.
@@ -20,7 +21,15 @@ import type {
 } from '../shared/types.js';
 import { NotImplementedError } from '../shared/types.js';
 import { getAdapters } from '../shared/registry.js';
-import { loadBrands } from '../shared/brands.js';
+import { isValidBrandSlug, loadBrands } from '../shared/brands.js';
+import {
+  isOrphan,
+  listClientStrategies,
+  loadClientStrategy,
+  parseKpiBlock,
+  saveKpi,
+  saveStrategy,
+} from '../shared/client-strategy.js';
 import { generateAwinTools } from '../networks/awin/tools.js';
 import { generateTradedoublerTools } from '../networks/tradedoubler/tools.js';
 import type { ToolDefinition } from './types.js';
@@ -411,6 +420,104 @@ export function generateMetaTools(): ToolDefinition[] {
         }
         return rows;
       },
+    },
+    {
+      name: 'affiliate_get_client_strategy',
+      description:
+        'Read the advisory strategy and KPI context an operator has recorded for one brand (the brand slug from brands.json). ' +
+        'Use this before producing a report so a delta can be judged against the client\'s own plan rather than reported bare. ' +
+        'Returns { brand, orphan, strategy:{present,markdown}, kpi:{present,version,targets,parseErrors} }; targets are already parsed, parseErrors must be reported and excluded from verdicts, and the context is advisory only and never authorises a write.',
+      inputSchema: {
+        type: 'object',
+        properties: { brand: { type: 'string' } },
+        required: ['brand'],
+        additionalProperties: false,
+      },
+      handle: async (args) => {
+        const parsed = z.object({ brand: z.string() }).strict().parse(args ?? {});
+        const c = loadClientStrategy(parsed.brand);
+        return {
+          brand: c.brand,
+          orphan: c.orphan,
+          strategy: {
+            present: c.strategy.present,
+            ...(c.strategy.markdown !== undefined ? { markdown: c.strategy.markdown } : {}),
+          },
+          kpi: {
+            present: c.kpi.present,
+            ...(c.kpi.parsed?.version !== undefined ? { version: c.kpi.parsed.version } : {}),
+            targets: c.kpi.parsed?.targets ?? [],
+            parseErrors: c.kpi.parsed?.errors ?? [],
+          },
+        };
+      },
+    },
+    {
+      name: 'affiliate_set_client_strategy',
+      description:
+        'Write the advisory Strategy.md and/or KPI.md for one brand (the brand slug from brands.json) to the local config directory. ' +
+        'Use this only after confirming the content with the operator; the onboarding skill drafts and confirms, this tool persists. ' +
+        'kpiMarkdown is validated against the fenced ```kpi grammar and is rejected without writing if it has parse errors (returned as parseErrors); these are local-config writes, not network writes, and never authorise a network action.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          brand: { type: 'string' },
+          strategyMarkdown: { type: 'string' },
+          kpiMarkdown: { type: 'string' },
+        },
+        required: ['brand'],
+        additionalProperties: false,
+      },
+      handle: async (args) => {
+        const parsed = z
+          .object({
+            brand: z.string(),
+            strategyMarkdown: z.string().optional(),
+            kpiMarkdown: z.string().optional(),
+          })
+          .strict()
+          .refine((d) => d.strategyMarkdown !== undefined || d.kpiMarkdown !== undefined, {
+            message: 'Provide strategyMarkdown, kpiMarkdown, or both.',
+          })
+          .parse(args ?? {});
+
+        if (!isValidBrandSlug(parsed.brand)) {
+          return {
+            brand: parsed.brand,
+            written: false,
+            reason: `Invalid brand slug "${parsed.brand}". Use lowercase letters, digits, and hyphens only.`,
+          };
+        }
+
+        // Validate KPI before writing anything; a malformed block is rejected
+        // whole rather than persisted to fail silently on the next read.
+        if (parsed.kpiMarkdown !== undefined) {
+          const result = parseKpiBlock(parsed.kpiMarkdown);
+          if (result.errors.length > 0) {
+            return { brand: parsed.brand, written: false, parseErrors: result.errors };
+          }
+        }
+
+        const wrote = { strategy: false, kpi: false };
+        if (parsed.strategyMarkdown !== undefined) {
+          saveStrategy(parsed.brand, parsed.strategyMarkdown);
+          wrote.strategy = true;
+        }
+        if (parsed.kpiMarkdown !== undefined) {
+          saveKpi(parsed.brand, parsed.kpiMarkdown);
+          wrote.kpi = true;
+        }
+        return { brand: parsed.brand, written: true, wrote, orphan: isOrphan(parsed.brand) };
+      },
+    },
+    {
+      name: 'affiliate_list_client_strategies',
+      description:
+        'List which brands have advisory strategy recorded, covering both brands bound in brands.json and any client directory on disk. ' +
+        'Use this to drive a portfolio rollup or to prompt the operator to record strategy for a brand that has none. ' +
+        'Returns an array of { slug, hasStrategy, hasKpi, registered, orphan }; orphan flags a strategy directory whose slug has no brand binding.',
+      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      handle: async () => listClientStrategies(),
     },
   ];
 }

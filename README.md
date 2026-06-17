@@ -693,9 +693,9 @@ a set of tool calls Claude can invoke, named
 `affiliate_<network>_<operation>` — for example
 `affiliate_awin_list_transactions` for the publisher side or
 `affiliate_impact-advertiser_get_programme_performance` for the
-brand side. Three meta-tools are always present:
-`affiliate_list_networks`, `affiliate_run_diagnostic`, and
-`affiliate_resolve_brand`.
+brand side. Six meta-tools are always present: `affiliate_list_networks`,
+`affiliate_run_diagnostic`, `affiliate_resolve_brand`,
+`affiliate_get_client_strategy`, `affiliate_set_client_strategy`, and `affiliate_list_client_strategies`.
 
 The packaged skills under [`skills/`](./skills) are the
 conversation patterns Claude follows for common requests:

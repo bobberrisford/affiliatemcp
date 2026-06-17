@@ -394,8 +394,10 @@ CLI entry points (built or via `npm run dev`):
 
 - Each registered adapter exposes its supported canonical operations as
   `affiliate_<network>_<snake_case_op>` tools.
-- Three meta-tools are always present: `affiliate_list_networks`,
-  `affiliate_run_diagnostic`, and `affiliate_resolve_brand`.
+- Six meta-tools are always present: `affiliate_list_networks`,
+  `affiliate_run_diagnostic`, `affiliate_resolve_brand`, and the advisory
+  client-strategy tools `affiliate_get_client_strategy`,
+  `affiliate_set_client_strategy`, and `affiliate_list_client_strategies`.
 - `NetworkErrorEnvelope` shape is stable; downstream MCP clients depend on its
   field names.
 - Adding an adapter registers its supported tools automatically; do not
