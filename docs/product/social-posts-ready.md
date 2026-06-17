@@ -120,6 +120,91 @@ https://github.com/bobberrisford/affiliatemcp
 
 ---
 
+## 5. affiliate-earnings-report — VIDEO
+
+**Asset:** `affiliate-earnings-report/affiliate-earnings-report.mp4` (1080x1350, ~37s)
+
+**Caption:**
+```
+What did you actually earn?
+
+Publishers: your earnings are scattered across every network you work with.
+Pending here, approved there, paid somewhere else.
+
+Ask "What did I earn across all networks last month?" and get one consolidated
+total, the paid/approved/pending split, and a flag on anything sitting unpaid
+too long.
+
+Free and open source. Link in the first comment.
+```
+
+**First comment:**
+```
+See your real earnings across every network (free, open source):
+https://github.com/bobberrisford/affiliatemcp
+```
+
+**Hashtags:** `#affiliatemarketing #affiliate #publishers #creators #opensource`
+
+---
+
+## 6. agency-portfolio-rollup — CAROUSEL
+
+**Asset:** `agency-portfolio-rollup/agency-portfolio-rollup-carousel.pdf`
+(7 pages; upload via "Add a document")
+
+**Caption:**
+```
+Your whole book in one view.
+
+Every client's numbers live in a different dashboard, and the weekly update is
+always due. For agencies: ask "Show me revenue across all my clients this week"
+and get every brand ranked, with the week-on-week move and a "needs attention"
+list for anything down more than 20%.
+
+You spot the brand that slipped before the client emails about it.
+
+Free and open source. Link in the first comment.
+```
+
+**First comment:**
+```
+Your portfolio's home dashboard, in the AI tools you already use (free, open
+source): https://github.com/bobberrisford/affiliatemcp
+```
+
+**Hashtags:** `#affiliatemarketing #affiliate #agency #performancemarketing #partnerships`
+
+---
+
+## 7. programme-anomaly-watch — STATIC IMAGE
+
+**Asset:** `programme-anomaly-watch/programme-anomaly-watch-static.png` (1080x1350)
+
+**Caption:**
+```
+Know before your client does.
+
+Revenue drops, reversal spikes, a top publisher going quiet, a dead tracking
+link: the things that turn into an awkward client call. For agencies: a
+week-on-week anomaly check across the whole book, ranked by revenue at risk.
+
+It is built to run on a schedule, so you hear about the problem first and walk
+in with the fix.
+
+Free and open source. Link in the first comment.
+```
+
+**First comment:**
+```
+Catch the problems before your clients do (free, open source):
+https://github.com/bobberrisford/affiliatemcp
+```
+
+**Hashtags:** `#affiliatemarketing #affiliate #agency #performancemarketing #automation`
+
+---
+
 ## Posting notes
 
 - Put the link in the first comment, not the post body, to avoid the

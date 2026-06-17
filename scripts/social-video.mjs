@@ -115,7 +115,7 @@ function sceneKeyframes() {
     .join('\n');
 }
 
-const TOTAL = post.scenes[post.scenes.length - 1].end + 0.4;
+const TOTAL = post.scenes ? post.scenes[post.scenes.length - 1].end + 0.4 : 0;
 
 function html({ still = null } = {}) {
   const scenesHtml = post.scenes

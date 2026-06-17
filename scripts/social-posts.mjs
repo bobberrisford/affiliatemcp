@@ -170,4 +170,83 @@ export const POSTS = {
       </div>
       <div class="pbot">{{MARK}}<p class="foot">free &amp; open source · link in the comments ↓</p></div>`,
   },
+
+  // ---- VIDEO ----
+  'affiliate-earnings-report': {
+    scenes: [
+      { id: 'hook', start: 0, end: 3.2, bg: 'ink',
+        html: `<span class="label">for publishers</span>
+          <h1 class="mega">what did you<br><span class="hl">actually earn?</span></h1>` },
+      { id: 'problem', start: 3.2, end: 7.4, bg: 'ink',
+        html: `<span class="label">the problem</span>
+          <p class="lead">your earnings are scattered across every network you work with.</p>
+          <p class="lead muted">pending here, approved there, paid somewhere else.</p>` },
+      { id: 'ask', start: 7.4, end: 16.6, bg: 'ink',
+        html: `<span class="label">ask in plain english</span>
+          ${ask('What did I earn across all networks last month?')}` },
+      { id: 'result', start: 16.6, end: 27.6, bg: 'ink',
+        html: `<span class="label">last 30 days · across 5 networks</span>
+          <div class="card">
+            <div class="top"><span class="sub">total earnings</span><span class="delta">5 networks</span></div>
+            <div class="amt">£6,480</div>
+          </div>
+          <table class="data-table" style="font-size:1.05rem">
+            ${row('Paid', '£1,300', 'dot-pos', 'paid')}
+            ${row('Approved', '£3,100', 'dot-pos', 'approved')}
+            ${row('Pending', '£1,900', 'dot-pending', 'pending')}
+          </table>
+          <p class="mono" style="color:var(--magenta)">oldest unpaid: 112 days · worth chasing</p>` },
+      cta(27.6, 33.4),
+      end(33.4, 36.4),
+    ],
+  },
+
+  // ---- CAROUSEL ----
+  'agency-portfolio-rollup': {
+    scenes: [
+      { id: 'hook', start: 0, end: 3.2, bg: 'ink',
+        html: `<span class="label">for brands &amp; agencies</span>
+          <h1 class="mega">your whole book.<br><span class="hl">one view.</span></h1>` },
+      { id: 'problem', start: 3.2, end: 7.4, bg: 'ink',
+        html: `<span class="label">the problem</span>
+          <p class="lead">every client's numbers live in a different dashboard.</p>
+          <p class="lead muted">and the weekly update is due.</p>` },
+      { id: 'ask', start: 7.4, end: 16.0, bg: 'ink',
+        html: `<span class="label">ask in plain english</span>
+          ${ask('Show me revenue across all my clients this week.')}` },
+      { id: 'result', start: 16.0, end: 24.0, bg: 'ink',
+        html: `<span class="label">this week vs last · gross sale</span>
+          <table class="data-table" style="font-size:1.05rem">
+            ${row('Acme', '£128k', 'dot-pos', '▲ 12%')}
+            ${row('Globex', '£74k', 'dot-neg', '▼ 6%')}
+            ${row('Initech', '£41k', 'dot-pos', '▲ 3%')}
+          </table>` },
+      { id: 'attention', start: 24.0, end: 30.0, bg: 'ink',
+        html: `<span class="label" style="color:var(--magenta)">needs attention</span>
+          <h2 class="h2">down more than 20% this week</h2>
+          <table class="data-table" style="font-size:1.05rem">
+            ${row('Soylent', '£18k → £13k', 'dot-neg', '▼ 24%')}
+          </table>
+          <p class="mono muted">flagged before the client asks.</p>` },
+      cta(30.4, 36.2),
+      end(36.2, 39.2),
+    ],
+  },
+
+  // ---- STATIC ----
+  'programme-anomaly-watch': {
+    poster: `<div class="ptop">
+        <span class="label">for brands &amp; agencies · runs on a schedule</span>
+        <h1 class="h1">know before <span class="hl-mag">your client does.</span></h1>
+        <p class="lead muted">a week-on-week anomaly check across the whole book, ranked by revenue at risk.</p>
+        <table class="data-table" style="font-size:0.95rem">
+          <tr><td class="net"><span class="dot dot-neg"></span>Acme · revenue drop</td><td class="num">▼ £9,400</td></tr>
+          <tr><td class="net"><span class="dot dot-neg"></span>Globex · reversal spike</td><td class="num">2.4× · £3,100</td></tr>
+          <tr><td class="net"><span class="dot dot-pending"></span>Initech · publisher silent</td><td class="num">£2,200</td></tr>
+          <tr><td class="net"><span class="dot dot-neg"></span>Umbrella · dead programme</td><td class="num">0 clicks</td></tr>
+        </table>
+        <p class="mono" style="color:var(--blue-bright)">runs on a schedule, so you hear it first.</p>
+      </div>
+      <div class="pbot">{{MARK}}<p class="foot">free &amp; open source · link in the comments ↓</p></div>`,
+  },
 };
