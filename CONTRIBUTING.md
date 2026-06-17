@@ -75,7 +75,8 @@ Contributions, in roughly the order we care about:
 The project exists to make affiliate data available where affiliate work
 happens. It wraps affiliate network access into local-first MCP tools, skills,
 prompts, and workflow guidance so users can work with their own data in Claude,
-ChatGPT, Codex, Cursor, Cowork, and similar clients.
+Codex, Cowork, and compatible local stdio MCP clients. ChatGPT support requires
+a separate remote HTTPS MCP path and is not shipped yet.
 
 Useful contributions should reinforce these boundaries:
 
@@ -183,8 +184,10 @@ Either way, the work per side is:
    support, `side: 'publisher' | 'advertiser'`, and
    `credential_scope: 'single-brand' | 'multi-brand'` (advertiser
    networks where one credential set reaches many brands — Impact, CJ,
-   Awin advertiser — are `multi-brand`). `claim_status: production`
-   is permissible — you, the network, are the source of truth.
+   Awin advertiser — are `multi-brand`). Set `claim_status` to the level
+   supported by current evidence. Network-owned live proof can support a
+   promotion request, but `production` still requires freshness and maintainer
+   review.
 3. **Write the setup doc** at `docs/networks/<slug>.md` (or
    `<slug>-advertiser.md`). Use the existing docs as templates. Quote
    dashboard button names verbatim — anything the user will literally
@@ -217,8 +220,9 @@ Either way, the work per side is:
 
 - A `@your-handle` entry in `.github/CODEOWNERS` for your adapter
   directories so PRs touching them route to you for review.
-- The placeholder is replaced; `claim_status: production` is
-  permissible because the network itself is verifying the adapter.
+- The placeholder is replaced and your team has a clear route to verify and
+  promote the adapter with current live evidence. Adoption does not
+  automatically grant `production` status.
 - Future API changes route through you. We won't merge community
   patches to your adapter without your sign-off.
 
@@ -242,8 +246,9 @@ Same workflow as adoption, with two adjustments:
   credentials, the workflow is the same — just expect ownership to
   transfer to the network when it adopts the adapter.
 - **`claim_status` starts at `partial` or `experimental`**, not
-  `production`. Promotion to `production` happens when the network
-  adopts the adapter, or after enough community evidence accumulates.
+  `production`. Promotion requires current evidence, a freshness trail, and
+  maintainer review. Network adoption helps establish ownership and access to
+  live proof, but it is not a shortcut around the promotion gates.
 
 Networks people most often ask for (Skimlinks, Webgains, FlexOffers,
 Sovrn) are tracked in GitHub Issues under the `good first issue`
@@ -314,7 +319,8 @@ adapter's `network.json`. To add or correct a finding:
 The project has a small number of deliberate non-goals. Please do not
 file PRs that:
 
-- Add telemetry, analytics, error-reporting beacons, or any phone-home.
+- Add telemetry, analytics, error-reporting beacons, or any phone-home beyond
+  the privacy-first opt-in telemetry contract in [`PRIVACY.md`](./PRIVACY.md).
 - Add a hosted service, dashboard, web UI, or credential broker. This
   is a local-only MCP server; credentials never leave the user's
   machine.

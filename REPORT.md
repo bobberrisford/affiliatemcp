@@ -1,11 +1,11 @@
 # affiliate-mcp Report — the state of affiliate-network APIs in June 2026
 
-_Date-stamped: 2026-06-15._
+_Date-stamped: 2026-06-17._
 
-This report describes the state of four affiliate-network APIs as observed
-during the construction of the affiliate-mcp MCP server: Awin, CJ Affiliate,
-Impact, and Rakuten Advertising. Each network is described in terms of
-documentation, setup friction, operational coverage, and known limitations.
+This report describes the current affiliate-mcp adapter surface as observed
+during construction and verification of the local MCP server. Each adapter
+is described in terms of documentation, setup friction, operational coverage,
+claim status, and known limitations.
 The reader is the comparator. The document presents the data; it does not
 rank the networks.
 
@@ -5949,4 +5949,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-15 08:17 UTC._
+_Last regenerated 2026-06-17 22:22 UTC._

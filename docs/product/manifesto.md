@@ -37,8 +37,9 @@ catalogue. It means:
   support, and that make clear when data came from an API or from a browser-driven
   session.
 - **Local control** so credentials stay on the user's machine by default.
-- **Portable context** so Claude, ChatGPT, Codex, Cursor, Cowork, and future MCP
-  clients can use the same affiliate data layer.
+- **Portable context** so Claude, Codex, Cowork, and compatible local MCP
+  clients can use the same affiliate data layer today, with ChatGPT requiring a
+  separate remote HTTPS MCP path.
 
 ## What this enables
 

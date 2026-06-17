@@ -42,7 +42,7 @@ ethos and voice.
 **affiliate-mcp** (npm: `affiliate-networks-mcp`) is a free, **MIT-licensed,
 open-source** Model Context Protocol server. It lets people **chat with their
 own affiliate-network data** inside the AI workspace they already use — Claude,
-Codex, Cursor, ChatGPT.
+Codex, and compatible local MCP clients. ChatGPT support is planned separately.
 
 > *"What did I earn across all networks last month?"*
 > *"Show me revenue across all my clients this week."*
@@ -55,8 +55,10 @@ APIs, and answers — then turns it into a sheet, an email, a brief, whatever.
 
 - **Local-first. Bring your own keys.** Credentials live in
   `~/.affiliate-mcp/.env` on *your* machine, mode `0600`. No hosted account.
-- **No telemetry. No phone-home.** The networks see the same calls their own
-  dashboard would make. Nobody else sees anything.
+- **Privacy-first opt-in telemetry.** Runtime telemetry is off by default,
+  aggregate-only, and never includes affiliate data, credentials, prompts,
+  arguments, results, or error text. The networks see the same calls their own
+  dashboard would make.
 - **Anti-dashboard.** "Your dashboards can't keep up with how fast you can
   think." One conversation spans every network and brand.
 - **Honest.** Adapters declare exactly what's supported, partial, experimental,
@@ -116,7 +118,7 @@ corporate, never hypey.
   - "your data. your machine. your terms."
   - "affiliate data, jailbroken."
   - "one question. every network. every brand."
-  - "no hosted account. no telemetry. no asking permission."
+  - "no hosted account. opt-in telemetry. no asking permission."
   - "free. open. yours."
 
 **Numbers & data.** When showing affiliate data, keep it real and specific:
@@ -179,7 +181,7 @@ the visual opposite of a glossy SaaS dashboard, which is exactly the point.
   slapped on.
 - **Highlighter swipes** (`.hl`) behind key words — riso blue with white text, like a marker.
 - **Redaction bars** (`.redact`) — black bars, nodding to "your data stays
-  private / no telemetry".
+  private / telemetry is opt-in".
 - **Terminal blocks** everywhere: prompt `>`, block cursor `▮`, command lines.
   The brand mark itself is a prompt.
 

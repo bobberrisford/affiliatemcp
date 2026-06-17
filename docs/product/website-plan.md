@@ -43,7 +43,7 @@ non-technical homepage.
 | Communicate the mission in one screen | A visitor can paraphrase "chat with your affiliate data where you already work, your keys stay local" after the hero | Time on page, scroll depth past hero |
 | De-risk the non-technical user | The word "terminal" never appears before the visitor has decided they want in | Click-through to "Get started" |
 | Onboard without fear | A guided, copy-one-line-at-a-time setup page with screenshots and "what you'll see" | Reaches step 3 (connect to Claude) |
-| Earn trust | Privacy ("your data, your machine"), MIT, open source, no telemetry stated up front | Outbound clicks to GitHub / PRIVACY |
+| Earn trust | Privacy ("your data, your machine"), MIT, open source, opt-in telemetry stated up front | Outbound clicks to GitHub / PRIVACY |
 | Route the other audiences | Networks and developers each find their path within one click | Clicks to /networks/adopt and /contribute |
 
 Non-goals: this is **not** a SaaS signup, not a dashboard, not a docs
@@ -63,10 +63,11 @@ with one voice. UK English throughout ("programme"), per manifesto principle 8.
 - **The problem (one sentence):** *"Your affiliate data is scattered across
   network dashboards, exports, and spreadsheets — and none of it is where you
   actually do your thinking."*
-- **The promise:** *"Bring the data into Claude, Codex, or ChatGPT. Ask in plain
-  English. No filters, no CSV exports, no code."*
+- **The promise:** *"Bring the data into Claude or Codex today. Ask in plain
+  English. No filters, no CSV exports, no code. ChatGPT support is planned
+  separately."*
 - **The trust line (repeated):** *"Bring your own keys. Runs locally. No hosted
-  account, no telemetry."*
+  account. Optional telemetry is opt-in and aggregate-only."*
 - **Reassurance for the nervous:** *"You do not need to know what an API is. You
   do not need to write code. If you can copy and paste one line, you can do
   this."*
@@ -109,10 +110,10 @@ Secondary CTA: **"See what you can ask"** → `/what-you-can-ask`.
    - *You run programmes (brand / agency)* → 3 example questions.
    Each card → `/what-you-can-ask` anchored to that side.
 4. **How it works, in 3 plain steps** — (1) Run a short setup, (2) it checks
-   your logins, (3) ask questions in Claude/Codex/ChatGPT. Each step one
+   your logins, (3) ask questions in Claude/Codex. Each step one
    sentence, illustrated. Link to `/get-started`.
 5. **Why people trust it** — four short proof tiles: *Your data, your machine* ·
-   *Free & MIT open source* · *No telemetry* · *72 networks, both sides*.
+   *Free & MIT open source* · *Opt-in telemetry* · *80+ adapters, both sides*.
    (Numbers sourced from the README badges — see §8 on keeping them fresh.)
 6. **Catches what dashboards bury** — the README's strongest differentiator:
    stale transactions, dead links, reversal spikes, week-on-week drops.
@@ -149,13 +150,13 @@ one-line description of what comes back. Group by outcome: *Earnings*, *Health*,
 *Anomalies* (brand). Reinforces value without any setup pressure.
 
 ### `/networks`
-A searchable/filterable rendering of the README network table (72 networks /
-86 adapters). Columns: network, side (publisher/advertiser), setup time,
-approval required, supported ops, notes. Filter by side and "no approval
-needed." **Must reproduce the honesty of the table** — show `experimental`
-status and the "community-built until adopted" caveat prominently, per manifesto
-principles 5 & 6 ("honest network truth", "no fake support"). Each row can link
-to its `docs/networks/<name>.md`.
+A searchable/filterable rendering of the README network table. Columns:
+network, side (publisher/advertiser), setup time, approval required, supported
+ops, notes, and claim status. Counts must come from generated metadata, not
+hand-typed copy. Filter by side and "no approval needed." **Must reproduce the
+honesty of the table** — show `experimental` status and the adoption caveat
+prominently, per manifesto principles 5 & 6 ("honest network truth", "no fake
+support"). Each row can link to its `docs/networks/<name>.md`.
 
 ### `/networks/adopt`
 For network operators. Short, credible, action-oriented: why adopt (correctness,
@@ -166,7 +167,8 @@ means, and a direct link to the `adopt-a-network` GitHub issues label and
 ### `/privacy`
 Plain-English retelling of `PRIVACY.md` and the manifesto's "what this project
 will not do" list: keys live in `~/.affiliate-mcp/.env` on your machine, no
-hosted account, no telemetry, networks see the same calls as your dashboard.
+hosted account, optional aggregate-only telemetry is off by default, networks
+see the same calls as your dashboard.
 This page is a conversion tool, not legal boilerplate — link to the full
 `PRIVACY.md` for completeness.
 
@@ -199,8 +201,9 @@ Rationale:
   §8). Astro content collections fit this well.
 - **GitHub Pages + Actions:** zero hosting cost, lives beside the code, one more
   workflow next to the existing `ci.yml` / `publish.yml`. Custom domain optional.
-- **No backend needed** — there is no signup, no data collection (consistent with
-  "no telemetry"). A static site keeps the privacy story clean and honest.
+- **No backend needed** — there is no signup and the website itself does not
+  collect affiliate data. A static site keeps the privacy story clean and
+  honest.
 
 Alternatives considered:
 - **Plain HTML + Tailwind** — lowest dependency, fine for a one-pager, but

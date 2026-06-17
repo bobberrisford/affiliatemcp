@@ -67,7 +67,7 @@ The clearest working paths are:
 - Adapter count is prominent even though most adapters have not been verified
   against live accounts.
 - Tools, MCP prompts, packaged skills, examples, and product backlog documents
-  overlap without one explicit contribution rule.
+  need one explicit contribution rule.
 - Some skills and examples contain stale assumptions or names despite the
   repository's broader current surface.
 
@@ -246,10 +246,10 @@ client.
   brand names, then use agency skills.
 - **First aha moment:** one portfolio rollup or client report spanning several
   brand-network bindings.
-- **Friction:** brand mapping complexity, unsupported metrics, no implemented
-  client strategy/KPI context yet, and no team-level configuration management.
-- **Missing affordances:** client onboarding workflow, capability-aware
-  templates, shared team deployment, and controlled output delivery.
+- **Friction:** brand mapping complexity, unsupported metrics, uneven strategy
+  coverage across the book, and no team-level configuration management.
+- **Missing affordances:** capability-aware templates, shared team deployment,
+  and controlled output delivery.
 - **Manifesto fit:** strategically strong because the AI workspace is the
   natural place for reporting and narrative work; operational maturity is
   incomplete.
@@ -389,8 +389,9 @@ product:
   do not validate complete workflow semantics or every publisher skill's cited
   tool names.
 - MCP prompts overlap with skills, especially around Awin workflows.
-- The setup-help skill still states that only four networks are supported,
-  despite the current 86-adapter registry.
+- The setup-help skill has hand-written quick references for four launch
+  networks, while the rest of the adapter registry relies on generated setup
+  steps and per-network docs.
 - The earnings-report example cites `affiliate_<network>_earnings_summary`,
   while generated canonical tool names use `get_earnings_summary`.
 
@@ -644,7 +645,7 @@ implementation.
 | Workflow packs by persona | Strengthen publisher and agency packs around a small number of verified, repeatable outcomes | Publishers, agencies | High | Medium | Medium | Should-have |
 | Network verification programme | Give networks and credentialed users a clear route to promote adapters | Users, network contributors | High | Medium | Medium | Must-have |
 | Tested local client matrix | Document and verify Claude, Codex, VS Code, Cursor, and generic MCP setup | Technical users | Medium | Medium | Medium | Should-have |
-| Agency strategy context | Implement accepted local client strategy and KPI direction after core workflow cleanup | Agencies | Medium | Medium | Medium | Should-have |
+| Agency strategy context hardening | Expand and test the shipped local client strategy and KPI context across more reporting workflows | Agencies | Medium | Medium | Medium | Should-have |
 
 ### Later: platform expansion and monetisation
 

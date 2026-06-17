@@ -21,7 +21,7 @@ cowork-mirror flow that already shipped.
 |---|---|---|
 | **Cloudflare quick tunnel + local server (chosen)** | Ship it | Preserves local-first stance. No account, no signup. Tunnel is auth-gated by our bearer token. One command. |
 | User deploys a Worker to their own Cloudflare account | Reject | Forces every non-technical user to make a Cloudflare account, mint an API token, learn what a Worker is. ~20 min install before they've asked a question. Credentials end up in a place they can't `rm -rf`. |
-| Hosted SaaS we run | Reject | Breaks every load-bearing README claim: "your data, your machine", "no account", "no telemetry". Creates GDPR / SOC2 scope. Different product. |
+| Hosted SaaS we run | Reject | Breaks the load-bearing local-first README claims: "your data, your machine", "no account", and "privacy-first opt-in telemetry". Creates GDPR / SOC2 scope. Different product. |
 | Print instructions only | Reject | Doesn't actually install anything. Cosmetic. |
 
 The cost we accept: the user's laptop must be awake for ChatGPT to
