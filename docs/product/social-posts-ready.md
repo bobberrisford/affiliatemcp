@@ -205,6 +205,89 @@ https://github.com/bobberrisford/affiliatemcp
 
 ---
 
+## 8. audit-affiliate-links — VIDEO
+
+**Asset:** `audit-affiliate-links/audit-affiliate-links.mp4` (1080x1350, ~37s)
+
+**Caption:**
+```
+Do your affiliate links still track?
+
+A programme closes, you don't notice, and the link earns nothing. Every dead
+link on your site is silent lost revenue.
+
+Paste a list, a draft, or your sitemap and ask "Audit my affiliate links and
+find any that are broken." Each link is checked against the live programme:
+active, not joined, or pending, with a recommendation for each.
+
+Free and open source. Link in the first comment.
+```
+
+**First comment:**
+```
+Find the dead links costing you commission (free, open source):
+https://github.com/bobberrisford/affiliatemcp
+```
+
+**Hashtags:** `#affiliatemarketing #affiliate #publishers #bloggers #opensource`
+
+---
+
+## 9. affiliate-network-setup-help — CAROUSEL
+
+**Asset:** `affiliate-network-setup-help/affiliate-network-setup-help-carousel.pdf`
+(7 pages; upload via "Add a document")
+
+**Caption:**
+```
+Connect your first network in minutes.
+
+API tokens, dashboards, menu paths: setup usually means a support ticket. Ask
+"Help me set up Awin" and get the exact steps, quoted from the dashboard's own
+labels, for Awin, CJ, Impact, Rakuten and the rest.
+
+Your logins stay on your machine. No hosted account, no middleman.
+
+Free and open source. Link in the first comment.
+```
+
+**First comment:**
+```
+Get connected in about five minutes (free, open source):
+https://github.com/bobberrisford/affiliatemcp
+```
+
+**Hashtags:** `#affiliatemarketing #affiliate #publishers #agency #opensource`
+
+---
+
+## 10. affiliate-network-status — STATIC IMAGE
+
+**Asset:** `affiliate-network-status/affiliate-network-status-static.png` (1080x1350)
+
+**Caption:**
+```
+Is everything still connected?
+
+Tokens expire, APIs slow down, and you only find out when a report comes back
+empty. Ask "Check my affiliate networks" for a health check across every
+network you have set up: auth, reachability, and which operations are working.
+
+OK, degraded, or failing, in one view, so you know before you rely on it.
+
+Free and open source. Link in the first comment.
+```
+
+**First comment:**
+```
+Check your whole affiliate setup in one command (free, open source):
+https://github.com/bobberrisford/affiliatemcp
+```
+
+**Hashtags:** `#affiliatemarketing #affiliate #publishers #agency #automation`
+
+---
+
 ## Posting notes
 
 - Put the link in the first comment, not the post body, to avoid the

@@ -249,4 +249,77 @@ export const POSTS = {
       </div>
       <div class="pbot">{{MARK}}<p class="foot">free &amp; open source · link in the comments ↓</p></div>`,
   },
+
+  // ---- VIDEO ----
+  'audit-affiliate-links': {
+    scenes: [
+      { id: 'hook', start: 0, end: 3.2, bg: 'ink',
+        html: `<span class="label">for publishers</span>
+          <h1 class="mega">do your links<br><span class="hl-mag">still track?</span></h1>` },
+      { id: 'problem', start: 3.2, end: 7.4, bg: 'ink',
+        html: `<span class="label">the problem</span>
+          <p class="lead">a programme closes, you don't notice, and the link earns nothing.</p>
+          <p class="lead muted">every dead link is silent lost revenue.</p>` },
+      { id: 'ask', start: 7.4, end: 16.6, bg: 'ink',
+        html: `<span class="label">ask in plain english</span>
+          ${ask('Audit my affiliate links and find any that are broken.')}` },
+      { id: 'result', start: 16.6, end: 27.6, bg: 'ink',
+        html: `<span class="label">links checked against live programmes</span>
+          <table class="data-table" style="font-size:1.05rem">
+            ${row('Acme · Awin', 'active', 'dot-pos', 'no action')}
+            ${row('Globex · CJ', 'not joined', 'dot-neg', 'replace')}
+            ${row('Initech · Rakuten', 'pending', 'dot-pending', 'check')}
+          </table>
+          <p class="mono" style="color:var(--magenta)">1 broken, 1 inactive · fix before they cost you.</p>` },
+      cta(27.6, 33.4),
+      end(33.4, 36.4),
+    ],
+  },
+
+  // ---- CAROUSEL ----
+  'affiliate-network-setup-help': {
+    scenes: [
+      { id: 'hook', start: 0, end: 3.2, bg: 'ink',
+        html: `<span class="label">publishers &amp; agencies</span>
+          <h1 class="mega">connect your<br>first network<br><span class="hl">in minutes.</span></h1>` },
+      { id: 'problem', start: 3.2, end: 7.4, bg: 'ink',
+        html: `<span class="label">the problem</span>
+          <p class="lead">api tokens, dashboards, menu paths.</p>
+          <p class="lead muted">setup usually means a support ticket. not here.</p>` },
+      { id: 'ask', start: 7.4, end: 14.0, bg: 'ink',
+        html: `<span class="label">ask in plain english</span>
+          ${ask('Help me set up Awin.')}` },
+      { id: 'result', start: 14.0, end: 22.0, bg: 'ink',
+        html: `<span class="label">where the credential lives</span>
+          <table class="data-table" style="font-size:1.05rem">
+            ${row('Awin', 'profile → API', 'dot-pos', 'instant')}
+            ${row('CJ', 'personal tokens', 'dot-pos', 'instant')}
+            ${row('Impact', 'settings → API', 'dot-pos', 'instant')}
+            ${row('Rakuten', 'My Apps', 'dot-pending', '≈5 days')}
+          </table>` },
+      { id: 'trust', start: 22.0, end: 28.0, bg: 'ink',
+        html: `<span class="label">your data, your machine</span>
+          <h2 class="h2">your logins stay on your machine.</h2>
+          <p class="lead muted">no hosted account. networks see the same calls as your own dashboard.</p>` },
+      cta(28.4, 34.2),
+      end(34.2, 37.2),
+    ],
+  },
+
+  // ---- STATIC ----
+  'affiliate-network-status': {
+    poster: `<div class="ptop">
+        <span class="label">publishers &amp; agencies · health check</span>
+        <h1 class="h1">is everything <span class="hl">still connected?</span></h1>
+        <p class="lead muted">auth, reachability and supported operations across every network you have set up.</p>
+        <table class="data-table" style="font-size:1.05rem">
+          ${row('Awin', 'auth + data OK', 'dot-pos', 'ok')}
+          ${row('CJ', 'auth + data OK', 'dot-pos', 'ok')}
+          ${row('Impact', 'transactions slow', 'dot-pending', 'degraded')}
+          ${row('Rakuten', 'auth expired', 'dot-neg', 'failing')}
+        </table>
+        <p class="mono" style="color:var(--blue-bright)">one check, so you know before you rely on it.</p>
+      </div>
+      <div class="pbot">{{MARK}}<p class="foot">free &amp; open source · link in the comments ↓</p></div>`,
+  },
 };
