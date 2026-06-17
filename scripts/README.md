@@ -15,9 +15,13 @@ package; used during development and CI.
 - `generate-report-image.ts` — render the report summary table to
   PNG (needs Playwright).
 - `social-video.mjs` / `social-posts.mjs` — render LinkedIn-ready 4:5
-  social posts (per-beat PNGs plus an MP4) from the design system,
-  following `docs/product/social-video-playbook.md`. Run as
-  `node scripts/social-video.mjs <post-id>`. Needs Playwright's Chromium
-  and ffmpeg (`npm i --no-save playwright ffmpeg-static`); set
-  `CHROME_BIN` if the browser lives outside the default path. Output
-  lands in `docs/product/social-assets/<post-id>/`.
+  social posts from the design system, following
+  `docs/product/social-video-playbook.md`. Run as
+  `node scripts/social-video.mjs <post-id> [video|carousel|static]`:
+  `video` (default) writes per-beat PNGs plus an MP4; `carousel` writes
+  the per-beat PNGs plus a multi-page portrait PDF (LinkedIn's native
+  document carousel); `static` writes a single self-contained poster PNG
+  (needs a `poster` defined on the post). Needs Playwright's Chromium and
+  ffmpeg (`npm i --no-save playwright ffmpeg-static`); set `CHROME_BIN` if
+  the browser lives outside the default path. Output lands in
+  `docs/product/social-assets/<post-id>/`.

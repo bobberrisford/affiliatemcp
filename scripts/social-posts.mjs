@@ -120,6 +120,18 @@ export const POSTS = {
       cta(27.6, 33.4),
       end(33.4, 36.4),
     ],
+    poster: `<div class="ptop">
+        <span class="label">for brands &amp; agencies</span>
+        <h1 class="h1">where's the commission <span class="hl-mag">leaking?</span></h1>
+        <p class="lead muted">reversals on acme, last 30 days, by reason and value at stake.</p>
+        <table class="data-table" style="font-size:1.05rem">
+          ${row('Cancelled order', '£2,100', 'dot-neg', 'reversed')}
+          ${row('Duplicate', '£640', 'dot-neg', 'reversed')}
+          ${row('Out of policy', '£380', 'dot-neg', 'reversed')}
+        </table>
+        <p class="mono" style="color:var(--pending)">surfaces the leak. it does not change any transaction.</p>
+      </div>
+      <div class="pbot">{{MARK}}<p class="foot">free &amp; open source · link in the comments ↓</p></div>`,
   },
 
   'publisher-performance-review': {
@@ -145,5 +157,17 @@ export const POSTS = {
       cta(27.6, 33.4),
       end(33.4, 36.4),
     ],
+    poster: `<div class="ptop">
+        <span class="label">for brands &amp; agencies</span>
+        <h1 class="h1">prep for the partner call <span class="hl">in minutes.</span></h1>
+        <p class="lead muted">cashbackco on acme, last 30 days, with talking points.</p>
+        <table class="data-table" style="font-size:1.05rem">
+          ${row('EPC', '£0.48', 'dot-pos', 'up')}
+          ${row('Avg order value', '£72', 'dot-pos', 'steady')}
+          ${row('Conversions', '↑ 9% vs prior', 'dot-pos', 'up')}
+        </table>
+        <p class="mono" style="color:var(--blue-bright)">+ talking points for the call.</p>
+      </div>
+      <div class="pbot">{{MARK}}<p class="foot">free &amp; open source · link in the comments ↓</p></div>`,
   },
 };

@@ -30,6 +30,7 @@ const FPS = 30;
 const ROOT_PX = 34;
 
 const postId = process.argv[2];
+const MODE = process.argv[3] || 'video'; // video | carousel | static
 const post = POSTS[postId];
 if (!post) {
   console.error(`Unknown post "${postId}". Known: ${Object.keys(POSTS).join(', ')}`);
@@ -85,7 +86,20 @@ html,body{width:${W}px;height:${H}px;margin:0;overflow:hidden;background:var(--i
 .mark img{width:78px;height:78px;}
 .mark .h3{color:var(--fg-invert);}
 .endwrap{justify-content:center;align-items:flex-start;}
+/* single static poster: top content, bottom lockup */
+.scene.poster{justify-content:space-between;padding-top:160px;padding-bottom:190px;}
+.scene.poster .mark{position:static;}
+.scene.poster .ptop{display:flex;flex-direction:column;gap:var(--s-5);}
+.scene.poster .pbot{display:flex;flex-direction:column;gap:var(--s-4);}
+/* carousel: flow each slide as its own print page instead of stacking */
+.slide{position:relative;inset:auto;width:${W}px;height:${H}px;break-after:page;}
+.pageno{position:absolute;top:64px;right:120px;font-family:var(--font-mono);font-size:0.72rem;font-weight:700;letter-spacing:0.12em;color:var(--blue-bright);}
+.on-paper .pageno{color:var(--blue);}
+.swipe{position:absolute;bottom:150px;right:120px;font-family:var(--font-mono);font-size:0.8rem;font-weight:700;letter-spacing:0.08em;color:var(--blue-bright);}
+.foot{font-family:var(--font-mono);font-size:0.8rem;font-weight:700;letter-spacing:0.06em;color:var(--blue-bright);}
 `;
+
+const PRINT_CSS = `@page{size:${W}px ${H}px;margin:0;} html,body{height:auto;overflow:visible;}`;
 
 function sceneKeyframes() {
   return post.scenes
@@ -129,15 +143,43 @@ ${still === null ? sceneKeyframes() : ''}
 </body></html>`;
 }
 
-async function main() {
-  const browser = await chromium.launch(
-    process.env.CHROME_BIN ? { executablePath: process.env.CHROME_BIN } : {},
-  );
-  const tmp = path.join(OUT, '.tmp-video');
-  rmSync(tmp, { recursive: true, force: true });
-  mkdirSync(tmp, { recursive: true });
+// Carousel: every beat as a standalone page, with a page counter and a swipe
+// hint on slide one. Rendered to a portrait PDF, LinkedIn's native document
+// (carousel) format.
+function carouselHtml() {
+  const n = post.scenes.length;
+  const slides = post.scenes
+    .map((s, i) => {
+      const body = s.html.replace('{{MARK}}', MARK_HTML);
+      const cls = `scene tex slide ${s.bg === 'paper' ? 'on-paper' : 'on-ink'} ${s.wrap || ''}`;
+      const pageno = `<div class="pageno">${String(i + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')}</div>`;
+      const hint = i === 0 ? `<div class="swipe">swipe →</div>` : '';
+      return `<section class="${cls}">${pageno}${hint}${body}</section>`;
+    })
+    .join('\n');
+  return `<!doctype html><html><head><meta charset="utf-8"><style>
+${FONT_CSS}
+${COLORS_CSS}
+${COMPONENTS_CSS}
+${LAYOUT_CSS}
+${PRINT_CSS}
+</style></head><body><div class="amcp">${slides}</div></body></html>`;
+}
 
-  // 1) Still PNG per beat.
+// Static: one self-contained poster (defined per post as `poster`).
+function posterHtml() {
+  const body = post.poster.replace('{{MARK}}', MARK_HTML);
+  return `<!doctype html><html><head><meta charset="utf-8"><style>
+${FONT_CSS}
+${COLORS_CSS}
+${COMPONENTS_CSS}
+${LAYOUT_CSS}
+</style></head><body>
+<div class="amcp stage"><section class="scene tex on-ink poster">${body}</section></div>
+</body></html>`;
+}
+
+async function renderStills(browser) {
   const stillPage = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
   for (let i = 0; i < post.scenes.length; i++) {
     await stillPage.setContent(html({ still: i }), { waitUntil: 'networkidle' });
@@ -147,8 +189,42 @@ async function main() {
     console.log('still:', name);
   }
   await stillPage.close();
+}
 
-  // 2) Record the animated timeline to video.
+async function main() {
+  const browser = await chromium.launch(
+    process.env.CHROME_BIN ? { executablePath: process.env.CHROME_BIN } : {},
+  );
+
+  if (MODE === 'static') {
+    if (!post.poster) throw new Error(`Post "${postId}" has no poster defined for static mode.`);
+    const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
+    await page.setContent(posterHtml(), { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.fonts.ready);
+    const out = path.join(OUT, `${postId}-static.png`);
+    await page.screenshot({ path: out });
+    await browser.close();
+    console.log('static:', path.relative(ROOT, out));
+    return;
+  }
+
+  if (MODE === 'carousel') {
+    await renderStills(browser); // per-slide PNGs, also usable individually
+    const page = await browser.newPage();
+    await page.setContent(carouselHtml(), { waitUntil: 'networkidle' });
+    await page.evaluate(() => document.fonts.ready);
+    const pdf = path.join(OUT, `${postId}-carousel.pdf`);
+    await page.pdf({ path: pdf, width: `${W}px`, height: `${H}px`, printBackground: true });
+    await browser.close();
+    console.log('carousel:', path.relative(ROOT, pdf));
+    return;
+  }
+
+  // video (default)
+  const tmp = path.join(OUT, '.tmp-video');
+  rmSync(tmp, { recursive: true, force: true });
+  mkdirSync(tmp, { recursive: true });
+  await renderStills(browser);
   const ctx = await browser.newContext({
     viewport: { width: W, height: H },
     deviceScaleFactor: 1,
