@@ -15,6 +15,14 @@ Call `affiliate_resolve_brand` with no arguments. The response is an array of `{
 
 If the array is empty, tell the user no brands are registered and point them at `affiliate-networks-mcp setup`. Stop.
 
+## Step 1b - load recorded plans
+
+Call `affiliate_list_client_strategies` once. It returns one row per slug with `hasStrategy` / `hasKpi` / `registered` / `orphan`. For each registered brand in the book with either `hasStrategy` or `hasKpi`, call `affiliate_get_client_strategy({ brand })` to load its `kpi.targets` and `strategy` framing. Skip registered brands with no plan.
+
+Keep a count of how many registered brands in the book have no plan recorded; it drives the coverage line in Step 5. If `affiliate_list_client_strategies` returns orphan rows, mention them in the coverage line and do not invent network data for them. This context is **advisory**: it adds a verdict and a coverage prompt; it never changes the figures.
+
+If `kpi.parseErrors` is non-empty for a loaded brand, report each malformed line verbatim in the coverage/failures area and exclude it from verdicts. Never guess what the target meant.
+
 ## Step 2 — pick the windows
 
 Default period: the last 7 days, ending today. Honour explicit user windows ("this month", "Q1", named dates).
@@ -48,11 +56,12 @@ For each brand:
 Output in this order:
 
 1. **Windows**: current `from YYYY-MM-DD to YYYY-MM-DD` and comparison `from YYYY-MM-DD to YYYY-MM-DD` (each with day count).
-2. **Per-brand headline**: one row per brand, sorted by current-period `grossSale` desc. Each row: brand name, gross sale, commission, conversions, delta (currency and percent). If a brand had errors on one or more networks, append the per-network errors verbatim at the end of its row — never silently drop data.
-3. **Needs attention**: a subsection listing every brand whose `grossSale` is down more than 20% vs. the comparison window. One line each: brand, current vs. comparison figure, percent delta.
-4. **Portfolio totals**: totals across every brand. Per-currency if the book spans currencies.
-5. **Long tail**: if there are more than 12 brands, show the top 12 in full and collapse the remainder under one `Others (N brands, <total>, <percent delta>)` line per currency.
-6. **Failures (if any)**: per (brand, network) verbatim error block, in case the user wants to retry.
+2. **Per-brand headline**: one row per brand, sorted by current-period `grossSale` desc. Each row: brand name, gross sale, commission, conversions, delta (currency and percent). For a brand with a `revenue` target, add a short verdict against the plan (on track / behind / ahead). When the target has a period, show pace to target, for example "behind: GBP 268k of GBP 400k quarter, about 7% short on run-rate". When the target has no period, compare the current-window total and say no period was recorded. Where a target's metric is unsupported on a brand's bound network, say so rather than guess. If a brand had errors on one or more networks, append the per-network errors verbatim at the end of its row; never silently drop data.
+3. **Needs attention**: a subsection listing every brand whose `grossSale` is down more than 20% vs. the comparison window, **or** that is behind a recorded KPI target. One line each: brand, current vs. comparison figure (or target gap), percent delta. A brand down in a channel its strategy deprioritised can be noted as lower concern only when the row data or publisher name makes that partner type evident.
+4. **Strategy coverage**: if any registered brands have no plan recorded, one line: "N of M brands have no strategy recorded; reports for them judge on bare deltas. Want to set them up?" If orphan strategy directories exist, add "Also found orphan strategy records: <slug...>; they have no registered brand binding." Omit when every registered brand has a plan and there are no orphans.
+5. **Portfolio totals**: totals across every brand. Per-currency if the book spans currencies.
+6. **Long tail**: if there are more than 12 brands, show the top 12 in full and collapse the remainder under one `Others (N brands, <total>, <percent delta>)` line per currency.
+7. **Failures (if any)**: per (brand, network) verbatim error block, in case the user wants to retry.
 
 Matter-of-fact tone, UK spelling. Keep the table compact.
 
@@ -61,5 +70,8 @@ Matter-of-fact tone, UK spelling. Keep the table compact.
 - Never invent figures. If a binding returned no rows, say "no data" — don't backfill zeros.
 - Currency: respect the per-row `currency`. Per-brand totals stay in the currency of their underlying rows. Across-brand totals stay per-currency.
 - Do not normalise across networks or across brands. The agency runs reports in the currencies its clients invoice in.
+- Recorded strategy and KPIs are advisory: they add a per-brand verdict and a coverage prompt, but never authorise an action or change the figures. Report KPI parse errors verbatim and exclude those targets.
+- A KPI target on a metric a bound network cannot supply is reported as unsupported for that network and left out of its verdict; never zero-fill it or silently merge partial coverage into a cross-brand total.
+- Pair with `client-onboarding` to record a plan for a brand surfaced by the coverage line.
 - Pair with `programme-performance-report` when the user drills into a single brand from the rollup.
 - Pair with `affiliate_resolve_brand({ network: "<slug>" })` if the user wants to scope the rollup to a single network.
