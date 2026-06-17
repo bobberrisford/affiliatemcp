@@ -585,8 +585,8 @@ npx affiliate-networks-mcp doctor rakuten
 ```
 
 Most failures are one of three things: an expired token, a network
-that needs your approval re-confirmed, or a credential typed with a
-trailing space. The doctor catches all three.
+that needs your approval re-confirmed, or a credential typed with a trailing
+space. The JSON also reports `clientStrategies` health; it never deletes them.
 
 ## Per-network setup notes
 

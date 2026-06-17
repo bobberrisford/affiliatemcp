@@ -87,6 +87,32 @@ describe('buildReport — environment + config info', () => {
   });
 });
 
+describe('buildReport - client-strategy health', () => {
+  it('is empty when no brands or client dirs exist', async () => {
+    const report = await buildReport();
+    expect(report.clientStrategies).toEqual({ recorded: 0, missing: [], orphans: [] });
+  });
+
+  it('flags registered brands with no plan and orphan directories', async () => {
+    const { saveBrands } = await import('../../src/shared/brands.js');
+    const { saveStrategy } = await import('../../src/shared/client-strategy.js');
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [{ network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-1' }],
+        globex: [{ network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-9' }],
+      },
+    });
+    saveStrategy('acme', 'Premium partners.'); // acme has a plan
+    saveStrategy('leftover', 'Stale.'); // orphan: no brand binding
+
+    const report = await buildReport();
+    expect(report.clientStrategies.recorded).toBe(2); // acme + leftover have files
+    expect(report.clientStrategies.missing).toEqual(['globex']);
+    expect(report.clientStrategies.orphans).toEqual(['leftover']);
+  });
+});
+
 describe('runDoctor — env-value leak regression (PRD §15.4, Polish Chunk 10)', () => {
   it('never embeds env VALUES in the JSON output for a fully-populated config', async () => {
     // Write a `.env` resembling a real fully-populated user file. Every value
