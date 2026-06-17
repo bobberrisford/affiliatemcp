@@ -20,7 +20,7 @@ semantic validation and the prompt/skill ownership question.
 
 ## Method
 
-- Inventoried `skills/` (11 skills), `src/prompts/generate.ts` (5 prompts), and
+- Inventoried `skills/` (10 skills), `src/prompts/generate.ts` (5 prompts), and
   `examples/` (Claude Desktop config plus its walkthrough).
 - Derived the canonical tool surface from `src/tools/generate.ts` (the shared
   operation specs and meta-tools) and the per-network custom tools in
@@ -38,10 +38,8 @@ Per-network operations generated for every adapter that declares support, named
 - Publisher: `get_earnings_summary`.
 - Advertiser only: `list_media_partners`, `get_programme_performance`.
 
-Six always-present meta-tools: `affiliate_list_networks`,
-`affiliate_run_diagnostic`, `affiliate_resolve_brand`,
-`affiliate_get_client_strategy`, `affiliate_set_client_strategy`,
-`affiliate_list_client_strategies`.
+Three always-present meta-tools: `affiliate_list_networks`,
+`affiliate_run_diagnostic`, `affiliate_resolve_brand`.
 
 Network-specific custom tools beyond the shared surface:
 
@@ -64,12 +62,11 @@ only. A workflow that names them is network-specific by definition.
 | affiliate-network-setup-help | Semi-technical operator | "Help me get credentials for network X." | Host with repo `docs/networks/` available; setup wizard CLI | `affiliate_list_networks`, `affiliate_run_diagnostic` | Yes | PR #210 made `affiliate_list_networks` the authoritative list; four launch networks framed as hand-written walkthroughs, not the supported set. No further repair needed. |
 | audit-affiliate-links | Publisher | "Are the affiliate links on my site still tracking?" | Host that can read a pasted doc or sitemap | `affiliate_list_networks`, `affiliate_<slug>_get_programme`, `affiliate_<slug>_list_programmes`, `affiliate_<slug>_generate_tracking_link` | Yes | Tool citations canonical. Scope-framing fix needed: Step 1 implies the server supports only the four networks whose host patterns are listed. See Finding 1. |
 | chase-unpaid-commissions | Publisher | "Chase commissions validated but unpaid past a term." | Publisher host; drafts a per-network chase email | `affiliate_list_networks`, `affiliate_<slug>_get_earnings_summary`, `affiliate_<slug>_list_transactions` | Yes | Canonical. Correctly limits to publisher-side adapters and uses the `minAgeDays` filter. |
-| client-onboarding | Agency / advertiser | "Record a client's advisory strategy and KPI targets." | Any host; advisory layer, no network calls for the write | `affiliate_resolve_brand`, `affiliate_get_client_strategy`, `affiliate_set_client_strategy`, `affiliate_list_client_strategies` | Yes | Canonical. KPI block is an advisory schema, not a network-capability claim. |
-| programme-performance-report | Agency / advertiser | "Per-publisher performance report for one brand." | Advertiser-side credentials; cadence profiles (daily/weekly/QBR) | `affiliate_resolve_brand`, `affiliate_get_client_strategy`, `affiliate_<network>_get_programme_performance`, `affiliate_<network>_list_transactions`, `affiliate_<network>_list_media_partners` | Yes | Canonical advertiser operations. Impact-advertiser used only as a templated example. |
+| programme-performance-report | Agency / advertiser | "Per-publisher performance report for one brand." | Advertiser-side credentials; cadence profiles (daily/weekly/QBR) | `affiliate_resolve_brand`, `affiliate_<network>_get_programme_performance`, `affiliate_<network>_list_transactions`, `affiliate_<network>_list_media_partners` | Yes | Canonical advertiser operations. Impact-advertiser used only as a templated example. |
 | publisher-performance-review | Agency / advertiser | "Single-publisher deep dive for a brand." | Advertiser-side credentials | `affiliate_resolve_brand`, `affiliate_list_networks`, `affiliate_<network>_list_media_partners`, `affiliate_<network>_get_programme_performance` | Yes | Canonical. Advises runtime capability checks. |
 | programme-reversal-report | Agency / advertiser | "Why are this brand's commissions being declined?" | Advertiser-side credentials | `affiliate_resolve_brand`, `affiliate_list_networks`, `affiliate_<network>_list_transactions` | Yes | Canonical. Checks network support at runtime rather than assuming. |
-| agency-portfolio-rollup | Agency | "How is the whole book doing this week?" | Advertiser-side credentials across brands; scheduled or on-demand | `affiliate_resolve_brand`, `affiliate_list_client_strategies`, `affiliate_get_client_strategy`, `affiliate_<network>_get_programme_performance` | Yes | Canonical. |
-| programme-anomaly-watch | Agency | "Flag week-over-week anomalies before clients notice." | Advertiser-side credentials; designed for scheduled runs | `affiliate_resolve_brand`, `affiliate_list_client_strategies`, `affiliate_get_client_strategy`, `affiliate_<network>_get_programme_performance` | Yes | Canonical. |
+| agency-portfolio-rollup | Agency | "How is the whole book doing this week?" | Advertiser-side credentials across brands; scheduled or on-demand | `affiliate_resolve_brand`, `affiliate_<network>_get_programme_performance` | Yes | Canonical. |
+| programme-anomaly-watch | Agency | "Flag week-over-week anomalies before clients notice." | Advertiser-side credentials; designed for scheduled runs | `affiliate_resolve_brand`, `affiliate_<network>_get_programme_performance` | Yes | Canonical. |
 
 All skill tool citations match the current surface. The one remaining semantic
 repair is the scope framing in audit-affiliate-links (Finding 1).
