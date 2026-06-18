@@ -116,6 +116,72 @@ export interface NetworkCapabilities {
 }
 
 // ---------------------------------------------------------------------------
+// Action capability map
+// ---------------------------------------------------------------------------
+// See docs/decisions/2026-06-18-action-capability-map.md. A channel-aware,
+// queryable inventory of what an adapter can DO, classified on three
+// ORTHOGONAL axes. The descriptor is descriptive metadata, not an execution
+// path: it states what is possible and how it is gated, and changes nothing
+// about how the authority layer or the browser-handoff contract execute.
+
+/**
+ * How an action reaches the network.
+ * - `api`: the adapter calls a documented endpoint.
+ * - `browser`: the adapter emits an `ApiGapResponse` with a `BrowserHandoff`;
+ *   a consumer (or a human) carries it out. (Contract lands in a later PR.)
+ * - `none`: a known gap with no route yet.
+ */
+export type ActionChannel = 'api' | 'browser' | 'none';
+
+/**
+ * What an action does to network state.
+ * - `read`: no side effect.
+ * - `advisement`: computes and returns a plan (e.g. a propose step); no side
+ *   effect on the network.
+ * - `write`: submits, changes, or sends.
+ */
+export type ActionEffect = 'read' | 'advisement' | 'write';
+
+/**
+ * Default authority gate from the action-authority layer
+ * (docs/decisions/2026-06-12-action-authority-layer.md): 0 reads, 1 propose,
+ * 2 auto-apply within policy, 3 human sign-off. This is the action's DEFAULT;
+ * an operator's policy may tighten it but never loosen it.
+ */
+export type AuthorityTier = 0 | 1 | 2 | 3;
+
+/**
+ * A declared action an adapter can perform, classified on the three orthogonal
+ * axes. The `action` name is the stable identifier the future policy artefact,
+ * audit log, and MCP host annotations all reference; it reuses the canonical
+ * operation vocabulary (an `AnyOperation` value for the existing reads).
+ *
+ * INVARIANT: `defaultTier` is pinned to `effect` and the action, NEVER to
+ * `channel`. A browser-driven write and an API write of the same thing sit at
+ * the same tier, so an operator cannot block an action on one channel and be
+ * exposed to it on another.
+ */
+export interface ActionDescriptor {
+  action: string;
+  channel: ActionChannel;
+  effect: ActionEffect;
+  defaultTier: AuthorityTier;
+  /** One-line, human-facing description of what the action does. */
+  description: string;
+}
+
+/**
+ * One row of the assembled action capability map: a descriptor bound to the
+ * network that declares it, plus whether it is currently available given the
+ * configured credentials. The map is read-only; exposing it adds no mutation
+ * path — a consumer still needs the credential and the tier gate to act.
+ */
+export interface ActionMapEntry extends ActionDescriptor {
+  network: NetworkSlug;
+  available: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Domain types — programmes, transactions, clicks, links, earnings
 // ---------------------------------------------------------------------------
 
