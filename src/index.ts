@@ -13,7 +13,7 @@
  * is the protocol channel). User-facing CLI text goes to stderr.
  */
 
-import { isFirstRun, loadConfig, CONFIG_ENV_FILE } from './shared/config.js';
+import { isFirstRun, loadConfig, resolveConfigEnvFile } from './shared/config.js';
 
 // Side-effect import: registers every network adapter with the shared registry.
 // Must precede any subcommand path (validate/setup/test/doctor) that consults it.
@@ -27,7 +27,7 @@ function printFirstRunBanner(): void {
   write('');
   write('  affiliate-networks-mcp — first run detected');
   write('  -----------------------------------------');
-  write(`  No config file at ${CONFIG_ENV_FILE}.`);
+  write(`  No config file at ${resolveConfigEnvFile()}.`);
   write('  Run `affiliate-networks-mcp setup` to configure your networks.');
   write('  See https://github.com/atolls/affiliate-mcp for documentation.');
   write('');

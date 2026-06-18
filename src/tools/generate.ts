@@ -16,13 +16,17 @@ import { z } from 'zod';
 import type {
   AdapterCallContext,
   AdapterOperation,
+  KpiParseError,
+  KpiTarget,
   NetworkAdapter,
   OperationCapability,
+  NetworkMeta,
 } from '../shared/types.js';
 import { NotImplementedError } from '../shared/types.js';
 import { getAdapters } from '../shared/registry.js';
 import { isValidBrandSlug, loadBrands } from '../shared/brands.js';
 import {
+  type ClientStrategySummary,
   isOrphan,
   listClientStrategies,
   loadClientStrategy,
@@ -35,8 +39,61 @@ import { generateTradedoublerTools } from '../networks/tradedoubler/tools.js';
 import type { ToolDefinition } from './types.js';
 import { toJsonSchema } from './schema.js';
 import { cacheKey, credentialHashFor, pickTtl, withCache } from '../shared/cache.js';
+import type { DiagnosticResult } from '../shared/diagnostic.js';
 
 export type { ToolDefinition } from './types.js';
+
+export type RunDiagnosticMetaResult = DiagnosticResult;
+
+export type ListNetworksMetaResult = Array<
+  NetworkMeta & {
+    operationClaimStatuses: Record<string, OperationCapability['claimStatus']>;
+  }
+>;
+
+export type ResolveBrandMetaResult = Array<{
+  brand: string;
+  network: string;
+  networkBrandId: string;
+}>;
+
+export interface GetClientStrategyMetaResult {
+  brand: string;
+  orphan: boolean;
+  strategy: {
+    present: boolean;
+    markdown?: string;
+  };
+  kpi: {
+    present: boolean;
+    version?: number;
+    targets: KpiTarget[];
+    parseErrors: KpiParseError[];
+  };
+}
+
+export type SetClientStrategyMetaResult =
+  | {
+      brand: string;
+      written: false;
+      reason: string;
+    }
+  | {
+      brand: string;
+      written: false;
+      parseErrors: KpiParseError[];
+    }
+  | {
+      brand: string;
+      written: true;
+      wrote: {
+        strategy: boolean;
+        kpi: boolean;
+      };
+      orphan: boolean;
+    };
+
+export type ListClientStrategiesMetaResult = ClientStrategySummary[];
 
 // Re-usable Zod schemas for tool inputs.
 const ProgrammeQuerySchema = z
@@ -352,7 +409,7 @@ export function generateMetaTools(): ToolDefinition[] {
         properties: { network: { type: 'string' } },
         additionalProperties: false,
       },
-      handle: async (args) => {
+      handle: async (args): Promise<RunDiagnosticMetaResult> => {
         const parsed = z
           .object({ network: z.string().optional() })
           .strict()
@@ -368,7 +425,7 @@ export function generateMetaTools(): ToolDefinition[] {
         'Use this to discover which networks are wired up before invoking a per-network tool. ' +
         'Returns a NetworkMeta[] array (additively extended with `operationClaimStatuses` — per-op claim-status overrides emitted by an adapter\'s capabilities()); pair with affiliate_run_diagnostic for live capability data.',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
-      handle: async () => {
+      handle: async (): Promise<ListNetworksMetaResult> => {
         // Additive shape: original NetworkMeta fields are preserved verbatim;
         // `operationClaimStatuses` is a NEW optional field that surfaces
         // per-op claimStatus overrides for callers that want to distinguish
@@ -405,13 +462,13 @@ export function generateMetaTools(): ToolDefinition[] {
         properties: { network: { type: 'string' } },
         additionalProperties: false,
       },
-      handle: async (args) => {
+      handle: async (args): Promise<ResolveBrandMetaResult> => {
         const parsed = z
           .object({ network: z.string().optional() })
           .strict()
           .parse(args ?? {});
         const file = loadBrands();
-        const rows: Array<{ brand: string; network: string; networkBrandId: string }> = [];
+        const rows: ResolveBrandMetaResult = [];
         for (const [slug, bindings] of Object.entries(file.brands)) {
           for (const b of bindings) {
             if (parsed.network && b.network !== parsed.network) continue;
@@ -433,7 +490,7 @@ export function generateMetaTools(): ToolDefinition[] {
         required: ['brand'],
         additionalProperties: false,
       },
-      handle: async (args) => {
+      handle: async (args): Promise<GetClientStrategyMetaResult> => {
         const parsed = z.object({ brand: z.string() }).strict().parse(args ?? {});
         const c = loadClientStrategy(parsed.brand);
         return {
@@ -468,7 +525,7 @@ export function generateMetaTools(): ToolDefinition[] {
         required: ['brand'],
         additionalProperties: false,
       },
-      handle: async (args) => {
+      handle: async (args): Promise<SetClientStrategyMetaResult> => {
         const parsed = z
           .object({
             brand: z.string(),
@@ -517,7 +574,7 @@ export function generateMetaTools(): ToolDefinition[] {
         'Use this to drive a portfolio rollup or to prompt the operator to record strategy for a brand that has none. ' +
         'Returns an array of { slug, hasStrategy, hasKpi, registered, orphan }; orphan flags a strategy directory whose slug has no brand binding.',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
-      handle: async () => listClientStrategies(),
+      handle: async (): Promise<ListClientStrategiesMetaResult> => listClientStrategies(),
     },
   ];
 }
