@@ -1,7 +1,7 @@
 # Browser-handoff contract: public shape, audit semantics, consumer boundary
 
 - **Date:** 2026-06-12
-- **Status:** Proposed
+- **Status:** Accepted (2026-06-18)
 - **Affects:** `src/shared/types.ts` (contract extension, implementation PR),
   `src/tools/generate.ts` (surfacing handoffs), the future consent/audit
   primitives, `REPORT.md` and `network.json` labelling of browser-driven
