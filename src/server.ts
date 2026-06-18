@@ -46,6 +46,20 @@ const SERVER_INFO = {
   version: '0.1.0',
 } as const;
 
+export interface TelemetryToolClassification {
+  network: string;
+  operation: string;
+}
+
+const META_TOOL_OPERATIONS = new Map<string, string>([
+  ['affiliate_list_networks', 'list_networks'],
+  ['affiliate_run_diagnostic', 'run_diagnostic'],
+  ['affiliate_resolve_brand', 'resolve_brand'],
+  ['affiliate_get_client_strategy', 'get_client_strategy'],
+  ['affiliate_set_client_strategy', 'set_client_strategy'],
+  ['affiliate_list_client_strategies', 'list_client_strategies'],
+]);
+
 export async function startServer(): Promise<void> {
   void flushTelemetry();
   recordTelemetry('lifecycle', 'server_start', 'success');
@@ -91,7 +105,8 @@ export async function startServer(): Promise<void> {
 
     try {
       const result = await tool.handle(args);
-      recordTelemetry(extractNetwork(name), extractOperation(name), 'success');
+      const telemetry = classifyToolForTelemetry(name);
+      recordTelemetry(telemetry.network, telemetry.operation, 'success');
       return {
         content: [
           {
@@ -101,16 +116,17 @@ export async function startServer(): Promise<void> {
         ],
       };
     } catch (err) {
+      const telemetry = classifyToolForTelemetry(name);
       const envelope =
         err instanceof NetworkError
           ? err.envelope
           : isErrorEnvelope(err)
             ? err
-            : toErrorEnvelope(err, { network: extractNetwork(name), operation: name });
+            : toErrorEnvelope(err, { network: telemetry.network, operation: name });
       log.warn({ tool: name, envelope }, 'tool invocation failed');
       recordTelemetry(
-        extractNetwork(name),
-        extractOperation(name),
+        telemetry.network,
+        telemetry.operation,
         telemetryOutcomeFromErrorType(envelope.type),
       );
       return {
@@ -143,6 +159,12 @@ export async function startServer(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   log.info({ tools: tools.length }, 'affiliate-mcp server started on stdio');
+}
+
+export function classifyToolForTelemetry(toolName: string): TelemetryToolClassification {
+  const metaOperation = META_TOOL_OPERATIONS.get(toolName);
+  if (metaOperation) return { network: 'meta', operation: metaOperation };
+  return { network: extractNetwork(toolName), operation: extractOperation(toolName) };
 }
 
 /** Best-effort: pull the network slug out of a tool name `affiliate_<slug>_<op>`. */
