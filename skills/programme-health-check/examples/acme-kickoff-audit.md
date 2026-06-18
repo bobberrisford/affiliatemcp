@@ -13,10 +13,16 @@ Called `affiliate_resolve_brand` (filtered to `acme`) →
 [{ brand: "acme", network: "awin-advertiser", networkBrandId: "100001" }]
 ```
 
+Called `affiliate_run_diagnostic({ network: "awin-advertiser" })` → auth ok;
+`listProgrammes`, `getProgrammePerformance`, `listMediaPartners`, and
+`listTransactions` are supported.
+
 Called `affiliate_awin-advertiser_verify_auth` → ok.
-Called `affiliate_list_networks` → Awin advertiser: claim status `production`;
-supports `list_programmes`, `get_programme_performance`, `list_media_partners`,
-`list_transactions`; no click-coverage limitation recorded.
+Called `affiliate_list_networks` → Awin advertiser: claim status
+`experimental`; supports `list_programmes`, `get_programme_performance`,
+`list_media_partners`, `list_transactions`; `list_programmes` is synthetic and
+`get_programme_performance` has tenant-specific column aliases still marked
+`TODO(verify)`.
 
 Exercised each supported operation once over 2026-05-19 to 2026-06-18:
 - `affiliate_awin-advertiser_list_programmes({ brand: "acme" })`
@@ -26,7 +32,7 @@ Exercised each supported operation once over 2026-05-19 to 2026-06-18:
 
 ## Acme — programme health check (Awin)
 
-**Connection**: auth ok. Claim status: production.
+**Connection**: auth ok. Claim status: experimental.
 
 ### Capability matrix
 
@@ -46,7 +52,11 @@ Exercised each supported operation once over 2026-05-19 to 2026-06-18:
 
 ### Known limitations
 
-- None recorded for Awin advertiser clicks in this account.
+- Awin advertiser is read-only at v0.1.
+- Awin applies a 20-calls-per-minute user rate limit; the client queues calls.
+- `list_programmes` is synthetic: one programme row for the advertiser account.
+- `get_programme_performance` is available, but some report column aliases are
+  still `TODO(verify)` against live tenants.
 
 ### Tracking-link check
 

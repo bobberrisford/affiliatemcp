@@ -24,15 +24,23 @@ The response is an array of `{ brand, network, networkBrandId }`. Reduce it to t
 
 ## Step 2 — read each network's capabilities
 
-Call `affiliate_list_networks` once and retain the metadata for the brand's
-bindings. Use each network's supported operations and `knownLimitations` to
-decide two things:
+Call `affiliate_run_diagnostic` for the brand's bound networks and retain the
+operation matrix. Call `affiliate_list_networks` once and retain each binding's
+metadata, including `knownLimitations` and any per-operation claim-status
+overrides. Use the diagnostic operation support plus the metadata to decide:
 
-- whether the network exposes `list_media_partners` at all (without it there is
-  no roster to audit on that binding — report the gap and continue);
+- whether the network supports `listMediaPartners` / `list_media_partners` at
+  all (without it there is no roster to audit on that binding — report the gap
+  and continue);
+- whether the network supports `getProgrammePerformance` /
+  `get_programme_performance` for dormancy (without it you can still show the
+  roster split, but not the dormant worklist);
 - whether partner `status` is genuinely reported or inferred, and whether
   clicks or other activity metrics are normalised to zero when unavailable. Do
   not read a normalised zero as observed inactivity.
+- whether either relevant operation is `partial` or `experimental`; surface
+  that caveat in the gaps/coverage notes instead of presenting the worklist as
+  fully proven.
 
 ## Step 3 — pull the roster per binding
 

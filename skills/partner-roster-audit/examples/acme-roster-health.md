@@ -13,9 +13,13 @@ Called `affiliate_resolve_brand` (filtered to `acme`) →
 [{ brand: "acme", network: "awin-advertiser", networkBrandId: "100001" }]
 ```
 
-Called `affiliate_list_networks` → Awin advertiser exposes `list_media_partners`
-and `get_programme_performance`, with no click-coverage limitation recorded, so
-both clicks and conversions are genuine activity signals here.
+Called `affiliate_run_diagnostic({ network: "awin-advertiser" })` → Awin
+advertiser supports `listMediaPartners` and `getProgrammePerformance`.
+
+Called `affiliate_list_networks` → Awin advertiser has no click-coverage
+limitation recorded, so both clicks and conversions are usable activity signals
+here. `getProgrammePerformance` is still marked experimental for tenant-specific
+report column aliases, so that caveat is carried into the coverage notes.
 
 Called:
 - `affiliate_awin-advertiser_list_media_partners({ brand: "acme" })` → 41 partners
@@ -49,6 +53,11 @@ active partners had at least one click or conversion.
 - 4 partners are awaiting a decision. For the full application queue use
   `partner-application-queue`.
 - 4 partners are already marked inactive and are excluded from the dormant list.
+
+### Coverage notes
+
+- `getProgrammePerformance` is marked experimental on Awin advertiser because
+  some report column aliases are tenant-specific.
 
 ---
 

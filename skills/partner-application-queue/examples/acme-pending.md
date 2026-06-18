@@ -12,8 +12,12 @@ Called `affiliate_resolve_brand` (filtered to `acme`) →
 [{ brand: "acme", network: "awin-advertiser", networkBrandId: "100001" }]
 ```
 
-Called `affiliate_list_networks` → Awin advertiser exposes `list_media_partners`
-and reports a genuine `pending` status for applications awaiting a decision.
+Called `affiliate_run_diagnostic({ network: "awin-advertiser" })` → Awin
+advertiser supports `listMediaPartners`.
+
+Called `affiliate_list_networks` → Awin advertiser reports `listMediaPartners`
+with the network's standard publisher relationship statuses. `pending` is used
+for applications awaiting a decision.
 
 Called `affiliate_awin-advertiser_list_media_partners({ brand: "acme" })` and
 filtered to `status: "pending"` → 4 partners.

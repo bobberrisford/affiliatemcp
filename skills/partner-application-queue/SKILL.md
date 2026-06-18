@@ -22,17 +22,21 @@ The response is an array of `{ brand, network, networkBrandId }`. Reduce it to t
 
 ## Step 2 — check status support per network
 
-Call `affiliate_list_networks` once and retain the metadata for the brand's
-bindings. Partner application status is the load-bearing field here, and its
-coverage varies by adapter. Use each network's supported operations and
-`knownLimitations` to decide:
+Call `affiliate_run_diagnostic` for the brand's bound networks and retain the
+operation matrix. Call `affiliate_list_networks` once and retain each binding's
+metadata, including `knownLimitations` and any per-operation claim-status
+overrides. Partner application status is the load-bearing field here, and its
+coverage varies by adapter. Use the diagnostic operation support plus the
+metadata to decide:
 
-- whether the network exposes `list_media_partners` at all (without it there is
-  no queue to read — report the gap and continue);
+- whether the network supports `listMediaPartners` / `list_media_partners` at
+  all (without it there is no queue to read — report the gap and continue);
 - whether a `pending` status genuinely means "application awaiting a decision"
   on this network, or whether the adapter only reports a coarser status. If the
   network cannot distinguish a pending application, say so for that binding
   rather than presenting an empty or inferred queue as fact.
+- whether the relevant operation is `partial` or `experimental`; surface that
+  caveat in the coverage notes instead of presenting the queue as fully proven.
 
 ## Step 3 — read the queue per binding
 

@@ -29,18 +29,21 @@ For the brand's bindings, confirm health and capability before pulling data:
 - Call `affiliate_run_diagnostic` for the configured networks, or
   `affiliate_<network>_verify_auth` per binding, to confirm credentials work.
   Awin advertiser: `affiliate_awin-advertiser_verify_auth`.
-- Call `affiliate_list_networks` once and retain each binding's supported
-  operations, `claimStatus`, and `knownLimitations`.
+- Call `affiliate_list_networks` once and retain each binding's metadata:
+  network `claimStatus`, `knownLimitations`, and any per-operation
+  claim-status overrides. Use the diagnostic result's `operations` object as
+  the source of truth for supported / unsupported operations.
 
 If auth fails for a binding, record it as a red flag and skip that binding's
 data pulls; do not retry around a failed credential.
 
 ## Step 3 — exercise each supported read operation once
 
-For every binding, call each operation the network actually supports, once, over
-a recent window (default last 30 days, ending today). Skip operations the
-network does not support and record them as "not supported" rather than calling
-them. Tool names follow `affiliate_<network>_<operation>`:
+For every binding, call each brand-scoped data operation the diagnostic says the
+network supports, once, over a recent window (default last 30 days, ending
+today). Skip operations the network does not support and record them as "not
+supported" rather than calling them. Tool names follow
+`affiliate_<network>_<operation>`. At minimum, cover these when supported:
 
 - Programmes: `affiliate_awin-advertiser_list_programmes({ brand })`
 - Per-publisher performance: `affiliate_awin-advertiser_get_programme_performance({ brand, from, to })`
