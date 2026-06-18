@@ -142,17 +142,21 @@ Partners ranked by revenue and conversion for one brand.
 - Covered by the top-10 publisher section in
   [`programme-performance-report`](../../skills/programme-performance-report).
 
-### 11. Roster audit and dormant / reactivation list — NET-NEW
+### 11. Roster audit and dormant / reactivation list — SHIPPED
 The roster split by status, plus active partners with no recent activity to chase.
 - Triggers: "Who's gone quiet on Acme?", "Acme's partner roster health."
 - Tools: `list_media_partners` cross-referenced with recent `get_programme_performance`. Output is a read-only worklist; the outreach itself happens outside the tool.
+- Covered by [`partner-roster-audit`](../../skills/partner-roster-audit). Drafting
+  the re-engagement messages from its worklist is
+  [`partner-outreach`](../../skills/partner-outreach) (drafts only; never sends).
 
-### 12. Application / onboarding queue — NET-NEW
+### 12. Application / onboarding queue — SHIPPED
 The list of partner applications waiting on a decision.
 - Triggers: "Which partner applications are pending on Acme?"
 - Tools: `list_media_partners` filtered to pending status.
 - Capability note: partner status coverage varies by adapter; unsupported or
   inferred status must be reported.
+- Covered by [`partner-application-queue`](../../skills/partner-application-queue).
 
 ## Commission and validation
 
@@ -179,13 +183,16 @@ What the brand owes this period, by status.
 
 ## Growth and new business
 
-### 16. Programme health check / audit — NET-NEW
+### 16. Programme health check / audit — SHIPPED
 A one-off diagnostic across every available data operation for an existing or
 newly-won brand, useful at handover or kick-off.
 - Triggers: "Audit Acme's programme.", "Health-check the Acme account."
 - Tools: every supported read operation, plus a clearly labelled manual
   tracking-link check where needed. Do not cite an unshipped tracking-check
   skill.
+- Covered by [`programme-health-check`](../../skills/programme-health-check),
+  which points at the shipped `audit-affiliate-links` skill for live link
+  verification rather than implying it ran the check itself.
 
 ### 17. New business pitch — PARTIAL
 Track-record evidence built from the agency's own book, aggregate results and

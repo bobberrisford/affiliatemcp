@@ -54,6 +54,19 @@ onboarding. MCP prompts currently ship separately and are Awin-specific.
   interview, or a vertical template. Confirms in plain English before
   saving, and edits through chat thereafter. Recorded targets let the
   reporting skills judge a delta against the client's own plan.
+- [`partner-roster-audit/`](./partner-roster-audit) — a brand's partner
+  roster split by status, plus the active partners that have gone quiet:
+  a read-only dormant/reactivation worklist.
+- [`partner-application-queue/`](./partner-application-queue) — the
+  partners sitting in a brand's application queue, pending a decision.
+  Read-only; the approve/decline happens in the network dashboard.
+- [`programme-health-check/`](./programme-health-check) — one-off
+  handover/kick-off diagnostic across every supported read operation for
+  a brand: connection, capability matrix, data presence, and gaps.
+- [`partner-outreach/`](./partner-outreach) — draft re-engagement or
+  recruitment outreach for a brand, grounded in real performance figures
+  and the recorded plan. Drafts only; never sends and never invents
+  contact details.
 
 A capability-aware roadmap of brand/agency deliverables, including which
 outcomes should extend shipped skills rather than create new ones, lives in
