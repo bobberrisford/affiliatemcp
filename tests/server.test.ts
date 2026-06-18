@@ -16,6 +16,10 @@ describe('classifyToolForTelemetry', () => {
       network: 'meta',
       operation: 'run_diagnostic',
     });
+    expect(classifyToolForTelemetry('affiliate_list_actions')).toEqual({
+      network: 'meta',
+      operation: 'list_actions',
+    });
   });
 
   it('keeps adapter tool slugs and operations unchanged', () => {

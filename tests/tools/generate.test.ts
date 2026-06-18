@@ -7,7 +7,7 @@ import {
   generateMetaTools,
   generateToolsFor,
 } from '../../src/tools/generate.js';
-import { _clearRegistry } from '../../src/shared/registry.js';
+import { _clearRegistry, registerAdapter } from '../../src/shared/registry.js';
 import { saveBrands } from '../../src/shared/brands.js';
 import { resolveKpiFile, resolveStrategyFile } from '../../src/shared/client-strategy.js';
 import { BrandNotRegistered } from '../../src/shared/errors.js';
@@ -87,6 +87,7 @@ describe('tool generator', () => {
     const names = meta.map((t) => t.name).sort();
     expect(names).toEqual([
       'affiliate_get_client_strategy',
+      'affiliate_list_actions',
       'affiliate_list_client_strategies',
       'affiliate_list_networks',
       'affiliate_resolve_brand',
@@ -99,6 +100,7 @@ describe('tool generator', () => {
     const all = generateAllTools();
     expect(all.map((t) => t.name).sort()).toEqual([
       'affiliate_get_client_strategy',
+      'affiliate_list_actions',
       'affiliate_list_client_strategies',
       'affiliate_list_networks',
       'affiliate_resolve_brand',
@@ -194,6 +196,74 @@ describe('affiliate_resolve_brand meta-tool', () => {
     const rows = (await tool.handle({ network: 'impact-advertiser' })) as Array<{ network: string }>;
     expect(rows).toHaveLength(1);
     expect(rows[0]!.network).toBe('impact-advertiser');
+  });
+});
+
+describe('affiliate_list_actions meta-tool', () => {
+  const findListActions = () =>
+    generateMetaTools().find((t) => t.name === 'affiliate_list_actions')!;
+
+  interface ActionRow {
+    network: string;
+    action: string;
+    channel: string;
+    effect: string;
+    defaultTier: number;
+    available: boolean;
+  }
+
+  it('returns [] when no adapters are registered', async () => {
+    expect(await findListActions().handle({})).toEqual([]);
+  });
+
+  it('reports the seven canonical reads per adapter as available api/read/Tier 0', async () => {
+    registerAdapter(fakeAdapter('alpha', 'Alpha'));
+    registerAdapter(fakeAdapter('beta', 'Beta'));
+
+    const rows = (await findListActions().handle({})) as ActionRow[];
+
+    expect(rows).toHaveLength(7 * 2);
+    expect(rows.every((r) => r.channel === 'api' && r.effect === 'read' && r.defaultTier === 0))
+      .toBe(true);
+    expect(rows.every((r) => r.available)).toBe(true);
+    expect(new Set(rows.map((r) => r.network))).toEqual(new Set(['alpha', 'beta']));
+  });
+
+  it('scopes to a single network slug', async () => {
+    registerAdapter(fakeAdapter('alpha', 'Alpha'));
+    registerAdapter(fakeAdapter('beta', 'Beta'));
+
+    const rows = (await findListActions().handle({ network: 'beta' })) as ActionRow[];
+
+    expect(rows).toHaveLength(7);
+    expect(rows.every((r) => r.network === 'beta')).toBe(true);
+  });
+
+  it('scopes to the networks a brand is bound to in brands.json', async () => {
+    registerAdapter(fakeAdapter('impact-advertiser', 'Impact'));
+    registerAdapter(fakeAdapter('cj-advertiser', 'CJ'));
+    registerAdapter(fakeAdapter('awin', 'Awin'));
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [
+          { network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-1' },
+          { network: 'cj-advertiser', credentialId: 'default', networkBrandId: 'CJ-1' },
+        ],
+      },
+    });
+
+    const rows = (await findListActions().handle({ brand: 'acme' })) as ActionRow[];
+
+    expect(rows).toHaveLength(7 * 2);
+    expect(new Set(rows.map((r) => r.network))).toEqual(
+      new Set(['impact-advertiser', 'cj-advertiser']),
+    );
+  });
+
+  it('returns [] for an unknown brand', async () => {
+    registerAdapter(fakeAdapter('awin', 'Awin'));
+    expect(await findListActions().handle({ brand: 'no-such-brand' })).toEqual([]);
   });
 });
 

@@ -3,8 +3,8 @@
  *
  * Produces the MCP tool definitions from the adapter registry:
  *   - 7 publisher tools per registered adapter (one per publisher operation).
- *   - 6 meta tools: network discovery/diagnostics, brand resolution, and
- *     advisory client-strategy read/write/list.
+ *   - 7 meta tools: network discovery/diagnostics, brand resolution, advisory
+ *     client-strategy read/write/list, and the action capability map.
  *
  * Tool descriptions follow PRD §5.5 — three sentences:
  *   1. WHAT the tool does.
@@ -14,6 +14,7 @@
 
 import { z } from 'zod';
 import type {
+  ActionMapEntry,
   AdapterCallContext,
   AdapterOperation,
   KpiParseError,
@@ -24,6 +25,7 @@ import type {
 } from '../shared/types.js';
 import { NotImplementedError } from '../shared/types.js';
 import { getAdapters } from '../shared/registry.js';
+import { assembleActionMap } from '../shared/actions.js';
 import { isValidBrandSlug, loadBrands } from '../shared/brands.js';
 import {
   type ClientStrategySummary,
@@ -94,6 +96,8 @@ export type SetClientStrategyMetaResult =
     };
 
 export type ListClientStrategiesMetaResult = ClientStrategySummary[];
+
+export type ListActionsMetaResult = ActionMapEntry[];
 
 // Re-usable Zod schemas for tool inputs.
 const ProgrammeQuerySchema = z
@@ -575,6 +579,35 @@ export function generateMetaTools(): ToolDefinition[] {
         'Returns an array of { slug, hasStrategy, hasKpi, registered, orphan }; orphan flags a strategy directory whose slug has no brand binding.',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
       handle: async (): Promise<ListClientStrategiesMetaResult> => listClientStrategies(),
+    },
+    {
+      name: 'affiliate_list_actions',
+      description:
+        'List the actions each registered affiliate network can perform, classified by channel (api, browser, or none), effect (read, advisement, or write), and the default approval tier. ' +
+        'Use this to see what is possible — and what each action will cost in approvals — before granting a write credential or planning a multi-step change; optionally scope to one network slug or one brand from brands.json. ' +
+        'Returns an ActionMapEntry[] (network, action, channel, effect, defaultTier, available); at this stage it reports the read operations every adapter supports, with advisement, write, and browser actions added as adapters declare them.',
+      inputSchema: {
+        type: 'object',
+        properties: { network: { type: 'string' }, brand: { type: 'string' } },
+        additionalProperties: false,
+      },
+      handle: async (args): Promise<ListActionsMetaResult> => {
+        const parsed = z
+          .object({ network: z.string().optional(), brand: z.string().optional() })
+          .strict()
+          .parse(args ?? {});
+        const map = assembleActionMap(
+          undefined,
+          parsed.network ? { network: parsed.network } : {},
+        );
+        if (!parsed.brand) return map;
+        // Brand scoping: restrict to the networks this brand is bound to in
+        // brands.json. An unknown brand (no bindings) yields an empty map,
+        // matching resolve_brand's "nothing registered" behaviour.
+        const bindings = loadBrands().brands[parsed.brand] ?? [];
+        const brandNetworks = new Set(bindings.map((b) => b.network));
+        return map.filter((entry) => brandNetworks.has(entry.network));
+      },
     },
   ];
 }
