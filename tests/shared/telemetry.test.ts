@@ -129,4 +129,14 @@ describe('PACKAGE_VERSION', () => {
     ) as { version: string };
     expect(plugin.version).toBe(PACKAGE_VERSION);
   });
+
+  it('stays in sync with both package-lock.json version fields so the lockfile cannot drift', async () => {
+    const { PACKAGE_VERSION } = await import('../../src/shared/telemetry.js');
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const lock = JSON.parse(
+      readFileSync(path.resolve(here, '..', '..', 'package-lock.json'), 'utf8'),
+    ) as { version: string; packages: Record<string, { version?: string }> };
+    expect(lock.version).toBe(PACKAGE_VERSION);
+    expect(lock.packages['']?.version).toBe(PACKAGE_VERSION);
+  });
 });
