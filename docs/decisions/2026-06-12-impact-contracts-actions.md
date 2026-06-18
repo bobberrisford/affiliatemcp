@@ -1,7 +1,7 @@
 # Impact contracts: the first brand-side write surface
 
 - **Date:** 2026-06-12
-- **Status:** Proposed
+- **Status:** Accepted (2026-06-18)
 - **Affects:** `src/networks/impact-advertiser/` (adapter, client, network
   metadata), `src/shared/types.ts` (optional advertiser-side operations),
   `src/tools/generate.ts` (tool annotations), setup wizard copy, `.env.example`
