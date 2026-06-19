@@ -36,7 +36,13 @@ export type AdapterOperation =
   // on these; advertiser adapters implement them. Kept generic so CJ and Awin
   // advertiser adapters (later PRs) reuse the same names.
   | 'listMediaPartners'
-  | 'getProgrammePerformance';
+  | 'getProgrammePerformance'
+  // Advertiser-side contract reads. The payment-term relationship between a
+  // brand and a partner. Read-only here; the write surface (proposeContract,
+  // applyContract, removeContract) lands in later PRs behind a consent gate.
+  // See docs/decisions/2026-06-12-impact-contracts-actions.md.
+  | 'listContracts'
+  | 'getContract';
 
 export type AdminOperation = 'listPublishers' | 'listPublisherSectors';
 
@@ -311,6 +317,38 @@ export interface ProgrammePerformanceRow {
   rawNetworkData: unknown;
 }
 
+/**
+ * A contract: the payment-term relationship between a brand and a media
+ * partner on a programme — surfaced by advertiser-side adapters via
+ * `listContracts` / `getContract`.
+ *
+ * This is the read shape. The write surface that proposes and applies changes
+ * to a contract (`proposeContract`, `applyContract`, `removeContract`) is
+ * defined in a later PR behind a consent gate; see
+ * docs/decisions/2026-06-12-impact-contracts-actions.md.
+ *
+ * Networks vary in how much of a contract they expose. `status` is the
+ * canonical normalised state; the verbatim upstream payload (rate cards,
+ * tiers, term dates) lives on `rawNetworkData` so the operator can drill in.
+ */
+export interface Contract {
+  id: string;
+  network: NetworkSlug;
+  /** The programme/campaign this contract governs (Impact: CampaignId). */
+  programmeId: string;
+  programmeName?: string;
+  /** The media partner/publisher the contract is with, when scoped to one. */
+  mediaPartnerId?: string;
+  mediaPartnerName?: string;
+  /** Canonical lifecycle state of the contract. */
+  status: 'active' | 'pending' | 'expired' | 'inactive' | 'unknown';
+  /** Human-readable summary of the payout terms, when the network provides one. */
+  payoutTerms?: string;
+  effectiveDate?: string; // ISO
+  expiryDate?: string; // ISO
+  rawNetworkData: unknown;
+}
+
 // ---------------------------------------------------------------------------
 // Query shapes — passed to adapter ops
 // ---------------------------------------------------------------------------
@@ -360,6 +398,21 @@ export interface ProgrammePerformanceQuery {
   programmeId?: string;
   /** Optional: scope to a single publisher/media-partner id. */
   publisherId?: string;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface ContractQuery {
+  /**
+   * The programme/campaign whose contracts to list. Impact addresses
+   * contracts under a campaign (`/Campaigns/{id}/Contracts`), so adapters
+   * that need it require this at runtime and throw a `config_error` envelope
+   * when it is absent.
+   */
+  programmeId?: string;
+  status?: Contract['status'] | Array<Contract['status']>;
+  /** Optional: scope to a single media-partner/publisher id. */
+  mediaPartnerId?: string;
   limit?: number;
   cursor?: string;
 }
@@ -524,6 +577,16 @@ export interface NetworkAdapter {
     query?: ProgrammePerformanceQuery,
     ctx?: AdapterCallContext,
   ): Promise<ProgrammePerformanceRow[]>;
+
+  // Advertiser-side contract reads. Optional, same pattern as the two ops
+  // above: the tool generator wires them for advertiser-side adapters only,
+  // and the invoke guard throws NotImplementedError if an advertiser adapter
+  // does not override them. The write surface is added in later PRs.
+  listContracts?(query?: ContractQuery, ctx?: AdapterCallContext): Promise<Contract[]>;
+  getContract?(
+    input: { programmeId: string; contractId: string },
+    ctx?: AdapterCallContext,
+  ): Promise<Contract>;
 
   // Setup + diagnostics
   validateCredential(field: string, value: string): Promise<CredentialValidationResult>;

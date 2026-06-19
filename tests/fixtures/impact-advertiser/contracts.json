@@ -1,0 +1,39 @@
+{
+  "Contracts": [
+    {
+      "Id": "CT-5001",
+      "CampaignId": "CMP-42",
+      "CampaignName": "Acme Spring Sale",
+      "Name": "Standard CPS — 8%",
+      "Status": "Active",
+      "MediaPartnerId": "MP-1",
+      "MediaPartnerName": "BestDeals.com",
+      "PayoutDescription": "8% of sale amount, 30-day cookie",
+      "EffectiveDate": "2026-01-01T00:00:00",
+      "ExpirationDate": "2026-12-31T00:00:00"
+    },
+    {
+      "Id": "CT-5002",
+      "CampaignId": "CMP-42",
+      "CampaignName": "Acme Spring Sale",
+      "Name": "Proposed CPS — 10%",
+      "Status": "Pending",
+      "MediaPartnerId": "MP-2",
+      "MediaPartnerName": "CouponCove",
+      "PayoutDescription": "10% of sale amount, 45-day cookie",
+      "EffectiveDate": "2026-06-01T00:00:00"
+    },
+    {
+      "Id": "CT-5003",
+      "CampaignId": "CMP-42",
+      "CampaignName": "Acme Spring Sale",
+      "Name": "Legacy flat fee",
+      "Status": "Terminated",
+      "MediaPartnerId": "MP-3",
+      "MediaPartnerName": "OldBlogNetwork",
+      "PayoutDescription": "Flat 5.00 USD per sale",
+      "EffectiveDate": "2024-01-01T00:00:00",
+      "ExpirationDate": "2025-12-31T00:00:00"
+    }
+  ]
+}

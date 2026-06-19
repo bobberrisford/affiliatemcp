@@ -155,6 +155,20 @@ const ProgrammePerformanceQuerySchema = z
   })
   .strict();
 
+const ContractQuerySchema = z
+  .object({
+    programmeId: z.string().optional(),
+    status: z.union([z.string(), z.array(z.string())]).optional(),
+    mediaPartnerId: z.string().optional(),
+    limit: z.number().int().positive().optional(),
+    cursor: z.string().optional(),
+  })
+  .strict();
+
+const GetContractSchema = z
+  .object({ programmeId: z.string(), contractId: z.string() })
+  .strict();
+
 /**
  * MCP tool names are capped at 64 characters by the Anthropic API; a single
  * over-length name makes a client reject the entire tool list. Only advertiser
@@ -310,6 +324,41 @@ const OP_SPECS: OpSpec[] = [
         ProgrammePerformanceQuerySchema.parse(args ?? {}) as never,
         ctx,
       );
+    },
+  },
+  {
+    op: 'listContracts',
+    advertiserOnly: true,
+    description: (n) =>
+      `List the contracts (the payment-term relationship with each media partner) on one of the brand's programmes at ${n}. ` +
+      `Use this when the user asks "what are our contract terms with this publisher on ${n}?", "which partners have active contracts?", or wants to review payout terms before changing them. ` +
+      `Requires the programmeId (campaign) whose contracts to list; returns read-only Contract records and pairs with the matching get_programme tool to discover programme ids.`,
+    schema: ContractQuerySchema,
+    invoke: (a, args, ctx) => {
+      if (typeof a.listContracts !== 'function') {
+        throw new NotImplementedError(
+          `Adapter "${a.slug}" does not implement listContracts; advertiser adapters must override it.`,
+        );
+      }
+      return a.listContracts(ContractQuerySchema.parse(args ?? {}) as never, ctx);
+    },
+  },
+  {
+    op: 'getContract',
+    advertiserOnly: true,
+    description: (n) =>
+      `Fetch a single contract on one of the brand's programmes at ${n} by its programmeId and contractId. ` +
+      `Use this when you already know the contract id and need its full read-only record (status, payout terms, term dates). ` +
+      `Returns a single Contract; pair with list_contracts on ${n} to discover the contract id first.`,
+    schema: GetContractSchema,
+    invoke: (a, args, ctx) => {
+      if (typeof a.getContract !== 'function') {
+        throw new NotImplementedError(
+          `Adapter "${a.slug}" does not implement getContract; advertiser adapters must override it.`,
+        );
+      }
+      const parsed = GetContractSchema.parse(args ?? {});
+      return a.getContract(parsed, ctx);
     },
   },
 ];
