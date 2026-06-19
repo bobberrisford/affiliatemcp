@@ -1,202 +1,243 @@
-# Action capability map: a channel-aware inventory of what can be done
+# Action capability map: a channel-aware inventory of the doing surface
 
 - **Date:** 2026-06-18
-- **Status:** Proposed
-- **Affects:** `src/shared/types.ts` (a declarative action descriptor on the
-  adapter contract), `src/tools/generate.ts` (a `list_actions` meta tool and
-  per-op annotations), `network.json` and `REPORT.md` (honest labelling of
-  actions by channel and effect), the future consent/audit and policy
-  primitives
-- **Depends on:** the three records this one connects, none of which it blocks:
-  the action-authority layer
-  ([`2026-06-12-action-authority-layer.md`](./2026-06-12-action-authority-layer.md),
-  accepted), the browser-handoff contract
-  ([`2026-06-12-browser-handoff-contract.md`](./2026-06-12-browser-handoff-contract.md),
-  proposed), and the Impact contracts Phase 0 write
-  ([`2026-06-12-impact-contracts-actions.md`](./2026-06-12-impact-contracts-actions.md),
-  proposed).
+- **Status:** Accepted (2026-06-19)
+- **Affects:** a future provider-neutral action descriptor, action discovery in
+  the MCP tool layer, and later consent, audit, and policy binding
+- **Depends on:** the accepted action-authority layer
+  ([`2026-06-12-action-authority-layer.md`](./2026-06-12-action-authority-layer.md)).
+  The proposed browser-handoff and Impact contracts records are related design
+  inputs, not accepted dependencies and not authorised by this record.
 
 ## Context
 
-The project is moving from reading affiliate data to doing things with it:
-changing commissions, approving publishers, applying to programmes, submitting
-transactions. Three records already settle large parts of that move. The
-authority layer settles how much an operator must approve (tiered, fail-closed,
-enforced in code). The browser-handoff contract settles what happens when a
-network's API cannot do the job (a normal `ApiGapResponse` carrying a nullable
-`BrowserHandoff`, executed by an out-of-scope consumer such as the Claude in
-Chrome extension). The Impact contracts record settles the first concrete API
-write and the propose-apply gate every write inherits.
+The shipped network surface is read-oriented. Operators can discover registered
+networks with `affiliate_list_networks`, and they can use
+`affiliate_run_diagnostic` or an adapter's `capabilitiesCheck` to inspect live
+read support, credential validity, latency, and known limitations. Those
+surfaces already own read-capability truth.
 
-What none of them provide is an inventory. Today an agent or operator cannot
-ask "for this brand on this network, what actions are possible, by which
-channel, and how risky is each?" without calling an operation and seeing what
-comes back. The channel answer (API versus browser versus no route yet) is
-known only per call, at call time, from the shape of the response. The effect
-answer (does this read, propose, or mutate) and the default authority tier are
-implied by tool naming and prose, not declared. `affiliate_list_networks` and
-`capabilitiesCheck` already give operators a readable map of read capability;
-the doing layer has no equivalent.
+The accepted action-authority record establishes a separate doing layer. It
+distinguishes reads, proposals, policy-authorised writes, and writes requiring
+human sign-off. Proposed records explore the first Impact write and a typed
+browser handoff, but neither is accepted on the date of this decision.
 
-Without that map, three problems follow. Operators cannot see the blast radius
-of a network before they grant a write credential. Agents cannot plan a
-multi-step workflow ("raise commission, then notify the partner") without
-probing. And the authority policy artefact, deferred to Phase 1 of the
-authority decision, has nothing stable to bind rules to: a policy that says
-"auto-apply commission changes under a point" needs a canonical action name to
-attach to.
+What is missing is a small, queryable inventory for doing surfaces: actions an
+adapter can advise on, submit to an API, or represent as an API gap. An operator
+should be able to see the route and default approval posture before configuring
+an opt-in write credential. A future deterministic policy and audit trail also
+need stable identifiers for the concrete actions they govern.
+
+A second catalogue of every existing read would not solve that problem. It
+would duplicate the adapter contract and `capabilitiesCheck` across 86 adapters,
+create another metadata-drift surface, and add a broad abstraction before the
+roadmap's write, consent, audit, and browser foundations are proven.
 
 ## Decision
 
-Introduce an **action capability map**: a declarative, queryable inventory of
-the actions each adapter can perform, classified on three orthogonal axes. The
-map is descriptive metadata, not an execution path; it states what is possible
-and how it is gated, and it changes nothing about how the authority layer or
-the browser-handoff contract execute.
+Introduce an **action capability map** for the doing surface. It is descriptive,
+read-only metadata. Reading the map never executes an adapter operation, emits a
+browser handoff, performs a live authentication probe, evaluates authority
+policy, or mutates local or network state.
 
-### 1. Three orthogonal axes
+### 1. Scope: doing surfaces and explicit gaps, not a duplicate read catalogue
 
-Every declared action carries exactly three classifications, and they do not
-collapse into one another:
+The map contains explicitly declared advisement and write actions, plus API gaps
+that have a typed browser-handoff route or are deliberately recorded with no
+route. A read-only browser gap may also appear because it needs channel and gap
+semantics that the existing API-read capability surface cannot express.
 
-- **Channel** — how the action reaches the network. One of `api` (the adapter
-  calls a documented endpoint), `browser` (the adapter emits an
-  `ApiGapResponse` with a `BrowserHandoff`; a consumer or a human carries it
-  out), or `none` (a known gap with no route yet; an `ApiGapResponse` with
-  `browserFallback: null`).
-- **Effect** — what the action does to network state. One of `read` (no side
-  effect), `advisement` (computes and returns a plan, such as
-  `proposeContract`; no side effect), or `write` (submits, changes, or sends).
-- **Authority tier** — the default gate from the authority layer (0 read, 1
-  propose, 2 auto-apply within policy, 3 human sign-off). This is the action's
-  *default*; an operator's policy may tighten it but never loosen it, and
-  anything unmatched stays at Tier 3.
+Existing API reads remain discoverable through the generated tool registry,
+`affiliate_list_networks`, and `affiliate_run_diagnostic`. They are not copied
+into a manually maintained `CANONICAL_READ_ACTIONS` list or repeated on every
+adapter. Consumers that need both views compose network/read capability with the
+action map; each source retains one clear responsibility.
 
-These axes are independent on purpose. The most important consequence: **a
-browser-driven write and an API write of the same thing sit at the same
-authority tier.** Channel changes brittleness and who executes; it does not
-change how much trust the action needs. A commission change is a commission
-change whether the adapter POSTs it or a browser consumer clicks it. Letting
-the channel set the tier would mean an operator who blocked API commission
-changes could be surprised by a browser one. The map forbids that by keeping
-the axes separate and pinning the tier to the effect and the action, not the
-channel.
+`effect: read` therefore remains a valid classification, but it does not require
+the seven publisher operations or advertiser reads to be redeclared.
 
-### 2. A `list_actions` meta tool, alongside `list_networks`
+### 2. Three orthogonal classifications
 
-Add a seventh meta tool that returns the capability map for the configured
-networks (optionally scoped to one brand or network). Each entry names the
-canonical action, its three axis values, whether it is currently available
-given the configured credentials (for example, an Impact write needs the
-opt-in write token), and a one-line human description. This is the doing-layer
-analogue of `affiliate_list_networks`: the readable answer to "what can I do
-here, and what will it cost me in approvals?" It is read-only and side-effect
-free.
+Each map entry carries three independent classifications:
 
-### 3. A declarative descriptor on the adapter contract
+- **Channel:** `api`, `browser`, or `none`.
+  - `api` means the owned operation can reach a documented network endpoint.
+  - `browser` means the adapter can return the typed handoff accepted by the
+    browser-handoff decision. It never means this repository opens, controls,
+    or observes a browser. No browser entry may ship while that contract remains
+    proposed.
+  - `none` records a known API gap for which no typed route exists. It is an
+    explicit unsupported state, not an executable capability, and is never
+    currently available.
+- **Effect:** `read`, `advisement`, or `write`.
+  - `read` has no local or network side effect.
+  - `advisement` is reserved for a typed, side-effect-free operation that
+    prepares or validates a reviewable plan for a named write. It is not a label
+    for arbitrary workflow reasoning.
+  - `write` submits, changes, removes, approves, or sends network state.
+- **Default authority tier:** descriptive metadata for the gate that applies
+  without a future signed policy. Reads are Tier 0, advisement is Tier 1, and
+  writes fail closed to Tier 3. A future accepted Phase 1 policy may produce a
+  Tier 2 execution decision for an eligible write. That effective decision is
+  evaluated in code at dispatch time and is not stored in or granted by the
+  capability map. Action-specific rules may tighten the posture, and channel
+  may never weaken it.
 
-Actions are declared, not inferred from naming. The adapter contract gains a
-descriptor (shape settled in the wiring PR) binding a canonical action name to
-its channel, effect, and default tier, plus the availability predicate.
-Read operations are declared too, so the map is complete rather than
-"writes only"; the seven existing canonical reads register as
-`channel: api, effect: read, tier: 0` with no behaviour change. Per the
-existing "two networks first" convention, a new *action* name joins the shared
-contract once a second network declares it; the first declarant is
-adapter-local but speaks the shared descriptor shape from day one.
+The same semantic action has the same effect and default authority posture on
+every channel. A browser handoff for a write cannot bypass a gate that applies
+to the API form of that write.
 
-### 4. Canonical action names are the binding surface
+### 3. Static support and runtime readiness are separate
 
-The action names in the map are the stable identifiers the Phase 1 policy
-artefact, the audit log, and the MCP host annotations all reference. Naming an
-action once, in one place, is what lets a policy rule, an audit line, and an
-approval dialog all talk about the same thing. This record does not design the
-policy file (that remains Phase 1 of the authority decision); it fixes the
-vocabulary that file will reference.
+An entry distinguishes two questions:
 
-### 5. What this record does not do
+1. **Declared route support:** what the shipped adapter knows how to do, or the
+   explicit `none` gap it knows about. This is static metadata owned beside the
+   operation.
+2. **Current readiness:** whether the route can be offered for the requested
+   network and, where relevant, brand using the local configuration available
+   now.
 
-It adds no write path. It does not change the authority tiers, the
-propose-apply gate, the browser-handoff shape, or the audit vocabulary. It does
-not design the policy artefact or resolve the multi-operator agency sign-off
-question. It is the connective inventory those pieces hang from, and it is
-independently useful the moment the first action is declared, because the
-operator can finally see the doing surface before granting a credential.
+Current readiness must represent at least `ready`, `missing_credentials`,
+`unsupported`, and `unknown`. Exact field names are settled with the first
+implementation. `unknown` is fail-closed and is used when readiness cannot be
+determined without a network call. Readiness does not claim that credentials
+are valid, that the upstream endpoint is healthy, that policy authorises a
+write, or that a browser consumer is installed. Live auth and health remain the
+diagnostic surface's responsibility.
+
+The map may expose a public requirement label and whether it is configured,
+including that an opt-in write credential is missing. It must never expose a
+credential value, token scope, account identity, cookie, session, account or
+brand identifier, or any value derived from a secret. A write action remains
+visible when its credential is absent so the operator can understand the blast
+radius before opting in.
+
+Unknown network or brand filters must return an explicit unsupported or
+configuration result. They must not silently return an empty list that is
+indistinguishable from a valid scope with no actions.
+
+### 4. Discovery surface follows a concrete action
+
+The eventual MCP discovery surface is read-only and provider-neutral. A
+dedicated `affiliate_list_actions` meta tool is acceptable once at least one
+accepted, implemented action makes its result useful. It may filter by network,
+brand, effect, or channel without calling the action itself.
+
+This decision does not require adding an empty seventh meta tool or a shared
+read-inventory framework first. The smallest coherent implementation starts
+with the first accepted concrete action, its descriptor, and focused tests. The
+query tool follows in the same PR or a small dependent PR once it has real data
+to return.
+
+`affiliate_list_networks` remains network discovery, while
+`affiliate_run_diagnostic` remains live capability and credential-health
+evidence. The action map must link callers to those surfaces rather than
+restate or overrule them.
+
+### 5. Stable names without blocking adapter-local actions
+
+Every declared action has an immutable, machine-oriented identifier from the
+moment it ships. Provider-neutral names join the shared adapter contract only
+after two real networks prove the same semantics, following the repository's
+existing convention.
+
+A useful first-network action is not blocked by that rule. It uses a stable,
+network-scoped identifier owned with its network-specific tool. If a later
+second implementation justifies a provider-neutral name, migration is explicit:
+the shipped identifier is not silently renamed, and policy or audit consumers
+receive an alias or versioned migration path.
+
+Human descriptions may improve without changing the identifier. Policy rules,
+approval records, host annotations, and audit events bind only to the stable
+machine identifier. An adapter must not declare an `api` or `browser` action
+unless the corresponding owned operation or handoff emitter exists.
+
+### 6. Sequencing and boundaries
+
+This record:
+
+- adds no write operation, browser emitter, browser consumer, consent gate,
+  audit event, authority evaluator, or policy file;
+- does not accept the proposed browser-handoff or Impact contracts records;
+- does not settle the Phase 1 authority questions, including policy format,
+  sign-off, audit storage, revocation, or multi-operator agency authority;
+- does not require duplicated per-action declarations in `network.json` and
+  runtime metadata. Public reporting should derive from one reviewed source of
+  truth once the metadata-ownership roadmap item is resolved;
+- does not make strategy or KPI files authoritative. They remain advisory and
+  may shape proposals but never readiness or write permission.
+
+Broad writes and general browser automation remain later, experimental roadmap
+work. The map is a narrow visibility and binding primitive, not a reason to
+advance them ahead of accepted consent, audit, write, and handoff foundations.
 
 ## Security
 
-- The map is descriptive and read-only; exposing it adds no mutation path. A
-  consumer that can read the map still cannot act without the credential, the
-  tier gate, and the propose-apply flow each action already requires.
-- Pinning the authority tier to effect and action, never to channel, closes the
-  surprise-channel hole: an operator cannot block an action on one channel and
-  be exposed to it on another.
-- The availability predicate makes credential blast radius visible before a
-  write token is configured, supporting the informed-consent posture in the
-  setup wizard.
-- Honest channel labelling (`api` versus `browser` versus `none`) carries the
-  product boundary's brittleness warning into a machine-readable field rather
-  than prose alone.
+- The map is read-only and non-probing. It cannot execute an action or convert
+  missing authority into permission.
+- Writes default to Tier 3. Only a separately accepted deterministic policy
+  evaluator can return Tier 2, and unmatched cases remain Tier 3.
+- Channel cannot weaken effect or authority. A browser entry describes handoff
+  emission only and never claims that the downstream mutation occurred.
+- Credential reporting is presence-only and redacted. Values, identities,
+  tokens, cookies, sessions, and account or brand identifiers are excluded.
+- Unsupported and unknown states remain explicit. `none` and `unknown` never
+  degrade to an optimistic capability claim.
 
-This record touches the shared adapter contract, a new public meta-tool
-surface, and the framing of write actions and consent, so it is a risk-based
-review item for `@offmann`.
+This decision affects a future public discovery contract, cross-network
+semantics, credentials, write framing, and browser framing, so it is a
+risk-based review item.
 
 ## Rejected alternatives
 
-- **Infer channel and effect from tool naming and prose.** The status quo. It
-  leaves the policy artefact, the audit log, and approval dialogs with no
-  stable identifier to bind to, and it cannot answer the operator's
-  "what can I do here?" question without probing. Rejected.
-- **Fold channel into the authority tier (browser actions one tier higher).**
-  Conflates brittleness with trust and creates the surprise-channel hole in
-  section 1. Rejected; the axes stay orthogonal.
-- **A writes-only map.** Leaves the inventory incomplete and forces consumers
-  to merge two sources (reads from `capabilitiesCheck`, writes from here).
-  Rejected; reads are declared too, at Tier 0.
-- **Design the policy artefact here.** Out of scope and premature; the
-  authority record already deferred it to a Phase 1 design with named open
-  questions. This record only fixes the action vocabulary that artefact will
-  reference. Rejected for now.
-- **A standalone registry file decoupled from adapters.** Drifts from the code
-  it describes. The descriptor lives on the adapter that owns the behaviour, so
-  the map cannot claim an action the adapter does not implement. Rejected.
+- **Redeclare every existing API read.** Rejected because the adapter contract
+  and diagnostics already own that truth. A second constant and per-adapter map
+  would increase drift without improving write consent or policy binding.
+- **Infer actions from tool names or descriptions.** Rejected because effect,
+  channel, and unsupported state are not safely inferable, and policy and audit
+  need stable identifiers.
+- **Treat `availability` as one boolean.** Rejected because it conflates static
+  route support, local credential presence, live auth, upstream health, policy
+  authority, and browser-consumer presence.
+- **Treat `browser` as execution.** Rejected. It means a typed handoff can be
+  emitted after the browser-handoff contract is accepted; consumers remain a
+  separate boundary.
+- **Omit known gaps.** Rejected because honest network truth includes a known
+  action with no route. Such entries use `channel: none`, `unsupported`
+  readiness, and can never be dispatched.
+- **Make advisement a generic workflow category.** Rejected because that would
+  pull skills and reasoning into the authority contract. Advisement is limited
+  to a typed plan for a named write.
+- **Ship the registry and meta tool before a concrete action.** Rejected as a
+  speculative abstraction. The first accepted action proves the descriptor;
+  discovery follows when it has real operator value.
 
 ## Consequences
 
-- `src/shared/types.ts` gains an action descriptor type next to the operation
-  and capability types; this is a reviewed shared-contract change and the
-  wiring PR stays draft until this decision merges.
-- `src/tools/generate.ts` gains the `list_actions` meta tool (the meta-tool
-  count moves from six to seven; the external contract note in `AGENTS.md`
-  updates accordingly) and an optional annotations path so write tools can
-  carry `destructiveHint` / `readOnlyHint` consistently with the Impact
-  contracts record.
-- `network.json` and `REPORT.md` gain per-action channel and effect labelling;
-  exact representation is settled in the wiring PR.
-- The Impact contracts and browser-handoff records gain a home for their
-  actions: each becomes a declared entry in the map rather than a bespoke
-  surface. Neither record's execution behaviour changes.
-- The Phase 1 policy artefact has a stable binding surface to design against
-  when it is taken up.
+- Operators gain one honest view of the doing surface without replacing the
+  existing read-capability and diagnostic surfaces.
+- A future policy, approval record, host annotation, and audit event can share
+  stable action identifiers while execution authority remains outside the map.
+- The implementation stays small: no blanket changes across 86 adapters, no
+  duplicate canonical-read constant, and no immediate metadata expansion.
+- Browser and Impact entries remain blocked until their own decisions are
+  accepted and their implementation evidence is reviewed.
+- Existing downstream implementation drafts that predeclare all reads or ship
+  an empty read-only action tool must be revised to this narrower sequence.
 
 ## Implementation follow-ups
 
-Sequenced so each step is independently reviewable; keep dependent PRs draft
-until this decision merges:
-
-1. Contract PR: the action descriptor type in `src/shared/types.ts`, the seven
-   existing reads registered as Tier 0 `api`/`read`, and a registry helper that
-   assembles the map from the adapter set. No new actions, no behaviour change.
-2. Surface PR: the `list_actions` meta tool over the descriptor, with scoping by
-   brand and network and the availability predicate; tests and the `AGENTS.md`
-   meta-tool-count update.
-3. First declared write: re-express the Impact contracts actions
-   (`proposeContract` advisement, `applyContract` / `removeContract` writes) and
-   the Awin proof-of-purchase action as map entries, proving advisement and
-   write effects and the `api` channel end to end.
-4. First declared browser action: re-express the browser-handoff emitter
-   (Impact `applyToProgram`) as a `browser`-channel entry, proving the channel
-   axis and the gap-with-no-fallback (`none`) case.
-5. Documentation pass: `network.json` and `REPORT.md` per-action labelling,
-   alongside the wiring PRs.
+1. After one concrete action decision is accepted, add the smallest descriptor
+   beside that owned operation. Cover channel, effect, default tier, declared
+   support, redacted readiness, stable identifier, and explicit unsupported
+   behaviour with focused tests.
+2. Add `affiliate_list_actions` once real entries exist. Keep it non-probing,
+   return explicit unknown-scope errors, and link live-health questions to
+   `affiliate_run_diagnostic`.
+3. Add further API or browser entries only after their own decisions and
+   implementations are accepted. A `browser` entry requires a real typed
+   emitter; `none` requires an evidenced gap.
+4. Add public report labelling only from the chosen source of truth, avoiding a
+   third hand-maintained copy in `network.json`, runtime metadata, and
+   `REPORT.md`.
