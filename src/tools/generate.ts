@@ -3,8 +3,8 @@
  *
  * Produces the MCP tool definitions from the adapter registry:
  *   - 7 publisher tools per registered adapter (one per publisher operation).
- *   - 6 meta tools: network discovery/diagnostics, brand resolution, and
- *     advisory client-strategy read/write/list.
+ *   - 7 meta tools: network discovery/diagnostics, brand resolution, advisory
+ *     client-strategy read/write/list, and the action capability map.
  *
  * Tool descriptions follow PRD §5.5 — three sentences:
  *   1. WHAT the tool does.
@@ -14,6 +14,7 @@
 
 import { z } from 'zod';
 import type {
+  ActionMapEntry,
   AdapterCallContext,
   AdapterOperation,
   KpiParseError,
@@ -24,6 +25,8 @@ import type {
 } from '../shared/types.js';
 import { NotImplementedError } from '../shared/types.js';
 import { getAdapters } from '../shared/registry.js';
+import { computeReadiness, snapshotCredentials } from '../shared/action-map.js';
+import { collectActionDescriptors } from './action-map.js';
 import { isValidBrandSlug, loadBrands } from '../shared/brands.js';
 import {
   type ClientStrategySummary,
@@ -95,6 +98,26 @@ export type SetClientStrategyMetaResult =
     };
 
 export type ListClientStrategiesMetaResult = ClientStrategySummary[];
+
+/**
+ * `affiliate_list_actions` returns the resolved action map, OR — when a
+ * `network`/`brand` filter names something unknown — an explicit
+ * unsupported-scope result. The discriminated shape means a typo'd filter is
+ * distinguishable from a valid scope that legitimately has no actions (which
+ * returns `[]`), per the accepted decision (#231 §3).
+ */
+export type ListActionsMetaResult =
+  | ActionMapEntry[]
+  | { unsupportedScope: { dimension: 'network' | 'brand'; value: string }; message: string };
+
+const ListActionsSchema = z
+  .object({
+    network: z.string().min(1).optional(),
+    brand: z.string().min(1).optional(),
+    effect: z.enum(['read', 'advisement', 'write']).optional(),
+    channel: z.enum(['api', 'browser', 'none']).optional(),
+  })
+  .strict();
 
 // Re-usable Zod schemas for tool inputs.
 const ProgrammeQuerySchema = z
@@ -576,6 +599,53 @@ export function generateMetaTools(): ToolDefinition[] {
         'Returns an array of { slug, hasStrategy, hasKpi, registered, orphan }; orphan flags a strategy directory whose slug has no brand binding.',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
       handle: async (): Promise<ListClientStrategiesMetaResult> => listClientStrategies(),
+    },
+    {
+      name: 'affiliate_list_actions',
+      description:
+        'List the doing-surface actions (advisement, write, and known gaps) the configured adapters declare, with channel, effect, default authority tier, and local readiness. ' +
+        'Use this to see what is possible and what it would cost in approvals before granting a write credential or planning a change; filter by network, brand, effect, or channel, and note it never executes an action, drives a browser, or checks live auth. ' +
+        'Returns an ActionMapEntry[] (or an explicit unsupported-scope result for an unknown network/brand); for live credential and endpoint health use affiliate_run_diagnostic, and for network discovery use affiliate_list_networks.',
+      inputSchema: toJsonSchema(ListActionsSchema),
+      handle: async (args): Promise<ListActionsMetaResult> => {
+        const f = ListActionsSchema.parse(args ?? {});
+        // Explicit unknown-scope results — never an ambiguous empty list (#231 §3).
+        if (f.network !== undefined && !getAdapters().some((a) => a.slug === f.network)) {
+          return {
+            unsupportedScope: { dimension: 'network', value: f.network },
+            message: `No registered adapter for network "${f.network}". Call affiliate_list_networks to see registered networks.`,
+          };
+        }
+        let brandNetworks: Set<string> | undefined;
+        if (f.brand !== undefined) {
+          const bindings = loadBrands().brands[f.brand];
+          if (!bindings || bindings.length === 0) {
+            return {
+              unsupportedScope: { dimension: 'brand', value: f.brand },
+              message: `No brand "${f.brand}" is bound in brands.json. Call affiliate_resolve_brand to see bound brands.`,
+            };
+          }
+          brandNetworks = new Set(bindings.map((b) => b.network));
+        }
+        // Non-probing: registry read + brands.json read + pure helpers only.
+        let descriptors = collectActionDescriptors();
+        if (f.network) descriptors = descriptors.filter((d) => d.network === f.network);
+        if (f.effect) descriptors = descriptors.filter((d) => d.effect === f.effect);
+        if (f.channel) descriptors = descriptors.filter((d) => d.channel === f.channel);
+        return descriptors.map((d) => {
+          const credentials = snapshotCredentials(d);
+          const readiness = computeReadiness(credentials, {
+            brandProvided: f.brand !== undefined,
+            brandBoundToNetwork: brandNetworks ? brandNetworks.has(d.network) : false,
+          });
+          return {
+            descriptor: d,
+            readiness,
+            credentials,
+            liveHealthVia: 'affiliate_run_diagnostic' as const,
+          };
+        });
+      },
     },
   ];
 }

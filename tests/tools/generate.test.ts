@@ -87,6 +87,7 @@ describe('tool generator', () => {
     const names = meta.map((t) => t.name).sort();
     expect(names).toEqual([
       'affiliate_get_client_strategy',
+      'affiliate_list_actions',
       'affiliate_list_client_strategies',
       'affiliate_list_networks',
       'affiliate_resolve_brand',
@@ -99,6 +100,7 @@ describe('tool generator', () => {
     const all = generateAllTools();
     expect(all.map((t) => t.name).sort()).toEqual([
       'affiliate_get_client_strategy',
+      'affiliate_list_actions',
       'affiliate_list_client_strategies',
       'affiliate_list_networks',
       'affiliate_resolve_brand',
@@ -329,6 +331,82 @@ describe('affiliate_list_client_strategies meta-tool', () => {
     expect(rows).toContainEqual(
       expect.objectContaining({ slug: 'acme', hasStrategy: false, registered: true }),
     );
+  });
+});
+
+describe('affiliate_list_actions meta-tool', () => {
+  type ActionRow = {
+    descriptor: { id: string; network: string; channel: string; effect: string };
+    readiness: string;
+    credentials: Array<{ label: string; configured: boolean }>;
+    liveHealthVia: string;
+  };
+  type Unsupported = { unsupportedScope: { dimension: string; value: string }; message: string };
+
+  const find = () => generateMetaTools().find((t) => t.name === 'affiliate_list_actions')!;
+
+  // The collector ties descriptors to registration; register the real Impact
+  // adapter so its proposeContract descriptor is in scope. (Outer beforeEach
+  // clears the registry first.)
+  beforeEach(async () => {
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    const { impactAdvertiserAdapter } = await import(
+      '../../src/networks/impact-advertiser/adapter.js'
+    );
+    registerAdapter(impactAdvertiserAdapter);
+  });
+
+  it('returns the proposeContract advisement entry, fail-closed to unknown with no brand', async () => {
+    const rows = (await find().handle({})) as ActionRow[];
+    expect(Array.isArray(rows)).toBe(true);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.descriptor.id).toBe('impact-advertiser.proposeContract');
+    expect(rows[0]!.descriptor.effect).toBe('advisement');
+    expect(rows[0]!.descriptor.channel).toBe('api');
+    expect(rows[0]!.readiness).toBe('unknown'); // no brand filter → fail-closed
+    expect(rows[0]!.liveHealthVia).toBe('affiliate_run_diagnostic');
+  });
+
+  it('reports ready when a brand bound to that network is named', async () => {
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [{ network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-1' }],
+      },
+    });
+    const rows = (await find().handle({ brand: 'acme' })) as ActionRow[];
+    expect(rows[0]!.readiness).toBe('ready');
+  });
+
+  it('returns an explicit unsupportedScope for an unknown network, not []', async () => {
+    const r = (await find().handle({ network: 'does-not-exist' })) as Unsupported;
+    expect(r.unsupportedScope).toEqual({ dimension: 'network', value: 'does-not-exist' });
+    expect(Array.isArray(r)).toBe(false);
+  });
+
+  it('returns an explicit unsupportedScope for an unbound brand', async () => {
+    const r = (await find().handle({ brand: 'ghost-brand' })) as Unsupported;
+    expect(r.unsupportedScope).toEqual({ dimension: 'brand', value: 'ghost-brand' });
+  });
+
+  it('filters by effect and channel', async () => {
+    expect(await find().handle({ effect: 'write' })).toEqual([]); // no write actions yet
+    expect(await find().handle({ channel: 'browser' })).toEqual([]); // none declared
+    const adv = (await find().handle({ effect: 'advisement' })) as ActionRow[];
+    expect(adv).toHaveLength(1);
+  });
+
+  it('is non-probing — issues no network call', async () => {
+    const original = globalThis.fetch;
+    const spy = vi.fn();
+    globalThis.fetch = spy as unknown as typeof fetch;
+    try {
+      await find().handle({});
+      await find().handle({ effect: 'advisement' });
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = original;
+    }
   });
 });
 
