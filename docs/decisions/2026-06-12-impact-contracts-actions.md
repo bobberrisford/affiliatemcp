@@ -1,7 +1,7 @@
 # Impact contracts: the first brand-side write surface
 
 - **Date:** 2026-06-12
-- **Status:** Proposed
+- **Status:** Accepted (2026-06-20)
 - **Affects:** `src/networks/impact-advertiser/` (adapter, client, network
   metadata), `src/shared/types.ts` (optional advertiser-side operations),
   `src/tools/generate.ts` (tool annotations), setup wizard copy, `.env.example`
@@ -34,6 +34,13 @@ this design with the general action-authority direction. The two are linked
 but separable decisions; the general direction is recorded separately per the
 maintainer's triage.
 
+Acceptance approves this design and authorises the read half only. The three
+write-facing operations remain design commitments, not implementation
+authority. They stay blocked until their live-tenant verification gates are
+closed and their own scoped risk review approves the credential, consent,
+authority, audit, idempotency, and recovery behaviour below. This record does
+not authorise broad write automation or bypass the action-authority decision.
+
 ## Decision
 
 Add five operations to the existing `impact-advertiser` adapter:
@@ -41,7 +48,7 @@ Add five operations to the existing `impact-advertiser` adapter:
 | Operation         | Endpoint                                       | Layer      |
 | ----------------- | ---------------------------------------------- | ---------- |
 | `listContracts`   | `GET .../Campaigns/{id}/Contracts`             | read       |
-| `getContract`     | `GET .../Campaigns/{id}/Contracts/{contractId}`| read       |
+| `getContract`     | `GET .../Campaigns/{id}/Contracts/{contractId}` | read       |
 | `proposeContract` | none; builds and returns a plan                | advisement |
 | `applyContract`   | `POST .../Programs/{id}/Contracts`             | write      |
 | `removeContract`  | `DELETE .../Programs/{id}/Contracts`           | write      |
@@ -49,40 +56,80 @@ Add five operations to the existing `impact-advertiser` adapter:
 The writes sit behind three independent gate layers, matching the
 defence-in-depth posture the client file already states:
 
-1. **Propose, then apply, with a pinned token.** `proposeContract` performs no
-   network write; it validates inputs, reads current state, and returns a
+1. **Propose, then apply or remove, with a pinned token.** `proposeContract`
+   performs no network write; it validates inputs, reads current state, and returns a
    `ContractChangePlan` (action, brand, programme, summary, before and after
-   snapshots, warnings, `confirmationToken`). `applyContract` requires the
-   token echoed back verbatim, recomputes the hash from the intent it is about
-   to execute, and refuses with a `config_error` on any mismatch. The token is
-   an advisement boundary, not a security boundary against the model: it
-   guarantees the change was rendered as a reviewable plan and pins execution
-   to the exact reviewed parameters.
+   snapshots, warnings, expiry, `confirmationToken`). Both `applyContract` and
+   `removeContract` require the token echoed back verbatim, recompute it from
+   the exact normalised intent and observed before-state they are about to act
+   on, and refuse with a `config_error` when it is missing, mismatched, or
+   stale. The token is an advisement boundary, not a security boundary against
+   the model: it proves the exact change was rendered as a reviewable plan and
+   pins execution to those reviewed parameters. A write still requires the
+   operator's explicit confirmation at dispatch.
 2. **Host approval via MCP annotations.** Write tools carry
-   `destructiveHint: true` / `readOnlyHint: false`; a compliant MCP host
-   renders an approve or decline dialog before dispatch. Reads and
+   `destructiveHint: true` / `readOnlyHint: false`, allowing a compliant MCP
+   host to render an approve or decline dialog before dispatch. Reads and
    `proposeContract` carry `readOnlyHint: true`. The tool generator gains an
-   optional `annotations` field on `OpSpec`.
+   optional `annotations` field on `OpSpec`. An annotation describes the risk;
+   it is not itself an enforcement boundary. Hosts without a trustworthy
+   confirmation step are not a supported Phase 0 write surface.
 3. **Opt-in read-write credential plus audit.** Writes engage only when a
    distinct `IMPACT_ADV_WRITE_TOKEN` is configured; the default read-only
    token cannot POST or DELETE, and a read-only user gets a clean
    `config_error`, never a surprise mutation. The existing hard throw on
    non-GET methods in `client.ts` is narrowed to an explicit per-operation
    allowlist (`applyContract`, `removeContract`), not removed. Every
-   successful write emits a structured audit line via `createLogger` (brand,
-   programme, before and after, token tier). `meta.setupRequiresApproval`
-   flips to `true` and the setup wizard states the blast radius before
-   accepting the write token.
+   write attempt emits a structured audit line via `createLogger` (action,
+   brand, programme, before and intended-after state, credential tier, plan
+   fingerprint, and outcome, but never a token value). Denied, failed,
+   unknown-outcome, and verified-success states remain distinct; a dispatched
+   request is never logged as successful merely because no error was observed.
+   `meta.setupRequiresApproval` flips to `true` and the setup wizard states the
+   blast radius before accepting the write token.
 
-One contract per `applyContract` call, so each change is individually
-reviewable. Reads use the `Campaigns` path and writes the `Programs` path;
-that split is a known footgun and lives in one well-commented helper.
+One contract per apply or remove call, so each change is individually
+reviewable. Reads use the `Campaigns` path and writes the `Programs` path; that
+split is a known footgun and lives in one well-commented helper.
+
+### Errors, retries, and recovery
+
+- Reads and writes use the existing `NetworkErrorEnvelope` categories. Write
+  failures additionally distinguish a confirmed rejection before mutation
+  from an unknown outcome after dispatch. Unknown outcomes require a fresh
+  read and operator reconciliation; they are never retried automatically.
+- A write uses Impact's idempotency facility if live verification proves one
+  exists. Otherwise it re-reads and compares the pinned before-state before
+  dispatch, treats an already-achieved target state as a no-op, and verifies
+  state after dispatch. The implementation must not claim exactly-once
+  delivery where Impact cannot provide it.
+- There is no pretend transaction or automatic rollback. An apply may be
+  compensated only by a separately proposed and confirmed remove after the
+  remove endpoint is live-verified. A removal may be irreversible; its plan
+  and audit record preserve the before-state and say so explicitly.
+
+Shared contracts contain only network-neutral concepts and error semantics.
+Impact path selection, request bodies, identifiers, auth tiers, pagination,
+response mapping, and recovery details stay inside `impact-advertiser`. Under
+the repository's two-network convention, an operation or domain type joins
+the provider-neutral adapter contract only when its semantics are genuinely
+shared; otherwise the first Impact implementation remains adapter-local while
+using reviewed shared primitives.
+
+The accepted action-capability map does not duplicate `listContracts` or
+`getContract`; existing read discovery owns those operations. Once the
+corresponding operations actually ship, the doing surface uses stable
+network-scoped identifiers aligned to `proposeContract` (advisement, Tier 1)
+and `applyContract` / `removeContract` (API writes, default Tier 3). No map
+entry may claim an API route, readiness, or write availability before its
+owned operation, live proof, and opt-in credential gate exist.
 
 ## Security
 
 - The adapter stays read-only by construction unless the operator explicitly
   configures a separate write token.
-- No single tool call mutates Impact; plan review precedes every write.
+- A proposal never mutates Impact; no write dispatch occurs without a pinned
+  plan and explicit confirmation.
 - The narrowed allowlist keeps every other operation GET-only in code.
 - Audit lines give a trail independent of Impact's own UI.
 - Local-first holds: both tokens stay on the operator's machine.
@@ -109,13 +156,15 @@ contract extension, and is a risk-based review item.
 
 ## Consequences
 
-- `AdapterOperation` and `NetworkAdapter` gain optional advertiser-side
-  contract operations (style of `listMediaPartners?`), so no publisher adapter
-  breaks. This is a shared-contract extension and needs its own review care.
-- New domain types: `Contract`, `ContractSnapshot`, `ContractChangePlan`, with
-  Zod input schemas in the tools layer.
-- Five new `OpSpec` entries (`advertiserOnly: true`); write descriptions steer
-  the model to only call `applyContract` after an approved plan.
+- The read implementation decides through review whether advertiser contract
+  operations and minimal domain types are genuinely provider-neutral or stay
+  Impact-local. Any shared-contract extension needs its own review care and
+  must not force Impact endpoint semantics onto other networks.
+- The future write implementation needs a reviewable plan type and Zod input
+  schemas, with Impact-specific fields contained in its adapter.
+- The read half adds only the two read `OpSpec` entries. Later advisement and
+  write PRs add their own entries (`advertiserOnly: true`); write descriptions
+  steer the model to apply or remove only after an approved plan.
 - `.env.example`, setup docs, and `network.json` must record the write
   operations honestly, including their unverified status until live testing.
 - Unverified endpoint details block the write half, all `TODO(verify)` against
@@ -129,15 +178,16 @@ contract extension, and is a risk-based review item.
 Sequenced so the risky half lands last; keep implementation PRs draft until
 this decision merges:
 
-1. Read half: `listContracts` and `getContract`. No write risk; confirms the
-   contracts endpoints, auth tiers, and response shapes, and retires part of
-   the `TODO(verify)` list.
-2. Advisement plumbing: `ContractChangePlan`, the confirmation token, the
-   `annotations` field on `OpSpec`, the `IMPACT_ADV_WRITE_TOKEN` credential,
-   and the wizard copy.
-3. Write half: `proposeContract`, then `applyContract` and `removeContract`
-   behind the full three-layer gate, only after the remaining `TODO(verify)`
-   items are confirmed against a live agency tenant.
+1. Read half: `listContracts` and `getContract`. It introduces no mutation;
+   endpoint, auth-tier, and response-shape claims remain labelled unverified
+   until exercised against a live agency tenant.
+2. Advisement plumbing and `proposeContract`: the reviewable plan,
+   confirmation token, and future write annotations, still without a network
+   mutation or write credential.
+3. Write half: `applyContract` and `removeContract` behind the full gate,
+   including `IMPACT_ADV_WRITE_TOKEN`, setup approval, audit, idempotency, and
+   recovery behaviour, only after the remaining `TODO(verify)` items are
+   confirmed against a live agency tenant.
 4. Scrubbed fixtures and adapter tests for all five operations; no real
    account, programme, or contract identifiers.
 5. Remove or redirect `docs/product/impact-contracts-action-layer.md` from the
