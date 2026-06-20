@@ -27,6 +27,14 @@
  *   listTransactions       → GET /Advertisers/{BrandSID}/Actions
  *   listMediaPartners      → GET /Advertisers/{BrandSID}/MediaPartners
  *   getProgrammePerformance→ GET /Advertisers/{BrandSID}/Reports/adv_performance_by_media
+ *   listContracts          → GET /Advertisers/{BrandSID}/Campaigns/{CampaignId}/Contracts
+ *   getContract            → GET /Advertisers/{BrandSID}/Campaigns/{CampaignId}/Contracts/{ContractId}
+ *
+ * Contract operations are READ-ONLY here. The write surface (proposeContract,
+ * applyContract, removeContract) lands in follow-up PRs behind a consent gate;
+ * see docs/decisions/2026-06-12-impact-contracts-actions.md. The exact contract
+ * endpoint paths and payload shapes carry `// TODO(verify):` until confirmed
+ * against a live agency tenant.
  *
  * Operations NOT in scope at v0.1 (throw NotImplementedError):
  *   getProgramme, getEarningsSummary, listClicks, generateTrackingLink,
@@ -91,6 +99,7 @@ const META: NetworkMeta = {
     'Read-only at v0.1. The HTTP client refuses non-GET methods.',
     'Two credential tiers auto-detected at runtime: agency-passthrough and brand-direct.',
     'getProgrammePerformance uses Impact pre-built `adv_performance_by_media` report; sync vs async behaviour `// TODO(verify)` until a live agency tenant is available.',
+    'listContracts/getContract read the brand-partner payment-term relationship; endpoint paths under `/Campaigns/{id}/Contracts` carry `// TODO(verify)` until confirmed against a live agency tenant. The contract write surface is not enabled here.',
   ],
   supportsBrandOps: true,
   setupTimeEstimateMinutes: 8,
@@ -136,6 +145,27 @@ function requireCtx(operation: string, ctx?: AdapterCallContext): AdapterCallCon
     );
   }
   return ctx;
+}
+
+/**
+ * Require a programme/campaign id on contract operations. Impact addresses
+ * contracts under a campaign, so without it we cannot build the path. We throw
+ * a `config_error` envelope so the user sees a clear "this op needs
+ * `programmeId`" rather than hitting a malformed URL.
+ */
+function requireProgrammeId(operation: string, programmeId?: string): string {
+  if (!programmeId || programmeId.trim() === '') {
+    throw new NetworkError(
+      buildErrorEnvelope({
+        type: 'config_error',
+        network: SLUG,
+        operation,
+        message: `Impact advertiser ${operation} requires a programmeId (the CampaignId whose contracts to address).`,
+        hint: 'Call listProgrammes for the brand first to discover campaign ids, then pass programmeId.',
+      }),
+    );
+  }
+  return programmeId;
 }
 
 interface ImpactAdvAdvertiserRaw {
@@ -209,6 +239,59 @@ interface ImpactAdvReportEnvelope {
   Status?: string;
 }
 
+// TODO(verify): exact contract payload shape against a live agency tenant.
+// The Impact docs site returned 403 to automated fetches during research, so
+// the transformer reads several field aliases defensively.
+interface ImpactAdvContractRaw {
+  Id?: string | number;
+  ContractId?: string | number;
+  CampaignId?: string | number;
+  CampaignName?: string;
+  Name?: string;
+  ContractName?: string;
+  Status?: string;
+  ContractStatus?: string;
+  MediaPartnerId?: string | number;
+  MediaPartnerName?: string;
+  PayoutDescription?: string;
+  Terms?: string;
+  StartDate?: string;
+  EffectiveDate?: string;
+  EndDate?: string;
+  ExpirationDate?: string;
+}
+
+interface ImpactAdvContractEnvelope {
+  Contracts?: ImpactAdvContractRaw[];
+  Contract?: ImpactAdvContractRaw;
+}
+
+export type ImpactContractStatus = 'active' | 'pending' | 'expired' | 'inactive' | 'unknown';
+
+/** Impact-local read shape until a second network proves shared semantics. */
+export interface ImpactContract {
+  id: string;
+  network: typeof SLUG;
+  programmeId: string;
+  programmeName?: string;
+  mediaPartnerId?: string;
+  mediaPartnerName?: string;
+  status: ImpactContractStatus;
+  payoutTerms?: string;
+  effectiveDate?: string;
+  expiryDate?: string;
+  rawNetworkData: unknown;
+}
+
+export interface ImpactContractQuery {
+  programmeId: string;
+  status?: ImpactContractStatus | ImpactContractStatus[];
+  mediaPartnerId?: string;
+  limit?: number;
+  /** Impact's one-based `Page` value, kept opaque at the MCP boundary. */
+  cursor?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Status mapping
 // ---------------------------------------------------------------------------
@@ -244,6 +327,16 @@ function mapMediaPartnerStatus(raw: ImpactAdvMediaPartnerRaw): MediaPartner['sta
   if (s === 'active' || s === 'approved' || s === 'live') return 'active';
   if (s === 'pending' || s === 'pendingreview' || s === 'inreview') return 'pending';
   if (s === 'inactive' || s === 'paused' || s === 'declined' || s === 'rejected')
+    return 'inactive';
+  return 'unknown';
+}
+
+function mapContractStatus(raw: ImpactAdvContractRaw): ImpactContractStatus {
+  const s = String(raw.Status ?? raw.ContractStatus ?? '').toLowerCase();
+  if (s === 'active' || s === 'live' || s === 'approved') return 'active';
+  if (s === 'pending' || s === 'proposed' || s === 'inreview') return 'pending';
+  if (s === 'expired' || s === 'ended') return 'expired';
+  if (s === 'inactive' || s === 'paused' || s === 'terminated' || s === 'removed')
     return 'inactive';
   return 'unknown';
 }
@@ -368,6 +461,45 @@ function toPerformanceRow(raw: ImpactAdvReportRow): ProgrammePerformanceRow {
     commission,
     currency: raw.Currency ?? 'USD',
     status: mapReportRowStatus(raw),
+    rawNetworkData: raw,
+  };
+}
+
+function toContract(
+  raw: ImpactAdvContractRaw,
+  programmeIdFallback?: string,
+  contractIdFallback?: string,
+  operation = 'getContract',
+): ImpactContract {
+  const id = String(raw.Id ?? raw.ContractId ?? contractIdFallback ?? '');
+  const programmeId = String(raw.CampaignId ?? programmeIdFallback ?? '');
+  if (!id || !programmeId) {
+    throw new NetworkError(
+      buildErrorEnvelope({
+        type: 'network_api_error',
+        network: SLUG,
+        operation,
+        networkErrorBody: JSON.stringify(raw),
+        message: 'Impact returned a contract without the identifiers required by the read contract.',
+        hint: 'Retry once; if the response is unchanged, keep the operation experimental and report the scrubbed payload shape.',
+      }),
+    );
+  }
+  const mediaPartnerId =
+    raw.MediaPartnerId !== undefined && raw.MediaPartnerId !== null
+      ? String(raw.MediaPartnerId)
+      : undefined;
+  return {
+    id,
+    network: SLUG,
+    programmeId,
+    programmeName: raw.CampaignName ?? raw.ContractName ?? raw.Name,
+    mediaPartnerId,
+    mediaPartnerName: raw.MediaPartnerName,
+    status: mapContractStatus(raw),
+    payoutTerms: raw.PayoutDescription ?? raw.Terms,
+    effectiveDate: parseImpactDate(raw.EffectiveDate ?? raw.StartDate),
+    expiryDate: parseImpactDate(raw.ExpirationDate ?? raw.EndDate),
     rawNetworkData: raw,
   };
 }
@@ -668,6 +800,88 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
   }
 
   // -------------------------------------------------------------------------
+  // listContracts / getContract — the brand-partner payment-term relationship.
+  // READ-ONLY. The write surface lives in a follow-up PR behind a consent gate.
+  // -------------------------------------------------------------------------
+
+  /**
+   * List the contracts on one of the brand's campaigns.
+   *
+   * Impact addresses contracts under a campaign, so `query.programmeId` (the
+   * CampaignId) is required; we throw a `config_error` envelope when it is
+   * missing rather than guessing a campaign.
+   *
+   * TODO(verify): the `/Campaigns/{id}/Contracts` path and response envelope
+   * against a live agency tenant. The decision record notes scoped tokens may
+   * force a `Programs` vs `Campaigns` split; reads use the `Campaigns` path per
+   * the reference until confirmed.
+   */
+  async listContracts(
+    query?: ImpactContractQuery,
+    ctx?: AdapterCallContext,
+  ): Promise<ImpactContract[]> {
+    const c = requireCtx('listContracts', ctx);
+    const campaignId = requireProgrammeId('listContracts', query?.programmeId);
+    const envelope = await impactAdvRequest<ImpactAdvContractEnvelope | ImpactAdvContractRaw[]>({
+      operation: 'listContracts',
+      brandPath: `/Campaigns/${encodeURIComponent(campaignId)}/Contracts`,
+      networkBrandId: c.networkBrandId,
+      query: { PageSize: query?.limit ?? 100, Page: query?.cursor },
+      resilience: RESILIENCE.default,
+    });
+    const list: ImpactAdvContractRaw[] = Array.isArray(envelope)
+      ? envelope
+      : envelope?.Contracts ?? [];
+    let contracts = list.map((raw) => toContract(raw, campaignId, undefined, 'listContracts'));
+    const statusFilter = toContractStatusList(query?.status);
+    if (statusFilter && statusFilter.length > 0) {
+      const set = new Set(statusFilter);
+      contracts = contracts.filter((ct) => set.has(ct.status));
+    }
+    if (query?.mediaPartnerId) {
+      contracts = contracts.filter((ct) => ct.mediaPartnerId === query.mediaPartnerId);
+    }
+    if (typeof query?.limit === 'number') contracts = contracts.slice(0, query.limit);
+    return contracts;
+  }
+
+  /**
+   * Fetch a single contract on one of the brand's campaigns by id.
+   *
+   * TODO(verify): the `/Campaigns/{id}/Contracts/{contractId}` path and whether
+   * the single-contract response is wrapped (`{ Contract }`) or returned flat,
+   * against a live agency tenant.
+   */
+  async getContract(
+    input: { programmeId: string; contractId: string },
+    ctx?: AdapterCallContext,
+  ): Promise<ImpactContract> {
+    const c = requireCtx('getContract', ctx);
+    const campaignId = requireProgrammeId('getContract', input?.programmeId);
+    const contractId = String(input?.contractId ?? '');
+    if (contractId === '') {
+      throw new NetworkError(
+        buildErrorEnvelope({
+          type: 'config_error',
+          network: SLUG,
+          operation: 'getContract',
+          message: 'Impact advertiser getContract requires a contractId.',
+          hint: 'Call listContracts for the campaign first to discover contract ids.',
+        }),
+      );
+    }
+    const envelope = await impactAdvRequest<ImpactAdvContractEnvelope | ImpactAdvContractRaw>({
+      operation: 'getContract',
+      brandPath: `/Campaigns/${encodeURIComponent(campaignId)}/Contracts/${encodeURIComponent(contractId)}`,
+      networkBrandId: c.networkBrandId,
+      resilience: RESILIENCE.default,
+    });
+    const wrapped = envelope as ImpactAdvContractEnvelope;
+    const flat = wrapped.Contract ?? wrapped.Contracts?.[0] ?? (envelope as ImpactAdvContractRaw);
+    return toContract(flat, campaignId, contractId);
+  }
+
+  // -------------------------------------------------------------------------
   // Ops the advertiser side does NOT implement at v0.1.
   // -------------------------------------------------------------------------
 
@@ -740,6 +954,16 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
       note: 'Uses Impact adv_performance_by_media report; sync/async path TODO(verify) — async ResultUri polling unverified against a live tenant.',
       claimStatus: 'experimental',
     };
+    operations['listContracts'] = {
+      supported: true,
+      note: 'Reads brand-partner contracts under a campaign. Endpoint path `/Campaigns/{id}/Contracts` is `// TODO(verify)` against a live agency tenant; the write surface is not enabled.',
+      claimStatus: 'experimental',
+    };
+    operations['getContract'] = {
+      supported: true,
+      note: 'Reads a single contract by id. Endpoint path and single-contract envelope are `// TODO(verify)` against a live agency tenant.',
+      claimStatus: 'experimental',
+    };
     operations['getProgramme'] = { supported: false, note: 'Not implemented at v0.1.' };
     operations['getEarningsSummary'] = { supported: false, note: 'Not implemented at v0.1.' };
     operations['listClicks'] = { supported: false, note: 'Not implemented at v0.1.' };
@@ -793,6 +1017,13 @@ function toMediaPartnerStatusList(
   return Array.isArray(v) ? v : [v];
 }
 
+function toContractStatusList(
+  v?: ImpactContractStatus | ImpactContractStatus[],
+): ImpactContractStatus[] | undefined {
+  if (v === undefined) return undefined;
+  return Array.isArray(v) ? v : [v];
+}
+
 function canonicalToImpactState(s: TransactionStatus): string | undefined {
   switch (s) {
     case 'pending':
@@ -820,10 +1051,12 @@ export const _internals = {
   toTransaction,
   toMediaPartner,
   toPerformanceRow,
+  toContract,
   toDiscoveredBrand,
   mapCampaignStatus,
   mapActionStatus,
   mapMediaPartnerStatus,
+  mapContractStatus,
   mapReportRowStatus,
   parseImpactDate,
   computeAgeDays,

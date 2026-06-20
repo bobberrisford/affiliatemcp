@@ -35,6 +35,7 @@ import {
   saveStrategy,
 } from '../shared/client-strategy.js';
 import { generateAwinTools } from '../networks/awin/tools.js';
+import { generateImpactAdvertiserTools } from '../networks/impact-advertiser/tools.js';
 import { generateTradedoublerTools } from '../networks/tradedoubler/tools.js';
 import type { ToolDefinition } from './types.js';
 import { toJsonSchema } from './schema.js';
@@ -583,6 +584,7 @@ export function generateAllTools(): ToolDefinition[] {
   const adapterTools = getAdapters().flatMap((a) => [
     ...generateToolsFor(a),
     ...(a.slug === 'awin' ? generateAwinTools() : []),
+    ...(a.slug === 'impact-advertiser' ? generateImpactAdvertiserTools() : []),
     ...(a.slug === 'tradedoubler' ? generateTradedoublerTools() : []),
   ]);
   return [...generateMetaTools(), ...adapterTools];
