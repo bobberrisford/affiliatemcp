@@ -25,7 +25,10 @@ gh pr checks <number>
 ```
 
 Read the applicable repo instructions, PR body, complete diff, changed tests,
-and adjacent ownership boundaries. Do not rely on the PR summary alone.
+adjacent ownership boundaries, accepted decisions, and direct dependency
+diffs. Do not rely on the PR summary alone. Treat implementation beyond an
+unresolved decision as a sequencing blocker even when the PR is draft or CI is
+green.
 
 ## 2. Review in risk order
 
@@ -33,15 +36,17 @@ Review these concerns in order:
 
 1. Public contracts, shared behaviour, authentication, security, writes,
    payments, releases, deployment, and cross-client or cross-network semantics.
-2. Concrete correctness failures, unhappy paths, error handling, and data loss.
-3. Tests that are absent, misleading, or unable to catch the claimed behaviour.
-4. Ownership and maintainability: logic in the wrong layer, hidden coupling,
+2. Dependency and sequencing validity: accepted decisions, semantic conflicts,
+   intended merge order, and whether a foundation has a concrete first consumer.
+3. Concrete correctness failures, unhappy paths, error handling, and data loss.
+4. Tests that are absent, misleading, or unable to catch the claimed behaviour.
+5. Ownership and maintainability: logic in the wrong layer, hidden coupling,
    duplicated domain behaviour, or an abstraction that obscures rather than
    simplifies.
-5. Product and customer journey: technically correct but confusing behaviour,
+6. Product and customer journey: technically correct but confusing behaviour,
    unclear tool names or descriptions, hidden network limitations, or a changed
    journey that the PR does not explain.
-6. Documentation accuracy across the README, MCP tool docs, examples, skills,
+7. Documentation accuracy across the README, MCP tool docs, examples, skills,
    roadmap or product docs, contribution docs, and release notes when relevant.
 
 Read past the touched file when needed. Follow the real call path from entrypoint
@@ -88,6 +93,11 @@ Return findings first. Then state:
 - whether the customer journey, tool behaviour, and documentation remain clear;
 - whether the current design is understandable and appropriately contained;
 - exact next action for the coding agent.
+
+When the review exposes a systemic delivery lesson rather than a one-off code
+finding, optionally add a short `Delivery-system learning` side note with the
+evidence and smallest proposed workflow change. Do not force a lesson into
+every review or make process preferences blocking findings.
 
 Do not approve, merge, or resolve review threads unless explicitly asked.
 

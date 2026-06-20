@@ -225,8 +225,26 @@ Create and merge a small decision PR before implementation when the work has an
 unresolved architecture, public-contract, security, payment, licensing,
 action-execution, or cross-client decision. Record the decision under
 `docs/decisions/YYYY-MM-DD-<slug>.md` with context, the chosen direction,
-rejected alternatives, consequences, and implementation follow-ups. Keep
-dependent implementation PRs draft until the decision or foundation PR merges.
+rejected alternatives, consequences, and implementation follow-ups. Until that
+decision merges, limit dependent work to discovery, interface sketches, and
+explicitly disposable prototypes. Do not build production foundations or
+implementation PRs against the unresolved direction. Draft status controls
+review state; it does not authorise speculative implementation.
+
+For a feature that needs multiple PRs, create one concise workstream brief in
+the first PR or tracking issue. Record the user outcome, dependency graph,
+owning domains, risk gates, acceptance proof per PR, and stop conditions. Land
+work in this order:
+
+1. decision PR for unresolved governance or contracts;
+2. the smallest concrete foundation with its first real consumer;
+3. stacked vertical implementation slices, each independently coherent;
+4. integration proof and any cross-slice documentation that could not stay
+   with the slice it validates.
+
+After a parent merges, retarget its child to `main`, refresh it once, rerun the
+relevant proof, and inspect the complete resulting diff before promotion. Do
+not repeatedly merge `main` into every queued branch.
 
 Split a PR when it combines independent user outcomes or separable high-risk
 domains. Tests, directly related docs, fixtures, and generated artefacts may
@@ -234,8 +252,25 @@ stay with their feature. A PR over 1,000 additions or 20 changed files is not
 automatically rejected, but its description must explain why splitting would
 make the change harder to understand or validate.
 
-Only one PR at a time may actively await `@offmann`'s review. Other work may
-continue in draft. A PR is review-ready only when:
+Use risk-based work-in-progress lanes:
+
+- `active-risk`: at most one review-ready PR awaiting `@offmann` for
+  architecture, security, privacy, public-contract, write, deployment, or
+  cross-client judgement;
+- `routine`: at most two concurrent, decision-complete PRs in disjoint owning
+  domains that preserve public contracts and do not need `@offmann`'s review;
+- `exploration`: discovery or explicitly disposable prototype work behind an
+  unresolved decision, never production implementation;
+- `blocked`, `queued-risk`, `merge-queued`, and `close-candidate`: work waiting
+  on a named dependency, ordered for later review, approved and awaiting merge,
+  or proposed for closure.
+
+File overlap is only one conflict signal. PRs share a lane and merge order when
+they affect the same owning module, public contract, decision, migration,
+generated authority, release surface, or customer journey. Decision and
+foundation PRs that unblock other work take priority in the risk lane.
+
+A PR is review-ready only when:
 
 - it is conflict-free and based on its intended foundation;
 - CI is green;
@@ -256,6 +291,25 @@ product-direction decisions with implementation consequences. Routine isolated
 changes do not require this risk-based review gate. A PR author must never be
 requested to review their own PR; when `@offmann` authors a risk-based change,
 request the maintainer instead.
+
+The repository currently operates at agent-prepared autonomy: agents may
+implement, validate, repair, review, push, and recommend a merge, but every
+merge requires explicit human approval for that PR. Autonomous merge is a
+separate, evidence-gated policy change. It must start with an allowlisted,
+reversible low-risk scope, protected `main`, required checks, rollback proof,
+and measured post-merge outcomes. See
+`docs/decisions/2026-06-20-risk-based-delivery-system.md` for the accepted model,
+metrics, and future autonomy ladder.
+
+Treat delivery as a learning system. At the end of meaningful implementation,
+review, or coordination work, briefly consider whether the interaction exposed
+a repeated failure mode, unnecessary hand-off, missing guardrail, noisy rule,
+or unusually effective pattern. When there is concrete evidence and a useful
+change to suggest, add a short `Delivery-system learning` side note to the final
+report or PR brief: observation, evidence, and the smallest proposed update.
+This is encouraged, not required. Do not manufacture a lesson, repeat generic
+process advice, or add the note on every task. Do not mix governance changes
+into a feature PR; record or propose them separately for human acceptance.
 
 ### Agent skill system
 

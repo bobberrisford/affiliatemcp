@@ -1,7 +1,8 @@
 # Risk-based delivery concurrency and agent autonomy
 
 - **Date:** 2026-06-20
-- **Status:** Proposed, requires Othman and Rob's acceptance
+- **Status:** Accepted for implementation (2026-06-20); effective when this
+  record and its instruction changes merge
 - **Affects:** `AGENTS.md`, the repo-local delivery and review skills, pull
   request sequencing, reviewer workload, and future repository controls
 - **Depends on:** the existing agent-native workflow introduced by PRs #153,
@@ -37,23 +38,23 @@ small batches and limiting work in process; short-lived branch practice also
 favours rapid integration. Neither implies serialising unrelated, low-risk
 work behind a single reviewer lane.
 
-## Proposed decision
+## Decision
 
 Replace “one active PR” with a risk-based delivery board. Keep one active
-human/risk-review lane for Othman, while allowing bounded autonomous lanes for
+human/risk-review lane for Othman, while allowing bounded routine lanes for
 decision-complete, low-risk work. Draft exploration is not a licence to build
 against an unresolved contract.
 
 ### Concurrency model
 
-Every PR has one state (`exploration`, `blocked-decision`, `queued-risk`,
-`active-risk`, `autonomous`, `merge-queued`, or `close-candidate`), explicit
-dependencies, and affected risk domains.
+Every PR has one state (`exploration`, `blocked`, `queued-risk`, `active-risk`,
+`routine`, `merge-queued`, or `close-candidate`), explicit dependencies, and
+affected risk domains.
 
 1. **Human/risk lane: WIP 1.** Only one review-ready PR may await Othman's
    architecture/security/public-contract review. Decision and foundation PRs
    that unblock a workstream take priority.
-2. **Autonomous lanes: WIP 2 initially.** At most two unrelated, low-risk PRs
+2. **Routine lanes: WIP 2 initially.** At most two unrelated, low-risk PRs
    may be advanced concurrently. They must touch disjoint ownership domains,
    have no unresolved decision, preserve public contracts, and be independently
    green. A maintainer may merge them under the autonomy ladder below.
@@ -110,12 +111,14 @@ permit discovery only, not production implementation.
 | 3. Policy autonomous | Auto-merge low-risk allowlisted paths after required checks and CODEOWNER policy; exceptions route to humans. | Protected branch, required checks, measured false-negative/rollback rate, audit trail, kill switch. |
 | 4. Near-autonomous | Agents sequence and merge most reversible work; humans set policy and decide high-impact exceptions. | Sustained Level 3 evidence, production monitoring, tested rollback, incident learning. |
 
-Adopt **Level 1 now**, with a Level 2 pilot limited to docs, tests, fixtures,
-and isolated bug fixes that do not alter runtime/public behaviour. Move up only
-after at least 20 pilot merges with: 100% required-check success, no rollback or
-escaped material defect, no premature implementation, accurate risk labels,
-and a declining human-correction rate. Any escaped contract/security/privacy
-defect immediately suspends that allowlist.
+Adopt **Level 1 now**. A later Level 2 pilot may be proposed for docs, tests,
+fixtures, and isolated bug fixes that do not alter runtime/public behaviour.
+Do not grant autonomous merge authority until the pilot scope and merge actor
+are explicitly accepted. Move up only after at least 20 pilot merges with: 100%
+required-check success, no rollback or escaped material defect, no premature
+implementation, accurate risk labels, and a declining human-correction rate.
+Any escaped contract/security/privacy defect immediately suspends that
+allowlist.
 
 ### Chief-of-Staff loop
 
@@ -132,7 +135,7 @@ For each run:
 2. Read PR metadata, checks, dependency fields, and the latest worker final
    report first. Read earlier turns, raw logs, or full diffs only for a material
    gap or changed risk.
-3. Classify active, queued, blocked, autonomous, and close-candidate; detect
+3. Classify active-risk, queued-risk, routine, blocked, and close-candidate; detect
    domain conflicts and invalid build-ahead.
 4. Delegate focused workers for CI diagnosis, review, branch refresh, or a
    scoped correction. Workers return outcome, proof, residual risk, and next
@@ -216,6 +219,17 @@ rework so speed does not hide quality loss. Confidence to expand autopilot
 comes from repeated correct risk classification, low review correction, clean
 rollback, reliable checks, and uneventful post-merge operation.
 
+### Evidence-triggered learning loop
+
+Delivery agents should reflect after meaningful implementation, review, or
+coordination work, but should not emit ritual retrospectives. When an
+interaction exposes a repeated failure mode, unnecessary hand-off, missing or
+noisy guardrail, or a notably effective pattern, the final report or PR brief
+may include a concise `Delivery-system learning`: observation, evidence, and
+the smallest proposed update. No note is expected when no useful lesson
+emerged. Governance changes remain separate proposals for human acceptance;
+the learning note does not authorise changing policy inside a feature PR.
+
 ## Consequences
 
 - Othman's scarce attention stays serialised where judgment is required, not
@@ -226,7 +240,7 @@ rollback, reliable checks, and uneventful post-merge operation.
   another coordinator skill.
 - The Chief-of-Staff becomes event- and delta-driven, reducing noise and token
   use while preserving human visibility.
-- Level 2 requires a separately accepted merge-authority change; this proposal
+- Level 2 requires a separately accepted merge-authority change; this decision
   does not grant it.
 
 ## Operational fragment for Rob and Claude
@@ -268,23 +282,28 @@ External benchmarks:
   [skills](https://code.claude.com/docs/en/skills), and
   [subagents](https://code.claude.com/docs/en/sub-agents)
 
-## Decisions required
+## Accepted operating decisions
 
-1. Accept, amend, or reject the risk-based WIP limits: one risk lane and two
-   autonomous low-risk lanes.
-2. Decide whether unresolved decisions prohibit production implementation
-   entirely or permit explicitly disposable prototypes under a time budget.
-3. Approve the Level 2 pilot scope and who may perform its merges.
-4. Approve repository settings: protected `main`, required checks, squash-only,
-   branch deletion, and later auto-merge/merge queue criteria.
-5. Choose the Chief-of-Staff cadence and what constitutes a report-worthy
-   state change.
+1. Use one human risk-review lane and at most two routine, decision-complete
+   lanes in disjoint domains.
+2. Prohibit production implementation beyond unresolved decisions. Permit only
+   discovery and explicitly disposable prototypes until acceptance.
+3. Remain at Level 1: every merge requires explicit human approval for that
+   PR. Level 2 merge authority requires a later decision backed by evidence.
+4. Use the delta-driven Chief-of-Staff loop described here, twice daily during
+   active delivery and on material state-change triggers. Do not create an
+   automation without separate approval.
+5. Encourage evidence-triggered delivery learning as an optional side note,
+   never a mandatory retrospective or permission to change governance inline.
+6. Treat protected `main`, required checks, squash-only merge, branch deletion,
+   and later auto-merge or merge-queue use as repository-setting follow-ups;
+   this documentation PR does not change repository settings.
 
-## Implementation follow-ups after acceptance
+## Implementation status and follow-ups
 
-1. Consolidate canonical policy in `AGENTS.md`; remove duplicate definitions
-   from the three skills while retaining compact action-local safety checks.
-2. Update PR templates with workstream/dependency/lane fields and extend
-   structural tests to prevent policy copies from drifting.
-3. Configure the accepted GitHub controls, then baseline the rolling 20-PR
-   measures before piloting Level 2 autonomy.
+1. This PR consolidates canonical policy in `AGENTS.md` and keeps compact,
+   action-local workflow steps in the three skills.
+2. This PR updates Claude's entry instructions, PR templates, and structural
+   tests for workstream, dependency, lane, and learning fields.
+3. After merge, configure the separately approved GitHub controls, then
+   baseline the rolling 20-PR measures before proposing Level 2 autonomy.
