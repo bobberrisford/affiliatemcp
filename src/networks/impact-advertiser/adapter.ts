@@ -49,6 +49,7 @@
  *      must not work around it.
  */
 
+import { createHash } from 'node:crypto';
 import { impactAdvRequest } from './client.js';
 import { verifyAuth as authVerify, validateCredential as authValidate, SLUG } from './auth.js';
 import { setupSteps } from './setup.js';
@@ -58,6 +59,7 @@ import { registerAdapter } from '../../shared/registry.js';
 import { createLogger } from '../../shared/logging.js';
 import {
   NotImplementedError,
+  type ActionDescriptor,
   type AdapterCallContext,
   type Click,
   type ClickQuery,
@@ -99,7 +101,7 @@ const META: NetworkMeta = {
     'Read-only at v0.1. The HTTP client refuses non-GET methods.',
     'Two credential tiers auto-detected at runtime: agency-passthrough and brand-direct.',
     'getProgrammePerformance uses Impact pre-built `adv_performance_by_media` report; sync vs async behaviour `// TODO(verify)` until a live agency tenant is available.',
-    'listContracts/getContract read the brand-partner payment-term relationship; endpoint paths under `/Campaigns/{id}/Contracts` carry `// TODO(verify)` until confirmed against a live agency tenant. The contract write surface is not enabled here.',
+    'listContracts/getContract read the brand-partner payment-term relationship; endpoint paths under `/Campaigns/{id}/Contracts` carry `// TODO(verify)` until confirmed against a live agency tenant. proposeContract builds a reviewable change plan from those reads (advisement only, no network write); the contract write surface (apply/remove) is not enabled here.',
   ],
   supportsBrandOps: true,
   setupTimeEstimateMinutes: 8,
@@ -290,6 +292,57 @@ export interface ImpactContractQuery {
   limit?: number;
   /** Impact's one-based `Page` value, kept opaque at the MCP boundary. */
   cursor?: string;
+}
+
+/**
+ * The intended contract change, fed to `proposeContract`. Adapter-local (like
+ * `ImpactContract`) until a second network proves shared semantics.
+ *
+ * `apply` with a `contractId` modifies that contract; `apply` without one
+ * proposes a new contract; `remove` requires a `contractId`. The `apply`
+ * payload fields (`payoutTerms`, `mediaPartnerId`) are the parts a change can
+ * touch today; the exact upstream payload shape (template id vs inline rate)
+ * is `// TODO(verify)` against a live agency tenant.
+ */
+export interface ContractChangeIntent {
+  action: 'apply' | 'remove';
+  /** Logical brand slug the caller supplied; echoed into the plan for display. */
+  brand: string;
+  /** CampaignId whose contracts are addressed. */
+  programmeId: string;
+  /** Required for `remove`; present on `apply` = modify, absent = create. */
+  contractId?: string;
+  /** apply payload — TODO(verify) exact shape. */
+  payoutTerms?: string;
+  mediaPartnerId?: string;
+}
+
+/**
+ * The reviewable plan `proposeContract` returns. Shape per the accepted Impact
+ * contracts decision (docs/decisions/2026-06-12-impact-contracts-actions.md):
+ * action, brand, programme, summary, before/after snapshots, warnings, and a
+ * `confirmationToken` that pins a later (gated, not-yet-built) apply to exactly
+ * these reviewed parameters. `experimental` is always true while the write
+ * payload shape is unverified.
+ *
+ * proposeContract performs NO network write: it reads current state via the
+ * read half and computes this plan locally. The token is an advisement
+ * boundary, not a security boundary.
+ */
+export interface ContractChangePlan {
+  action: 'apply' | 'remove';
+  network: typeof SLUG;
+  /** Logical brand slug (echoed from the intent), never the network's brand id. */
+  brand: string;
+  programmeId: string;
+  summary: string;
+  /** Current contract state, when the change targets an existing contract. */
+  before?: ImpactContract;
+  /** Intended end state. `undefined` for a removal (nothing remains). */
+  after?: Partial<ImpactContract>;
+  warnings: string[];
+  confirmationToken: string;
+  experimental: true;
 }
 
 // ---------------------------------------------------------------------------
@@ -882,6 +935,62 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
   }
 
   // -------------------------------------------------------------------------
+  // proposeContract — the first DOING-surface action (ADVISEMENT, not a write).
+  // -------------------------------------------------------------------------
+
+  /**
+   * Build a reviewable plan for changing a contract WITHOUT performing any
+   * network write. Reads current state via the read half (GET only, through the
+   * guarded client), projects the intended end state, collects warnings, and
+   * returns a deterministic `confirmationToken` over the normalised intent plus
+   * the observed before-state.
+   *
+   * This issues NO non-GET request. The actual write (`applyContract` /
+   * `removeContract`) is gated behind a separate opt-in token and live-tenant
+   * verification, and is not built here; this advisement step lets an operator
+   * see exactly what such a change would do, and its blast radius, first.
+   *
+   * TODO(verify): the projected `after` payload shape (template id vs inline
+   * rate fields) against a live agency tenant, per the contracts decision.
+   */
+  async proposeContract(
+    input: ContractChangeIntent,
+    ctx?: AdapterCallContext,
+  ): Promise<ContractChangePlan> {
+    const c = requireCtx('proposeContract', ctx);
+    const campaignId = requireProgrammeId('proposeContract', input?.programmeId);
+    if (input.action === 'remove' && (!input.contractId || input.contractId.trim() === '')) {
+      throw new NetworkError(
+        buildErrorEnvelope({
+          type: 'config_error',
+          network: SLUG,
+          operation: 'proposeContract',
+          message: 'Impact advertiser proposeContract requires a contractId to remove a contract.',
+          hint: 'Call listContracts for the campaign first to discover contract ids.',
+        }),
+      );
+    }
+    // Read current state only when the change targets an existing contract.
+    const before =
+      input.contractId && input.contractId.trim() !== ''
+        ? await this.getContract({ programmeId: campaignId, contractId: input.contractId }, c)
+        : undefined;
+    const after = projectContractAfter(before, input, campaignId);
+    return {
+      action: input.action,
+      network: SLUG,
+      brand: input.brand,
+      programmeId: campaignId,
+      summary: renderContractSummary(before, input),
+      before,
+      after,
+      warnings: buildContractWarnings(before, input),
+      confirmationToken: computeConfirmationToken(input, campaignId, before),
+      experimental: true,
+    };
+  }
+
+  // -------------------------------------------------------------------------
   // Ops the advertiser side does NOT implement at v0.1.
   // -------------------------------------------------------------------------
 
@@ -964,6 +1073,11 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
       note: 'Reads a single contract by id. Endpoint path and single-contract envelope are `// TODO(verify)` against a live agency tenant.',
       claimStatus: 'experimental',
     };
+    operations['proposeContract'] = {
+      supported: true,
+      note: 'Advisement only: reads current state and returns a reviewable ContractChangePlan + token. Performs no network write. The projected change payload shape is `// TODO(verify)`; applying the plan is gated and not enabled here.',
+      claimStatus: 'experimental',
+    };
     operations['getProgramme'] = { supported: false, note: 'Not implemented at v0.1.' };
     operations['getEarningsSummary'] = { supported: false, note: 'Not implemented at v0.1.' };
     operations['listClicks'] = { supported: false, note: 'Not implemented at v0.1.' };
@@ -1024,6 +1138,113 @@ function toContractStatusList(
   return Array.isArray(v) ? v : [v];
 }
 
+// ---------------------------------------------------------------------------
+// proposeContract helpers — pure; no network call, no mutation.
+// ---------------------------------------------------------------------------
+
+/** Project the intended end state. `undefined` for a removal (nothing remains). */
+function projectContractAfter(
+  before: ImpactContract | undefined,
+  input: ContractChangeIntent,
+  campaignId: string,
+): Partial<ImpactContract> | undefined {
+  if (input.action === 'remove') return undefined;
+  const base: Partial<ImpactContract> = before
+    ? { ...before }
+    : { network: SLUG, programmeId: campaignId, status: 'pending' };
+  if (input.payoutTerms !== undefined) base.payoutTerms = input.payoutTerms;
+  if (input.mediaPartnerId !== undefined) base.mediaPartnerId = input.mediaPartnerId;
+  // The `after` is a projection, not a fetched object; drop any carried raw payload.
+  delete (base as { rawNetworkData?: unknown }).rawNetworkData;
+  return base;
+}
+
+/** Human-readable warnings, surfaced before any (gated) apply. */
+function buildContractWarnings(
+  before: ImpactContract | undefined,
+  input: ContractChangeIntent,
+): string[] {
+  const warnings: string[] = [];
+  if (input.action === 'remove') {
+    warnings.push(
+      'Removing a contract is irreversible. The before-state is preserved in this plan, but Impact may not allow re-creating an identical contract.',
+    );
+  } else if (!before) {
+    warnings.push(
+      "This creates a new contract; it would start pending, subject to Impact's workflow.",
+    );
+  } else if (before.status === 'active' && input.payoutTerms !== undefined) {
+    warnings.push('Changing payout terms on an active contract affects live partner payouts.');
+  }
+  warnings.push(
+    'Experimental: the contract write payload shape is unverified (TODO(verify)). Applying this plan is gated and not yet enabled in this adapter.',
+  );
+  return warnings;
+}
+
+/** One-line summary of the proposed change for the operator. */
+function renderContractSummary(
+  before: ImpactContract | undefined,
+  input: ContractChangeIntent,
+): string {
+  const target = input.contractId ? `contract ${input.contractId}` : 'a new contract';
+  if (input.action === 'remove') {
+    return `Remove ${target} on campaign ${input.programmeId} for brand ${input.brand}.`;
+  }
+  const terms = input.payoutTerms ? ` with payout terms "${input.payoutTerms}"` : '';
+  const verb = before ? 'Update' : 'Create';
+  return `${verb} ${target} on campaign ${input.programmeId} for brand ${input.brand}${terms}.`;
+}
+
+/**
+ * Deterministic token over the normalised intent and the observed before-state.
+ * Same intent + same before → identical token; any change of either differs.
+ * Advisement boundary only (pins a later reviewed apply to these parameters);
+ * NOT a security boundary against the model.
+ */
+function computeConfirmationToken(
+  input: ContractChangeIntent,
+  campaignId: string,
+  before: ImpactContract | undefined,
+): string {
+  const canonical = JSON.stringify({
+    action: input.action,
+    programmeId: campaignId,
+    contractId: input.contractId ?? null,
+    payoutTerms: input.payoutTerms ?? null,
+    mediaPartnerId: input.mediaPartnerId ?? null,
+    before: before
+      ? { id: before.id, status: before.status, payoutTerms: before.payoutTerms ?? null }
+      : null,
+  });
+  return createHash('sha256').update(canonical).digest('hex');
+}
+
+// ---------------------------------------------------------------------------
+// Action capability map — the DOING-surface actions this adapter declares.
+// See docs/decisions/2026-06-18-action-capability-map.md. Network-scoped
+// identifiers, owned beside the operation. Only proposeContract is declared:
+// the write half is not built, and #231 forbids declaring an api action whose
+// owned operation does not exist.
+// ---------------------------------------------------------------------------
+
+export const impactAdvertiserActionDescriptors: ActionDescriptor[] = [
+  {
+    id: 'impact-advertiser.proposeContract',
+    network: SLUG,
+    channel: 'api',
+    effect: 'advisement',
+    defaultAuthorityTier: 1,
+    description:
+      'Build a reviewable plan for changing an Impact contract (the brand-partner ' +
+      'payment-term relationship) without performing any network write. Reads current ' +
+      'state and returns a ContractChangePlan with a confirmation token. Experimental: ' +
+      'the change payload shape carries TODO(verify) and applying it is gated, not yet enabled.',
+    // proposeContract only READS to build the plan, so it needs no write credential.
+    credentialRequirements: [],
+  },
+];
+
 function canonicalToImpactState(s: TransactionStatus): string | undefined {
   switch (s) {
     case 'pending':
@@ -1063,4 +1284,8 @@ export const _internals = {
   extractRows,
   isAsync,
   canonicalToImpactState,
+  projectContractAfter,
+  buildContractWarnings,
+  renderContractSummary,
+  computeConfirmationToken,
 };

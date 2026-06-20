@@ -30,6 +30,17 @@ const GetContractSchema = z
   })
   .strict();
 
+const ProposeContractSchema = z
+  .object({
+    brand: z.string().min(1),
+    programmeId: z.string().min(1),
+    action: z.enum(['apply', 'remove']),
+    contractId: z.string().min(1).optional(),
+    payoutTerms: z.string().min(1).optional(),
+    mediaPartnerId: z.string().min(1).optional(),
+  })
+  .strict();
+
 export function generateImpactAdvertiserTools(): ToolDefinition[] {
   return [
     tool(
@@ -50,6 +61,16 @@ export function generateImpactAdvertiserTools(): ToolDefinition[] {
         const { brand, programmeId, contractId } = GetContractSchema.parse(args ?? {});
         const ctx = buildAdapterCallContext(brand, impactAdvertiserAdapter.slug);
         return impactAdvertiserAdapter.getContract({ programmeId, contractId }, ctx);
+      },
+    ),
+    tool(
+      'affiliate_impact-advertiser_propose_contract',
+      'Experimentally build a reviewable plan for changing an Impact contract (a brand-partner payment-term relationship) WITHOUT writing anything to the network. Use this to preview exactly what an apply or remove would do, and its blast radius, before any separately gated write is enabled. Requires brand, programmeId, and action (apply|remove); returns a ContractChangePlan with before/after snapshots, warnings, and a confirmation token, and performs only API reads.',
+      ProposeContractSchema,
+      (args) => {
+        const input = ProposeContractSchema.parse(args ?? {});
+        const ctx = buildAdapterCallContext(input.brand, impactAdvertiserAdapter.slug);
+        return impactAdvertiserAdapter.proposeContract(input, ctx);
       },
     ),
   ];

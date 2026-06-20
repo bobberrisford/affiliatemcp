@@ -4,14 +4,17 @@ import { generateImpactAdvertiserTools } from '../../../src/networks/impact-adve
 import { generateAllTools, generateToolsFor } from '../../../src/tools/generate.js';
 
 describe('Impact advertiser contract tool surface', () => {
-  it('ships only the two accepted network-local read tools', () => {
+  it('ships the two reads plus the proposeContract advisement tool, but no write tools', () => {
     const tools = generateImpactAdvertiserTools();
     expect(tools.map((tool) => tool.name)).toEqual([
       'affiliate_impact-advertiser_list_contracts',
       'affiliate_impact-advertiser_get_contract',
+      'affiliate_impact-advertiser_propose_contract',
     ]);
-    expect(tools.every((tool) => tool.description.includes('read'))).toBe(true);
-    expect(tools.some((tool) => /propose|apply|remove/.test(tool.name))).toBe(false);
+    // proposeContract is advisement (no network write); the write surface
+    // (apply/remove) is not exposed while it remains unbuilt and gated.
+    const names = tools.map((tool) => tool.name);
+    expect(names.some((n) => /apply_contract|remove_contract/.test(n))).toBe(false);
   });
 
   it('adds the reads only to Impact rather than every advertiser adapter', () => {
@@ -21,6 +24,7 @@ describe('Impact advertiser contract tool surface', () => {
     const allNames = generateAllTools().map((tool) => tool.name);
     expect(allNames).toContain('affiliate_impact-advertiser_list_contracts');
     expect(allNames).toContain('affiliate_impact-advertiser_get_contract');
+    expect(allNames).toContain('affiliate_impact-advertiser_propose_contract');
   });
 
   it('requires brand and programmeId and constrains status and page cursor', () => {
