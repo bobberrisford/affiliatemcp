@@ -61,8 +61,6 @@ import {
   type AdapterCallContext,
   type Click,
   type ClickQuery,
-  type Contract,
-  type ContractQuery,
   type CredentialValidationResult,
   type DiscoveredBrand,
   type EarningsSummary,
@@ -268,6 +266,32 @@ interface ImpactAdvContractEnvelope {
   Contract?: ImpactAdvContractRaw;
 }
 
+export type ImpactContractStatus = 'active' | 'pending' | 'expired' | 'inactive' | 'unknown';
+
+/** Impact-local read shape until a second network proves shared semantics. */
+export interface ImpactContract {
+  id: string;
+  network: typeof SLUG;
+  programmeId: string;
+  programmeName?: string;
+  mediaPartnerId?: string;
+  mediaPartnerName?: string;
+  status: ImpactContractStatus;
+  payoutTerms?: string;
+  effectiveDate?: string;
+  expiryDate?: string;
+  rawNetworkData: unknown;
+}
+
+export interface ImpactContractQuery {
+  programmeId: string;
+  status?: ImpactContractStatus | ImpactContractStatus[];
+  mediaPartnerId?: string;
+  limit?: number;
+  /** Impact's one-based `Page` value, kept opaque at the MCP boundary. */
+  cursor?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Status mapping
 // ---------------------------------------------------------------------------
@@ -307,7 +331,7 @@ function mapMediaPartnerStatus(raw: ImpactAdvMediaPartnerRaw): MediaPartner['sta
   return 'unknown';
 }
 
-function mapContractStatus(raw: ImpactAdvContractRaw): Contract['status'] {
+function mapContractStatus(raw: ImpactAdvContractRaw): ImpactContractStatus {
   const s = String(raw.Status ?? raw.ContractStatus ?? '').toLowerCase();
   if (s === 'active' || s === 'live' || s === 'approved') return 'active';
   if (s === 'pending' || s === 'proposed' || s === 'inreview') return 'pending';
@@ -441,9 +465,26 @@ function toPerformanceRow(raw: ImpactAdvReportRow): ProgrammePerformanceRow {
   };
 }
 
-function toContract(raw: ImpactAdvContractRaw): Contract {
-  const id = String(raw.Id ?? raw.ContractId ?? '');
-  const programmeId = String(raw.CampaignId ?? '');
+function toContract(
+  raw: ImpactAdvContractRaw,
+  programmeIdFallback?: string,
+  contractIdFallback?: string,
+  operation = 'getContract',
+): ImpactContract {
+  const id = String(raw.Id ?? raw.ContractId ?? contractIdFallback ?? '');
+  const programmeId = String(raw.CampaignId ?? programmeIdFallback ?? '');
+  if (!id || !programmeId) {
+    throw new NetworkError(
+      buildErrorEnvelope({
+        type: 'network_api_error',
+        network: SLUG,
+        operation,
+        networkErrorBody: JSON.stringify(raw),
+        message: 'Impact returned a contract without the identifiers required by the read contract.',
+        hint: 'Retry once; if the response is unchanged, keep the operation experimental and report the scrubbed payload shape.',
+      }),
+    );
+  }
   const mediaPartnerId =
     raw.MediaPartnerId !== undefined && raw.MediaPartnerId !== null
       ? String(raw.MediaPartnerId)
@@ -775,20 +816,23 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
    * force a `Programs` vs `Campaigns` split; reads use the `Campaigns` path per
    * the reference until confirmed.
    */
-  async listContracts(query?: ContractQuery, ctx?: AdapterCallContext): Promise<Contract[]> {
+  async listContracts(
+    query?: ImpactContractQuery,
+    ctx?: AdapterCallContext,
+  ): Promise<ImpactContract[]> {
     const c = requireCtx('listContracts', ctx);
     const campaignId = requireProgrammeId('listContracts', query?.programmeId);
     const envelope = await impactAdvRequest<ImpactAdvContractEnvelope | ImpactAdvContractRaw[]>({
       operation: 'listContracts',
       brandPath: `/Campaigns/${encodeURIComponent(campaignId)}/Contracts`,
       networkBrandId: c.networkBrandId,
-      query: { PageSize: query?.limit ?? 100 },
-      resilience: RESILIENCE.listContracts ?? RESILIENCE.default,
+      query: { PageSize: query?.limit ?? 100, Page: query?.cursor },
+      resilience: RESILIENCE.default,
     });
     const list: ImpactAdvContractRaw[] = Array.isArray(envelope)
       ? envelope
       : envelope?.Contracts ?? [];
-    let contracts = list.map(toContract);
+    let contracts = list.map((raw) => toContract(raw, campaignId, undefined, 'listContracts'));
     const statusFilter = toContractStatusList(query?.status);
     if (statusFilter && statusFilter.length > 0) {
       const set = new Set(statusFilter);
@@ -811,7 +855,7 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
   async getContract(
     input: { programmeId: string; contractId: string },
     ctx?: AdapterCallContext,
-  ): Promise<Contract> {
+  ): Promise<ImpactContract> {
     const c = requireCtx('getContract', ctx);
     const campaignId = requireProgrammeId('getContract', input?.programmeId);
     const contractId = String(input?.contractId ?? '');
@@ -830,11 +874,11 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
       operation: 'getContract',
       brandPath: `/Campaigns/${encodeURIComponent(campaignId)}/Contracts/${encodeURIComponent(contractId)}`,
       networkBrandId: c.networkBrandId,
-      resilience: RESILIENCE.getContract ?? RESILIENCE.default,
+      resilience: RESILIENCE.default,
     });
-    const flat =
-      (envelope as ImpactAdvContractEnvelope).Contract ?? (envelope as ImpactAdvContractRaw);
-    return toContract(flat);
+    const wrapped = envelope as ImpactAdvContractEnvelope;
+    const flat = wrapped.Contract ?? wrapped.Contracts?.[0] ?? (envelope as ImpactAdvContractRaw);
+    return toContract(flat, campaignId, contractId);
   }
 
   // -------------------------------------------------------------------------
@@ -974,8 +1018,8 @@ function toMediaPartnerStatusList(
 }
 
 function toContractStatusList(
-  v?: Contract['status'] | Array<Contract['status']>,
-): Array<Contract['status']> | undefined {
+  v?: ImpactContractStatus | ImpactContractStatus[],
+): ImpactContractStatus[] | undefined {
   if (v === undefined) return undefined;
   return Array.isArray(v) ? v : [v];
 }

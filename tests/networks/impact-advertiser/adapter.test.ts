@@ -419,11 +419,13 @@ describe('Impact advertiser.listContracts', () => {
   it('lists contracts under a campaign and builds the right path', async () => {
     const { urls } = mockFetchQueue([expectAgency(), fakeResponse(loadFixture('contracts.json'))]);
     const r = await impactAdvertiserAdapter.listContracts(
-      { programmeId: 'CMP-42' },
+      { programmeId: 'CMP-42', cursor: '2', limit: 50 },
       { networkBrandId: 'BRAND-42' },
     );
     expect(r).toHaveLength(3);
     expect(urls[1]).toContain('/Agencies/IRA-AGENCY-1/Advertisers/BRAND-42/Campaigns/CMP-42/Contracts');
+    expect(urls[1]).toContain('PageSize=50');
+    expect(urls[1]).toContain('Page=2');
   });
 
   it('filters by status client-side', async () => {
@@ -434,6 +436,34 @@ describe('Impact advertiser.listContracts', () => {
     );
     expect(r).toHaveLength(1);
     expect(r[0]?.mediaPartnerName).toBe('CouponCove');
+  });
+
+  it('uses the brand-direct credential path when agency detection returns 404', async () => {
+    const { urls } = mockFetchQueue([
+      expectBrandDirect(),
+      fakeResponse(loadFixture('contracts.json')),
+    ]);
+    await impactAdvertiserAdapter.listContracts(
+      { programmeId: 'CMP-42' },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(urls[1]).toContain('/Advertisers/BRAND-42/Campaigns/CMP-42/Contracts');
+    expect(urls[1]).not.toContain('/Agencies/');
+  });
+
+  it('rejects a successful payload that cannot identify a listed contract', async () => {
+    mockFetchQueue([expectAgency(), fakeResponse({ Contracts: [{ Status: 'Active' }] })]);
+    try {
+      await impactAdvertiserAdapter.listContracts(
+        { programmeId: 'CMP-42' },
+        { networkBrandId: 'BRAND-42' },
+      );
+      throw new Error('expected listContracts to throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(NetworkError);
+      expect((err as NetworkError).envelope.type).toBe('network_api_error');
+      expect((err as NetworkError).envelope.operation).toBe('listContracts');
+    }
   });
 
   it('refuses to run without a brand context (config_error)', async () => {
@@ -464,6 +494,17 @@ describe('Impact advertiser.getContract', () => {
     expect(ct.id).toBe('CT-5001');
     expect(ct.status).toBe('active');
     expect(urls[1]).toContain('/Campaigns/CMP-42/Contracts/CT-5001');
+  });
+
+  it('uses requested ids when the single-contract payload omits them', async () => {
+    mockFetchQueue([expectAgency(), fakeResponse({ Contract: { Status: 'Active' } })]);
+    const ct = await impactAdvertiserAdapter.getContract(
+      { programmeId: 'CMP-42', contractId: 'CT-5001' },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(ct.id).toBe('CT-5001');
+    expect(ct.programmeId).toBe('CMP-42');
+    expect(ct.rawNetworkData).toEqual({ Status: 'Active' });
   });
 
   it('refuses to run without a contractId (config_error)', async () => {

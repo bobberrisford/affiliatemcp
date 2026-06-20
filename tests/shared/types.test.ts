@@ -6,8 +6,6 @@
 import { describe, expect, it } from 'vitest';
 import { NotImplementedError } from '../../src/shared/types.js';
 import type {
-  Contract,
-  ContractQuery,
   NetworkErrorEnvelope,
   NetworkMeta,
   Programme,
@@ -93,47 +91,6 @@ describe('shared types', () => {
     };
     expect(t.statusRaw).toBe('LOCKED');
     expect(t.merchantKey).toBe('acme.com');
-  });
-
-  it('a minimal read-only Contract record is structurally valid', () => {
-    const c: Contract = {
-      id: 'CT-1',
-      network: 'impact-advertiser',
-      programmeId: 'CMP-42',
-      status: 'active',
-      rawNetworkData: {},
-    };
-    expect(c.id).toBe('CT-1');
-    expect(c.status).toBe('active');
-  });
-
-  it('Contract accepts optional partner, terms, and date fields', () => {
-    const c: Contract = {
-      id: 'CT-1',
-      network: 'impact-advertiser',
-      programmeId: 'CMP-42',
-      programmeName: 'Acme Spring Sale',
-      mediaPartnerId: 'MP-1',
-      mediaPartnerName: 'BestDeals.com',
-      status: 'pending',
-      payoutTerms: '8% of sale amount',
-      effectiveDate: '2026-01-01T00:00:00.000Z',
-      expiryDate: '2026-12-31T00:00:00.000Z',
-      rawNetworkData: {},
-    };
-    expect(c.mediaPartnerName).toBe('BestDeals.com');
-    expect(c.payoutTerms).toContain('8%');
-  });
-
-  it('ContractQuery scopes by programme, status, and media partner', () => {
-    const q: ContractQuery = {
-      programmeId: 'CMP-42',
-      status: ['active', 'pending'],
-      mediaPartnerId: 'MP-1',
-      limit: 50,
-    };
-    expect(q.programmeId).toBe('CMP-42');
-    expect(Array.isArray(q.status)).toBe(true);
   });
 
   it('NetworkMeta accepts optional networkTimezone', () => {
