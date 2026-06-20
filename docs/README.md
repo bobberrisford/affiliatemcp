@@ -29,6 +29,7 @@ be changed through their source data or generator, not edited by hand.
 | [`decisions/`](./decisions) | Settled and proposed cross-cutting decisions | Recording a decision or updating its status |
 | [`product/`](./product) | Product direction, active proposals, historical plans, and research | Clarifying direction or proposal status |
 | [`networks/`](./networks) | User-facing credential and setup walkthroughs | Setup steps or network requirements change |
+| [`security/`](./security) | Self-serve security and data-handling overview for brands, agencies, and their reviewers | Security posture or data-handling answers change |
 | [`findings/`](./findings) | Evidence and implementation findings used by `REPORT.md` | Network research or verified behaviour changes |
 
 Component-specific documentation stays beside the component, for example
