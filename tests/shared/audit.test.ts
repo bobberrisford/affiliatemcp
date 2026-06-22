@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ACTION_AUDIT_EVENTS,
   recordActionAudit,
   toAuditLine,
   type ActionAuditEntry,
@@ -11,17 +12,23 @@ import {
 const REDACT_KEY = /token|secret|key|password|authorization/i;
 
 describe('audit event vocabulary', () => {
-  it('has no generic `succeeded` event — success is only ever `applied`', () => {
+  it('keeps denied, dispatched, rejected, unknown, and verified writes distinct', () => {
     const events: ActionAuditEvent[] = [
       'proposed',
       'dry_run',
-      'applied',
-      'apply_failed',
+      'write_denied',
+      'write_dispatched',
+      'write_rejected',
+      'write_unknown',
+      'write_verified',
       'handoff_emitted',
     ];
+    expect(ACTION_AUDIT_EVENTS).toEqual(events);
     // @ts-expect-error `succeeded` is deliberately not part of the vocabulary.
     const bad: ActionAuditEvent = 'succeeded';
     expect(events).not.toContain(bad);
+    expect(events).not.toContain('applied');
+    expect(events).not.toContain('apply_failed');
   });
 });
 
@@ -42,7 +49,7 @@ describe('toAuditLine', () => {
 
   it('uses redaction-safe key names for the hash and tier', () => {
     const entry: ActionAuditEntry = {
-      event: 'applied',
+      event: 'write_verified',
       action: 'impact-advertiser.applyContract',
       network: 'impact-advertiser',
       credentialTier: 'write',
@@ -57,15 +64,8 @@ describe('toAuditLine', () => {
 });
 
 describe('recordActionAudit', () => {
-  it('records every event type without throwing', () => {
-    const events: ActionAuditEvent[] = [
-      'proposed',
-      'dry_run',
-      'applied',
-      'apply_failed',
-      'handoff_emitted',
-    ];
-    for (const event of events) {
+  it('records every event type without throwing for the active logger', () => {
+    for (const event of ACTION_AUDIT_EVENTS) {
       expect(() =>
         recordActionAudit({ event, action: 'test.action', network: 'test' }),
       ).not.toThrow();
