@@ -30,6 +30,34 @@ const GetContractSchema = z
   })
   .strict();
 
+const ProposeApplyContractSchema = z
+  .object({
+    brand: z.string().trim().min(1),
+    programmeId: z.string().trim().min(1),
+    action: z.literal('apply'),
+    contractId: z.string().trim().min(1).optional(),
+    payoutTerms: z.string().trim().min(1).optional(),
+    mediaPartnerId: z.string().trim().min(1).optional(),
+  })
+  .strict()
+  .refine((value) => value.payoutTerms !== undefined || value.mediaPartnerId !== undefined, {
+    message: 'An apply proposal requires payoutTerms or mediaPartnerId.',
+  });
+
+const ProposeRemoveContractSchema = z
+  .object({
+    brand: z.string().trim().min(1),
+    programmeId: z.string().trim().min(1),
+    action: z.literal('remove'),
+    contractId: z.string().trim().min(1),
+  })
+  .strict();
+
+const ProposeContractSchema = z.union([
+  ProposeApplyContractSchema,
+  ProposeRemoveContractSchema,
+]);
+
 export function generateImpactAdvertiserTools(): ToolDefinition[] {
   return [
     tool(
@@ -41,6 +69,7 @@ export function generateImpactAdvertiserTools(): ToolDefinition[] {
         const ctx = buildAdapterCallContext(brand, impactAdvertiserAdapter.slug);
         return impactAdvertiserAdapter.listContracts(query, ctx);
       },
+      { readOnlyHint: true },
     ),
     tool(
       'affiliate_impact-advertiser_get_contract',
@@ -51,6 +80,18 @@ export function generateImpactAdvertiserTools(): ToolDefinition[] {
         const ctx = buildAdapterCallContext(brand, impactAdvertiserAdapter.slug);
         return impactAdvertiserAdapter.getContract({ programmeId, contractId }, ctx);
       },
+      { readOnlyHint: true },
+    ),
+    tool(
+      'affiliate_impact-advertiser_propose_contract',
+      'Experimentally build a reviewable plan for changing an Impact contract (a brand-partner payment-term relationship) WITHOUT writing anything to the network. Use this to preview exactly what an apply or remove would do, and its blast radius, before any separately gated write is enabled. Requires brand, programmeId, and action (apply|remove); returns a ContractChangePlan with before/after snapshots, warnings, and a confirmation token, and performs only API reads.',
+      ProposeContractSchema,
+      (args) => {
+        const input = ProposeContractSchema.parse(args ?? {});
+        const ctx = buildAdapterCallContext(input.brand, impactAdvertiserAdapter.slug);
+        return impactAdvertiserAdapter.proposeContract(input, ctx);
+      },
+      { readOnlyHint: true },
     ),
   ];
 }
@@ -60,6 +101,7 @@ function tool(
   description: string,
   schema: z.ZodTypeAny,
   handle: (args: unknown) => Promise<unknown>,
+  annotations?: ToolDefinition['annotations'],
 ): ToolDefinition {
-  return { name, description, inputSchema: toJsonSchema(schema), handle };
+  return { name, description, inputSchema: toJsonSchema(schema), handle, annotations };
 }
