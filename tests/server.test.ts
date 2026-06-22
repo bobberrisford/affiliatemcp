@@ -23,5 +23,11 @@ describe('classifyToolForTelemetry', () => {
       network: 'impact',
       operation: 'list_transactions',
     });
+    expect(
+      classifyToolForTelemetry('affiliate_impact-advertiser_propose_contract'),
+    ).toEqual({
+      network: 'impact-advertiser',
+      operation: 'propose_contract',
+    });
   });
 });
