@@ -108,12 +108,18 @@ export type ListClientStrategiesMetaResult = ClientStrategySummary[];
  */
 export type ListActionsMetaResult =
   | ActionMapEntry[]
-  | { unsupportedScope: { dimension: 'network' | 'brand'; value: string }; message: string };
+  | {
+      unsupportedScope: {
+        dimension: 'network' | 'brand' | 'brand_network';
+        value: string;
+      };
+      message: string;
+    };
 
 const ListActionsSchema = z
   .object({
-    network: z.string().min(1).optional(),
-    brand: z.string().min(1).optional(),
+    network: z.string().trim().min(1).optional(),
+    brand: z.string().trim().min(1).optional(),
     effect: z.enum(['read', 'advisement', 'write']).optional(),
     channel: z.enum(['api', 'browser', 'none']).optional(),
   })
@@ -607,10 +613,12 @@ export function generateMetaTools(): ToolDefinition[] {
         'Use this to see what is possible and what it would cost in approvals before granting a write credential or planning a change; filter by network, brand, effect, or channel, and note it never executes an action, drives a browser, or checks live auth. ' +
         'Returns an ActionMapEntry[] (or an explicit unsupported-scope result for an unknown network/brand); for live credential and endpoint health use affiliate_run_diagnostic, and for network discovery use affiliate_list_networks.',
       inputSchema: toJsonSchema(ListActionsSchema),
+      annotations: { readOnlyHint: true },
       handle: async (args): Promise<ListActionsMetaResult> => {
         const f = ListActionsSchema.parse(args ?? {});
+        const registeredNetworks = new Set(getAdapters().map((adapter) => adapter.slug));
         // Explicit unknown-scope results — never an ambiguous empty list (#231 §3).
-        if (f.network !== undefined && !getAdapters().some((a) => a.slug === f.network)) {
+        if (f.network !== undefined && !registeredNetworks.has(f.network)) {
           return {
             unsupportedScope: { dimension: 'network', value: f.network },
             message: `No registered adapter for network "${f.network}". Call affiliate_list_networks to see registered networks.`,
@@ -625,11 +633,31 @@ export function generateMetaTools(): ToolDefinition[] {
               message: `No brand "${f.brand}" is bound in brands.json. Call affiliate_resolve_brand to see bound brands.`,
             };
           }
-          brandNetworks = new Set(bindings.map((b) => b.network));
+          brandNetworks = new Set(
+            bindings
+              .map((binding) => binding.network)
+              .filter((network) => registeredNetworks.has(network)),
+          );
+          if (brandNetworks.size === 0) {
+            return {
+              unsupportedScope: { dimension: 'brand', value: f.brand },
+              message: `Brand "${f.brand}" has no binding to a registered adapter. Call affiliate_list_networks and affiliate_resolve_brand to inspect the configuration.`,
+            };
+          }
+          if (f.network !== undefined && !brandNetworks.has(f.network)) {
+            return {
+              unsupportedScope: {
+                dimension: 'brand_network',
+                value: `${f.brand}@${f.network}`,
+              },
+              message: `Brand "${f.brand}" is not bound to network "${f.network}". Call affiliate_resolve_brand to see its network bindings.`,
+            };
+          }
         }
         // Non-probing: registry read + brands.json read + pure helpers only.
         let descriptors = collectActionDescriptors();
         if (f.network) descriptors = descriptors.filter((d) => d.network === f.network);
+        if (brandNetworks) descriptors = descriptors.filter((d) => brandNetworks.has(d.network));
         if (f.effect) descriptors = descriptors.filter((d) => d.effect === f.effect);
         if (f.channel) descriptors = descriptors.filter((d) => d.channel === f.channel);
         return descriptors.map((d) => {

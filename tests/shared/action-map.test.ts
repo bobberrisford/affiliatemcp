@@ -29,6 +29,15 @@ describe('computeReadiness', () => {
     );
   });
 
+  it('unsupported scope takes precedence over missing credentials', () => {
+    expect(
+      computeReadiness([{ label: 'SOME_TOKEN', configured: false }], {
+        brandProvided: true,
+        brandBoundToNetwork: false,
+      }),
+    ).toBe('unsupported');
+  });
+
   it('missing_credentials when any required credential is unconfigured', () => {
     expect(
       computeReadiness([{ label: 'SOME_TOKEN', configured: false }], {
@@ -38,13 +47,13 @@ describe('computeReadiness', () => {
     ).toBe('missing_credentials');
   });
 
-  it('credential check takes precedence over the brand dimension', () => {
+  it('scope uncertainty takes precedence over credential presence', () => {
     expect(
       computeReadiness([{ label: 'SOME_TOKEN', configured: false }], {
         brandProvided: false,
         brandBoundToNetwork: false,
       }),
-    ).toBe('missing_credentials');
+    ).toBe('unknown');
   });
 });
 

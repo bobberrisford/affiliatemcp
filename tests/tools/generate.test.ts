@@ -16,14 +16,20 @@ import type { NetworkAdapter } from '../../src/shared/types.js';
 let tmp: string;
 let originalConfigDir: string | undefined;
 let originalCacheSetting: string | undefined;
+let originalImpactSid: string | undefined;
+let originalImpactToken: string | undefined;
 
 beforeEach(() => {
   _clearRegistry();
   tmp = mkdtempSync(path.join(tmpdir(), 'amcp-tool-gen-'));
   originalConfigDir = process.env['AFFILIATE_MCP_CONFIG_DIR'];
   originalCacheSetting = process.env['AFFILIATE_MCP_CACHE'];
+  originalImpactSid = process.env['IMPACT_ADVERTISER_ACCOUNT_SID'];
+  originalImpactToken = process.env['IMPACT_ADVERTISER_AUTH_TOKEN'];
   process.env['AFFILIATE_MCP_CONFIG_DIR'] = tmp;
   process.env['AFFILIATE_MCP_CACHE'] = 'on';
+  delete process.env['IMPACT_ADVERTISER_ACCOUNT_SID'];
+  delete process.env['IMPACT_ADVERTISER_AUTH_TOKEN'];
 });
 
 afterEach(() => {
@@ -31,6 +37,10 @@ afterEach(() => {
   else process.env['AFFILIATE_MCP_CONFIG_DIR'] = originalConfigDir;
   if (originalCacheSetting === undefined) delete process.env['AFFILIATE_MCP_CACHE'];
   else process.env['AFFILIATE_MCP_CACHE'] = originalCacheSetting;
+  if (originalImpactSid === undefined) delete process.env['IMPACT_ADVERTISER_ACCOUNT_SID'];
+  else process.env['IMPACT_ADVERTISER_ACCOUNT_SID'] = originalImpactSid;
+  if (originalImpactToken === undefined) delete process.env['IMPACT_ADVERTISER_AUTH_TOKEN'];
+  else process.env['IMPACT_ADVERTISER_AUTH_TOKEN'] = originalImpactToken;
 });
 
 /**
@@ -364,10 +374,28 @@ describe('affiliate_list_actions meta-tool', () => {
     expect(rows[0]!.descriptor.effect).toBe('advisement');
     expect(rows[0]!.descriptor.channel).toBe('api');
     expect(rows[0]!.readiness).toBe('unknown'); // no brand filter → fail-closed
+    expect(rows[0]!.credentials).toEqual([
+      { label: 'IMPACT_ADVERTISER_ACCOUNT_SID', configured: false },
+      { label: 'IMPACT_ADVERTISER_AUTH_TOKEN', configured: false },
+    ]);
     expect(rows[0]!.liveHealthVia).toBe('affiliate_run_diagnostic');
   });
 
-  it('reports ready when a brand bound to that network is named', async () => {
+  it('reports missing credentials for a bound brand without exposing values', async () => {
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [{ network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-1' }],
+      },
+    });
+    const rows = (await find().handle({ brand: 'acme' })) as ActionRow[];
+    expect(rows[0]!.readiness).toBe('missing_credentials');
+    expect(JSON.stringify(rows)).not.toContain('networkBrandId');
+  });
+
+  it('reports ready only when the brand is bound and both read credentials are present', async () => {
+    process.env['IMPACT_ADVERTISER_ACCOUNT_SID'] = 'secret-sid';
+    process.env['IMPACT_ADVERTISER_AUTH_TOKEN'] = 'secret-token';
     saveBrands({
       version: 1,
       brands: {
@@ -376,6 +404,9 @@ describe('affiliate_list_actions meta-tool', () => {
     });
     const rows = (await find().handle({ brand: 'acme' })) as ActionRow[];
     expect(rows[0]!.readiness).toBe('ready');
+    expect(rows[0]!.credentials.every((credential) => credential.configured)).toBe(true);
+    expect(JSON.stringify(rows)).not.toContain('secret-sid');
+    expect(JSON.stringify(rows)).not.toContain('secret-token');
   });
 
   it('returns an explicit unsupportedScope for an unknown network, not []', async () => {
@@ -387,6 +418,46 @@ describe('affiliate_list_actions meta-tool', () => {
   it('returns an explicit unsupportedScope for an unbound brand', async () => {
     const r = (await find().handle({ brand: 'ghost-brand' })) as Unsupported;
     expect(r.unsupportedScope).toEqual({ dimension: 'brand', value: 'ghost-brand' });
+  });
+
+  it('returns an explicit unsupportedScope for a stale brand binding', async () => {
+    saveBrands({
+      version: 1,
+      brands: {
+        stale: [{ network: 'not-registered', credentialId: 'default', networkBrandId: 'OLD-1' }],
+      },
+    });
+    const r = (await find().handle({ brand: 'stale' })) as Unsupported;
+    expect(r.unsupportedScope).toEqual({ dimension: 'brand', value: 'stale' });
+    expect(r.message).toMatch(/no binding to a registered adapter/i);
+  });
+
+  it('returns an explicit unsupportedScope for a valid brand/network mismatch', async () => {
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [{ network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-1' }],
+      },
+    });
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(fakeAdapter('quiet-network', 'Quiet Network'));
+    const r = (await find().handle({ brand: 'acme', network: 'quiet-network' })) as Unsupported;
+    expect(r.unsupportedScope).toEqual({
+      dimension: 'brand_network',
+      value: 'acme@quiet-network',
+    });
+  });
+
+  it('returns [] when a valid brand scope has no declared actions', async () => {
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(fakeAdapter('quiet-network', 'Quiet Network'));
+    saveBrands({
+      version: 1,
+      brands: {
+        quiet: [{ network: 'quiet-network', credentialId: 'default', networkBrandId: 'QN-1' }],
+      },
+    });
+    expect(await find().handle({ brand: 'quiet' })).toEqual([]);
   });
 
   it('filters by effect and channel', async () => {
@@ -407,6 +478,10 @@ describe('affiliate_list_actions meta-tool', () => {
     } finally {
       globalThis.fetch = original;
     }
+  });
+
+  it('declares itself read-only to MCP hosts', () => {
+    expect(find().annotations?.readOnlyHint).toBe(true);
   });
 });
 
