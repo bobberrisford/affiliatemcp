@@ -38,9 +38,9 @@ export interface ReadinessScope {
 
 /**
  * Compute runtime readiness for one descriptor against a scope. Fail-closed:
- * a missing required credential is `missing_credentials`; an advertiser action
- * with no brand named cannot be confirmed ready, so it is `unknown`; a brand
- * named but not bound to this network is `unsupported`; otherwise `ready`.
+ * an advertiser action with no brand named cannot be confirmed ready, so it is
+ * `unknown`; a brand named but not bound to this network is `unsupported`; a
+ * missing required credential is `missing_credentials`; otherwise `ready`.
  *
  * Takes the already-computed credential snapshot (from `snapshotCredentials`)
  * so it stays pure and unit-testable without touching the environment.
@@ -49,8 +49,8 @@ export function computeReadiness(
   credentials: ActionCredentialStatus[],
   scope: ReadinessScope,
 ): ActionReadiness {
-  if (credentials.some((c) => !c.configured)) return 'missing_credentials';
   if (!scope.brandProvided) return 'unknown';
   if (!scope.brandBoundToNetwork) return 'unsupported';
+  if (credentials.some((c) => !c.configured)) return 'missing_credentials';
   return 'ready';
 }
