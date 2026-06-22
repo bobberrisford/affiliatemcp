@@ -59,7 +59,7 @@ describe('snapshotCredentials', () => {
     const d: ActionDescriptor = {
       ...baseDescriptor,
       // input `configured` is ignored; snapshot recomputes from the environment.
-      credentialRequirements: [{ label: ENV, configured: false }],
+      credentialRequirements: [{ label: ENV }],
     };
     const snap = snapshotCredentials(d);
     expect(snap).toEqual([{ label: ENV, configured: true }]);
@@ -69,7 +69,7 @@ describe('snapshotCredentials', () => {
   it('reports configured:false when the env var is unset or blank', () => {
     const d: ActionDescriptor = {
       ...baseDescriptor,
-      credentialRequirements: [{ label: ENV, configured: true }],
+      credentialRequirements: [{ label: ENV }],
     };
     expect(snapshotCredentials(d)).toEqual([{ label: ENV, configured: false }]);
     process.env[ENV] = '   ';

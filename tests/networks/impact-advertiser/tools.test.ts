@@ -15,6 +15,7 @@ describe('Impact advertiser contract tool surface', () => {
     // (apply/remove) is not exposed while it remains unbuilt and gated.
     const names = tools.map((tool) => tool.name);
     expect(names.some((n) => /apply_contract|remove_contract/.test(n))).toBe(false);
+    expect(tools.every((tool) => tool.annotations?.readOnlyHint === true)).toBe(true);
   });
 
   it('adds the reads only to Impact rather than every advertiser adapter', () => {

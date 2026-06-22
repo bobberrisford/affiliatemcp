@@ -164,13 +164,17 @@ export type DefaultAuthorityTier = 0 | 1 | 3;
  */
 export type ActionReadiness = 'ready' | 'missing_credentials' | 'unsupported' | 'unknown';
 
-/**
- * Presence-only, redacted credential requirement. Carries the public label and
- * whether SOMETHING is configured for it — never a value, token, scope,
- * identity, cookie, session, or account/brand identifier.
- */
+/** Static public label for a credential an action engages. */
 export interface ActionCredentialRequirement {
   label: string;
+}
+
+/**
+ * Runtime, presence-only status for one statically declared requirement.
+ * Never carries a value, token, scope, identity, cookie, session, or account
+ * or brand identifier.
+ */
+export interface ActionCredentialStatus extends ActionCredentialRequirement {
   configured: boolean;
 }
 
@@ -202,7 +206,7 @@ export interface ActionMapEntry {
   /** Computed now, from local config. Fail-closed to `unknown`. */
   readiness: ActionReadiness;
   /** Presence-only credential snapshot for the requested scope. Redacted. */
-  credentials: ActionCredentialRequirement[];
+  credentials: ActionCredentialStatus[];
   /** Where to confirm live auth/health — the map links, never restates. */
   liveHealthVia: 'affiliate_run_diagnostic';
 }

@@ -76,6 +76,7 @@ export async function startServer(): Promise<void> {
       name: t.name,
       description: t.description,
       inputSchema: t.inputSchema,
+      ...(t.annotations ? { annotations: t.annotations } : {}),
     })),
   }));
 

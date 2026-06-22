@@ -9,7 +9,11 @@
  */
 
 import { getCredential } from './config.js';
-import type { ActionCredentialRequirement, ActionDescriptor, ActionReadiness } from './types.js';
+import type {
+  ActionCredentialStatus,
+  ActionDescriptor,
+  ActionReadiness,
+} from './types.js';
 
 /**
  * Presence-only snapshot of a descriptor's credential requirements for the
@@ -17,7 +21,7 @@ import type { ActionCredentialRequirement, ActionDescriptor, ActionReadiness } f
  * never the value. A write action stays visible with its credential absent so
  * the operator can see the blast radius before opting in.
  */
-export function snapshotCredentials(descriptor: ActionDescriptor): ActionCredentialRequirement[] {
+export function snapshotCredentials(descriptor: ActionDescriptor): ActionCredentialStatus[] {
   return descriptor.credentialRequirements.map((r) => ({
     label: r.label,
     configured: getCredential(r.label) !== undefined,
@@ -42,7 +46,7 @@ export interface ReadinessScope {
  * so it stays pure and unit-testable without touching the environment.
  */
 export function computeReadiness(
-  credentials: ActionCredentialRequirement[],
+  credentials: ActionCredentialStatus[],
   scope: ReadinessScope,
 ): ActionReadiness {
   if (credentials.some((c) => !c.configured)) return 'missing_credentials';

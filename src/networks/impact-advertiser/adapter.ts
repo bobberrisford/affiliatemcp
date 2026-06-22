@@ -338,9 +338,13 @@ export interface ContractChangePlan {
   summary: string;
   /** Current contract state, when the change targets an existing contract. */
   before?: ImpactContract;
+  /** Current contracts observed for this target, preserved with raw payloads. */
+  observedContracts: ImpactContract[];
   /** Intended end state. `undefined` for a removal (nothing remains). */
   after?: Partial<ImpactContract>;
   warnings: string[];
+  /** No executable validity window exists until the separately reviewed write half ships. */
+  expiresAt: null;
   confirmationToken: string;
   experimental: true;
 }
@@ -958,8 +962,9 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
     ctx?: AdapterCallContext,
   ): Promise<ContractChangePlan> {
     const c = requireCtx('proposeContract', ctx);
-    const campaignId = requireProgrammeId('proposeContract', input?.programmeId);
-    if (input.action === 'remove' && (!input.contractId || input.contractId.trim() === '')) {
+    const intent = normaliseContractChangeIntent(input);
+    const campaignId = requireProgrammeId('proposeContract', intent.programmeId);
+    if (intent.action === 'remove' && !intent.contractId) {
       throw new NetworkError(
         buildErrorEnvelope({
           type: 'config_error',
@@ -971,21 +976,28 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
       );
     }
     // Read current state only when the change targets an existing contract.
-    const before =
-      input.contractId && input.contractId.trim() !== ''
-        ? await this.getContract({ programmeId: campaignId, contractId: input.contractId }, c)
-        : undefined;
-    const after = projectContractAfter(before, input, campaignId);
+    const before = intent.contractId
+      ? await this.getContract({ programmeId: campaignId, contractId: intent.contractId }, c)
+      : undefined;
+    const observedContracts = before
+      ? [before]
+      : await this.listContracts(
+          { programmeId: campaignId, mediaPartnerId: intent.mediaPartnerId, limit: 100 },
+          c,
+        );
+    const after = projectContractAfter(before, intent, campaignId);
     return {
-      action: input.action,
+      action: intent.action,
       network: SLUG,
-      brand: input.brand,
+      brand: intent.brand,
       programmeId: campaignId,
-      summary: renderContractSummary(before, input),
+      summary: renderContractSummary(before, intent),
       before,
+      observedContracts,
       after,
-      warnings: buildContractWarnings(before, input),
-      confirmationToken: computeConfirmationToken(input, campaignId, before),
+      warnings: buildContractWarnings(before, intent, observedContracts),
+      expiresAt: null,
+      confirmationToken: computeConfirmationToken(intent, campaignId, before, observedContracts),
       experimental: true,
     };
   }
@@ -1142,6 +1154,34 @@ function toContractStatusList(
 // proposeContract helpers — pure; no network call, no mutation.
 // ---------------------------------------------------------------------------
 
+function normaliseContractChangeIntent(input: ContractChangeIntent): ContractChangeIntent {
+  const action = input?.action;
+  const brand = input?.brand?.trim();
+  const programmeId = input?.programmeId?.trim();
+  const contractId = input?.contractId?.trim() || undefined;
+  const payoutTerms = input?.payoutTerms?.trim() || undefined;
+  const mediaPartnerId = input?.mediaPartnerId?.trim() || undefined;
+  const invalid =
+    (action !== 'apply' && action !== 'remove') ||
+    !brand ||
+    !programmeId ||
+    (action === 'remove' && (!contractId || payoutTerms !== undefined || mediaPartnerId !== undefined)) ||
+    (action === 'apply' && payoutTerms === undefined && mediaPartnerId === undefined);
+  if (invalid) {
+    throw new NetworkError(
+      buildErrorEnvelope({
+        type: 'config_error',
+        network: SLUG,
+        operation: 'proposeContract',
+        message:
+          'Impact advertiser proposeContract requires a valid brand, programmeId, and either an apply change (payoutTerms or mediaPartnerId) or a remove contractId.',
+        hint: 'Use action apply with at least one changed field, or action remove with only contractId.',
+      }),
+    );
+  }
+  return { action, brand, programmeId, contractId, payoutTerms, mediaPartnerId };
+}
+
 /** Project the intended end state. `undefined` for a removal (nothing remains). */
 function projectContractAfter(
   before: ImpactContract | undefined,
@@ -1163,6 +1203,7 @@ function projectContractAfter(
 function buildContractWarnings(
   before: ImpactContract | undefined,
   input: ContractChangeIntent,
+  observedContracts: ImpactContract[] = before ? [before] : [],
 ): string[] {
   const warnings: string[] = [];
   if (input.action === 'remove') {
@@ -1172,6 +1213,14 @@ function buildContractWarnings(
   } else if (!before) {
     warnings.push(
       "This creates a new contract; it would start pending, subject to Impact's workflow.",
+    );
+    if (observedContracts.length > 0) {
+      warnings.push(
+        `${observedContracts.length} existing contract(s) matched the current campaign${input.mediaPartnerId ? ' and media partner' : ''}; review observedContracts before creating another.`,
+      );
+    }
+    warnings.push(
+      'The create current-state check covers the first 100 contracts returned by the unverified Impact list endpoint.',
     );
   } else if (before.status === 'active' && input.payoutTerms !== undefined) {
     warnings.push('Changing payout terms on an active contract affects live partner payouts.');
@@ -1206,16 +1255,31 @@ function computeConfirmationToken(
   input: ContractChangeIntent,
   campaignId: string,
   before: ImpactContract | undefined,
+  observedContracts: ImpactContract[] = before ? [before] : [],
 ): string {
+  const normalised = normaliseContractChangeIntent(input);
   const canonical = JSON.stringify({
-    action: input.action,
+    network: SLUG,
+    action: normalised.action,
+    brand: normalised.brand,
     programmeId: campaignId,
-    contractId: input.contractId ?? null,
-    payoutTerms: input.payoutTerms ?? null,
-    mediaPartnerId: input.mediaPartnerId ?? null,
-    before: before
-      ? { id: before.id, status: before.status, payoutTerms: before.payoutTerms ?? null }
-      : null,
+    contractId: normalised.contractId ?? null,
+    payoutTerms: normalised.payoutTerms ?? null,
+    mediaPartnerId: normalised.mediaPartnerId ?? null,
+    observedContracts: observedContracts
+      .map((contract) => ({
+        id: contract.id,
+        network: contract.network,
+        programmeId: contract.programmeId,
+        programmeName: contract.programmeName ?? null,
+        mediaPartnerId: contract.mediaPartnerId ?? null,
+        mediaPartnerName: contract.mediaPartnerName ?? null,
+        status: contract.status,
+        payoutTerms: contract.payoutTerms ?? null,
+        effectiveDate: contract.effectiveDate ?? null,
+        expiryDate: contract.expiryDate ?? null,
+      }))
+      .sort((a, b) => a.id.localeCompare(b.id)),
   });
   return createHash('sha256').update(canonical).digest('hex');
 }
@@ -1241,7 +1305,10 @@ export const impactAdvertiserActionDescriptors: ActionDescriptor[] = [
       'state and returns a ContractChangePlan with a confirmation token. Experimental: ' +
       'the change payload shape carries TODO(verify) and applying it is gated, not yet enabled.',
     // proposeContract only READS to build the plan, so it needs no write credential.
-    credentialRequirements: [],
+    credentialRequirements: [
+      { label: 'IMPACT_ADVERTISER_ACCOUNT_SID' },
+      { label: 'IMPACT_ADVERTISER_AUTH_TOKEN' },
+    ],
   },
 ];
 
@@ -1288,4 +1355,5 @@ export const _internals = {
   buildContractWarnings,
   renderContractSummary,
   computeConfirmationToken,
+  normaliseContractChangeIntent,
 };

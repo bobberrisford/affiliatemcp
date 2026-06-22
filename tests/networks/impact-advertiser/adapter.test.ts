@@ -539,6 +539,7 @@ describe('Impact advertiser.proposeContract (advisement)', () => {
     expect(plan.after).toBeUndefined();
     expect(plan.warnings.join(' ')).toMatch(/irreversible/i);
     expect(plan.confirmationToken).toMatch(/^[0-9a-f]{64}$/);
+    expect(plan.expiresAt).toBeNull();
     expect(plan.experimental).toBe(true);
     // GET-only: every request issued used GET (no POST/DELETE reaches the client).
     const allGet = spy.mock.calls.every(
@@ -548,25 +549,33 @@ describe('Impact advertiser.proposeContract (advisement)', () => {
     expect(urls.some((u) => u.includes('/Contracts/CT-5001'))).toBe(true);
   });
 
-  it('plans a create (no contractId): no before, issues NO network call, pending after', async () => {
-    const { spy } = mockFetchQueue([]); // any fetch would throw "queue exhausted"
+  it('plans a create (no contractId): reads current contracts via GET, no write, pending after', async () => {
+    const { spy } = mockFetchQueue([
+      expectAgency(),
+      fakeResponse(loadFixture('contracts.json')),
+    ]);
     const plan = await impactAdvertiserAdapter.proposeContract(
       {
         action: 'apply',
         brand: 'acme',
         programmeId: 'CMP-42',
         payoutTerms: '12% of sale',
-        mediaPartnerId: 'MP-9',
+        mediaPartnerId: 'MP-1',
       },
       { networkBrandId: 'BRAND-42' },
     );
     expect(plan.before).toBeUndefined();
+    expect(plan.observedContracts.length).toBeGreaterThan(0);
     expect(plan.after?.status).toBe('pending');
     expect(plan.after?.payoutTerms).toBe('12% of sale');
-    expect(plan.after?.mediaPartnerId).toBe('MP-9');
+    expect(plan.after?.mediaPartnerId).toBe('MP-1');
     expect((plan.after as { rawNetworkData?: unknown }).rawNetworkData).toBeUndefined();
     expect(plan.warnings.join(' ')).toMatch(/creates a new contract/i);
-    expect(spy).not.toHaveBeenCalled(); // advisement create reaches the network zero times
+    expect(
+      spy.mock.calls.every(
+        (call) => ((call[1] as { method?: string } | undefined)?.method ?? 'GET') === 'GET',
+      ),
+    ).toBe(true);
   });
 
   it('plans an update to an active contract: warns about live partner payouts', async () => {
@@ -602,11 +611,28 @@ describe('Impact advertiser.proposeContract (advisement)', () => {
       rawNetworkData: {},
     };
     const before2 = { ...before1, payoutTerms: '9%' };
+    const otherBrand = { ...intent, brand: 'globex' };
+    const otherContract = { ...intent, contractId: 'CT-5002' };
+    const otherChange = { ...intent, action: 'apply' as const, payoutTerms: '8%' };
     const t1 = _internals.computeConfirmationToken(intent, 'CMP-42', before1 as never);
     const t1again = _internals.computeConfirmationToken(intent, 'CMP-42', before1 as never);
     const t2 = _internals.computeConfirmationToken(intent, 'CMP-42', before2 as never);
+    const brandToken = _internals.computeConfirmationToken(otherBrand, 'CMP-42', before1 as never);
+    const contractToken = _internals.computeConfirmationToken(
+      otherContract,
+      'CMP-42',
+      before1 as never,
+    );
+    const changeToken = _internals.computeConfirmationToken(
+      otherChange,
+      'CMP-42',
+      before1 as never,
+    );
     expect(t1).toBe(t1again); // deterministic
     expect(t2).not.toBe(t1); // before-state participates
+    expect(brandToken).not.toBe(t1); // cannot reuse across logical brands
+    expect(contractToken).not.toBe(t1); // cannot reuse across target contracts
+    expect(changeToken).not.toBe(t1); // cannot reuse across intended changes
   });
 
   it('refuses a remove without a contractId (config_error)', async () => {
@@ -621,6 +647,15 @@ describe('Impact advertiser.proposeContract (advisement)', () => {
       expect((err as NetworkError).envelope.type).toBe('config_error');
       expect((err as NetworkError).envelope.operation).toBe('proposeContract');
     }
+  });
+
+  it('refuses an apply proposal with no concrete change (config_error)', async () => {
+    await expect(
+      impactAdvertiserAdapter.proposeContract(
+        { action: 'apply', brand: 'acme', programmeId: 'CMP-42' },
+        { networkBrandId: 'BRAND-42' },
+      ),
+    ).rejects.toMatchObject({ envelope: { type: 'config_error', operation: 'proposeContract' } });
   });
 
   it('refuses without brand context or without programmeId (config_error)', async () => {
@@ -649,7 +684,10 @@ describe('Impact advertiser action descriptors', () => {
     expect(d.channel).toBe('api');
     expect(d.effect).toBe('advisement');
     expect(d.defaultAuthorityTier).toBe(1);
-    expect(d.credentialRequirements).toEqual([]);
+    expect(d.credentialRequirements).toEqual([
+      { label: 'IMPACT_ADVERTISER_ACCOUNT_SID' },
+      { label: 'IMPACT_ADVERTISER_AUTH_TOKEN' },
+    ]);
     const ids = impactAdvertiserActionDescriptors.map((x) => x.id);
     // The write half is not built, so it is not declared (#231 §5); reads are
     // never catalogued here.
