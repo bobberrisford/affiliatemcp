@@ -58,6 +58,33 @@ const ProposeContractSchema = z.union([
   ProposeRemoveContractSchema,
 ]);
 
+const ApplyContractSchema = z
+  .object({
+    brand: z.string().trim().min(1),
+    programmeId: z.string().trim().min(1),
+    contractId: z.string().trim().min(1).optional(),
+    payoutTerms: z.string().trim().min(1).optional(),
+    mediaPartnerId: z.string().trim().min(1).optional(),
+    /** Pins the write to a fresh propose_contract plan; rejected on mismatch. */
+    confirmationToken: z.string().trim().min(1),
+    /** Default false (dry-run). True issues a real POST and also needs IMPACT_ADV_WRITE_TOKEN. */
+    live: z.boolean().optional(),
+  })
+  .strict()
+  .refine((value) => value.payoutTerms !== undefined || value.mediaPartnerId !== undefined, {
+    message: 'An apply requires payoutTerms or mediaPartnerId.',
+  });
+
+const RemoveContractSchema = z
+  .object({
+    brand: z.string().trim().min(1),
+    programmeId: z.string().trim().min(1),
+    contractId: z.string().trim().min(1),
+    confirmationToken: z.string().trim().min(1),
+    live: z.boolean().optional(),
+  })
+  .strict();
+
 export function generateImpactAdvertiserTools(): ToolDefinition[] {
   return [
     tool(
@@ -92,6 +119,28 @@ export function generateImpactAdvertiserTools(): ToolDefinition[] {
         return impactAdvertiserAdapter.proposeContract(input, ctx);
       },
       { readOnlyHint: true },
+    ),
+    tool(
+      'affiliate_impact-advertiser_apply_contract',
+      'Experimentally create or update an Impact contract (brand-partner payment terms) for a programme. DRY-RUN by default: it returns the exact request it would send and writes nothing unless live is true AND IMPACT_ADV_WRITE_TOKEN is configured; it also requires a confirmationToken from a fresh propose_contract plan, which pins the change to reviewed parameters. Returns a ContractWriteResult; pair with propose_contract to obtain the token, and expect experimental, unverified (TODO(verify)) endpoint and payload shapes.',
+      ApplyContractSchema,
+      (args) => {
+        const input = ApplyContractSchema.parse(args ?? {});
+        const ctx = buildAdapterCallContext(input.brand, impactAdvertiserAdapter.slug);
+        return impactAdvertiserAdapter.applyContract(input, ctx);
+      },
+      { destructiveHint: true, readOnlyHint: false },
+    ),
+    tool(
+      'affiliate_impact-advertiser_remove_contract',
+      'Experimentally remove an Impact contract by id for a programme. DRY-RUN by default: it returns the exact delete request and removes nothing unless live is true AND IMPACT_ADV_WRITE_TOKEN is configured; it also requires a confirmationToken from a fresh propose_contract plan. Removal is irreversible; returns a ContractWriteResult, pairs with propose_contract for the token, and uses experimental, unverified (TODO(verify)) endpoint shapes.',
+      RemoveContractSchema,
+      (args) => {
+        const input = RemoveContractSchema.parse(args ?? {});
+        const ctx = buildAdapterCallContext(input.brand, impactAdvertiserAdapter.slug);
+        return impactAdvertiserAdapter.removeContract(input, ctx);
+      },
+      { destructiveHint: true, readOnlyHint: false },
     ),
   ];
 }

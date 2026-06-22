@@ -366,18 +366,17 @@ describe('affiliate_list_actions meta-tool', () => {
     registerAdapter(impactAdvertiserAdapter);
   });
 
-  it('returns the proposeContract advisement entry, fail-closed to unknown with no brand', async () => {
+  it('returns the advisement + two write entries, fail-closed to unknown with no brand', async () => {
     const rows = (await find().handle({})) as ActionRow[];
     expect(Array.isArray(rows)).toBe(true);
-    expect(rows).toHaveLength(1);
-    expect(rows[0]!.descriptor.id).toBe('impact-advertiser.proposeContract');
-    expect(rows[0]!.descriptor.effect).toBe('advisement');
-    expect(rows[0]!.descriptor.channel).toBe('api');
-    expect(rows[0]!.readiness).toBe('unknown'); // no brand filter → fail-closed
-    expect(rows[0]!.credentials).toEqual([
-      { label: 'IMPACT_ADVERTISER_ACCOUNT_SID', configured: false },
-      { label: 'IMPACT_ADVERTISER_AUTH_TOKEN', configured: false },
+    expect(rows.map((r) => r.descriptor.id)).toEqual([
+      'impact-advertiser.proposeContract',
+      'impact-advertiser.applyContract',
+      'impact-advertiser.removeContract',
     ]);
+    expect(rows.map((r) => r.descriptor.effect)).toEqual(['advisement', 'write', 'write']);
+    // No brand filter → every entry is fail-closed unknown.
+    expect(rows.every((r) => r.readiness === 'unknown')).toBe(true);
     expect(rows[0]!.liveHealthVia).toBe('affiliate_run_diagnostic');
   });
 
@@ -403,8 +402,16 @@ describe('affiliate_list_actions meta-tool', () => {
       },
     });
     const rows = (await find().handle({ brand: 'acme' })) as ActionRow[];
-    expect(rows[0]!.readiness).toBe('ready');
-    expect(rows[0]!.credentials.every((credential) => credential.configured)).toBe(true);
+    const byId = Object.fromEntries(rows.map((r) => [r.descriptor.id, r]));
+    // proposeContract only needs the read creds → ready.
+    expect(byId['impact-advertiser.proposeContract']!.readiness).toBe('ready');
+    expect(byId['impact-advertiser.proposeContract']!.credentials.every((c) => c.configured)).toBe(
+      true,
+    );
+    // The writes also need the opt-in IMPACT_ADV_WRITE_TOKEN (not set) → visible
+    // but missing_credentials, so the operator sees the blast radius before opting in.
+    expect(byId['impact-advertiser.applyContract']!.readiness).toBe('missing_credentials');
+    expect(byId['impact-advertiser.removeContract']!.readiness).toBe('missing_credentials');
     expect(JSON.stringify(rows)).not.toContain('secret-sid');
     expect(JSON.stringify(rows)).not.toContain('secret-token');
   });
@@ -461,10 +468,15 @@ describe('affiliate_list_actions meta-tool', () => {
   });
 
   it('filters by effect and channel', async () => {
-    expect(await find().handle({ effect: 'write' })).toEqual([]); // no write actions yet
+    const writes = (await find().handle({ effect: 'write' })) as ActionRow[];
+    expect(writes.map((r) => r.descriptor.id).sort()).toEqual([
+      'impact-advertiser.applyContract',
+      'impact-advertiser.removeContract',
+    ]);
     expect(await find().handle({ channel: 'browser' })).toEqual([]); // none declared
     const adv = (await find().handle({ effect: 'advisement' })) as ActionRow[];
     expect(adv).toHaveLength(1);
+    expect(adv[0]!.descriptor.id).toBe('impact-advertiser.proposeContract');
   });
 
   it('is non-probing — issues no network call', async () => {

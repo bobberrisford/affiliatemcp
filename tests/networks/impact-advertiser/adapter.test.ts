@@ -676,24 +676,184 @@ describe('Impact advertiser.proposeContract (advisement)', () => {
 });
 
 describe('Impact advertiser action descriptors', () => {
-  it('declares exactly proposeContract (advisement/api/Tier 1), no read or write catalogue', () => {
-    expect(impactAdvertiserActionDescriptors).toHaveLength(1);
-    const d = impactAdvertiserActionDescriptors[0]!;
-    expect(d.id).toBe('impact-advertiser.proposeContract');
-    expect(d.network).toBe('impact-advertiser');
-    expect(d.channel).toBe('api');
-    expect(d.effect).toBe('advisement');
-    expect(d.defaultAuthorityTier).toBe(1);
-    expect(d.credentialRequirements).toEqual([
-      { label: 'IMPACT_ADVERTISER_ACCOUNT_SID' },
-      { label: 'IMPACT_ADVERTISER_AUTH_TOKEN' },
+  it('declares proposeContract (advisement) and the two gated writes, no read catalogue', () => {
+    const byId = Object.fromEntries(impactAdvertiserActionDescriptors.map((d) => [d.id, d]));
+    expect(Object.keys(byId).sort()).toEqual([
+      'impact-advertiser.applyContract',
+      'impact-advertiser.proposeContract',
+      'impact-advertiser.removeContract',
     ]);
-    const ids = impactAdvertiserActionDescriptors.map((x) => x.id);
-    // The write half is not built, so it is not declared (#231 §5); reads are
-    // never catalogued here.
-    expect(ids).not.toContain('impact-advertiser.applyContract');
-    expect(ids).not.toContain('impact-advertiser.removeContract');
-    expect(ids).not.toContain('impact-advertiser.listContracts');
+
+    const propose = byId['impact-advertiser.proposeContract']!;
+    expect(propose.channel).toBe('api');
+    expect(propose.effect).toBe('advisement');
+    expect(propose.defaultAuthorityTier).toBe(1);
+
+    for (const id of ['impact-advertiser.applyContract', 'impact-advertiser.removeContract']) {
+      const w = byId[id]!;
+      expect(w.effect).toBe('write');
+      expect(w.defaultAuthorityTier).toBe(3); // writes fail closed to Tier 3
+      // The write token is declared so the map shows blast radius (missing_credentials
+      // until opted in) even before it is configured.
+      expect(w.credentialRequirements.map((r) => r.label)).toContain('IMPACT_ADV_WRITE_TOKEN');
+    }
+
+    // Reads are never catalogued in the action map (#231 §1).
+    expect(byId['impact-advertiser.listContracts']).toBeUndefined();
+  });
+});
+
+describe('Impact advertiser.applyContract / removeContract (gated write)', () => {
+  const WRITE = 'IMPACT_ADV_WRITE_TOKEN';
+  afterEach(() => delete process.env[WRITE]);
+
+  // Get a valid confirmation token for a create-apply by running proposeContract
+  // (reads listContracts for observedContracts), then return it for the apply.
+  async function tokenForCreate(): Promise<string> {
+    mockFetchQueue([expectAgency(), fakeResponse({ Contracts: [] })]);
+    const plan = await impactAdvertiserAdapter.proposeContract(
+      { action: 'apply', brand: 'acme', programmeId: 'CMP-42', payoutTerms: '12% of sale' },
+      { networkBrandId: 'BRAND-42' },
+    );
+    return plan.confirmationToken;
+  }
+
+  it('refuses without the opt-in write token (config_error), before any read', async () => {
+    const { spy } = mockFetchQueue([]); // any fetch would throw "queue exhausted"
+    try {
+      await impactAdvertiserAdapter.applyContract(
+        {
+          brand: 'acme',
+          programmeId: 'CMP-42',
+          payoutTerms: '12%',
+          confirmationToken: 'whatever',
+        },
+        { networkBrandId: 'BRAND-42' },
+      );
+      throw new Error('expected applyContract to throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(NetworkError);
+      expect((err as NetworkError).envelope.type).toBe('config_error');
+      expect((err as NetworkError).envelope.operation).toBe('applyContract');
+    }
+    expect(spy).not.toHaveBeenCalled(); // fails fast, no reads
+  });
+
+  it('refuses when the confirmation token does not pin the fresh plan (config_error)', async () => {
+    process.env[WRITE] = 'write-tok';
+    // proposeContract (internal) reads listContracts once (agency cached after probe).
+    mockFetchQueue([expectAgency(), fakeResponse({ Contracts: [] })]);
+    try {
+      await impactAdvertiserAdapter.applyContract(
+        { brand: 'acme', programmeId: 'CMP-42', payoutTerms: '12%', confirmationToken: 'stale' },
+        { networkBrandId: 'BRAND-42' },
+      );
+      throw new Error('expected applyContract to throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(NetworkError);
+      expect((err as NetworkError).envelope.type).toBe('config_error');
+    }
+  });
+
+  it('dry-run by default: builds the request, writes nothing', async () => {
+    process.env[WRITE] = 'write-tok';
+    const token = await tokenForCreate();
+    // applyContract re-runs proposeContract (listContracts; agency cached) then dry-runs.
+    const { spy } = mockFetchQueue([fakeResponse({ Contracts: [] })]);
+    const result = await impactAdvertiserAdapter.applyContract(
+      { brand: 'acme', programmeId: 'CMP-42', payoutTerms: '12% of sale', confirmationToken: token },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(result.sent).toBe(false);
+    expect(result.dryRun).toBe(true);
+    expect(result.request.method).toBe('POST');
+    expect(result.request.path).toBe('/Programs/CMP-42/Contracts');
+    expect(result.request.body).toMatchObject({ PayoutTerms: '12% of sale' });
+    // No POST/DELETE issued — every request was a GET read.
+    const methods = spy.mock.calls.map((c) => (c[1] as { method?: string } | undefined)?.method ?? 'GET');
+    expect(methods.every((m) => m === 'GET')).toBe(true);
+  });
+
+  it('live apply issues a POST authenticated with the write token', async () => {
+    process.env[WRITE] = 'write-tok';
+    const token = await tokenForCreate();
+    const { spy, urls } = mockFetchQueue([
+      fakeResponse({ Contracts: [] }), // internal proposeContract re-read
+      fakeResponse({ Id: 'CT-NEW', Status: 'Pending' }), // the POST response
+    ]);
+    const result = await impactAdvertiserAdapter.applyContract(
+      {
+        brand: 'acme',
+        programmeId: 'CMP-42',
+        payoutTerms: '12% of sale',
+        confirmationToken: token,
+        live: true,
+      },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(result.sent).toBe(true);
+    expect(result.dryRun).toBe(false);
+    const post = spy.mock.calls.find((c) => (c[1] as { method?: string } | undefined)?.method === 'POST');
+    expect(post, 'a POST should have been issued').toBeDefined();
+    const init = post![1] as { headers: Record<string, string>; body?: string };
+    const decoded = Buffer.from(
+      (init.headers.Authorization ?? '').replace('Basic ', ''),
+      'base64',
+    ).toString();
+    expect(decoded).toContain('write-tok'); // write token, not the read token
+    expect(JSON.parse(init.body!)).toMatchObject({ PayoutTerms: '12% of sale' });
+    expect(urls.some((u) => u.includes('/Programs/CMP-42/Contracts'))).toBe(true);
+  });
+
+  it('removeContract dry-run builds a DELETE to the Programs path', async () => {
+    process.env[WRITE] = 'write-tok';
+    // token for a remove (proposeContract reads getContract for the before-state)
+    mockFetchQueue([expectAgency(), fakeResponse(loadFixture('contract.json'))]);
+    const plan = await impactAdvertiserAdapter.proposeContract(
+      { action: 'remove', brand: 'acme', programmeId: 'CMP-42', contractId: 'CT-5001' },
+      { networkBrandId: 'BRAND-42' },
+    );
+    mockFetchQueue([fakeResponse(loadFixture('contract.json'))]); // internal re-read (agency cached)
+    const result = await impactAdvertiserAdapter.removeContract(
+      {
+        brand: 'acme',
+        programmeId: 'CMP-42',
+        contractId: 'CT-5001',
+        confirmationToken: plan.confirmationToken,
+      },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(result.action).toBe('remove');
+    expect(result.dryRun).toBe(true);
+    expect(result.request.method).toBe('DELETE');
+    expect(result.request.path).toBe('/Programs/CMP-42/Contracts/CT-5001');
+  });
+
+  it('buildApplyBody emits a best-guess inline payload', () => {
+    expect(
+      _internals.buildApplyBody({ contractId: 'CT-1', mediaPartnerId: 'MP-2', payoutTerms: '9%' }),
+    ).toEqual({ ContractId: 'CT-1', MediaPartnerId: 'MP-2', PayoutTerms: '9%' });
+    expect(_internals.buildApplyBody({})).toEqual({});
+  });
+});
+
+describe('Impact advertiser client write allowlist', () => {
+  it('rejects a non-GET method for a non-allowlisted operation', async () => {
+    process.env['IMPACT_ADVERTISER_ACCOUNT_SID'] = 'IRA-AGENCY-1';
+    process.env['IMPACT_ADVERTISER_AUTH_TOKEN'] = 'fake-token';
+    try {
+      await impactAdvRequest({
+        operation: 'listProgrammes',
+        method: 'POST',
+        brandPath: '/Campaigns',
+        networkBrandId: 'BRAND-42',
+        resilience: DEFAULT_RESILIENCE,
+      });
+      throw new Error('expected the guard to throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(NetworkError);
+      expect((err as NetworkError).envelope.type).toBe('config_error');
+    }
   });
 });
 
@@ -782,5 +942,9 @@ describe('Impact advertiser.capabilitiesCheck — per-op claimStatus', () => {
     expect(caps.operations['getContract']?.claimStatus).toBe('experimental');
     expect(caps.operations['proposeContract']?.supported).toBe(true);
     expect(caps.operations['proposeContract']?.claimStatus).toBe('experimental');
+    expect(caps.operations['applyContract']?.supported).toBe(true);
+    expect(caps.operations['applyContract']?.claimStatus).toBe('experimental');
+    expect(caps.operations['removeContract']?.supported).toBe(true);
+    expect(caps.operations['removeContract']?.claimStatus).toBe('experimental');
   });
 });

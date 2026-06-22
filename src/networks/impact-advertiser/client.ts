@@ -34,8 +34,17 @@ const log = createLogger('impact-advertiser.client');
 
 export const IMPACT_ADV_BASE_URL = 'https://api.impact.com';
 
+/**
+ * Operations allowed to issue a non-GET request. This is the narrowed
+ * write allowlist from the Impact contracts decision
+ * (docs/decisions/2026-06-12-impact-contracts-actions.md): the read-only guard
+ * is narrowed to exactly these, never removed, so every other operation stays
+ * GET-only in code.
+ */
+const WRITE_OPS: ReadonlySet<string> = new Set(['applyContract', 'removeContract']);
+
 export interface ImpactAdvRequestInput {
-  operation: AnyOperation | 'listContracts' | 'getContract';
+  operation: AnyOperation | 'listContracts' | 'getContract' | 'applyContract' | 'removeContract';
   /**
    * Brand-relative path under the detected tier prefix. Example: `/Campaigns`
    * resolves to `/Advertisers/{BrandSID}/Campaigns` under brand-direct creds
@@ -56,8 +65,20 @@ export interface ImpactAdvRequestInput {
    * Required when `brandPath` is used.
    */
   networkBrandId?: string;
-  /** Method. Always `GET` at v0.1; passing anything else throws. */
-  method?: 'GET';
+  /**
+   * HTTP method. Defaults to `GET`. `POST`/`DELETE` are permitted ONLY for the
+   * `WRITE_OPS` allowlist (applyContract, removeContract); any other operation
+   * passing a non-GET method throws a `config_error` before the call goes out.
+   */
+  method?: 'GET' | 'POST' | 'DELETE';
+  /** JSON request body for a write. Serialised and sent with `Content-Type: application/json`. */
+  body?: unknown;
+  /**
+   * Override the Authorization token for this request. Writes pass the opt-in
+   * `IMPACT_ADV_WRITE_TOKEN` here so the default read-only token is never used
+   * to mutate; reads omit it and use the detected read credential.
+   */
+  authTokenOverride?: string;
   query?: Record<string, string | number | undefined>;
   resilience: ResilienceConfig;
 }
@@ -65,23 +86,23 @@ export interface ImpactAdvRequestInput {
 /**
  * Issue a single Impact advertiser API request under the resilience policy.
  *
- * Cardinal: only GET is permitted. Any other method throws a `config_error`
- * before the network call goes out.
+ * Read-only by default. A non-GET method is permitted ONLY for the `WRITE_OPS`
+ * allowlist (applyContract, removeContract); any other operation passing a
+ * non-GET method throws a `config_error` before the network call goes out, so
+ * the read surface can never accidentally mutate.
  */
 export async function impactAdvRequest<T>(input: ImpactAdvRequestInput): Promise<T> {
-  // Hard read-only guard. This adapter ships read-only at v0.1 and a future
-  // contributor must consciously remove this throw to enable writes.
   const method = input.method ?? 'GET';
-  if (method !== 'GET') {
+  if (method !== 'GET' && !WRITE_OPS.has(input.operation)) {
     throw new NetworkError(
       buildErrorEnvelope({
         type: 'config_error',
         network: SLUG,
         operation: input.operation,
-        message: `Impact advertiser adapter is read-only at v0.1; refusing ${method}.`,
+        message: `Impact advertiser ${input.operation} is read-only; refusing ${method}.`,
         hint:
-          'This adapter only issues GET requests. To enable writes a future PR must lift this ' +
-          'guard explicitly AND the operator must rotate to a read-write Impact token.',
+          'Only applyContract and removeContract may issue a non-GET request, and only with the ' +
+          'opt-in IMPACT_ADV_WRITE_TOKEN configured. Every other operation is GET-only by design.',
       }),
     );
   }
@@ -102,14 +123,20 @@ export async function impactAdvRequest<T>(input: ImpactAdvRequestInput): Promise
       );
 
       const init: RequestInit = {
-        method: 'GET',
+        method,
         headers: {
-          Authorization: basicAuthHeader(creds.accountSid, creds.authToken),
+          // Writes authenticate with the opt-in write token, never the read token.
+          Authorization: basicAuthHeader(
+            creds.accountSid,
+            input.authTokenOverride ?? creds.authToken,
+          ),
           Accept: 'application/json',
+          ...(input.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
         },
+        ...(input.body !== undefined ? { body: JSON.stringify(input.body) } : {}),
       };
 
-      log.debug({ url, operation: input.operation, shape: creds.shape }, 'impact-adv request');
+      log.debug({ url, operation: input.operation, method, shape: creds.shape }, 'impact-adv request');
 
       const res = await fetch(url, init);
       const rawBody = await res.text();
@@ -117,7 +144,7 @@ export async function impactAdvRequest<T>(input: ImpactAdvRequestInput): Promise
         throw new HttpStatusError(
           res.status,
           rawBody,
-          `Impact advertiser ${input.operation} GET ${url} → HTTP ${res.status}`,
+          `Impact advertiser ${input.operation} ${method} ${url} → HTTP ${res.status}`,
         );
       }
       const trimmed = rawBody.trim();

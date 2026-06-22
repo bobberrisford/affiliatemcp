@@ -4,18 +4,31 @@ import { generateImpactAdvertiserTools } from '../../../src/networks/impact-adve
 import { generateAllTools, generateToolsFor } from '../../../src/tools/generate.js';
 
 describe('Impact advertiser contract tool surface', () => {
-  it('ships the two reads plus the proposeContract advisement tool, but no write tools', () => {
+  it('ships reads + propose (readOnly) and the two gated writes (destructive)', () => {
     const tools = generateImpactAdvertiserTools();
     expect(tools.map((tool) => tool.name)).toEqual([
       'affiliate_impact-advertiser_list_contracts',
       'affiliate_impact-advertiser_get_contract',
       'affiliate_impact-advertiser_propose_contract',
+      'affiliate_impact-advertiser_apply_contract',
+      'affiliate_impact-advertiser_remove_contract',
     ]);
-    // proposeContract is advisement (no network write); the write surface
-    // (apply/remove) is not exposed while it remains unbuilt and gated.
-    const names = tools.map((tool) => tool.name);
-    expect(names.some((n) => /apply_contract|remove_contract/.test(n))).toBe(false);
-    expect(tools.every((tool) => tool.annotations?.readOnlyHint === true)).toBe(true);
+    const byName = Object.fromEntries(tools.map((t) => [t.name, t]));
+    // Reads + advisement carry readOnlyHint; the writes carry destructiveHint.
+    for (const n of [
+      'affiliate_impact-advertiser_list_contracts',
+      'affiliate_impact-advertiser_get_contract',
+      'affiliate_impact-advertiser_propose_contract',
+    ]) {
+      expect(byName[n]!.annotations?.readOnlyHint).toBe(true);
+    }
+    for (const n of [
+      'affiliate_impact-advertiser_apply_contract',
+      'affiliate_impact-advertiser_remove_contract',
+    ]) {
+      expect(byName[n]!.annotations?.destructiveHint).toBe(true);
+      expect(byName[n]!.annotations?.readOnlyHint).toBe(false);
+    }
   });
 
   it('adds the reads only to Impact rather than every advertiser adapter', () => {

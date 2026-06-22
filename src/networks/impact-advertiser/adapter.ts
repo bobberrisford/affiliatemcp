@@ -1,7 +1,11 @@
 /**
  * Impact advertiser (brand-side) adapter.
  *
- * READ-ONLY at v0.1. Mirrors the publisher Impact adapter's defensive style:
+ * Read-oriented, with a narrowly-gated contract write surface (applyContract /
+ * removeContract): dry-run by default, opt-in IMPACT_ADV_WRITE_TOKEN required
+ * for a live write, and the client's non-GET guard narrowed to exactly those
+ * two operations. Everything else stays GET-only. Mirrors the publisher Impact
+ * adapter's defensive style:
  * Impact is NOT a pattern source — most of its quirks (dual pagination, nullable
  * bodies, mixed date formats) apply on the brand surface too. Use the Awin
  * adapter as the canonical template for new networks.
@@ -30,11 +34,12 @@
  *   listContracts          → GET /Advertisers/{BrandSID}/Campaigns/{CampaignId}/Contracts
  *   getContract            → GET /Advertisers/{BrandSID}/Campaigns/{CampaignId}/Contracts/{ContractId}
  *
- * Contract operations are READ-ONLY here. The write surface (proposeContract,
- * applyContract, removeContract) lands in follow-up PRs behind a consent gate;
- * see docs/decisions/2026-06-12-impact-contracts-actions.md. The exact contract
- * endpoint paths and payload shapes carry `// TODO(verify):` until confirmed
- * against a live agency tenant.
+ * Contract operations: listContracts/getContract read; proposeContract is
+ * advisement (no write); applyContract/removeContract are the gated write
+ * surface (see docs/decisions/2026-06-12-impact-contracts-actions.md). Writes
+ * are dry-run by default and need the opt-in IMPACT_ADV_WRITE_TOKEN plus a
+ * confirmation token to go live. The exact contract endpoint paths and payload
+ * shapes carry `// TODO(verify):` until confirmed against a live agency tenant.
  *
  * Operations NOT in scope at v0.1 (throw NotImplementedError):
  *   getProgramme, getEarningsSummary, listClicks, generateTrackingLink,
@@ -45,8 +50,9 @@
  *   2. EVERY failure round-trips through `NetworkErrorEnvelope`.
  *   3. PRESERVE the raw response on every domain object's `rawNetworkData`.
  *   4. UK English in user-visible strings.
- *   5. NEVER issue a non-GET request. The client enforces this; the adapter
- *      must not work around it.
+ *   5. Non-GET requests are permitted ONLY for applyContract/removeContract
+ *      (the client's narrowed allowlist) and only with the opt-in write token.
+ *      Every other operation is GET-only; do not work around the guard.
  */
 
 import { createHash } from 'node:crypto';
@@ -57,6 +63,8 @@ import { buildErrorEnvelope, NetworkError } from '../../shared/errors.js';
 import { DEFAULT_RESILIENCE } from '../../shared/resilience.js';
 import { registerAdapter } from '../../shared/registry.js';
 import { createLogger } from '../../shared/logging.js';
+import { getCredential } from '../../shared/config.js';
+import { recordActionAudit } from '../../shared/audit.js';
 import {
   NotImplementedError,
   type ActionDescriptor,
@@ -101,7 +109,7 @@ const META: NetworkMeta = {
     'Read-only at v0.1. The HTTP client refuses non-GET methods.',
     'Two credential tiers auto-detected at runtime: agency-passthrough and brand-direct.',
     'getProgrammePerformance uses Impact pre-built `adv_performance_by_media` report; sync vs async behaviour `// TODO(verify)` until a live agency tenant is available.',
-    'listContracts/getContract read the brand-partner payment-term relationship; endpoint paths under `/Campaigns/{id}/Contracts` carry `// TODO(verify)` until confirmed against a live agency tenant. proposeContract builds a reviewable change plan from those reads (advisement only, no network write); the contract write surface (apply/remove) is not enabled here.',
+    'listContracts/getContract read the brand-partner payment-term relationship; endpoint paths under `/Campaigns/{id}/Contracts` carry `// TODO(verify)` until confirmed against a live agency tenant. proposeContract builds a reviewable change plan from those reads (advisement only, no network write). applyContract/removeContract are gated writes: dry-run by default, and a live POST/DELETE to `/Programs/{id}/Contracts` needs the opt-in IMPACT_ADV_WRITE_TOKEN plus a confirmation token pinning a fresh plan; endpoint and payload shapes carry `// TODO(verify)`.',
   ],
   supportsBrandOps: true,
   setupTimeEstimateMinutes: 8,
@@ -343,9 +351,44 @@ export interface ContractChangePlan {
   /** Intended end state. `undefined` for a removal (nothing remains). */
   after?: Partial<ImpactContract>;
   warnings: string[];
-  /** No executable validity window exists until the separately reviewed write half ships. */
+  /**
+   * No time-based validity window: the pin is re-derived from fresh state at
+   * apply time (applyContract re-runs proposeContract and compares the token),
+   * so a stale or drifted plan is rejected without needing an expiry.
+   */
   expiresAt: null;
   confirmationToken: string;
+  experimental: true;
+}
+
+/** Exactly the request a write would send (or sent), surfaced for dry-run review. */
+export interface ContractWriteRequest {
+  method: 'POST' | 'DELETE';
+  /** Brand-relative path. Writes use the `/Programs/{id}` path, not `/Campaigns/{id}`. */
+  path: string;
+  body?: unknown;
+}
+
+/**
+ * The result of `applyContract` / `removeContract`. DRY-RUN BY DEFAULT: unless
+ * `live` is set (and `IMPACT_ADV_WRITE_TOKEN` is configured), `sent` is false
+ * and `request` shows exactly what WOULD be sent, with no network write. This
+ * lets a beta tester validate the request shape before any real mutation, the
+ * safe path while the payload/endpoint shapes are `// TODO(verify)`.
+ */
+export interface ContractWriteResult {
+  action: 'apply' | 'remove';
+  network: typeof SLUG;
+  brand: string;
+  programmeId: string;
+  contractId?: string;
+  /** True only when a real POST/DELETE was issued (live + write token present). */
+  sent: boolean;
+  dryRun: boolean;
+  request: ContractWriteRequest;
+  /** Upstream response, present only when `sent`. */
+  result?: unknown;
+  warnings: string[];
   experimental: true;
 }
 
@@ -1003,6 +1046,231 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
   }
 
   // -------------------------------------------------------------------------
+  // applyContract / removeContract — the WRITE half (Phase 0).
+  //
+  // Three-layer gate (docs/decisions/2026-06-12-impact-contracts-actions.md):
+  //   1. propose-then-apply with a pinned token (re-derived from fresh state);
+  //   2. host annotations (destructiveHint on the tools);
+  //   3. opt-in IMPACT_ADV_WRITE_TOKEN + audit + the narrowed non-GET allowlist.
+  //
+  // DRY-RUN BY DEFAULT: without `live: true` these build and return the exact
+  // request without sending it. Live sending also needs the write token. The
+  // endpoint path and payload shape are `// TODO(verify)` against a live agency
+  // tenant — the dry-run-then-beta flow is how they get confirmed safely.
+  // -------------------------------------------------------------------------
+
+  async applyContract(
+    input: {
+      brand: string;
+      programmeId: string;
+      contractId?: string;
+      payoutTerms?: string;
+      mediaPartnerId?: string;
+      confirmationToken: string;
+      live?: boolean;
+    },
+    ctx?: AdapterCallContext,
+  ): Promise<ContractWriteResult> {
+    const c = this.requireWriteToken('applyContract', ctx);
+    // Re-derive the plan from FRESH state; this recomputes the pin identically.
+    const plan = await this.proposeContract(
+      {
+        action: 'apply',
+        brand: input.brand,
+        programmeId: input.programmeId,
+        contractId: input.contractId,
+        payoutTerms: input.payoutTerms,
+        mediaPartnerId: input.mediaPartnerId,
+      },
+      ctx,
+    );
+    this.assertTokenPin('applyContract', plan.confirmationToken, input.confirmationToken);
+    const campaignId = plan.programmeId;
+    const request: ContractWriteRequest = {
+      method: 'POST',
+      // Writes use the `/Programs/{id}` path, not the read `/Campaigns/{id}` path.
+      path: `/Programs/${encodeURIComponent(campaignId)}/Contracts`,
+      body: buildApplyBody(input),
+    };
+    return this.dispatchContractWrite({
+      action: 'apply',
+      brand: input.brand,
+      programmeId: campaignId,
+      contractId: input.contractId,
+      request,
+      warnings: plan.warnings,
+      planHash: plan.confirmationToken,
+      live: input.live ?? false,
+      writeToken: c.writeToken,
+      ctx: c.ctx,
+    });
+  }
+
+  async removeContract(
+    input: {
+      brand: string;
+      programmeId: string;
+      contractId: string;
+      confirmationToken: string;
+      live?: boolean;
+    },
+    ctx?: AdapterCallContext,
+  ): Promise<ContractWriteResult> {
+    const c = this.requireWriteToken('removeContract', ctx);
+    const plan = await this.proposeContract(
+      { action: 'remove', brand: input.brand, programmeId: input.programmeId, contractId: input.contractId },
+      ctx,
+    );
+    this.assertTokenPin('removeContract', plan.confirmationToken, input.confirmationToken);
+    const campaignId = plan.programmeId;
+    const request: ContractWriteRequest = {
+      method: 'DELETE',
+      // TODO(verify): whether DELETE carries the contract id in the path (used
+      // here) or the body, against a live agency tenant.
+      path: `/Programs/${encodeURIComponent(campaignId)}/Contracts/${encodeURIComponent(input.contractId)}`,
+    };
+    return this.dispatchContractWrite({
+      action: 'remove',
+      brand: input.brand,
+      programmeId: campaignId,
+      contractId: input.contractId,
+      request,
+      warnings: plan.warnings,
+      planHash: plan.confirmationToken,
+      live: input.live ?? false,
+      writeToken: c.writeToken,
+      ctx: c.ctx,
+    });
+  }
+
+  /**
+   * Layer 3 gate: writes engage only when the opt-in `IMPACT_ADV_WRITE_TOKEN`
+   * is configured. The default read-only credential can never POST or DELETE —
+   * a read-only operator gets a clean `config_error`, never a surprise mutation.
+   * Checked first, before any read, so an unconfigured operator fails fast.
+   */
+  private requireWriteToken(
+    operation: string,
+    ctx?: AdapterCallContext,
+  ): { ctx: AdapterCallContext; writeToken: string } {
+    const resolved = requireCtx(operation, ctx);
+    const writeToken = getCredential('IMPACT_ADV_WRITE_TOKEN');
+    if (!writeToken) {
+      throw new NetworkError(
+        buildErrorEnvelope({
+          type: 'config_error',
+          network: SLUG,
+          operation,
+          message: `Impact advertiser ${operation} requires the opt-in IMPACT_ADV_WRITE_TOKEN.`,
+          hint:
+            'This adapter is read-only by default. To enable contract writes, configure a ' +
+            'read-write Impact token as IMPACT_ADV_WRITE_TOKEN; the default read token cannot mutate.',
+        }),
+      );
+    }
+    return { ctx: resolved, writeToken };
+  }
+
+  /** Layer 1 gate: refuse to apply unless the supplied token pins the freshly re-derived plan. */
+  private assertTokenPin(operation: string, derived: string, supplied: string): void {
+    if (derived !== supplied) {
+      throw new NetworkError(
+        buildErrorEnvelope({
+          type: 'config_error',
+          network: SLUG,
+          operation,
+          message: `Impact advertiser ${operation} confirmation token does not match the current plan.`,
+          hint:
+            'The contract state changed since the plan was produced, or the token was altered. ' +
+            'Call proposeContract again, review the new plan, and apply with its fresh token.',
+        }),
+      );
+    }
+  }
+
+  /**
+   * Dispatch a contract write. DRY-RUN unless `live`: a dry run records a
+   * `dry_run` audit event and returns the exact request without sending. A live
+   * write authenticates with the opt-in write token, records `applied` on a
+   * server-observed success or `apply_failed` on failure, and never claims a
+   * success the server did not observe.
+   */
+  private async dispatchContractWrite(args: {
+    action: 'apply' | 'remove';
+    brand: string;
+    programmeId: string;
+    contractId?: string;
+    request: ContractWriteRequest;
+    warnings: string[];
+    planHash: string;
+    live: boolean;
+    writeToken: string;
+    ctx: AdapterCallContext;
+  }): Promise<ContractWriteResult> {
+    const actionId = `impact-advertiser.${args.action}Contract`;
+    const base: Omit<ContractWriteResult, 'sent' | 'dryRun' | 'result'> = {
+      action: args.action,
+      network: SLUG,
+      brand: args.brand,
+      programmeId: args.programmeId,
+      ...(args.contractId !== undefined ? { contractId: args.contractId } : {}),
+      request: args.request,
+      warnings: args.warnings,
+      experimental: true,
+    };
+    if (!args.live) {
+      recordActionAudit({
+        event: 'dry_run',
+        action: actionId,
+        network: SLUG,
+        brand: args.brand,
+        programmeId: args.programmeId,
+        ...(args.contractId !== undefined ? { contractId: args.contractId } : {}),
+        credentialTier: 'write',
+        planHash: args.planHash,
+        summary: `dry-run ${args.request.method} ${args.request.path}`,
+      });
+      return { ...base, sent: false, dryRun: true };
+    }
+    try {
+      const result = await impactAdvRequest<unknown>({
+        operation: args.action === 'apply' ? 'applyContract' : 'removeContract',
+        method: args.request.method,
+        brandPath: args.request.path,
+        networkBrandId: args.ctx.networkBrandId,
+        body: args.request.body,
+        authTokenOverride: args.writeToken,
+        resilience: RESILIENCE.default,
+      });
+      recordActionAudit({
+        event: 'applied',
+        action: actionId,
+        network: SLUG,
+        brand: args.brand,
+        programmeId: args.programmeId,
+        ...(args.contractId !== undefined ? { contractId: args.contractId } : {}),
+        credentialTier: 'write',
+        planHash: args.planHash,
+        summary: `${args.request.method} ${args.request.path}`,
+      });
+      return { ...base, sent: true, dryRun: false, result };
+    } catch (err) {
+      recordActionAudit({
+        event: 'apply_failed',
+        action: actionId,
+        network: SLUG,
+        brand: args.brand,
+        programmeId: args.programmeId,
+        ...(args.contractId !== undefined ? { contractId: args.contractId } : {}),
+        credentialTier: 'write',
+        planHash: args.planHash,
+        detail: err instanceof Error ? err.message : String(err),
+      });
+      throw err;
+    }
+  }
+
+  // -------------------------------------------------------------------------
   // Ops the advertiser side does NOT implement at v0.1.
   // -------------------------------------------------------------------------
 
@@ -1087,7 +1355,17 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
     };
     operations['proposeContract'] = {
       supported: true,
-      note: 'Advisement only: reads current state and returns a reviewable ContractChangePlan + token. Performs no network write. The projected change payload shape is `// TODO(verify)`; applying the plan is gated and not enabled here.',
+      note: 'Advisement only: reads current state and returns a reviewable ContractChangePlan + token. Performs no network write.',
+      claimStatus: 'experimental',
+    };
+    operations['applyContract'] = {
+      supported: true,
+      note: 'Write, gated. Dry-run by default; a live POST needs the opt-in IMPACT_ADV_WRITE_TOKEN and live:true, and a confirmation token pinning a fresh plan. Endpoint path `/Programs/{id}/Contracts` and body shape are `// TODO(verify)` against a live agency tenant.',
+      claimStatus: 'experimental',
+    };
+    operations['removeContract'] = {
+      supported: true,
+      note: 'Write, gated. Dry-run by default; a live DELETE needs the opt-in IMPACT_ADV_WRITE_TOKEN and live:true, and a confirmation token pinning a fresh plan. Endpoint path and whether the id is in path or body are `// TODO(verify)`.',
       claimStatus: 'experimental',
     };
     operations['getProgramme'] = { supported: false, note: 'Not implemented at v0.1.' };
@@ -1226,9 +1504,27 @@ function buildContractWarnings(
     warnings.push('Changing payout terms on an active contract affects live partner payouts.');
   }
   warnings.push(
-    'Experimental: the contract write payload shape is unverified (TODO(verify)). Applying this plan is gated and not yet enabled in this adapter.',
+    'Experimental: the contract write payload and endpoint shapes are unverified (TODO(verify)). Applying requires the opt-in IMPACT_ADV_WRITE_TOKEN and is dry-run by default — pass live: true only once the request shape is confirmed.',
   );
   return warnings;
+}
+
+/**
+ * Best-guess inline-rate payload for an apply (create or modify). The real
+ * Impact contract POST body — inline rate fields vs a template id — is
+ * `// TODO(verify)` against a live agency tenant; the dry-run surfaces exactly
+ * this body so a beta tester can confirm or correct it before any live write.
+ */
+function buildApplyBody(input: {
+  contractId?: string;
+  mediaPartnerId?: string;
+  payoutTerms?: string;
+}): Record<string, unknown> {
+  const body: Record<string, unknown> = {};
+  if (input.contractId) body['ContractId'] = input.contractId;
+  if (input.mediaPartnerId) body['MediaPartnerId'] = input.mediaPartnerId;
+  if (input.payoutTerms) body['PayoutTerms'] = input.payoutTerms;
+  return body;
 }
 
 /** One-line summary of the proposed change for the operator. */
@@ -1303,11 +1599,43 @@ export const impactAdvertiserActionDescriptors: ActionDescriptor[] = [
       'Build a reviewable plan for changing an Impact contract (the brand-partner ' +
       'payment-term relationship) without performing any network write. Reads current ' +
       'state and returns a ContractChangePlan with a confirmation token. Experimental: ' +
-      'the change payload shape carries TODO(verify) and applying it is gated, not yet enabled.',
+      'the change payload shape carries TODO(verify).',
     // proposeContract only READS to build the plan, so it needs no write credential.
     credentialRequirements: [
       { label: 'IMPACT_ADVERTISER_ACCOUNT_SID' },
       { label: 'IMPACT_ADVERTISER_AUTH_TOKEN' },
+    ],
+  },
+  {
+    id: 'impact-advertiser.applyContract',
+    network: SLUG,
+    channel: 'api',
+    effect: 'write',
+    defaultAuthorityTier: 3,
+    description:
+      'Create or update an Impact contract (brand-partner payment terms). Gated: dry-run by ' +
+      'default, and a live write needs the opt-in IMPACT_ADV_WRITE_TOKEN plus a confirmation ' +
+      'token pinning a fresh proposeContract plan. Endpoint and payload shapes are experimental (TODO(verify)).',
+    // Visible even when the write token is absent so the operator sees the blast
+    // radius before opting in; readiness then reports missing_credentials.
+    credentialRequirements: [
+      { label: 'IMPACT_ADVERTISER_ACCOUNT_SID' },
+      { label: 'IMPACT_ADV_WRITE_TOKEN' },
+    ],
+  },
+  {
+    id: 'impact-advertiser.removeContract',
+    network: SLUG,
+    channel: 'api',
+    effect: 'write',
+    defaultAuthorityTier: 3,
+    description:
+      'Remove an Impact contract. Gated: dry-run by default, and a live delete needs the opt-in ' +
+      'IMPACT_ADV_WRITE_TOKEN plus a confirmation token pinning a fresh proposeContract plan. ' +
+      'Removal is irreversible; the endpoint shape is experimental (TODO(verify)).',
+    credentialRequirements: [
+      { label: 'IMPACT_ADVERTISER_ACCOUNT_SID' },
+      { label: 'IMPACT_ADV_WRITE_TOKEN' },
     ],
   },
 ];
@@ -1356,4 +1684,5 @@ export const _internals = {
   renderContractSummary,
   computeConfirmationToken,
   normaliseContractChangeIntent,
+  buildApplyBody,
 };
