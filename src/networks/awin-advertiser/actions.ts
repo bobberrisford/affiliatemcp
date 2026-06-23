@@ -87,13 +87,13 @@ function buildPublisherDecisionHandoff(
     constraints: composeConstraints([
       `Operate only on publisher ${input.publisherId}; do not approve or decline any other applicant.`,
       'If the publisher row is not in a pending state, stop — it may already be decided.',
-      'Do not change commission, payout, or contract terms while approving.',
+      'Do not change commission, payout, or contract terms while recording this decision.',
       'If the dashboard requires setting terms as part of approval, stop and hand back to the user.',
     ]),
     mutates: true,
     verify: {
       url: AWIN_PENDING_PUBLISHERS_URL,
-      expect: `publisher ${input.publisherId} no longer appears in the pending queue; its status reads approved (or declined).`,
+      expect: `publisher ${input.publisherId} no longer appears in the pending queue; its status reads ${decision === 'approve' ? 'approved' : 'declined'}.`,
     },
   };
 }
