@@ -30,14 +30,18 @@ and upgrade to take a fix.
 
 ## Reporting a vulnerability
 
-Report suspected vulnerabilities privately through GitHub's private
-vulnerability reporting:
+Report suspected vulnerabilities through the most private GitHub route
+available for the repository:
 
 1. Open <https://github.com/bobberrisford/affiliatemcp/security/advisories>.
-2. Choose **Report a vulnerability**.
+2. If **Report a vulnerability** is available, use it.
+3. If private reporting is unavailable, open a public issue asking for a
+   private disclosure channel, but do not include exploit details, credentials,
+   or sensitive reproduction material in the public issue.
 
-Please do not open a public issue for a suspected vulnerability. Include the
-affected version, a description, reproduction steps, and the impact you expect.
+Please do not post exploit details publicly. Once a private channel is
+established, include the affected version, a description, reproduction steps,
+and the impact you expect.
 
 We aim to acknowledge a report within a few working days and to agree a
 disclosure timeline with the reporter. There is no bug-bounty programme.

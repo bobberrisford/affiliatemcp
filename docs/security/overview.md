@@ -72,7 +72,7 @@ own machine and their own network API keys.
 | Logging | Operational logs go to stderr on the user's machine and are not collected by us. The project never logs credentials. |
 | Telemetry / analytics | Off by default, opt-in, aggregate-only. Never carries credentials, account identifiers, affiliate data, prompts, arguments, results, amounts, URLs, error text, or exact timestamps. Full contract in `PRIVACY.md`. |
 | Source code review | The project is open source. The full implementation, including the adapter contract and resilience layer, is available for inspection at <https://github.com/bobberrisford/affiliatemcp>. |
-| Vulnerability reporting | Private reporting via GitHub Security Advisories. See `SECURITY.md`. |
+| Vulnerability reporting | Prefer GitHub private vulnerability reporting when available; otherwise request a private disclosure channel without posting exploit details publicly. See `SECURITY.md`. |
 | Compliance certifications (SOC 2, ISO 27001) | Not applicable in the usual sense: there is no hosted service or vendor-held data to certify. The relevant controls (device security, key management, disk encryption) sit with the operator and their organisation. |
 | Data protection / GDPR | We are not a processor of the user's affiliate data, because it is never sent to us. The operator and the affiliate networks remain the parties handling that data under their existing agreements. |
 
