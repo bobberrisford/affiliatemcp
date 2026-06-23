@@ -37,9 +37,18 @@ const auditLog = createLogger('audit');
  * - `write_rejected` means rejection before mutation was confirmed;
  * - `write_unknown` means dispatch may have mutated state and needs a re-read;
  * - `write_verified` means the server re-read and observed the intended state;
- * - `handoff_emitted` claims only that a handoff was produced and shown.
+ * - `handoff_emitted` claims only that a handoff was produced and shown;
+ * - `verified` means a previously emitted handoff was confirmed by revisiting
+ *   its verify target and finding the expected state present;
+ * - `verify_failed` means the verify target was revisited and the expected
+ *   state was not present.
  *
- * A future browser verify step closes the handoff arc with its own events.
+ * `verified` and `verify_failed` are the consumer's report-back closing the
+ * handoff arc `handoff_emitted -> verified | verify_failed`
+ * (docs/decisions/2026-06-12-browser-handoff-contract.md, decision 2). They do
+ * not relax the rule that `succeeded` is never recorded for a handoff: a
+ * handoff is only ever closed by an outcome a consumer actually observed at the
+ * verify target, recorded as `verified` or `verify_failed`.
  */
 export const ACTION_AUDIT_EVENTS = [
   'proposed',
@@ -50,6 +59,8 @@ export const ACTION_AUDIT_EVENTS = [
   'write_unknown',
   'write_verified',
   'handoff_emitted',
+  'verified',
+  'verify_failed',
 ] as const;
 
 export type ActionAuditEvent = (typeof ACTION_AUDIT_EVENTS)[number];
@@ -95,6 +106,13 @@ export interface ActionAuditEntry {
   httpStatus?: number;
   /** Bounded reason code, not a free-form upstream response or credential-bearing message. */
   reasonCode?: string;
+  /**
+   * ISO-8601 instant the event occurred. Optional, and never a secret. Carried
+   * so a read-back can attribute an entry to a calendar day, which the per-day
+   * consent-cap basis needs (see `countMutatingHandoffsOn`). The logger stamps
+   * its own emission time; this is the entry's own record for later reads.
+   */
+  occurredAt?: string;
 }
 
 /** The structured shape handed to the logger. Pure; exposed for testing. */
@@ -110,4 +128,37 @@ export function toAuditLine(entry: ActionAuditEntry): { msg: string; audit: Acti
 export function recordActionAudit(entry: ActionAuditEntry): void {
   const line = toAuditLine(entry);
   auditLog.info({ audit: line.audit }, line.msg);
+}
+
+/**
+ * True when an audit entry represents a mutating handoff: a `handoff_emitted`
+ * event whose handoff intended to change state. There is deliberately no
+ * `mutates` flag on the entry; the minimal existing signal is the presence of
+ * an `intendedAfterState`, which a mutating handoff records and a read-only
+ * one (an API gap exposing data only) does not.
+ */
+function isMutatingHandoff(entry: ActionAuditEntry): boolean {
+  return entry.event === 'handoff_emitted' && entry.intendedAfterState !== undefined;
+}
+
+/**
+ * Count the mutating `handoff_emitted` entries that occurred on a given
+ * calendar day, the basis for the per-day consent cap
+ * (docs/decisions/2026-06-12-browser-handoff-contract.md, decision 2: a
+ * mutating handoff consumes the day's allowance, the conservative basis a
+ * handoff that may have mutated state must use).
+ *
+ * Pure and deterministic: the day is supplied as an ISO date (`YYYY-MM-DD`),
+ * never read from the clock. An entry is on that day when its `occurredAt`
+ * instant falls on it (compared by the leading `YYYY-MM-DD` of the ISO string).
+ * Entries with no `occurredAt`, non-mutating handoffs, and any other event are
+ * not counted. This counts the basis only; it does not enforce any cap.
+ */
+export function countMutatingHandoffsOn(entries: ActionAuditEntry[], isoDate: string): number {
+  return entries.filter(
+    (entry) =>
+      isMutatingHandoff(entry) &&
+      typeof entry.occurredAt === 'string' &&
+      entry.occurredAt.slice(0, 10) === isoDate,
+  ).length;
 }
