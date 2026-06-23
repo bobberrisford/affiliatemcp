@@ -16,7 +16,8 @@ only the brand's recorded advisory strategy, you show the operator the full batc
 and you execute only after one explicit confirmation of the whole set.
 
 This skill is assisted, not unattended. It never invents an approval rule and
-never records a result the server did not observe.
+never records a result the browser consumer did not observe at the verify
+target.
 
 ## Step 1 — resolve the brand
 
@@ -165,5 +166,6 @@ Matter-of-fact tone, UK spelling, no hype.
 - One brand per run, Awin advertiser only.
 - The queue read is the API (the verified source). Execution is the browser, in
   the operator's own authenticated session.
-- Never record a success the server did not observe. Close each handoff only as
-  `verified` or `verify_failed` from the verify target, never as applied.
+- Never record a result the browser consumer did not observe at the verify
+  target. Close each handoff only as `verified` or `verify_failed`, never as
+  applied.
