@@ -40,6 +40,7 @@ const AGENCY_SKILLS = [
   'client-onboarding',
   'partner-roster-audit',
   'partner-application-queue',
+  'awin-application-auto-approval',
   'programme-health-check',
   'partner-outreach',
 ] as const;

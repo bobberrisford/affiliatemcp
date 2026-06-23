@@ -85,10 +85,11 @@ describe('Awin advertiser action-map wiring', () => {
 });
 
 describe('Awin advertiser propose_publisher_decision tool', () => {
-  it('exposes exactly the one propose tool, readOnlyHint, strict schema', () => {
+  it('exposes the propose and report tools, readOnlyHint, strict schema', () => {
     const tools = generateAwinAdvertiserTools();
     expect(tools.map((t) => t.name)).toEqual([
       'affiliate_awin-advertiser_propose_publisher_decision',
+      'affiliate_awin-advertiser_report_publisher_decision_result',
     ]);
     const tool = tools[0];
     if (!tool) throw new Error('tool missing');
@@ -199,6 +200,103 @@ describe('Awin advertiser propose_publisher_decision tool', () => {
           publisherId: '12345',
           publisherName: 'Cashback Co',
           decision: 'approve',
+        }))(),
+    ).rejects.toBeInstanceOf(BrandNotRegistered);
+  });
+});
+
+describe('Awin advertiser report_publisher_decision_result tool', () => {
+  function reportTool() {
+    const tool = generateAwinAdvertiserTools()[1];
+    if (!tool) throw new Error('report tool missing');
+    return tool;
+  }
+
+  function bindAcme() {
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [{ network: 'awin-advertiser', credentialId: 'default', networkBrandId: 'adv-99' }],
+      },
+    });
+  }
+
+  it('is readOnlyHint with a strict schema that rejects unknown keys', async () => {
+    const tool = reportTool();
+    expect(tool.name).toBe('affiliate_awin-advertiser_report_publisher_decision_result');
+    expect(tool.annotations?.readOnlyHint).toBe(true);
+    const schema = tool.inputSchema as {
+      required?: string[];
+      additionalProperties?: boolean;
+    };
+    expect(schema.required).toEqual(
+      expect.arrayContaining(['brand', 'programmeId', 'publisherId', 'decision', 'verified']),
+    );
+    expect(schema.additionalProperties).toBe(false);
+
+    bindAcme();
+    await expect(
+      (async () =>
+        tool.handle({
+          brand: 'acme',
+          programmeId: 'prog-1',
+          publisherId: '12345',
+          decision: 'approve',
+          verified: true,
+          unexpected: 'nope',
+        }))(),
+    ).rejects.toThrow();
+  });
+
+  it('records verified when verified=true and never applied/succeeded', async () => {
+    bindAcme();
+    const auditSpy = vi.spyOn(auditModule, 'recordActionAudit').mockImplementation(() => {});
+    const result = (await reportTool().handle({
+      brand: 'acme',
+      programmeId: 'prog-1',
+      publisherId: '12345',
+      decision: 'approve',
+      verified: true,
+      note: 'row gone from pending queue',
+    })) as { recorded: string };
+
+    expect(result.recorded).toBe('verified');
+    expect(auditSpy).toHaveBeenCalledTimes(1);
+    const entry = auditSpy.mock.calls[0]?.[0];
+    expect(entry?.event).toBe('verified');
+    expect(entry?.action).toBe('awin-advertiser.approvePublisher');
+    expect(entry?.network).toBe('awin-advertiser');
+    expect(typeof entry?.occurredAt).toBe('string');
+    // Never an applied/succeeded-style event.
+    expect(['write_dispatched', 'write_verified', 'handoff_emitted']).not.toContain(entry?.event);
+  });
+
+  it('records verify_failed when verified=false, using the decline descriptor id', async () => {
+    bindAcme();
+    const auditSpy = vi.spyOn(auditModule, 'recordActionAudit').mockImplementation(() => {});
+    const result = (await reportTool().handle({
+      brand: 'acme',
+      programmeId: 'prog-1',
+      publisherId: '67890',
+      decision: 'decline',
+      verified: false,
+    })) as { recorded: string };
+
+    expect(result.recorded).toBe('verify_failed');
+    const entry = auditSpy.mock.calls[0]?.[0];
+    expect(entry?.event).toBe('verify_failed');
+    expect(entry?.action).toBe('awin-advertiser.declinePublisher');
+  });
+
+  it('surfaces BrandNotRegistered when the brand is not bound', async () => {
+    await expect(
+      (async () =>
+        reportTool().handle({
+          brand: 'never-bound',
+          programmeId: 'prog-1',
+          publisherId: '12345',
+          decision: 'approve',
+          verified: true,
         }))(),
     ).rejects.toBeInstanceOf(BrandNotRegistered);
   });
