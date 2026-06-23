@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   ACTION_AUDIT_EVENTS,
+  countMutatingHandoffsOn,
   recordActionAudit,
   toAuditLine,
   type ActionAuditEntry,
@@ -22,6 +23,8 @@ describe('audit event vocabulary', () => {
       'write_unknown',
       'write_verified',
       'handoff_emitted',
+      'verified',
+      'verify_failed',
     ];
     expect(ACTION_AUDIT_EVENTS).toEqual(events);
     // @ts-expect-error `succeeded` is deliberately not part of the vocabulary.
@@ -29,6 +32,13 @@ describe('audit event vocabulary', () => {
     expect(events).not.toContain(bad);
     expect(events).not.toContain('applied');
     expect(events).not.toContain('apply_failed');
+  });
+
+  it('accepts the verify-closure events that close the handoff arc', () => {
+    const verified: ActionAuditEvent = 'verified';
+    const verifyFailed: ActionAuditEvent = 'verify_failed';
+    expect(ACTION_AUDIT_EVENTS).toContain(verified);
+    expect(ACTION_AUDIT_EVENTS).toContain(verifyFailed);
   });
 });
 
@@ -70,5 +80,82 @@ describe('recordActionAudit', () => {
         recordActionAudit({ event, action: 'test.action', network: 'test' }),
       ).not.toThrow();
     }
+  });
+
+  it('round-trips verify-closure entries through toAuditLine', () => {
+    for (const event of ['verified', 'verify_failed'] as const) {
+      const entry: ActionAuditEntry = {
+        event,
+        action: 'impact-advertiser.applyContract',
+        network: 'impact-advertiser',
+        contractId: 'CT-1',
+        summary: 'Revisited the verify target',
+      };
+      const line = toAuditLine(entry);
+      expect(line.msg).toBe(`action_audit:${event}`);
+      expect(line.audit).toEqual(entry);
+      expect(() => recordActionAudit(entry)).not.toThrow();
+    }
+  });
+});
+
+describe('countMutatingHandoffsOn', () => {
+  const day = '2026-06-23';
+  const mutatingHandoff = (occurredAt: string): ActionAuditEntry => ({
+    event: 'handoff_emitted',
+    action: 'impact-advertiser.applyContract',
+    network: 'impact-advertiser',
+    intendedAfterState: { status: 'pending' },
+    occurredAt,
+  });
+
+  it('counts only mutating handoffs emitted on the given day', () => {
+    const entries: ActionAuditEntry[] = [
+      mutatingHandoff(`${day}T09:00:00.000Z`),
+      mutatingHandoff(`${day}T23:59:59.000Z`),
+    ];
+    expect(countMutatingHandoffsOn(entries, day)).toBe(2);
+  });
+
+  it('ignores handoffs on other days', () => {
+    const entries: ActionAuditEntry[] = [
+      mutatingHandoff(`${day}T09:00:00.000Z`),
+      mutatingHandoff('2026-06-22T23:59:59.000Z'),
+      mutatingHandoff('2026-06-24T00:00:00.000Z'),
+    ];
+    expect(countMutatingHandoffsOn(entries, day)).toBe(1);
+  });
+
+  it('ignores non-mutating handoffs (no intendedAfterState)', () => {
+    const readOnlyHandoff: ActionAuditEntry = {
+      event: 'handoff_emitted',
+      action: 'impact-advertiser.viewReport',
+      network: 'impact-advertiser',
+      occurredAt: `${day}T10:00:00.000Z`,
+    };
+    expect(countMutatingHandoffsOn([readOnlyHandoff], day)).toBe(0);
+  });
+
+  it('ignores other events and entries without an occurredAt', () => {
+    const entries: ActionAuditEntry[] = [
+      {
+        event: 'write_verified',
+        action: 'impact-advertiser.applyContract',
+        network: 'impact-advertiser',
+        intendedAfterState: { status: 'approved' },
+        occurredAt: `${day}T11:00:00.000Z`,
+      },
+      {
+        event: 'handoff_emitted',
+        action: 'impact-advertiser.applyContract',
+        network: 'impact-advertiser',
+        intendedAfterState: { status: 'pending' },
+      },
+    ];
+    expect(countMutatingHandoffsOn(entries, day)).toBe(0);
+  });
+
+  it('returns zero for an empty trail', () => {
+    expect(countMutatingHandoffsOn([], day)).toBe(0);
   });
 });
