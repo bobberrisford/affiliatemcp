@@ -39,6 +39,7 @@ import {
 } from '../shared/client-strategy.js';
 import { generateAwinTools } from '../networks/awin/tools.js';
 import { generateImpactAdvertiserTools } from '../networks/impact-advertiser/tools.js';
+import { generateAwinAdvertiserTools } from '../networks/awin-advertiser/tools.js';
 import { generateTradedoublerTools } from '../networks/tradedoubler/tools.js';
 import type { ToolDefinition } from './types.js';
 import { toJsonSchema } from './schema.js';
@@ -683,6 +684,7 @@ export function generateAllTools(): ToolDefinition[] {
     ...generateToolsFor(a),
     ...(a.slug === 'awin' ? generateAwinTools() : []),
     ...(a.slug === 'impact-advertiser' ? generateImpactAdvertiserTools() : []),
+    ...(a.slug === 'awin-advertiser' ? generateAwinAdvertiserTools() : []),
     ...(a.slug === 'tradedoubler' ? generateTradedoublerTools() : []),
   ]);
   return [...generateMetaTools(), ...adapterTools];
