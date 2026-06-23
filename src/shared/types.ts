@@ -515,6 +515,50 @@ export interface NetworkErrorEnvelope {
   timestamp: string; // ISO
 }
 
+// ---------------------------------------------------------------------------
+// Browser-handoff contract
+// ---------------------------------------------------------------------------
+// See docs/decisions/2026-06-12-browser-handoff-contract.md (accepted). When a
+// network's API does not expose an operation, an adapter may emit an
+// `ApiGapResponse` rather than throw: an API gap is an expected, documented
+// condition, not a failure, so it never travels through `NetworkErrorEnvelope`.
+// The response is a normal return value, serialised as-is by the tool layer;
+// MCP clients branch on `kind`. A pure emitter never drives a browser: the
+// handoff is carried out by a human, or later by an out-of-scope consumer that
+// reads this shared shape. These types are a deliberate, reviewed exception to
+// "do not modify src/shared/", authorised by that decision.
+
+/** Network-agnostic handoff payload. One consumer reads every handoff. */
+export interface BrowserHandoff {
+  /** Plain-English goal, e.g. "Apply to programme 12345 on Impact". */
+  goal: string;
+  /** Reviewed network-owned https location; never a caller- or model-supplied arbitrary URL. */
+  startingUrl: string;
+  /** Minimum non-secret values needed for the operation. JSON-serialisable; schema is per-operation. */
+  inputs: Record<string, unknown>;
+  /** Shared default floor plus per-action additions. See decision 4. */
+  constraints: string[];
+  /** True if the flow submits, changes, or sends anything. Forces confirm-before-submit. */
+  mutates: boolean;
+  /** How the outcome is confirmed: a URL to revisit and the state to expect there. */
+  verify: { url?: string; expect: string };
+  /** Optional bounded hints (stable selectors, known steps). Never executable or open-ended instructions. */
+  hints?: string[];
+}
+
+/** Normal return value for an operation the network's API does not expose. Never thrown. */
+export interface ApiGapResponse {
+  kind: 'api-gap';
+  network: NetworkSlug;
+  operation: string;
+  /** Factual one-liner naming the gap. */
+  reason: string;
+  /** Verbatim sentence the calling agent shows the user. */
+  userMessage: string;
+  /** Null when no fallback path is known; the message invites the user to teach the gap. */
+  browserFallback: BrowserHandoff | null;
+}
+
 /**
  * Thrown by operations that an adapter does not (yet) support.
  * Surfaces as a `not_implemented` envelope; never silently empty.
