@@ -35,7 +35,7 @@ const log = createLogger('impact-advertiser.client');
 export const IMPACT_ADV_BASE_URL = 'https://api.impact.com';
 
 export interface ImpactAdvRequestInput {
-  operation: AnyOperation;
+  operation: AnyOperation | 'listContracts' | 'getContract';
   /**
    * Brand-relative path under the detected tier prefix. Example: `/Campaigns`
    * resolves to `/Advertisers/{BrandSID}/Campaigns` under brand-direct creds

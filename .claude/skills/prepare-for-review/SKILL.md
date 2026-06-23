@@ -38,6 +38,7 @@ Classify and record:
 - intended customer journey and affected cohort;
 - the owning architectural layer;
 - dependencies and whether they are merged;
+- workstream, dependency graph, lane, and semantic conflict domains;
 - public contracts changed;
 - risk domains and failure modes;
 - deliberately excluded scope;
@@ -50,7 +51,9 @@ Keep the PR draft and explain the next action when any gate fails:
 - The branch has conflicts, failed or pending required CI, or an unmerged
   dependency.
 - A product or architecture decision required by this PR remains unresolved.
-  Propose a small decision PR using the decision template.
+  Propose a small decision PR using the decision template. Keep this PR to
+  discovery or an explicitly disposable prototype; do not prepare production
+  foundations or implementation for review.
 - The diff combines independent outcomes or separable high-risk domains.
   Propose concrete PR slices.
 - The review brief is incomplete or does not match the diff.
@@ -97,6 +100,7 @@ The body must state:
 - mode: `decision`, `implementation`, or `ready-to-merge`;
 - intended customer journey and any changed product assumption;
 - owning layer, contracts changed, and dependencies;
+- workstream, lane, dependency graph, and merge order when multi-PR;
 - risk domains, failure modes, out-of-scope items, and split rationale;
 - documentation, examples, tool descriptions, roadmap status, or release notes
   checked or updated;
@@ -104,6 +108,11 @@ The body must state:
 - what the coding agent inspected and what remains uncertain;
 - exact questions or decisions for the reviewer, especially around abstraction,
   ownership boundaries, or live-proof gaps.
+
+Optionally include a `Delivery-system learning` when this work produced concrete
+evidence for a process improvement. Keep it to observation, evidence, and the
+smallest proposed update. Omit it when there is no meaningful lesson, and do
+not add unrelated governance edits to the PR.
 
 Use `gh pr edit --body-file <file>` after preparing the body in a temporary
 file. Do not hide failed checks, conflicts, unresolved decisions, or dependency
@@ -121,9 +130,13 @@ Risk-based review is required for:
 - cross-client architecture or Claude/Codex parity decisions;
 - product-direction decisions with implementation consequences.
 
-Inspect all open PRs. Another PR occupies `@offmann`'s queue when it is open,
-not draft, requests `offmann`, and has not received a review decision. If the
-queue is occupied, keep this PR draft and report which PR is ahead of it.
+Inspect all open PRs and apply the canonical lanes from `AGENTS.md`. Another PR
+occupies `active-risk` when it is open, not draft, requests `offmann`, and has
+not received a review decision. If the risk lane is occupied, keep this PR
+draft as `queued-risk` and report which PR is ahead of it. Routine work may
+enter review concurrently only when fewer than two routine PRs are active, all
+required decisions are merged, public contracts are preserved, and the owning
+domains do not conflict.
 
 When every gate passes:
 
@@ -132,8 +145,8 @@ When every gate passes:
    is in a risk-based category, his queue is empty, and he is not the PR author.
    When `@offmann` is the author, request the repository maintainer instead.
 3. For routine isolated changes, mark ready without requesting `@offmann`.
-4. Report the PR URL, verification evidence, risk classification, and reviewer
-   request made.
+4. Report the PR URL, verification evidence, lane, dependency status, risk
+   classification, and reviewer request made.
 
 Never approve or merge the PR yourself.
 

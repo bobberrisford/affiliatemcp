@@ -16,12 +16,22 @@ describe('classifyToolForTelemetry', () => {
       network: 'meta',
       operation: 'run_diagnostic',
     });
+    expect(classifyToolForTelemetry('affiliate_list_actions')).toEqual({
+      network: 'meta',
+      operation: 'list_actions',
+    });
   });
 
   it('keeps adapter tool slugs and operations unchanged', () => {
     expect(classifyToolForTelemetry('affiliate_impact_list_transactions')).toEqual({
       network: 'impact',
       operation: 'list_transactions',
+    });
+    expect(
+      classifyToolForTelemetry('affiliate_impact-advertiser_propose_contract'),
+    ).toEqual({
+      network: 'impact-advertiser',
+      operation: 'propose_contract',
     });
   });
 });

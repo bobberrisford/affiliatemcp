@@ -29,6 +29,11 @@ Read the owning files, adjacent tests, relevant accepted decisions, and current
 product docs before choosing an approach. Treat shipped behaviour and accepted
 decisions as stronger evidence than historical plans.
 
+For multi-PR work, write the workstream dependency graph and acceptance proof
+before implementation. If a required decision is unresolved, stop production
+implementation at that boundary. Discovery and explicitly disposable
+prototypes may continue; foundations and child implementation PRs may not.
+
 Make routine implementation choices without asking for approval. Ask for human
 direction only when a decision is product-sensitive, architecture-sensitive,
 security-sensitive, irreversible, or changes a public contract. Othman steers
@@ -76,10 +81,20 @@ Flag and correct cases where:
 Gather all open PRs, current `main`, dependencies, conflicts, review decisions,
 checks, age, size, and risk domains. Assign exactly one state:
 
-- `active`: the single PR being advanced towards merge;
-- `queued`: coherent and valuable, but waiting behind the active PR;
-- `needs-update`: worth keeping, but requires refresh, repair, or a decision;
+- `active-risk`: the single PR awaiting scarce human risk review;
+- `routine`: one of at most two decision-complete, disjoint low-risk PRs being
+  advanced in parallel;
+- `exploration`: discovery or disposable prototype work behind an unresolved
+  decision, with no production implementation;
+- `queued-risk`: coherent risk work waiting behind `active-risk`;
+- `blocked`: waiting on a named dependency, decision, repair, or refresh;
+- `merge-queued`: approved by a human and awaiting merge;
 - `close-candidate`: stale, superseded, duplicative, or no longer aligned.
+
+Detect semantic conflicts, not only overlapping files. PRs conflict when they
+affect the same owning module, public contract, decision, migration, generated
+authority, release surface, or customer journey. Conflicting PRs share a lane
+and explicit merge order.
 
 Order work by:
 
@@ -89,8 +104,9 @@ Order work by:
 4. accepted larger implementations;
 5. stale experiments and redesigns.
 
-Refresh branches just in time when promoted to `active`; do not repeatedly
-merge `main` into every queued branch.
+Refresh branches just in time when promoted. After a stacked parent merges,
+retarget the child to `main`, refresh once, and validate the resulting diff. Do
+not repeatedly merge `main` into every queued branch.
 
 ## 5. Close stale work safely
 
@@ -101,7 +117,7 @@ Link a replacement PR when one exists.
 Closing a PR is reversible portfolio hygiene. Deleting its branch is a separate,
 destructive action.
 
-## 6. Advance the active PR
+## 6. Advance the selected lane
 
 Use `prepare-for-review` and `review-pr`, then act on what is already known:
 
@@ -117,7 +133,8 @@ the current role began as reviewer. Ask for a decision only when the missing
 choice is genuinely product, architecture, security, or scope ownership.
 
 Keep unrelated outcomes on separate branches and PRs. Never mix queue-governance
-changes into the active feature PR.
+changes into a feature PR. Advance at most one `active-risk` PR and two routine
+PRs at once; routine lanes must remain decision-complete and disjoint.
 
 ## 7. Confidence gate
 
@@ -144,5 +161,16 @@ and `main` state.
 
 While active-PR CI runs, perform non-conflicting portfolio work: inspect the next
 PR, close authorised stale work, or prepare decision boundaries. Keep only one
-PR actively awaiting human review. On merge, promote the next queued PR, refresh
-it onto the new `main`, and repeat.
+PR actively awaiting Othman's risk review, but use the two routine lanes when
+their domains are disjoint. On merge, promote the next ordered PR, retarget and
+refresh its direct child if needed, then repeat. Every merge still requires
+explicit human approval for that specific PR.
+
+## 9. Learn from delivery
+
+After meaningful work, reflect briefly on evidence from the interaction. If it
+revealed a repeated failure, avoidable hand-off, missing or noisy guardrail, or
+an effective pattern worth preserving, add a concise `Delivery-system learning`
+side note: observation, evidence, and smallest proposed update. Omit the note
+when no useful lesson emerged. Do not edit governance inside the feature PR;
+propose the refinement separately for human acceptance.

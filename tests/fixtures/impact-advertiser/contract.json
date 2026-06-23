@@ -1,0 +1,14 @@
+{
+  "Contract": {
+    "Id": "CT-5001",
+    "CampaignId": "CMP-42",
+    "CampaignName": "Acme Spring Sale",
+    "Name": "Standard CPS — 8%",
+    "Status": "Active",
+    "MediaPartnerId": "MP-1",
+    "MediaPartnerName": "BestDeals.com",
+    "PayoutDescription": "8% of sale amount, 30-day cookie",
+    "EffectiveDate": "2026-01-01T00:00:00",
+    "ExpirationDate": "2026-12-31T00:00:00"
+  }
+}

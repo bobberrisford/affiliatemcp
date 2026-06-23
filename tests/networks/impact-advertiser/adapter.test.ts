@@ -12,6 +12,7 @@ import path from 'node:path';
 
 import {
   impactAdvertiserAdapter,
+  impactAdvertiserActionDescriptors,
   _internals,
 } from '../../../src/networks/impact-advertiser/adapter.js';
 import { _resetCredentialCache } from '../../../src/networks/impact-advertiser/auth.js';
@@ -389,6 +390,314 @@ describe('Impact advertiser.getProgrammePerformance', () => {
 });
 
 // ---------------------------------------------------------------------------
+// listContracts / getContract — read-only contract surface
+// ---------------------------------------------------------------------------
+
+describe('Impact advertiser contract transformers', () => {
+  it('maps contract status to active|pending|expired|inactive|unknown', () => {
+    expect(_internals.mapContractStatus({ Status: 'Active' })).toBe('active');
+    expect(_internals.mapContractStatus({ Status: 'Pending' })).toBe('pending');
+    expect(_internals.mapContractStatus({ Status: 'Expired' })).toBe('expired');
+    expect(_internals.mapContractStatus({ Status: 'Terminated' })).toBe('inactive');
+    expect(_internals.mapContractStatus({ Status: 'whatever' })).toBe('unknown');
+  });
+
+  it('transforms a raw contract and preserves raw network data', () => {
+    const raw = (loadFixture('contracts.json') as { Contracts: Array<Record<string, unknown>> })
+      .Contracts[0];
+    const ct = _internals.toContract(raw as never);
+    expect(ct.id).toBe('CT-5001');
+    expect(ct.programmeId).toBe('CMP-42');
+    expect(ct.mediaPartnerName).toBe('BestDeals.com');
+    expect(ct.status).toBe('active');
+    expect(ct.payoutTerms).toContain('8%');
+    expect(ct.effectiveDate).toBe('2026-01-01T00:00:00.000Z');
+    expect(ct.rawNetworkData).toBe(raw);
+  });
+});
+
+describe('Impact advertiser.listContracts', () => {
+  it('lists contracts under a campaign and builds the right path', async () => {
+    const { urls } = mockFetchQueue([expectAgency(), fakeResponse(loadFixture('contracts.json'))]);
+    const r = await impactAdvertiserAdapter.listContracts(
+      { programmeId: 'CMP-42', cursor: '2', limit: 50 },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(r).toHaveLength(3);
+    expect(urls[1]).toContain('/Agencies/IRA-AGENCY-1/Advertisers/BRAND-42/Campaigns/CMP-42/Contracts');
+    expect(urls[1]).toContain('PageSize=50');
+    expect(urls[1]).toContain('Page=2');
+  });
+
+  it('filters by status client-side', async () => {
+    mockFetchQueue([expectAgency(), fakeResponse(loadFixture('contracts.json'))]);
+    const r = await impactAdvertiserAdapter.listContracts(
+      { programmeId: 'CMP-42', status: 'pending' },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(r).toHaveLength(1);
+    expect(r[0]?.mediaPartnerName).toBe('CouponCove');
+  });
+
+  it('uses the brand-direct credential path when agency detection returns 404', async () => {
+    const { urls } = mockFetchQueue([
+      expectBrandDirect(),
+      fakeResponse(loadFixture('contracts.json')),
+    ]);
+    await impactAdvertiserAdapter.listContracts(
+      { programmeId: 'CMP-42' },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(urls[1]).toContain('/Advertisers/BRAND-42/Campaigns/CMP-42/Contracts');
+    expect(urls[1]).not.toContain('/Agencies/');
+  });
+
+  it('rejects a successful payload that cannot identify a listed contract', async () => {
+    mockFetchQueue([expectAgency(), fakeResponse({ Contracts: [{ Status: 'Active' }] })]);
+    try {
+      await impactAdvertiserAdapter.listContracts(
+        { programmeId: 'CMP-42' },
+        { networkBrandId: 'BRAND-42' },
+      );
+      throw new Error('expected listContracts to throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(NetworkError);
+      expect((err as NetworkError).envelope.type).toBe('network_api_error');
+      expect((err as NetworkError).envelope.operation).toBe('listContracts');
+    }
+  });
+
+  it('refuses to run without a brand context (config_error)', async () => {
+    await expect(
+      impactAdvertiserAdapter.listContracts({ programmeId: 'CMP-42' }),
+    ).rejects.toBeInstanceOf(NetworkError);
+  });
+
+  it('refuses to run without a programmeId (config_error)', async () => {
+    await expect(
+      impactAdvertiserAdapter.listContracts(undefined, { networkBrandId: 'BRAND-42' }),
+    ).rejects.toBeInstanceOf(NetworkError);
+    try {
+      await impactAdvertiserAdapter.listContracts(undefined, { networkBrandId: 'BRAND-42' });
+    } catch (err) {
+      expect((err as NetworkError).envelope.type).toBe('config_error');
+    }
+  });
+});
+
+describe('Impact advertiser.getContract', () => {
+  it('fetches a single contract and builds the right path', async () => {
+    const { urls } = mockFetchQueue([expectAgency(), fakeResponse(loadFixture('contract.json'))]);
+    const ct = await impactAdvertiserAdapter.getContract(
+      { programmeId: 'CMP-42', contractId: 'CT-5001' },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(ct.id).toBe('CT-5001');
+    expect(ct.status).toBe('active');
+    expect(urls[1]).toContain('/Campaigns/CMP-42/Contracts/CT-5001');
+  });
+
+  it('uses requested ids when the single-contract payload omits them', async () => {
+    mockFetchQueue([expectAgency(), fakeResponse({ Contract: { Status: 'Active' } })]);
+    const ct = await impactAdvertiserAdapter.getContract(
+      { programmeId: 'CMP-42', contractId: 'CT-5001' },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(ct.id).toBe('CT-5001');
+    expect(ct.programmeId).toBe('CMP-42');
+    expect(ct.rawNetworkData).toEqual({ Status: 'Active' });
+  });
+
+  it('refuses to run without a contractId (config_error)', async () => {
+    try {
+      await impactAdvertiserAdapter.getContract(
+        { programmeId: 'CMP-42', contractId: '' },
+        { networkBrandId: 'BRAND-42' },
+      );
+      throw new Error('expected getContract to throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(NetworkError);
+      expect((err as NetworkError).envelope.type).toBe('config_error');
+    }
+  });
+});
+
+describe('Impact advertiser.proposeContract (advisement)', () => {
+  it('plans a removal: reads before-state via GET only, no write, irreversibility warning + token', async () => {
+    const { spy, urls } = mockFetchQueue([
+      expectAgency(),
+      fakeResponse(loadFixture('contract.json')),
+    ]);
+    const plan = await impactAdvertiserAdapter.proposeContract(
+      { action: 'remove', brand: 'acme', programmeId: 'CMP-42', contractId: 'CT-5001' },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(plan.action).toBe('remove');
+    expect(plan.network).toBe('impact-advertiser');
+    expect(plan.brand).toBe('acme'); // logical slug echoed, never the networkBrandId
+    expect(plan.before?.id).toBe('CT-5001');
+    expect(plan.after).toBeUndefined();
+    expect(plan.warnings.join(' ')).toMatch(/irreversible/i);
+    expect(plan.confirmationToken).toMatch(/^[0-9a-f]{64}$/);
+    expect(plan.expiresAt).toBeNull();
+    expect(plan.experimental).toBe(true);
+    // GET-only: every request issued used GET (no POST/DELETE reaches the client).
+    const allGet = spy.mock.calls.every(
+      (c) => ((c[1] as { method?: string } | undefined)?.method ?? 'GET') === 'GET',
+    );
+    expect(allGet).toBe(true);
+    expect(urls.some((u) => u.includes('/Contracts/CT-5001'))).toBe(true);
+  });
+
+  it('plans a create (no contractId): reads current contracts via GET, no write, pending after', async () => {
+    const { spy } = mockFetchQueue([
+      expectAgency(),
+      fakeResponse(loadFixture('contracts.json')),
+    ]);
+    const plan = await impactAdvertiserAdapter.proposeContract(
+      {
+        action: 'apply',
+        brand: 'acme',
+        programmeId: 'CMP-42',
+        payoutTerms: '12% of sale',
+        mediaPartnerId: 'MP-1',
+      },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(plan.before).toBeUndefined();
+    expect(plan.observedContracts.length).toBeGreaterThan(0);
+    expect(plan.after?.status).toBe('pending');
+    expect(plan.after?.payoutTerms).toBe('12% of sale');
+    expect(plan.after?.mediaPartnerId).toBe('MP-1');
+    expect((plan.after as { rawNetworkData?: unknown }).rawNetworkData).toBeUndefined();
+    expect(plan.warnings.join(' ')).toMatch(/creates a new contract/i);
+    expect(
+      spy.mock.calls.every(
+        (call) => ((call[1] as { method?: string } | undefined)?.method ?? 'GET') === 'GET',
+      ),
+    ).toBe(true);
+  });
+
+  it('plans an update to an active contract: warns about live partner payouts', async () => {
+    mockFetchQueue([expectAgency(), fakeResponse(loadFixture('contract.json'))]);
+    const plan = await impactAdvertiserAdapter.proposeContract(
+      {
+        action: 'apply',
+        brand: 'acme',
+        programmeId: 'CMP-42',
+        contractId: 'CT-5001',
+        payoutTerms: '15% of sale',
+      },
+      { networkBrandId: 'BRAND-42' },
+    );
+    expect(plan.before?.status).toBe('active');
+    expect(plan.after?.payoutTerms).toBe('15% of sale');
+    expect(plan.warnings.join(' ')).toMatch(/active contract affects live partner payouts/i);
+  });
+
+  it('computes a deterministic token over the intent and before-state', () => {
+    const intent = {
+      action: 'remove' as const,
+      brand: 'acme',
+      programmeId: 'CMP-42',
+      contractId: 'CT-5001',
+    };
+    const before1 = {
+      id: 'CT-5001',
+      network: 'impact-advertiser' as const,
+      programmeId: 'CMP-42',
+      status: 'active' as const,
+      payoutTerms: '8%',
+      rawNetworkData: {},
+    };
+    const before2 = { ...before1, payoutTerms: '9%' };
+    const otherBrand = { ...intent, brand: 'globex' };
+    const otherContract = { ...intent, contractId: 'CT-5002' };
+    const otherChange = { ...intent, action: 'apply' as const, payoutTerms: '8%' };
+    const t1 = _internals.computeConfirmationToken(intent, 'CMP-42', before1 as never);
+    const t1again = _internals.computeConfirmationToken(intent, 'CMP-42', before1 as never);
+    const t2 = _internals.computeConfirmationToken(intent, 'CMP-42', before2 as never);
+    const brandToken = _internals.computeConfirmationToken(otherBrand, 'CMP-42', before1 as never);
+    const contractToken = _internals.computeConfirmationToken(
+      otherContract,
+      'CMP-42',
+      before1 as never,
+    );
+    const changeToken = _internals.computeConfirmationToken(
+      otherChange,
+      'CMP-42',
+      before1 as never,
+    );
+    expect(t1).toBe(t1again); // deterministic
+    expect(t2).not.toBe(t1); // before-state participates
+    expect(brandToken).not.toBe(t1); // cannot reuse across logical brands
+    expect(contractToken).not.toBe(t1); // cannot reuse across target contracts
+    expect(changeToken).not.toBe(t1); // cannot reuse across intended changes
+  });
+
+  it('refuses a remove without a contractId (config_error)', async () => {
+    try {
+      await impactAdvertiserAdapter.proposeContract(
+        { action: 'remove', brand: 'acme', programmeId: 'CMP-42' },
+        { networkBrandId: 'BRAND-42' },
+      );
+      throw new Error('expected proposeContract to throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(NetworkError);
+      expect((err as NetworkError).envelope.type).toBe('config_error');
+      expect((err as NetworkError).envelope.operation).toBe('proposeContract');
+    }
+  });
+
+  it('refuses an apply proposal with no concrete change (config_error)', async () => {
+    await expect(
+      impactAdvertiserAdapter.proposeContract(
+        { action: 'apply', brand: 'acme', programmeId: 'CMP-42' },
+        { networkBrandId: 'BRAND-42' },
+      ),
+    ).rejects.toMatchObject({ envelope: { type: 'config_error', operation: 'proposeContract' } });
+  });
+
+  it('refuses without brand context or without programmeId (config_error)', async () => {
+    await expect(
+      impactAdvertiserAdapter.proposeContract({
+        action: 'apply',
+        brand: 'acme',
+        programmeId: 'CMP-42',
+      }),
+    ).rejects.toBeInstanceOf(NetworkError);
+    await expect(
+      impactAdvertiserAdapter.proposeContract(
+        { action: 'apply', brand: 'acme', programmeId: '' },
+        { networkBrandId: 'BRAND-42' },
+      ),
+    ).rejects.toBeInstanceOf(NetworkError);
+  });
+});
+
+describe('Impact advertiser action descriptors', () => {
+  it('declares exactly proposeContract (advisement/api/Tier 1), no read or write catalogue', () => {
+    expect(impactAdvertiserActionDescriptors).toHaveLength(1);
+    const d = impactAdvertiserActionDescriptors[0]!;
+    expect(d.id).toBe('impact-advertiser.proposeContract');
+    expect(d.network).toBe('impact-advertiser');
+    expect(d.channel).toBe('api');
+    expect(d.effect).toBe('advisement');
+    expect(d.defaultAuthorityTier).toBe(1);
+    expect(d.credentialRequirements).toEqual([
+      { label: 'IMPACT_ADVERTISER_ACCOUNT_SID' },
+      { label: 'IMPACT_ADVERTISER_AUTH_TOKEN' },
+    ]);
+    const ids = impactAdvertiserActionDescriptors.map((x) => x.id);
+    // The write half is not built, so it is not declared (#231 §5); reads are
+    // never catalogued here.
+    expect(ids).not.toContain('impact-advertiser.applyContract');
+    expect(ids).not.toContain('impact-advertiser.removeContract');
+    expect(ids).not.toContain('impact-advertiser.listContracts');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Ops not implemented at v0.1
 // ---------------------------------------------------------------------------
 
@@ -463,5 +772,15 @@ describe('Impact advertiser.capabilitiesCheck — per-op claimStatus', () => {
     expect(caps.operations['listProgrammes']?.claimStatus).toBeUndefined();
     expect(caps.operations['listTransactions']?.claimStatus).toBeUndefined();
     expect(caps.operations['listMediaPartners']?.claimStatus).toBeUndefined();
+  });
+
+  it('marks contract reads as supported but experimental (endpoint TODO(verify))', async () => {
+    const caps = await impactAdvertiserAdapter.capabilitiesCheck();
+    expect(caps.operations['listContracts']?.supported).toBe(true);
+    expect(caps.operations['listContracts']?.claimStatus).toBe('experimental');
+    expect(caps.operations['getContract']?.supported).toBe(true);
+    expect(caps.operations['getContract']?.claimStatus).toBe('experimental');
+    expect(caps.operations['proposeContract']?.supported).toBe(true);
+    expect(caps.operations['proposeContract']?.claimStatus).toBe('experimental');
   });
 });

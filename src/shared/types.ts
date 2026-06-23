@@ -116,6 +116,102 @@ export interface NetworkCapabilities {
 }
 
 // ---------------------------------------------------------------------------
+// Action capability map — the DOING surface
+// ---------------------------------------------------------------------------
+// See docs/decisions/2026-06-18-action-capability-map.md (accepted). A
+// read-only, descriptive inventory of the advisement/write/gap actions adapters
+// declare. Reading a descriptor NEVER executes an operation, probes auth,
+// evaluates authority policy, or mutates state. It is the stable identifier
+// surface a future policy engine, audit log, and host annotations bind to.
+//
+// This is NOT a catalogue of reads: the seven canonical read operations stay
+// owned by the tool registry, `affiliate_list_networks`, and
+// `affiliate_run_diagnostic`, and are never redeclared here.
+
+/**
+ * How an action reaches the network.
+ * - `api`: an owned operation calls a documented endpoint.
+ * - `browser`: the adapter emits the typed handoff from the accepted
+ *   browser-handoff contract. It never means this repo drives a browser.
+ * - `none`: a known API gap with no typed route; an explicit unsupported state
+ *   that can never be dispatched.
+ */
+export type ActionChannel = 'api' | 'browser' | 'none';
+
+/**
+ * What an action does to network state.
+ * - `read`: no side effect.
+ * - `advisement`: a typed, side-effect-free operation that prepares or
+ *   validates a reviewable plan for a named write (not generic reasoning).
+ * - `write`: submits, changes, removes, approves, or sends network state.
+ */
+export type ActionEffect = 'read' | 'advisement' | 'write';
+
+/**
+ * Default authority gate WITHOUT a signed policy (descriptive only): 0 read,
+ * 1 advisement, 3 write fail-closed. Tier 2 is NEVER stored in the map — only a
+ * future deterministic policy evaluator yields it, in code at dispatch time.
+ * The literal union makes "Tier 2 is never stored" a compile-time guarantee.
+ */
+export type DefaultAuthorityTier = 0 | 1 | 3;
+
+/**
+ * Runtime readiness for a requested scope, computed from local config only.
+ * `unknown` is fail-closed (used when readiness cannot be confirmed for the
+ * scope). Readiness never asserts credential validity, upstream health, policy
+ * authority, or browser-consumer presence — those stay with
+ * `affiliate_run_diagnostic`.
+ */
+export type ActionReadiness = 'ready' | 'missing_credentials' | 'unsupported' | 'unknown';
+
+/** Static public label for a credential an action engages. */
+export interface ActionCredentialRequirement {
+  label: string;
+}
+
+/**
+ * Runtime, presence-only status for one statically declared requirement.
+ * Never carries a value, token, scope, identity, cookie, session, or account
+ * or brand identifier.
+ */
+export interface ActionCredentialStatus extends ActionCredentialRequirement {
+  configured: boolean;
+}
+
+/**
+ * STATIC metadata, owned beside the operation that implements it. The `id` is
+ * an immutable, machine-oriented identifier stable from first ship. First-network
+ * actions use a network-scoped id (e.g. `impact-advertiser.proposeContract`);
+ * a provider-neutral id is adopted only after a second network proves the same
+ * semantics, via an explicit alias/migration, never a silent rename.
+ */
+export interface ActionDescriptor {
+  id: string;
+  network: NetworkSlug;
+  channel: ActionChannel;
+  effect: ActionEffect;
+  defaultAuthorityTier: DefaultAuthorityTier;
+  /** Human description; may change without changing `id`. */
+  description: string;
+  /** Credential labels this action engages; presence reported at runtime. */
+  credentialRequirements: ActionCredentialRequirement[];
+}
+
+/**
+ * A descriptor resolved against a concrete scope at query time. The map links
+ * live-health questions to the diagnostic surface rather than restating them.
+ */
+export interface ActionMapEntry {
+  descriptor: ActionDescriptor;
+  /** Computed now, from local config. Fail-closed to `unknown`. */
+  readiness: ActionReadiness;
+  /** Presence-only credential snapshot for the requested scope. Redacted. */
+  credentials: ActionCredentialStatus[];
+  /** Where to confirm live auth/health — the map links, never restates. */
+  liveHealthVia: 'affiliate_run_diagnostic';
+}
+
+// ---------------------------------------------------------------------------
 // Domain types — programmes, transactions, clicks, links, earnings
 // ---------------------------------------------------------------------------
 

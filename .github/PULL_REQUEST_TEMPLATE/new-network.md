@@ -16,6 +16,10 @@ claim status, expected to be `partial` for a first landing.
 - Owning layer:
 - Public contracts changed:
 - Dependencies:
+- Lane: `active-risk | routine | queued-risk | blocked | exploration`
+- Dependency graph and merge order, if multi-PR:
+- Accepted decisions or unresolved gates:
+- Semantic conflict domains:
 
 ## Risks and scope
 
@@ -67,3 +71,4 @@ upstream quirks, areas where you would like a second opinion.
 - What the agent generated:
 - What a human or agent manually checked:
 - Remaining uncertainty:
+- Optional delivery-system learning, only when evidence suggests a useful change:

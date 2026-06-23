@@ -58,6 +58,7 @@ const META_TOOL_OPERATIONS = new Map<string, string>([
   ['affiliate_get_client_strategy', 'get_client_strategy'],
   ['affiliate_set_client_strategy', 'set_client_strategy'],
   ['affiliate_list_client_strategies', 'list_client_strategies'],
+  ['affiliate_list_actions', 'list_actions'],
 ]);
 
 export async function startServer(): Promise<void> {
@@ -76,6 +77,7 @@ export async function startServer(): Promise<void> {
       name: t.name,
       description: t.description,
       inputSchema: t.inputSchema,
+      ...(t.annotations ? { annotations: t.annotations } : {}),
     })),
   }));
 

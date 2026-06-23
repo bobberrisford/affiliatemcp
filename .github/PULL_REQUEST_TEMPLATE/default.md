@@ -13,6 +13,14 @@ Describe the one user outcome this PR enables.
 - Public contracts changed:
 - Dependencies:
 
+## Workstream and delivery
+
+- Workstream or standalone outcome:
+- Lane: `active-risk | routine | queued-risk | blocked | exploration`
+- Dependency graph and merge order:
+- Accepted decisions or unresolved gates:
+- Semantic conflict domains:
+
 ## Risks and scope
 
 - Risk domains:
@@ -32,6 +40,7 @@ Describe the one user outcome this PR enables.
 - What the agent generated:
 - What a human or agent manually checked:
 - Remaining uncertainty:
+- Optional delivery-system learning, only when evidence suggests a useful change:
 
 ## Screenshots
 
