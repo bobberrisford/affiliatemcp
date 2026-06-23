@@ -11,11 +11,13 @@
 import { getAdapters } from '../shared/registry.js';
 import type { ActionDescriptor } from '../shared/types.js';
 import { impactAdvertiserActionDescriptors } from '../networks/impact-advertiser/adapter.js';
+import { awinAdvertiserActionDescriptors } from '../networks/awin-advertiser/actions.js';
 
 export function collectActionDescriptors(): ActionDescriptor[] {
   const out: ActionDescriptor[] = [];
   for (const adapter of getAdapters()) {
     if (adapter.slug === 'impact-advertiser') out.push(...impactAdvertiserActionDescriptors);
+    if (adapter.slug === 'awin-advertiser') out.push(...awinAdvertiserActionDescriptors);
   }
   return out;
 }
