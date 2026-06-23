@@ -14,3 +14,13 @@ work back. Never merge without explicit human approval for that specific PR.
 When an interaction reveals a concrete delivery-system lesson, include a brief
 optional side note with evidence and a proposed improvement; stay silent when
 there is no meaningful lesson and keep governance edits out of feature PRs.
+
+## Multi-PR features
+
+A feature too big for one coherent PR ships as multiple linked PRs, never one
+mega-PR. Before coding, write the workstream brief (user outcome, dependency
+graph, owning domains, risk gates, acceptance proof per PR, stop conditions) in
+the first PR or a tracking issue. Land in dependency order: decision PR for
+unresolved governance or contracts first, then the smallest foundation with its
+first real consumer, then stacked vertical slices, then integration proof. See
+AGENTS.md ("For a feature that needs multiple PRs…") for the full protocol.
