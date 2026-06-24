@@ -229,6 +229,15 @@ describe('Awin advertiser.listBrands', () => {
     const brands = await awinAdvertiserAdapter.listBrands();
     expect(brands).toHaveLength(3);
   });
+
+  it('discovers advertisers from the live `accountType` field, not just `type`', async () => {
+    // Live `GET /accounts` carries the kind on `accountType`; reading `type`
+    // alone returned zero advertisers (the no-advertiser-accounts bug).
+    mockFetchQueue([fakeResponse(loadFixture('accounts-accounttype.json'))]);
+    const brands = await awinAdvertiserAdapter.listBrands();
+    expect(brands.map((b) => b.networkBrandId).sort()).toEqual(['19011', '74386']);
+    expect(brands.every((b) => b.apiEnabled === true)).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -27,7 +27,7 @@
  * Awin sign-in is linked to both publisher and advertiser accounts.
  *
  * Operations:
- *   listBrands              GET /accounts (filtered to type === 'advertiser')
+ *   listBrands              GET /accounts (filtered to accountType === 'advertiser')
  *   verifyAuth              GET /accounts (same call; checks 200)
  *   listProgrammes          synthetic single-row per ctx.networkBrandId
  *   listTransactions        GET /advertisers/{id}/transactions/
@@ -607,7 +607,7 @@ export class AwinAdvertiserAdapter implements NetworkAdapter {
         ? ((envelope as { accounts: AwinAdvAccountRaw[] }).accounts)
         : [];
     return list
-      .filter((a) => normaliseType(a.type) === 'advertiser')
+      .filter((a) => normaliseType(a.accountType ?? a.type) === 'advertiser')
       .map(toDiscoveredBrand);
   }
 
