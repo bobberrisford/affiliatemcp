@@ -95,7 +95,39 @@ describe('Awin advertiser publisher-decision emitters', () => {
       true,
     );
     expect(handoff.constraints.some((c) => c.includes('hand back to the user'))).toBe(true);
-    expect(handoff.constraints.length).toBe(BROWSER_CONSTRAINT_FLOOR.length + 5);
+    // Account-activation constraint is present on approve, plus the floor and the
+    // five shared per-action rules above (no decline-reason rule on approve).
+    expect(
+      handoff.constraints.some((c) => c.includes('the active account in the Awin UI')),
+    ).toBe(true);
+    expect(handoff.constraints.length).toBe(BROWSER_CONSTRAINT_FLOOR.length + 6);
+  });
+
+  it('adds the account-activation constraint to both approve and decline handoffs', () => {
+    const approve = buildApprovePublisherHandoff(baseInput).browserFallback;
+    const decline = buildDeclinePublisherHandoff(baseInput).browserFallback;
+    if (!approve || !decline) throw new Error('expected browser fallbacks');
+    for (const handoff of [approve, decline]) {
+      expect(
+        handoff.constraints.some(
+          (c) =>
+            c.includes('the active account in the Awin UI') &&
+            c.includes('does not switch accounts'),
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it('adds the fixed-list decline-reason constraint to decline only, not approve', () => {
+    const approve = buildApprovePublisherHandoff(baseInput).browserFallback;
+    const decline = buildDeclinePublisherHandoff(baseInput).browserFallback;
+    if (!approve || !decline) throw new Error('expected browser fallbacks');
+    const matches = (c: string): boolean =>
+      c.includes("Awin's fixed list") && c.includes('Do not invent a reason');
+    expect(decline.constraints.some(matches)).toBe(true);
+    expect(approve.constraints.some(matches)).toBe(false);
+    // Decline therefore carries one more per-action rule than approve.
+    expect(decline.constraints.length).toBe(BROWSER_CONSTRAINT_FLOOR.length + 7);
   });
 
   it('carries no secrets in inputs and keeps startingUrl account-scoped on the Awin app origin', () => {
