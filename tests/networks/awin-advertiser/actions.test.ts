@@ -4,8 +4,9 @@
  * The emitters are PURE: they build an ApiGapResponse carrying a typed
  * BrowserHandoff and never call fetch, the client, or auth. These tests assert
  * purity, the API-gap shape, constraint-floor inheritance, no-secrets in inputs,
- * a constant Awin-owned startingUrl that ignores hostile input, and the
- * descriptor invariants.
+ * an account-scoped Awin partnerships startingUrl (host/path fixed, only the
+ * adapter-selected advertiserId interpolated) that ignores hostile input, the
+ * Awin-Classic-unsupported constraint, and the descriptor invariants.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -20,10 +21,13 @@ import { BROWSER_CONSTRAINT_FLOOR } from '../../../src/shared/browser-handoff.js
 
 const baseInput = {
   brand: 'acme',
+  advertiserId: 'adv-99',
   programmeId: 'prog-1',
   publisherId: '12345',
   publisherName: 'Cashback Co',
 };
+
+const EXPECTED_URL = _internals.awinPartnershipsUrl(baseInput.advertiserId);
 
 describe('Awin advertiser publisher-decision emitters', () => {
   const fetchSpy = vi.fn();
@@ -58,7 +62,7 @@ describe('Awin advertiser publisher-decision emitters', () => {
       expect(handoff).not.toBeNull();
       if (!handoff) throw new Error('expected a browser fallback');
       expect(handoff.mutates).toBe(true);
-      expect(handoff.verify.url).toBe(_internals.AWIN_PENDING_PUBLISHERS_URL);
+      expect(handoff.verify.url).toBe(EXPECTED_URL);
       expect(typeof handoff.verify.expect).toBe('string');
       expect(handoff.verify.expect).toContain('12345');
     }
@@ -80,16 +84,21 @@ describe('Awin advertiser publisher-decision emitters', () => {
       expect(handoff.constraints).toContain(floorRule);
     }
     // Awin-specific additions follow the floor.
+    expect(
+      handoff.constraints.some(
+        (c) => c.includes('app.awin.com') && c.includes('Awin Classic'),
+      ),
+    ).toBe(true);
     expect(handoff.constraints.some((c) => c.includes('only on publisher 12345'))).toBe(true);
     expect(handoff.constraints.some((c) => c.includes('already be decided'))).toBe(true);
     expect(handoff.constraints.some((c) => c.includes('commission, payout, or contract'))).toBe(
       true,
     );
     expect(handoff.constraints.some((c) => c.includes('hand back to the user'))).toBe(true);
-    expect(handoff.constraints.length).toBe(BROWSER_CONSTRAINT_FLOOR.length + 4);
+    expect(handoff.constraints.length).toBe(BROWSER_CONSTRAINT_FLOOR.length + 5);
   });
 
-  it('carries no secrets in inputs and keeps startingUrl on the Awin origin', () => {
+  it('carries no secrets in inputs and keeps startingUrl account-scoped on the Awin app origin', () => {
     const handoff = buildDeclinePublisherHandoff({
       ...baseInput,
       declineReason: 'out of category',
@@ -99,7 +108,8 @@ describe('Awin advertiser publisher-decision emitters', () => {
     for (const banned of ['token', 'cookie', 'session', 'secret', 'password', 'auth']) {
       expect(keys.some((k) => k.includes(banned))).toBe(false);
     }
-    // The non-secret, JSON-serialisable fields are present.
+    // The non-secret, JSON-serialisable fields are present. advertiserId scopes
+    // the url but is not echoed into inputs.
     expect(handoff.inputs).toMatchObject({
       publisherId: '12345',
       publisherName: 'Cashback Co',
@@ -108,20 +118,25 @@ describe('Awin advertiser publisher-decision emitters', () => {
       programmeId: 'prog-1',
       declineReason: 'out of category',
     });
-    expect(handoff.startingUrl.startsWith('https://ui.awin.com')).toBe(true);
+    // Account-scoped, on the new Awin app origin, carrying the advertiserId.
+    expect(handoff.startingUrl.startsWith('https://app.awin.com/')).toBe(true);
+    expect(handoff.startingUrl).toContain(baseInput.advertiserId);
+    expect(handoff.startingUrl).toBe(EXPECTED_URL);
   });
 
-  it('uses a constant startingUrl that ignores a hostile startingUrl in input', () => {
+  it('uses the account-scoped template and ignores a hostile startingUrl/advertiserId in input', () => {
     // startingUrl is NOT part of the input contract; a smuggled value must be
-    // ignored. The emitted url is always the module constant.
+    // ignored. The host/path are the fixed template; only the adapter-selected
+    // advertiserId is interpolated, so a hostile origin can never leak through.
     const hostile = {
       ...baseInput,
       startingUrl: 'https://evil.example/phish',
     } as unknown as typeof baseInput;
     const handoff = buildApprovePublisherHandoff(hostile).browserFallback;
     if (!handoff) throw new Error('expected a browser fallback');
-    expect(handoff.startingUrl).toBe(_internals.AWIN_PENDING_PUBLISHERS_URL);
+    expect(handoff.startingUrl).toBe(_internals.awinPartnershipsUrl(baseInput.advertiserId));
     expect(handoff.startingUrl).not.toContain('evil.example');
+    expect(handoff.startingUrl.startsWith('https://app.awin.com/')).toBe(true);
     expect(Object.keys(handoff.inputs)).not.toContain('startingUrl');
   });
 

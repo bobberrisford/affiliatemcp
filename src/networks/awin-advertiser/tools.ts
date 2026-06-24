@@ -49,11 +49,15 @@ export function generateAwinAdvertiserTools(): ToolDefinition[] {
       async (args) => {
         const input = ProposePublisherDecisionSchema.parse(args ?? {});
         // Validate the brand binding to awin-advertiser the same way Impact does;
-        // a clean BrandNotRegistered surfaces if the brand is not bound.
-        buildAdapterCallContext(input.brand, awinAdvertiserAdapter.slug);
+        // a clean BrandNotRegistered surfaces if the brand is not bound. The
+        // resolved ctx.networkBrandId IS the Awin advertiser accountId, which
+        // scopes the partnerships-page startingUrl — advertiserId is therefore
+        // derived from the brand binding, never accepted as caller input.
+        const ctx = buildAdapterCallContext(input.brand, awinAdvertiserAdapter.slug);
 
         const emitterInput: PublisherDecisionInput = {
           brand: input.brand,
+          advertiserId: ctx.networkBrandId,
           programmeId: input.programmeId,
           publisherId: input.publisherId,
           publisherName: input.publisherName,

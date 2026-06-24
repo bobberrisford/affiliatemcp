@@ -12,7 +12,9 @@
     "Awin's advertiser API is gated to the Accelerate and Advanced advertiser plans. Brands on the Entry-tier plan appear in `/accounts` output but data endpoints return 401/403; the adapter does not probe each brand (rate-budget reasons — see next entry), so the wizard surfaces a graceful 'found but not API-accessible — upgrade or skip' message at brand-registration time instead.",
     "`listBrands` calls `GET /accounts` and filters `type === 'advertiser'`. To stay under the 20-per-minute rate budget on accounts with many advertisers, the adapter does NOT issue per-brand probes — all advertiser accounts are reported with `apiEnabled: true`.",
     "`listProgrammes` is synthetic: Awin programmes are configured in the UI and not enumerated under `/advertisers/{id}/programmes` on every tenant. The adapter returns one Programme per advertiserId keyed on the call context. `// TODO(verify)` against a live Accelerate tenant.",
-    "`listTransactions` maps Awin's `declined` status onto the canonical `reversed` value. Awin's `dateType` is exposed as `transaction` (default) or `validation`."
+    "`listTransactions` maps Awin's `declined` status onto the canonical `reversed` value. Awin's `dateType` is exposed as `transaction` (default) or `validation`.",
+    "Advertiser accounts in `GET /accounts` are matched on the `accountType` field (the live API returns `accountType`, not `type`); reading `type` alone filtered out every advertiser account.",
+    "The `/advertisers/{id}/publishers/` endpoint returns joined publishers with NO status field, so `listMediaPartners` cannot surface a `pending` relationship state. The pending-applications queue lives only in the Awin dashboard (new UI, app.awin.com) and is browser-only; the `propose_publisher_decision` tool emits a guided browser handoff for it."
   ],
   "claim_status": "experimental",
   "adapter_version": "0.1.0",

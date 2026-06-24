@@ -144,10 +144,18 @@ describe('Awin advertiser propose_publisher_decision tool', () => {
       publisherId: '12345',
       publisherName: 'Cashback Co',
       decision: 'approve',
-    })) as { kind: string; browserFallback: { mutates: boolean } | null };
+    })) as {
+      kind: string;
+      browserFallback: { mutates: boolean; startingUrl: string } | null;
+    };
 
     expect(result.kind).toBe('api-gap');
     expect(result.browserFallback).not.toBeNull();
+    // advertiserId is derived from the resolved brand binding (adv-99), not from
+    // tool input, and scopes the partnerships-page startingUrl.
+    expect(result.browserFallback?.startingUrl).toBe(
+      'https://app.awin.com/en/awin/advertiser/adv-99/partnerships/all',
+    );
 
     expect(auditSpy).toHaveBeenCalledTimes(1);
     const entry = auditSpy.mock.calls[0]?.[0];

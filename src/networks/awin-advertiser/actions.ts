@@ -13,8 +13,10 @@
  * `awin-advertiser` client, `auth.ts`, or `withResilience`, and they touch no
  * session, cookie, or DOM. The mutation risk lives entirely in the consumer
  * that carries out the handoff, never in this repo. The starting URL is a
- * CONSTANT Awin-owned origin path defined here, never derived from caller
- * input, so a hostile caller cannot redirect the operator to an arbitrary page.
+ * fixed Awin-owned host/path TEMPLATE defined here; the only interpolated value
+ * is the resolved advertiser account id, which the adapter selects from the
+ * brand binding (it is NOT free caller input). A hostile caller cannot redirect
+ * the operator to an arbitrary origin or path.
  *
  * Cardinal rules honoured:
  *   1. NEVER call fetch. These emitters call nothing.
@@ -33,20 +35,31 @@ import type {
 } from '../../shared/types.js';
 
 /**
- * The Awin advertiser pending-publishers queue. CONSTANT and Awin-owned: it is
- * never derived from caller input, so the handoff can only ever point the
- * operator at this reviewed Awin origin path.
+ * The Awin advertiser partnerships page, where the "Pending partners" section
+ * carries the approve/decline controls. Verified against the new Awin UI
+ * (`app.awin.com`). The host and path are a fixed Awin-owned template; only the
+ * resolved advertiser account id is interpolated, and that id is adapter-
+ * selected from the brand binding, not free caller input. A hostile caller can
+ * therefore never redirect the operator off this origin/path.
  *
- * TODO(verify): the exact path is unverified against a live Accelerate/Advanced
- * tenant. The origin (`https://ui.awin.com`) is the Awin advertiser UI; confirm
- * the queue path when a live tenant is available.
+ * Note: this flow targets the NEW Awin UI only. Legacy "Awin Classic"
+ * (`ui.awin.com`) accounts are not supported; the per-action constraints tell
+ * the consumer to stop if navigation redirects there.
  */
-const AWIN_PENDING_PUBLISHERS_URL = 'https://ui.awin.com/awin/advertiser/publishers/pending';
+function awinPartnershipsUrl(advertiserId: string): string {
+  return `https://app.awin.com/en/awin/advertiser/${advertiserId}/partnerships/all`;
+}
 
 /** Caller-supplied, non-secret inputs for a publisher-decision handoff. */
 export interface PublisherDecisionInput {
   /** Operator's logical brand slug; echoed for display, never a network id. */
   brand: string;
+  /**
+   * The resolved Awin advertiser account id (= networkBrandId). Selected by the
+   * adapter from the brand binding, never free caller input; it scopes the
+   * partnerships page the handoff points at.
+   */
+  advertiserId: string;
   /** The Awin programme (advertiser) the publisher applied to. */
   programmeId: string;
   /** The publisher (media partner) the decision targets. */
@@ -61,15 +74,17 @@ type PublisherDecision = 'approve' | 'decline';
 
 /**
  * Build the shared `BrowserHandoff` for a publisher approve/decline. The
- * `startingUrl` and `verify.url` are always the module constant; the per-action
- * constraints are appended to the shared floor via `composeConstraints`, which
- * the consumer must honour and cannot weaken.
+ * `startingUrl` and `verify.url` are always the partnerships-page template
+ * scoped to the resolved `advertiserId`; the per-action constraints are appended
+ * to the shared floor via `composeConstraints`, which the consumer must honour
+ * and cannot weaken.
  */
 function buildPublisherDecisionHandoff(
   input: PublisherDecisionInput,
   decision: PublisherDecision,
 ): BrowserHandoff {
   const verb = decision === 'approve' ? 'Approve' : 'Decline';
+  const startingUrl = awinPartnershipsUrl(input.advertiserId);
   const inputs: Record<string, unknown> = {
     publisherId: input.publisherId,
     publisherName: input.publisherName,
@@ -82,9 +97,10 @@ function buildPublisherDecisionHandoff(
   }
   return {
     goal: `${verb} publisher ${input.publisherName} (id ${input.publisherId}) on the Awin programme for brand ${input.brand}.`,
-    startingUrl: AWIN_PENDING_PUBLISHERS_URL,
+    startingUrl,
     inputs,
     constraints: composeConstraints([
+      'This flow only works on the new Awin UI (app.awin.com). If navigation redirects to ui.awin.com (Awin Classic), stop — this account is not supported.',
       `Operate only on publisher ${input.publisherId}; do not approve or decline any other applicant.`,
       'If the publisher row is not in a pending state, stop — it may already be decided.',
       'Do not change commission, payout, or contract terms while recording this decision.',
@@ -92,8 +108,8 @@ function buildPublisherDecisionHandoff(
     ]),
     mutates: true,
     verify: {
-      url: AWIN_PENDING_PUBLISHERS_URL,
-      expect: `publisher ${input.publisherId} no longer appears in the pending queue; its status reads ${decision === 'approve' ? 'approved' : 'declined'}.`,
+      url: startingUrl,
+      expect: `publisher ${input.publisherId} no longer appears under Pending partners on the partnerships page.`,
     },
   };
 }
@@ -170,5 +186,8 @@ export const awinAdvertiserActionDescriptors: ActionDescriptor[] = [
   },
 ];
 
-/** Exposed for tests: the constant starting URL is never derived from input. */
-export const _internals = { AWIN_PENDING_PUBLISHERS_URL };
+/**
+ * Exposed for tests: the partnerships-URL builder. The host/path are a fixed
+ * Awin-owned template; only the adapter-selected advertiserId is interpolated.
+ */
+export const _internals = { awinPartnershipsUrl };

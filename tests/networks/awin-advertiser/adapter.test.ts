@@ -229,6 +229,15 @@ describe('Awin advertiser.listBrands', () => {
     const brands = await awinAdvertiserAdapter.listBrands();
     expect(brands).toHaveLength(3);
   });
+
+  it('matches advertiser accounts on the live `accountType` field (not just `type`)', async () => {
+    // The live /accounts payload returns `accountType`, not `type`. Reading
+    // `type` alone filtered out every advertiser account (the pre-existing bug).
+    mockFetchQueue([fakeResponse(loadFixture('accounts-accounttype.json'))]);
+    const brands = await awinAdvertiserAdapter.listBrands();
+    expect(brands.map((b) => b.networkBrandId).sort()).toEqual(['100001', '100003']);
+    expect(brands.every((b) => b.apiEnabled === true)).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -435,6 +444,18 @@ describe('Awin advertiser.verifyAuth', () => {
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.identity).toContain('advertiser-account');
+    }
+  });
+
+  it('counts advertisers from the live `accountType` field (>0, not no-advertiser-accounts)', async () => {
+    // Regression for the accountType bug: a payload that only carries
+    // `accountType` must still yield a positive advertiser count.
+    mockFetchQueue([fakeResponse(loadFixture('accounts-accounttype.json'))]);
+    const r = await awinAdvertiserAdapter.verifyAuth();
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.identity).toContain('2-advertiser-accounts');
+      expect(r.identity).not.toContain('no-advertiser-accounts');
     }
   });
 
