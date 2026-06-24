@@ -95,17 +95,27 @@ function buildPublisherDecisionHandoff(
   if (decision === 'decline' && input.declineReason !== undefined) {
     inputs['declineReason'] = input.declineReason;
   }
+  // Per-action constraints, composed on top of the shared floor. The first five
+  // apply to both decisions; the decline-reason rule is decline-only. Both were
+  // confirmed against a live click-test of the new Awin partnerships UI.
+  const perAction = [
+    'This flow only works on the new Awin UI (app.awin.com). If navigation redirects to ui.awin.com (Awin Classic), stop — this account is not supported.',
+    `Operate only on publisher ${input.publisherId}; do not approve or decline any other applicant.`,
+    'If the publisher row is not in a pending state, stop — it may already be decided.',
+    'Do not change commission, payout, or contract terms while recording this decision.',
+    'If the dashboard requires setting terms as part of approval, stop and hand back to the user.',
+    'Before acting, make sure the target advertiser account is the active account in the Awin UI; deep-linking the partnerships URL by advertiser id alone does not switch accounts and may redirect.',
+  ];
+  if (decision === 'decline') {
+    perAction.push(
+      "The decline flow requires selecting a reason from Awin's fixed list (it is not free text); choose the listed option that best matches the decline rationale, for example 'Website doesn't align with our brand or audience'. Do not invent a reason.",
+    );
+  }
   return {
     goal: `${verb} publisher ${input.publisherName} (id ${input.publisherId}) on the Awin programme for brand ${input.brand}.`,
     startingUrl,
     inputs,
-    constraints: composeConstraints([
-      'This flow only works on the new Awin UI (app.awin.com). If navigation redirects to ui.awin.com (Awin Classic), stop — this account is not supported.',
-      `Operate only on publisher ${input.publisherId}; do not approve or decline any other applicant.`,
-      'If the publisher row is not in a pending state, stop — it may already be decided.',
-      'Do not change commission, payout, or contract terms while recording this decision.',
-      'If the dashboard requires setting terms as part of approval, stop and hand back to the user.',
-    ]),
+    constraints: composeConstraints(perAction),
     mutates: true,
     verify: {
       url: startingUrl,
