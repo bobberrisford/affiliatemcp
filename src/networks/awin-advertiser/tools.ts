@@ -4,7 +4,10 @@
  *
  * `affiliate_awin-advertiser_propose_publisher_decision` validates the brand
  * binding, calls the matching pure emitter from `./actions.ts`, and records a
- * `handoff_emitted` audit line before returning the `ApiGapResponse`.
+ * `handoff_emitted` audit line before returning the `ApiGapResponse`. The
+ * resolved `ctx.networkBrandId` IS the Awin advertiser accountId, which scopes
+ * the partnerships-page startingUrl; advertiserId is therefore derived from the
+ * brand binding, never accepted as caller input.
  *
  * `affiliate_awin-advertiser_report_publisher_decision_result` closes the arc:
  * after a consumer carries out the handoff and revisits the verify target, it
@@ -76,11 +79,15 @@ export function generateAwinAdvertiserTools(): ToolDefinition[] {
       async (args) => {
         const input = ProposePublisherDecisionSchema.parse(args ?? {});
         // Validate the brand binding to awin-advertiser the same way Impact does;
-        // a clean BrandNotRegistered surfaces if the brand is not bound.
-        buildAdapterCallContext(input.brand, awinAdvertiserAdapter.slug);
+        // a clean BrandNotRegistered surfaces if the brand is not bound. The
+        // resolved ctx.networkBrandId IS the Awin advertiser accountId, which
+        // scopes the partnerships-page startingUrl — advertiserId is therefore
+        // derived from the brand binding, never accepted as caller input.
+        const ctx = buildAdapterCallContext(input.brand, awinAdvertiserAdapter.slug);
 
         const emitterInput: PublisherDecisionInput = {
           brand: input.brand,
+          advertiserId: ctx.networkBrandId,
           programmeId: input.programmeId,
           publisherId: input.publisherId,
           publisherName: input.publisherName,
@@ -130,6 +137,7 @@ export function generateAwinAdvertiserTools(): ToolDefinition[] {
         const input = ReportPublisherDecisionResultSchema.parse(args ?? {});
         // Validate the brand binding to awin-advertiser, exactly as the propose
         // tool does; a clean BrandNotRegistered surfaces if the brand is unbound.
+        // The report records audit only, so it needs no advertiserId.
         buildAdapterCallContext(input.brand, awinAdvertiserAdapter.slug);
 
         // verified -> the consumer observed the intended state at the verify

@@ -1,0 +1,20 @@
+[
+  {
+    "accountId": 100001,
+    "accountName": "Acme Widgets",
+    "accountType": "advertiser",
+    "userRole": "owner"
+  },
+  {
+    "accountId": 200001,
+    "accountName": "My Personal Publisher Site",
+    "accountType": "publisher",
+    "userRole": "owner"
+  },
+  {
+    "accountId": 100003,
+    "accountName": "Initech Software",
+    "accountType": "ADVERTISER",
+    "userRole": "admin"
+  }
+]

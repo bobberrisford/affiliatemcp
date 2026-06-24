@@ -607,7 +607,7 @@ export class AwinAdvertiserAdapter implements NetworkAdapter {
         ? ((envelope as { accounts: AwinAdvAccountRaw[] }).accounts)
         : [];
     return list
-      .filter((a) => normaliseType(a.type) === 'advertiser')
+      .filter((a) => normaliseType(a.accountType ?? a.type) === 'advertiser')
       .map(toDiscoveredBrand);
   }
 

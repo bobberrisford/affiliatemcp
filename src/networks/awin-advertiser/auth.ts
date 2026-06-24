@@ -9,8 +9,10 @@
  * The wizard surfaces that fact (see `./setup.ts`) but does not auto-copy.
  *
  * Awin's auth check endpoint is `GET /accounts`. The response is a flat list of
- * `{ accountId, accountName, type, ... }`. The `type` field is `"advertiser"`
- * or `"publisher"`; we filter on that in `listBrands` (see `./adapter.ts`).
+ * `{ accountId, accountName, accountType, userRole, ... }`. The account kind is
+ * carried on `accountType` (`"advertiser"`/`"publisher"`) on the live API; we
+ * read `accountType` first and fall back to `type` for aliased payloads, then
+ * filter on that in `listBrands` (see `./adapter.ts`).
  *
  * Cardinal: never call `fetch` from this module. Auth verification goes via
  * `awinAdvRequest` from `./client.ts` so the read-only guard AND the 20-per-
@@ -51,11 +53,19 @@ export interface AwinAdvAccountRaw {
   id?: number | string;
   accountName?: string;
   name?: string;
+  /**
+   * Live `/accounts` returns the account kind on `accountType` (e.g.
+   * "advertiser"/"publisher"), not `type`. We read `accountType` first and fall
+   * back to `type` for older/aliased payloads; reading `type` alone silently
+   * filtered out every advertiser account.
+   */
+  accountType?: string;
   type?: string;
-  // TODO(verify): some tenants attach a `userRole` or `permissions` field per
-  // account that distinguishes Accelerate-tier brands from Entry-tier brands.
-  // If/when confirmed, we can flip `apiEnabled: false` more accurately than
-  // the current "all advertisers are reported apiEnabled: true" heuristic.
+  /**
+   * Live `/accounts` also returns a per-account `userRole`. Captured for
+   * future tier/permission heuristics; not yet used to flip `apiEnabled`.
+   */
+  userRole?: string;
 }
 
 export interface VerifyAuthOk {
@@ -112,7 +122,9 @@ export async function verifyAuth(): Promise<VerifyAuthOk | VerifyAuthFail> {
       : Array.isArray((accounts as { accounts?: AwinAdvAccountRaw[] }).accounts)
         ? ((accounts as { accounts: AwinAdvAccountRaw[] }).accounts)
         : [];
-    const advertiserCount = list.filter((a) => normaliseType(a.type) === 'advertiser').length;
+    const advertiserCount = list.filter(
+      (a) => normaliseType(a.accountType ?? a.type) === 'advertiser',
+    ).length;
     log.debug(
       { totalAccounts: list.length, advertiserCount },
       'awin-advertiser verifyAuth succeeded',
