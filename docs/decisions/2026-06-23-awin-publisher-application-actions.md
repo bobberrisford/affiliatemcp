@@ -257,6 +257,39 @@ A pre-existing adapter bug surfaced during this run and is fixed in the emitter
 PR: the live `/accounts` response uses `accountType` while the adapter read
 `type`, so advertiser accounts were invisible until corrected.
 
+A full end-to-end click-test was then run against a real advertiser account: one
+pending applicant (a sub-network) was declined successfully, and the dashboard
+confirmed the row left the "Pending partners" queue afterwards. That run
+produced four further operational facts that the consumer skill must honour.
+
+4. **Account context must be switched first.** Deep-linking
+   `https://app.awin.com/en/awin/advertiser/{advertiserId}/partnerships/all` does
+   not switch accounts; the app serves the session's currently-active account and
+   OIDC-redirects otherwise. The consumer must activate the target advertiser
+   account in the session before loading the queue, rather than relying on the
+   account id in the URL to scope the view.
+
+5. **Decline requires a reason.** The decline flow opens a panel with a required
+   reason dropdown drawn from a fixed Awin list (for example "Website doesn't
+   align with our brand or audience", "Website content isn't relevant to our
+   brand", "Publisher profile is incomplete") before the "Decline partner" submit
+   control enables. The consumer maps the decline rationale to the closest listed
+   reason; it never invents or free-types a reason. Approve has not yet been
+   exercised live and may differ; its panel and required fields remain unverified.
+
+6. **Applicant-website vetting is part of the decision.** Before proposing
+   approve or decline, the consumer visits each applicant's website to verify
+   what it actually does and whether it fits, rather than relying on the
+   dashboard's promotional-type and sector labels alone. This is advisory input
+   to the proposal, consistent with the advisory-only strategy boundary in
+   section 4; it never authorises a write and never substitutes for the per-batch
+   human confirmation.
+
+7. **Interstitials.** The flow must dismiss the cookie banner (decline
+   non-essential cookies), the "Welcome to your new Awin" modal, and any
+   feedback-survey popup before the queue and the decline controls are reliably
+   reachable.
+
 ## Consequences
 
 - The `awin-advertiser` adapter gains its first non-read actions, both
