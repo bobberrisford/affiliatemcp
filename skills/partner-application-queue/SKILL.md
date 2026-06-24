@@ -153,5 +153,3 @@ Matter-of-fact tone, UK spelling, no hype.
 - Partner status coverage varies by adapter. Where `pending` cannot be
   distinguished, report that limitation instead of guessing the queue.
 - Keep each network's queue separate; do not merge partner ids across networks.
-</content>
-</invoke>
