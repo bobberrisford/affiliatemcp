@@ -139,4 +139,12 @@ describe('PACKAGE_VERSION', () => {
     expect(lock.version).toBe(PACKAGE_VERSION);
     expect(lock.packages['']?.version).toBe(PACKAGE_VERSION);
   });
+
+  it('reports the current released version', async () => {
+    // Bump this literal each release. It forces a deliberate tests/shared edit
+    // (the check:change guardrail under src/shared) and pins the published
+    // version the telemetry channel reports.
+    const { PACKAGE_VERSION } = await import('../../src/shared/telemetry.js');
+    expect(PACKAGE_VERSION).toBe('0.10.0');
+  });
 });

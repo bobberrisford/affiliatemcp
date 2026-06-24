@@ -1,6 +1,6 @@
 # affiliate-mcp Report — the state of affiliate-network APIs in June 2026
 
-_Date-stamped: 2026-06-17._
+_Date-stamped: 2026-06-24._
 
 This report describes the current affiliate-mcp adapter surface as observed
 during construction and verification of the local MCP server. Each adapter
@@ -75,7 +75,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Hotmart | 10 | no | 6 / 7 | 8 | experimental | 0.1.0 | 2026-06-04 |
 | Howl | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | Impact | 6 | no | 7 / 7 | 2 | partial | 0.1.0 | 2026-05-21 |
-| Impact (advertiser) | 8 | no | 7 / 7 | 3 | experimental | 0.1.0 | 2026-05-23 |
+| Impact (advertiser) | 8 | no | 7 / 7 | 4 | experimental | 0.1.0 | 2026-05-23 |
 | Indoleads | 5 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Involve Asia | 5 | no | 6 / 7 | 4 | experimental | 0.1.0 | 2026-06-05 |
 | Kwanko | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-04 |
@@ -2840,6 +2840,7 @@ returning a half-formed link.
 - Read-only at v0.1. The adapter refuses any non-GET HTTP method client-side; pair this with Impact's read-only credential tier in the dashboard for defence in depth.
 - Two credential shapes auto-detected at runtime: agency-passthrough (one SID addresses many brands) and brand-direct (one SID, one brand). `listBrands()` returns the discovered set; advertiser tools take `brand` and resolve via brands.json.
 - `getProgrammePerformance` uses Impact's pre-built `adv_performance_by_media` report template. Endpoint shape verified from docs; live behaviour (sync vs async polling) has // TODO(verify) annotations until a live agency tenant is available.
+- `listContracts`/`getContract` read the brand-partner payment-term relationship under `/Campaigns/{id}/Contracts`. `proposeContract` builds a reviewable ContractChangePlan from those reads (advisement only, no network write). Endpoint paths and the projected write payload shape carry // TODO(verify) until confirmed against a live agency tenant; the contract write surface (apply/remove) is NOT enabled in this adapter.
 
 ### Findings
 
@@ -5949,4 +5950,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-17 22:22 UTC._
+_Last regenerated 2026-06-24 15:57 UTC._
