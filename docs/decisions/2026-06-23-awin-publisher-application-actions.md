@@ -78,11 +78,15 @@ shape fixed by the browser-handoff contract:
 - `goal`: plain English, naming the publisher and the decision, for example
   "Approve publisher Acme Media (id 4567) for the Example Brand programme on
   Awin" or the decline equivalent.
-- `startingUrl`: a reviewed, Awin-owned `https://ui.awin.com` advertiser
-  dashboard path for the pending-publisher queue. It is selected by reviewed
-  adapter code, never supplied by the caller or the model, and it is recorded
-  with a `// TODO(verify)` marker to be confirmed against a live
-  Accelerate/Advanced advertiser tenant before the emitter ships.
+- `startingUrl`: a reviewed, Awin-owned advertiser dashboard path for the
+  pending-partner queue, confirmed by the live verification below to be
+  `https://app.awin.com/en/awin/advertiser/{advertiserId}/partnerships/all` (the
+  "Pending partners" section), account-scoped by `advertiserId` (the resolved
+  `networkBrandId`). It is selected by reviewed adapter code, never supplied by
+  the caller or the model. The earlier guessed
+  `https://ui.awin.com/...publishers/pending` path was wrong: that origin is the
+  legacy "Awin Classic" UI, which has no equivalent queue (see Live verification
+  below).
 - `inputs`: `{ publisherId, publisherName, decision: 'approve' | 'decline',
   brand, programmeId, declineReason? }`. All values are JSON-serialisable. The
   payload carries no secrets, tokens, cookies, or session material.
@@ -99,8 +103,9 @@ shape fixed by the browser-handoff contract:
     back to the operator rather than choosing terms.
 - `mutates: true`: the flow submits a decision, so confirm-before-submit is
   forced.
-- `verify`: `{ url: <pending-publisher queue url>, expect: "publisher no longer
-  in the pending queue; status reads approved or declined" }`.
+- `verify`: `{ url: <pending-partner queue url on app.awin.com>, expect:
+  "publisher no longer in the pending queue; status reads approved or declined"
+  }`.
 
 The emitter wraps this handoff in an `ApiGapResponse` with `kind: 'api-gap'`,
 `reason: "Awin has no public publisher approve/decline endpoint"`, a verbatim
@@ -117,9 +122,13 @@ read-only guard in `client.ts`, because it makes no network call.
 ### 3. Consumer authorisation: one skill, one per-batch human confirmation
 
 This record authorises exactly one consumer skill, driving Claude in Chrome, for
-these two action ids and no others. The skill is gated by a single per-batch
-human confirmation: the operator reviews the proposed set of approve and decline
-decisions and confirms once for the batch. That single confirmation satisfies
+these two action ids and no others. The pending-application queue is read from
+the dashboard by the consumer skill, not from the API: live verification (below)
+confirmed Awin's advertiser API exposes no pending-application queue, so the
+skill reads the pending rows from the new-UI "Pending partners" section and the
+adapter only emits the typed handoff per decision. The skill is gated by a single
+per-batch human confirmation: the operator reviews the proposed set of approve
+and decline decisions and confirms once for the batch. That single confirmation satisfies
 the Tier 3 human sign-off for the batch. The per-submit safety floor still
 applies on every individual submission: the consumer respects the constraint
 floor on each row, stops on a non-pending row, and stops and hands back on any
@@ -171,8 +180,8 @@ audit field.
   account secrets. `inputs` is limited to the non-secret values the decision
   needs.
 - `startingUrl` is selected by reviewed adapter code from the Awin-owned
-  `https://ui.awin.com` origin and a bounded path; callers and models cannot
-  supply an arbitrary navigation target.
+  `https://app.awin.com` origin and a bounded, account-scoped path; callers and
+  models cannot supply an arbitrary navigation target.
 - Audit honesty is a security property: recording `succeeded` for an unobserved
   dashboard outcome would overstate what was done on the operator's behalf.
   `handoff_emitted` plus consumer-reported `verified`/`verify_failed` keeps the
@@ -201,6 +210,52 @@ browser consumer, so it is a risk-based review item for `@offmann`.
   Bypasses the shared contract, the constraint floor, the consumer boundary, and
   the `handoff_emitted` audit semantics. Rejected; the adapter emits the typed
   response and the skill consumes it.
+- **Maintaining two parallel UI flows (new Awin UI and legacy Awin Classic).**
+  Live verification found Awin accounts split across the new `app.awin.com` UI
+  and the legacy `ui.awin.com` "Awin Classic" UI, which has no equivalent
+  pending-applications queue, and deep-linking a Classic account to the new-UI
+  URL OIDC-redirects back to `ui.awin.com`. Building and maintaining a second
+  Classic flow is fragile and doubles the browser surface. Rejected; this feature
+  supports new-UI accounts only, and legacy-account mapping is a separate future
+  effort.
+
+## Live verification (2026-06-24)
+
+A live dry run against a real Awin advertiser account (API key authenticated, two
+advertiser accounts visible) produced three findings that change the design.
+They are recorded here as they were observed.
+
+1. **The API has no pending-application queue.** `GET
+   /advertisers/{id}/publishers/` returns only joined publishers and carries no
+   status or relationship field, so a pending publisher application cannot be
+   read from the API at all. Consequence: the pending queue is read from the
+   dashboard by the consumer skill, not from the API. The two write action ids
+   (`awin-advertiser.approvePublisher`, `awin-advertiser.declinePublisher`) and
+   the Tier 3 assisted-batch gate are unchanged.
+
+2. **The real `startingUrl`.** The pending queue and the approve (green tick) and
+   decline (red cross) controls live in the new Awin UI at
+   `https://app.awin.com/en/awin/advertiser/{advertiserId}/partnerships/all`,
+   under the "Pending partners" section, account-scoped by `advertiserId` (the
+   resolved `networkBrandId`). This replaces the earlier guessed
+   `https://ui.awin.com/...publishers/pending` path. Each pending row exposes the
+   publisher name, publisher id, website, primary promotional type, and primary
+   sector: the signals the advisory strategy is matched against.
+
+3. **UI generation is not uniform across accounts (scope limit).** Some
+   advertiser accounts are on the new UI (`app.awin.com`); others are on the
+   legacy "Awin Classic" UI (`ui.awin.com`), which has no equivalent
+   pending-applications queue. Deep-linking a Classic account to the
+   `app.awin.com` URL OIDC-redirects back to `ui.awin.com`. Decision: this
+   feature supports new-UI accounts only. The consumer skill must detect the
+   generation (if navigation lands on `ui.awin.com` the account is Classic) and
+   stop with a clean "this account is on Awin Classic; automated approval is not
+   supported for it yet" message. Legacy-account mapping is a separate future
+   effort, not part of this contract.
+
+A pre-existing adapter bug surfaced during this run and is fixed in the emitter
+PR: the live `/accounts` response uses `accountType` while the adapter read
+`type`, so advertiser accounts were invisible until corrected.
 
 ## Consequences
 
@@ -216,8 +271,12 @@ browser consumer, so it is a risk-based review item for `@offmann`.
 - The audit trail records `handoff_emitted` per decision and closes on
   consumer-reported `verified`/`verify_failed`; mutating handoffs draw down the
   per-day consent cap.
-- The `startingUrl` and the pending-publisher queue path carry `// TODO(verify)`
-  until confirmed against a live Accelerate/Advanced advertiser tenant.
+- The `startingUrl` and the pending-partner queue path are confirmed by the live
+  verification below against a real advertiser account
+  (`https://app.awin.com/en/awin/advertiser/{advertiserId}/partnerships/all`),
+  so the `// TODO(verify)` marker is resolved for new-UI accounts. Legacy "Awin
+  Classic" accounts are out of scope and the consumer skill detects and stops on
+  them.
 
 ## Implementation follow-ups
 
@@ -234,10 +293,14 @@ review item for `@offmann`:
 3. **Awin emitter, descriptors, tools, and action-map wiring.** Add the pure
    `approvePublisher` and `declinePublisher` emitters in `awin-advertiser`, their
    action descriptors with the stable identifiers, the generated tools, and the
-   action-map entries. Carry the `// TODO(verify)` markers for the dashboard
-   paths and add scrubbed fixtures and tests with no real publisher, programme,
-   or account identifiers.
+   action-map entries. Use the live-verified `app.awin.com` pending-partner path
+   (no longer a `// TODO(verify)`) and add scrubbed fixtures and tests with no
+   real publisher, programme, or account identifiers.
 4. **Consumer skill and verify closure.** Add the one consumer skill driving
    Claude in Chrome for these two ids, gated by the single per-batch human
    confirmation with the per-submit floor enforced, reporting back against the
-   `verify` block to record `verified` or `verify_failed`.
+   `verify` block to record `verified` or `verify_failed`. The skill must detect
+   the account's UI generation first: if navigation lands on `ui.awin.com` the
+   account is on Awin Classic, and the skill stops with a clean "this account is
+   on Awin Classic; automated approval is not supported for it yet" message
+   rather than attempting the flow.
