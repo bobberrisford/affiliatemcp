@@ -1,0 +1,23 @@
+{
+  "userId": 1969217,
+  "accounts": [
+    {
+      "accountId": 587491,
+      "accountName": "Awin - Bloggers & Social Content",
+      "accountType": "publisher",
+      "userRole": "userViewer"
+    },
+    {
+      "accountId": 19011,
+      "accountName": "Demo Account (UK)",
+      "accountType": "advertiser",
+      "userRole": "userViewer"
+    },
+    {
+      "accountId": 74386,
+      "accountName": "LateRooms.com",
+      "accountType": "advertiser",
+      "userRole": "userFullAccess"
+    }
+  ]
+}
