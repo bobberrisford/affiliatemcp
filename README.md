@@ -571,6 +571,27 @@ Three skills are tuned for the brand side:
 - [`programme-anomaly-watch`](./skills/programme-anomaly-watch/SKILL.md)
   — week-over-week anomaly scan, designed to run on a schedule.
 
+## Use it from the terminal
+
+The `call` command exposes the same registered operations as the MCP server for
+quick checks, shell scripts, and CI. Calls are explicit but may contact an
+upstream network; for example, `generate_tracking_link` can mint a link.
+
+```bash
+# Discover and inspect operations
+npx affiliate-networks-mcp call --list
+npx affiliate-networks-mcp call --list --network awin
+npx affiliate-networks-mcp call --describe awin list_transactions
+
+# Invoke with <network> <operation> or a full affiliate_<network>_<operation> name
+npx affiliate-networks-mcp call awin list_transactions from=2026-01-01 to=2026-02-01 limit=50
+npx affiliate-networks-mcp call awin list_transactions --args '{"from":"2026-01-01","status":["approved","pending"],"limit":50}'
+```
+
+Schema-aware `key=value` parsing preserves string ids, converts numbers, and
+accepts comma-separated or JSON arrays. Results are JSON on stdout; failures
+are `NetworkErrorEnvelope` JSON on stderr with a non-zero exit code.
+
 ## When something goes wrong
 
 ```
