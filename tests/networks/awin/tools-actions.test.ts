@@ -6,7 +6,7 @@
  * strict schema, is readOnlyHint, records a handoff_emitted audit line (never
  * applied/succeeded) and returns the gap; the report tool closes the arc with
  * verified/verify_failed. Unlike the advertiser side, applying does NOT require
- * a brand binding — `brand` is a free display label — because publishers apply
+ * a brand binding: `brand` is a free display label, because publishers apply
  * to brands they have not joined.
  */
 
@@ -76,6 +76,24 @@ describe('affiliate_awin_propose_application tool', () => {
     ).rejects.toThrow();
   });
 
+  it('rejects blank or non-numeric advertiser ids before emitting a handoff', async () => {
+    const auditSpy = vi.spyOn(auditModule, 'recordActionAudit').mockImplementation(() => {});
+    const tool = proposeTool();
+
+    for (const advertiserId of ['', '   ', 'https://evil.example/phish']) {
+      await expect(
+        (async () =>
+          tool.handle({
+            brand: 'example-brand',
+            advertiserId,
+            programmeName: 'Example Brand',
+          }))(),
+      ).rejects.toThrow();
+    }
+
+    expect(auditSpy).not.toHaveBeenCalled();
+  });
+
   it('records a handoff_emitted audit line and never applied/succeeded, then returns the gap', async () => {
     const auditSpy = vi.spyOn(auditModule, 'recordActionAudit').mockImplementation(() => {});
     const result = (await proposeTool().handle({
@@ -112,7 +130,7 @@ describe('affiliate_awin_propose_application tool', () => {
     expect(auditModule.countMutatingHandoffsOn(captured, day)).toBe(1);
   });
 
-  it('does not require a brand binding (free label) — succeeds for an unbound brand', async () => {
+  it('does not require a brand binding (free label): succeeds for an unbound brand', async () => {
     vi.spyOn(auditModule, 'recordActionAudit').mockImplementation(() => {});
     const result = (await proposeTool().handle({
       brand: 'never-bound-brand',
@@ -179,5 +197,24 @@ describe('affiliate_awin_report_application_result tool', () => {
     const entry = auditSpy.mock.calls[0]?.[0];
     expect(entry?.event).toBe('verify_failed');
     expect(entry?.action).toBe('awin.applyToProgramme');
+  });
+
+  it('rejects blank or non-numeric advertiser ids before recording a result', async () => {
+    const auditSpy = vi.spyOn(auditModule, 'recordActionAudit').mockImplementation(() => {});
+    const tool = reportTool();
+
+    for (const advertiserId of ['', '   ', 'https://evil.example/phish']) {
+      await expect(
+        (async () =>
+          tool.handle({
+            brand: 'example-brand',
+            advertiserId,
+            programmeName: 'Example Brand',
+            verified: true,
+          }))(),
+      ).rejects.toThrow();
+    }
+
+    expect(auditSpy).not.toHaveBeenCalled();
   });
 });

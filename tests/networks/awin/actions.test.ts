@@ -66,7 +66,7 @@ describe('Awin publisher programme-application emitter', () => {
     expect(handoff.constraints.slice(0, BROWSER_CONSTRAINT_FLOOR.length)).toEqual([
       ...BROWSER_CONSTRAINT_FLOOR,
     ]);
-    // The floor's terms rule is present — the consumer must surface terms.
+    // The floor's terms rule is present: the consumer must surface terms.
     expect(
       handoff.constraints.some((c) => c.includes('Never accept terms')),
     ).toBe(true);

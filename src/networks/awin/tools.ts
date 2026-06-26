@@ -144,10 +144,15 @@ const ProofOfPurchaseSchema = z
   })
   .strict();
 
+const ApplicationAdvertiserIdSchema = z.union([
+  z.string().trim().regex(/^\d+$/, 'advertiserId must be a numeric Awin advertiser id'),
+  z.number().int().positive(),
+]);
+
 const ProposeApplicationSchema = z
   .object({
     brand: z.string().trim().min(1),
-    advertiserId: IdSchema,
+    advertiserId: ApplicationAdvertiserIdSchema,
     programmeName: z.string().trim().min(1),
     promotionMethodSummary: z.string().trim().min(1).optional(),
   })
@@ -156,7 +161,7 @@ const ProposeApplicationSchema = z
 const ReportApplicationResultSchema = z
   .object({
     brand: z.string().trim().min(1),
-    advertiserId: IdSchema,
+    advertiserId: ApplicationAdvertiserIdSchema,
     programmeName: z.string().trim().min(1),
     verified: z.boolean(),
     note: z.string().trim().min(1).optional(),
@@ -271,13 +276,13 @@ export function generateAwinTools(): ToolDefinition[] {
     ),
     tool(
       'affiliate_awin_propose_application',
-      'Experimentally prepare a guided browser handoff to apply to a brand’s programme on Awin as a ' +
+      "Experimentally prepare a guided browser handoff to apply to a brand's programme on Awin as a " +
         'publisher. Awin exposes no public publisher application endpoint, so this emits a typed handoff ' +
         'for a human (or the authorised consumer skill) to carry out against their own Awin session; it ' +
         'performs no network write itself. Requires brand (a display label, not a binding), advertiserId, ' +
         'and programmeName; accepts an optional promotionMethodSummary. Returns an ApiGapResponse carrying ' +
         'the browser handoff (constraints, verify target, and inputs with no credentials). The consumer ' +
-        'is responsible for surfacing the programme’s terms for informed acceptance before any submit.',
+        "is responsible for surfacing the programme's terms for informed acceptance before any submit.",
       ProposeApplicationSchema,
       async (args) => {
         const input = ProposeApplicationSchema.parse(args ?? {});
@@ -297,7 +302,7 @@ export function generateAwinTools(): ToolDefinition[] {
         // Record a handoff_emitted audit line. `intendedAfterState` is present so
         // countMutatingHandoffsOn treats this mutating handoff as consuming the
         // day's allowance; `occurredAt` attributes it to a calendar day. We never
-        // record `applied`/`succeeded` — closing the arc is the consumer's report.
+        // record `applied`/`succeeded` - closing the arc is the consumer's report.
         recordActionAudit({
           event: 'handoff_emitted',
           action: 'awin.applyToProgramme',

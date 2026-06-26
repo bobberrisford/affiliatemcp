@@ -1,5 +1,5 @@
 /**
- * Awin publisher programme-application EMITTER — pure, side-effect-free.
+ * Awin publisher programme-application EMITTER - pure, side-effect-free.
  *
  * Awin's publisher API has no public endpoint to apply to or join a programme
  * (`network.json` records `supports_brand_ops: false`), so the operation is an
@@ -25,7 +25,7 @@
  *
  * Cardinal rules honoured:
  *   1. NEVER call fetch. This emitter calls nothing.
- *   2. An API gap is an expected, documented condition — it returns an
+ *   2. An API gap is an expected, documented condition - it returns an
  *      `ApiGapResponse`, never a `NetworkErrorEnvelope`.
  *   3. No secrets (token, cookie, session) ever reach the handoff `inputs`.
  *   4. UK English in user-visible strings.
@@ -95,7 +95,7 @@ function buildProgrammeApplicationHandoff(input: ProgrammeApplicationInput): Bro
     constraints: composeConstraints([
       `Apply only to advertiser ${input.advertiserId}; do not apply to any other programme.`,
       'If the programme relationship is not joinable (already joined, pending, or rejected), stop and hand back.',
-      'Do not negotiate, counter, or alter the programme’s commercial terms.',
+      "Do not negotiate, counter, or alter the programme's commercial terms.",
       'If the application form requires answers the inputs do not supply (for example a free-text promotional-methods justification beyond the supplied summary), stop and hand back rather than inventing them.',
     ]),
     mutates: true,
@@ -126,7 +126,7 @@ export function buildApplyToProgrammeHandoff(input: ProgrammeApplicationInput): 
 }
 
 // ---------------------------------------------------------------------------
-// Action capability map — the one browser/write action this adapter declares.
+// Action capability map - the one browser/write action this adapter declares.
 // See docs/decisions/2026-06-18-action-capability-map.md and
 // docs/decisions/2026-06-24-awin-publisher-programme-application-actions.md.
 // Network-scoped id, owned beside the emitter that implements it. Channel
@@ -141,10 +141,10 @@ export const awinActionDescriptors: ActionDescriptor[] = [
     effect: 'write',
     defaultAuthorityTier: 3,
     description:
-      'Apply to a brand’s programme on Awin as a publisher. Awin exposes no public ' +
+      "Apply to a brand's programme on Awin as a publisher. Awin exposes no public " +
       'publisher application endpoint, so this emits a typed browser handoff for a human (or the ' +
-      'authorised consumer skill) to carry out against the operator’s own Awin session, with ' +
-      'the programme’s terms surfaced for informed acceptance. The emitter performs no network ' +
+      "authorised consumer skill) to carry out against the operator's own Awin session, with " +
+      "the programme's terms surfaced for informed acceptance. The emitter performs no network " +
       'write; the mutation risk lives in the consumer that carries out the handoff.',
     credentialRequirements: [{ label: 'AWIN_API_TOKEN' }, { label: 'AWIN_PUBLISHER_ID' }],
   },
