@@ -1,7 +1,7 @@
 # Rob-led delivery and review model
 
 - **Date:** 2026-06-26
-- **Status:** Proposed
+- **Status:** Accepted (2026-06-26)
 - **Affects:** `AGENTS.md`, `CLAUDE.md`, repo-local delivery and review skills,
   roadmap ownership notes, pull request review routing, and contributor
   expectations.
