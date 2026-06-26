@@ -1,7 +1,7 @@
 # Awin publisher programme-application action: write-gated browser apply with surfaced terms
 
 - **Date:** 2026-06-24
-- **Status:** Proposed
+- **Status:** Accepted (2026-06-26)
 - **Affects:** `src/networks/awin/` (the publisher-side adapter: a new action
   descriptor, a pure emitter, and the generated tools), action-map wiring in
   the MCP tool layer, and a first publisher-side consumer skill driving Claude
