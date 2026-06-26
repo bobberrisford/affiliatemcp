@@ -57,7 +57,7 @@ describe('collaboration review skills', () => {
     expect(content).toMatch(/Delivery-system learning/i);
   });
 
-  it('delivery steward covers implementation and keeps human decision gates', () => {
+  it('delivery steward covers implementation and keeps maintainer decision gates', () => {
     const content = readFileSync(
       join(repoRoot, '.claude', 'skills', 'delivery-steward', 'SKILL.md'),
       'utf8',
@@ -65,11 +65,11 @@ describe('collaboration review skills', () => {
     expect(content).toMatch(/customer journey/i);
     expect(content).toMatch(/smallest coherent change/i);
     expect(content).toMatch(/Assumptions can evolve/i);
-    expect(content).toMatch(/Othman steers\s+technical architecture/i);
-    expect(content).toMatch(/Rob steers affiliate-domain\s+truth/i);
+    expect(content).toMatch(/Rob is the current maintainer/i);
+    expect(content).toMatch(/default decision\s+owner/i);
     expect(content).toMatch(/repair branch/i);
     expect(content).toMatch(/Preserve its remote branch/i);
-    expect(content).toMatch(/Do not merge until the user explicitly approves/i);
+    expect(content).toMatch(/Do not merge until Rob or another maintainer explicitly approves/i);
     expect(content).toMatch(/Refresh branches just in time/i);
     expect(content).toMatch(/active-risk/i);
     expect(content).toMatch(/at most two decision-complete/i);
@@ -84,7 +84,8 @@ describe('collaboration review skills', () => {
     expect(content).toMatch(/active-risk[\s\S]*at most one/i);
     expect(content).toMatch(/routine[\s\S]*at most two/i);
     expect(content).toMatch(/Draft status controls[\s\S]*does not authorise/i);
-    expect(content).toMatch(/every[\s\S]*merge requires explicit human approval/i);
+    expect(content).toMatch(/Agents must not merge unless Rob or another maintainer/i);
+    expect(content).toMatch(/Rob may merge his own PRs/i);
     expect(content).toMatch(/Delivery-system learning/i);
 
     const claude = readFileSync(join(repoRoot, 'CLAUDE.md'), 'utf8');
