@@ -228,7 +228,7 @@ Each dependent PR stays draft until its foundation merges.
   or client's behalf. `handoff_emitted` keeps the trail truthful.
 
 This decision touches shared/public contracts, write actions, consent, and
-audit behaviour, so it is a risk-based review item for `@offmann`.
+audit behaviour, so it is a risk-based review item for maintainer review.
 
 ## Rejected alternatives
 

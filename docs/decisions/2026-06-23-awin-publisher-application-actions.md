@@ -180,7 +180,7 @@ audit field.
 
 This decision touches a shared and public contract, an action-execution and
 write surface, the consent and audit primitive, browser framing, and the first
-browser consumer, so it is a risk-based review item for `@offmann`.
+browser consumer, so it is a risk-based review item for maintainer review.
 
 ## Rejected alternatives
 
@@ -222,7 +222,7 @@ browser consumer, so it is a risk-based review item for `@offmann`.
 ## Implementation follow-ups
 
 Sequenced; each PR stays draft until its parent merges, and each is a risk-based
-review item for `@offmann`:
+review item for maintainer review:
 
 1. **Foundation: shared types and constraint floor.** Add `ApiGapResponse` and
    `BrowserHandoff` to `src/shared/types.ts` next to `NetworkErrorEnvelope`, plus

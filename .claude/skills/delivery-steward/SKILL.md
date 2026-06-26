@@ -34,12 +34,14 @@ before implementation. If a required decision is unresolved, stop production
 implementation at that boundary. Discovery and explicitly disposable
 prototypes may continue; foundations and child implementation PRs may not.
 
-Make routine implementation choices without asking for approval. Ask for human
-direction only when a decision is product-sensitive, architecture-sensitive,
-security-sensitive, irreversible, or changes a public contract. Othman steers
-technical architecture and product trade-offs. Rob steers affiliate-domain
-truth, product direction, and customer or industry judgement. When escalating,
-recommend a direction, name the material trade-offs, and propose a next step.
+Make routine implementation choices without asking for approval. Ask for
+maintainer direction only when a decision is product-sensitive,
+architecture-sensitive, security-sensitive, privacy-sensitive, irreversible, or
+changes a public contract. Rob is the current maintainer and default decision
+owner for affiliate-domain truth, product direction, architecture, privacy,
+security, deployment, and cross-client trade-offs unless another maintainer or
+CODEOWNER is explicitly assigned. When escalating, recommend a direction, name
+the material trade-offs, and propose a next step.
 
 Assumptions can evolve. Question one when new requirements, usage evidence,
 architecture, or product direction materially changes the outcome. Otherwise,
@@ -81,7 +83,7 @@ Flag and correct cases where:
 Gather all open PRs, current `main`, dependencies, conflicts, review decisions,
 checks, age, size, and risk domains. Assign exactly one state:
 
-- `active-risk`: the single PR awaiting scarce human risk review;
+- `active-risk`: the single PR awaiting deliberate maintainer risk review;
 - `routine`: one of at most two decision-complete, disjoint low-risk PRs being
   advanced in parallel;
 - `exploration`: discovery or disposable prototype work behind an unresolved
@@ -148,12 +150,16 @@ Recommend merge only when all are true:
 - release, security, migration, data-loss, and rollback risks are understood;
 - the review brief accurately states proof and remaining uncertainty.
 
-Keep a human in the loop before merge. Present a short evidence-based checkpoint:
+Keep the maintainer in the loop before merge. Present a short evidence-based
+checkpoint:
 
 > PR #N is ready: outcome, repairs made, strongest proof, remaining uncertainty.
 > Approve merge?
 
-Do not merge until the user explicitly approves that specific merge. After
+Do not merge until Rob or another maintainer explicitly approves that specific
+merge, or explicitly asks the agent to merge it. Rob may self-merge his own PRs
+after the readiness gates are met, CI is green, the complete diff has been
+inspected, and any risk-based decision has been deliberately accepted. After
 approval, merge using the repository's squash-merge default and verify the PR
 and `main` state.
 
@@ -161,10 +167,10 @@ and `main` state.
 
 While active-PR CI runs, perform non-conflicting portfolio work: inspect the next
 PR, close authorised stale work, or prepare decision boundaries. Keep only one
-PR actively awaiting Othman's risk review, but use the two routine lanes when
+PR actively awaiting maintainer risk review, but use the two routine lanes when
 their domains are disjoint. On merge, promote the next ordered PR, retarget and
-refresh its direct child if needed, then repeat. Every merge still requires
-explicit human approval for that specific PR.
+refresh its direct child if needed, then repeat. Every agent-performed merge
+still requires explicit maintainer approval for that specific PR.
 
 ## 9. Learn from delivery
 
