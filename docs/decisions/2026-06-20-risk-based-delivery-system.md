@@ -1,8 +1,10 @@
 # Risk-based delivery concurrency and agent autonomy
 
 - **Date:** 2026-06-20
-- **Status:** Accepted for implementation (2026-06-20); effective when this
-  record and its instruction changes merge
+- **Status:** Superseded in part by
+  [`2026-06-26-rob-led-delivery-system.md`](./2026-06-26-rob-led-delivery-system.md).
+  The risk-based lanes, decision-first sequencing, and autonomy ladder remain
+  useful background; Othman-specific reviewer routing is no longer current.
 - **Affects:** `AGENTS.md`, the repo-local delivery and review skills, pull
   request sequencing, reviewer workload, and future repository controls
 - **Depends on:** the existing agent-native workflow introduced by PRs #153,
@@ -32,18 +34,20 @@ Recent work shows both the strength and the remaining gap:
   provenance. The external sources below are benchmarks for this proposal,
   not invented origins of the current skills.
 
-The current one-active-review rule is a useful reviewer WIP limit, but it
-conflates Othman's scarce risk-review lane with all delivery. DORA recommends
-small batches and limiting work in process; short-lived branch practice also
-favours rapid integration. Neither implies serialising unrelated, low-risk
-work behind a single reviewer lane.
+The then-current one-active-review rule was a useful reviewer WIP limit, but it
+conflated one scarce risk-review lane with all delivery. DORA recommends small
+batches and limiting work in process; short-lived branch practice also favours
+rapid integration. Neither implies serialising unrelated, low-risk work behind
+a single reviewer lane.
 
 ## Decision
 
 Replace “one active PR” with a risk-based delivery board. Keep one active
-human/risk-review lane for Othman, while allowing bounded routine lanes for
-decision-complete, low-risk work. Draft exploration is not a licence to build
-against an unresolved contract.
+human/risk-review lane for the named maintainer reviewer, while allowing
+bounded routine lanes for decision-complete, low-risk work. Draft exploration
+is not a licence to build against an unresolved contract. The named reviewer in
+the original operating model was Othman; current routing is superseded by the
+Rob-led delivery decision.
 
 ### Concurrency model
 
@@ -51,9 +55,9 @@ Every PR has one state (`exploration`, `blocked`, `queued-risk`, `active-risk`,
 `routine`, `merge-queued`, or `close-candidate`), explicit dependencies, and
 affected risk domains.
 
-1. **Human/risk lane: WIP 1.** Only one review-ready PR may await Othman's
-   architecture/security/public-contract review. Decision and foundation PRs
-   that unblock a workstream take priority.
+1. **Human/risk lane: WIP 1.** Only one review-ready PR may await the named
+   maintainer's architecture/security/public-contract review. Decision and
+   foundation PRs that unblock a workstream take priority.
 2. **Routine lanes: WIP 2 initially.** At most two unrelated, low-risk PRs
    may be advanced concurrently. They must touch disjoint ownership domains,
    have no unresolved decision, preserve public contracts, and be independently
@@ -185,9 +189,11 @@ humans accept the authority model:
 2. Allow squash merge only, matching documented practice.
 3. Turn on automatic branch deletion after merge unless preserving a branch is
    explicitly required.
-4. Extend CODEOWNERS only for real ownership boundaries. Require Othman for
-   shared/public/security paths and Rob for affiliate-domain/product paths;
-   avoid ownership rules on every documentation file.
+4. Extend CODEOWNERS only for real ownership boundaries. In the original
+   two-maintainer model this meant splitting shared/public/security and
+   affiliate-domain/product paths. Under the current Rob-led model, CODEOWNERS
+   should point to `@bobberrisford` until additional maintainers or real area
+   owners exist; avoid ownership rules on every documentation file.
 5. Enable auto-merge for approved Level 2 PRs after required checks. A merge
    queue is useful when concurrent ready PRs regularly invalidate each other;
    with today's volume, branch protection and required checks come first.
@@ -232,7 +238,7 @@ the learning note does not authorise changing policy inside a feature PR.
 
 ## Consequences
 
-- Othman's scarce attention stays serialised where judgment is required, not
+- Scarce maintainer attention stays serialised where judgment is required, not
   across all safe delivery.
 - Rob and Claude can continue quickly on accepted, disjoint slices while a
   decision is reviewed, but cannot build production foundations past it.

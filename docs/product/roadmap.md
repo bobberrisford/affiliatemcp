@@ -726,9 +726,12 @@ implementation.
 - Keep one coherent user outcome per PR.
 - Use decision-first PRs for shared/public contracts, privacy, security,
   deployment, and cross-client architecture.
-- Keep only one risk-based PR actively awaiting Othman's review.
-- Route affiliate-domain and customer-journey truth to Rob; route architecture,
-  privacy, security, deployment, and cross-client trade-offs to Othman.
+- Keep only one risk-based PR actively awaiting deliberate maintainer review.
+- Rob is the current maintainer decision owner across affiliate-domain truth,
+  customer journeys, architecture, privacy, security, deployment, and
+  cross-client trade-offs. Use independent agent review as the default backstop
+  for Rob-authored risk PRs, and use CODEOWNER or contributor review when a
+  separate owner exists.
 
 ## 11. Monetisation options
 
@@ -791,7 +794,7 @@ after focused records are accepted under [`../decisions/`](../decisions).
 
 Each package is one reviewable user outcome. Decision-first packages begin
 with a small decision PR; dependent implementation remains draft. Sequence
-risk-based work so only one PR actively awaits Othman's review.
+risk-based work so only one PR actively awaits maintainer review.
 
 ### 1. P0: Establish the roadmap as canonical and reconcile product claims
 
@@ -857,8 +860,8 @@ risk-based work so only one PR actively awaits Othman's review.
   an adapter status; public docs explain the statuses.
 - **Decision-first:** yes, because claim status is a cross-network public
   contract.
-- **Suggested owner type:** product and technical; Rob leads domain evidence,
-  Othman reviews contract implications.
+- **Suggested owner type:** product and technical; Rob leads domain evidence
+  and contract implications, with independent agent review for the decision.
 
 ### 4. P0: Audit shipped skills, prompts, and examples against actual tools and journeys
 
@@ -913,8 +916,9 @@ risk-based work so only one PR actively awaits Othman's review.
 - **Acceptance criteria:** accepted decision covers threat model, consent,
   lifecycle, supported platforms, migration, and retirement criteria.
 - **Decision-first:** yes.
-- **Suggested owner type:** technical and product; Othman leads security and
-  architecture, Rob reviews non-technical journey.
+- **Suggested owner type:** technical and product; Rob leads security,
+  architecture, and non-technical journey trade-offs, with independent agent
+  review before acceptance.
 
 ### 7. P1: Standardise adapter metadata, registry generation, and version propagation
 
@@ -931,7 +935,8 @@ risk-based work so only one PR actively awaits Othman's review.
 - **Acceptance criteria:** one documented source exists for each metadata
   class; CI detects drift; adding an adapter has fewer unchecked manual steps.
 - **Decision-first:** yes.
-- **Suggested owner type:** technical; Othman leads.
+- **Suggested owner type:** technical; Rob leads, with independent agent review
+  for metadata and release-surface implications.
 
 ### 8. P1: Publish MCP Registry metadata and document VS Code and generic MCP setup
 
@@ -968,8 +973,8 @@ risk-based work so only one PR actively awaits Othman's review.
 - **Acceptance criteria:** accepted strategy states what is portable, what is
   host-specific, and how every shipped pack is tested.
 - **Decision-first:** yes.
-- **Suggested owner type:** product and technical; Othman leads architecture,
-  Rob leads workflow value.
+- **Suggested owner type:** product and technical; Rob leads architecture and
+  workflow value, with independent agent review for cross-host compatibility.
 
 ### 10. P1: Reconcile telemetry consent, taxonomy, policy, and ingestion operations
 
@@ -988,8 +993,8 @@ risk-based work so only one PR actively awaits Othman's review.
 - **Acceptance criteria:** one allowlist and consent contract matches policy,
   implementation, tests, and operations.
 - **Decision-first:** yes.
-- **Suggested owner type:** technical and product; Othman leads privacy and
-  architecture.
+- **Suggested owner type:** technical and product; Rob leads privacy and
+  architecture, with independent agent review for consent and ingestion risk.
 
 ### 11. P2: Choose a secure remote HTTPS MCP path for ChatGPT and managed deployments
 
@@ -1009,8 +1014,9 @@ risk-based work so only one PR actively awaits Othman's review.
 - **Acceptance criteria:** accepted decision selects an MVP boundary and names
   rejected alternatives, threat model, and local-first implications.
 - **Decision-first:** yes.
-- **Suggested owner type:** technical and product; Othman leads architecture
-  and security, Rob validates customer demand.
+- **Suggested owner type:** technical and product; Rob leads architecture,
+  security, and customer-demand validation, with independent agent review for
+  threat-model gaps.
 
 ### 12. P2: Validate monetisation through agency support and network-certified adapters
 
@@ -1032,5 +1038,5 @@ risk-based work so only one PR actively awaits Othman's review.
   support burden, and with what open-source boundary.
 - **Decision-first:** no for discovery; yes before introducing a paid product
   or licensing boundary.
-- **Suggested owner type:** product; Rob leads customer and industry discovery,
-  Othman reviews technical prerequisites.
+- **Suggested owner type:** product; Rob leads customer and industry discovery
+  and records technical prerequisites before any paid product boundary.

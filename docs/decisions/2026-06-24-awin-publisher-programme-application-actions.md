@@ -225,7 +225,7 @@ new audit field.
 
 This decision touches an action-execution and write surface, the consent and
 audit primitive, browser framing, and the first publisher-side browser consumer,
-so it is a risk-based review item for `@offmann`.
+so it is a risk-based review item for maintainer review.
 
 ## Rejected alternatives
 
@@ -279,7 +279,7 @@ so it is a risk-based review item for `@offmann`.
 ## Implementation follow-ups
 
 Sequenced; each PR stays draft until its parent merges, and each write-surface
-PR is a risk-based review item for `@offmann`:
+PR is a risk-based review item for maintainer review:
 
 1. **Read consumer first (independent, routine).** A publisher-side
    discover-and-prioritise skill that reads joinable brands via `listProgrammes`

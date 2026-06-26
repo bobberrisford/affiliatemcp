@@ -3,7 +3,7 @@ name: prepare-for-review
 description: |
   Prepare, open, update, or request review for an affiliate-mcp pull request.
   Use when asked to create a PR, make a PR review-ready, update a PR body,
-  request @offmann's review, or check whether a branch is ready for review.
+  request maintainer review, or check whether a branch is ready for review.
 ---
 
 # Prepare a pull request for review
@@ -131,24 +131,27 @@ Risk-based review is required for:
 - product-direction decisions with implementation consequences.
 
 Inspect all open PRs and apply the canonical lanes from `AGENTS.md`. Another PR
-occupies `active-risk` when it is open, not draft, requests `offmann`, and has
-not received a review decision. If the risk lane is occupied, keep this PR
-draft as `queued-risk` and report which PR is ahead of it. Routine work may
-enter review concurrently only when fewer than two routine PRs are active, all
-required decisions are merged, public contracts are preserved, and the owning
-domains do not conflict.
+occupies `active-risk` when it is open, not draft, in a risk-based category, and
+awaiting deliberate maintainer judgement. If the risk lane is occupied, keep
+this PR draft as `queued-risk` and report which PR is ahead of it. Routine work
+may enter review concurrently only when fewer than two routine PRs are active,
+all required decisions are merged, public contracts are preserved, and the
+owning domains do not conflict.
 
 When every gate passes:
 
 1. Mark the PR ready with `gh pr ready`.
-2. Request `@offmann` with `gh pr edit --add-reviewer offmann` only when the PR
-   is in a risk-based category, his queue is empty, and he is not the PR author.
-   When `@offmann` is the author, request the repository maintainer instead.
-3. For routine isolated changes, mark ready without requesting `@offmann`.
-4. Report the PR URL, verification evidence, lane, dependency status, risk
-   classification, and reviewer request made.
+2. For external contributor PRs, request the relevant CODEOWNER or maintainer.
+3. For Rob-authored risk-based PRs, do not request `@offmann`. Ask for an
+   independent agent review in the PR body or a follow-up comment, and make the
+   decision question explicit for Rob.
+4. For routine isolated changes, mark ready without requesting a reviewer unless
+   repository settings require one.
+5. Report the PR URL, verification evidence, lane, dependency status, risk
+   classification, and reviewer or independent-agent review requested.
 
-Never approve or merge the PR yourself.
+Never approve or merge the PR yourself unless Rob or another maintainer has
+explicitly asked you to merge that specific PR after readiness is established.
 
 ## 6. Respond to review
 
