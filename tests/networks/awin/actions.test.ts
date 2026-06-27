@@ -142,6 +142,17 @@ describe('Awin publisher programme-application emitter', () => {
     expect(handoff.startingUrl).not.toContain('../');
   });
 
+  it('percent-encodes a malformed publisherId so the config-sourced id cannot escape the origin', () => {
+    const handoff = buildApplyToProgrammeHandoff({
+      ...baseInput,
+      publisherId: '../../evil',
+    }).browserFallback;
+    if (!handoff) throw new Error('expected a browser fallback');
+    expect(handoff.startingUrl.startsWith('https://ui.awin.com/awin/affiliate/')).toBe(true);
+    expect(handoff.startingUrl).not.toContain('../');
+    expect(handoff.verify.url).not.toContain('../');
+  });
+
   it('declares one browser/write descriptor with the expected invariants', () => {
     expect(awinActionDescriptors.map((d) => d.id)).toEqual(['awin.applyToProgramme']);
     const descriptor = awinActionDescriptors[0];
