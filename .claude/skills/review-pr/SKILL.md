@@ -9,8 +9,10 @@ description: |
 # Review a pull request
 
 Follow the delivery and review protocol in `AGENTS.md`. This skill is the
-independent engineering backstop for fast agent-authored work. Find material
-problems without turning preferences or hypothetical future needs into blockers.
+independent engineering backstop for fast agent-authored and maintainer-authored
+work, including Rob-authored PRs where no separate human reviewer exists. Find
+material problems without turning preferences or hypothetical future needs into
+blockers.
 
 ## 1. Establish the review target
 
@@ -99,7 +101,9 @@ finding, optionally add a short `Delivery-system learning` side note with the
 evidence and smallest proposed workflow change. Do not force a lesson into
 every review or make process preferences blocking findings.
 
-Do not approve, merge, or resolve review threads unless explicitly asked.
+Do not approve, merge, or resolve review threads unless explicitly asked. For a
+Rob-authored PR, return a clear recommendation and the residual risk so Rob can
+make the maintainer decision.
 
 ## 5. Re-review
 

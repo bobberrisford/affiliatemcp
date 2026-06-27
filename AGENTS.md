@@ -206,10 +206,13 @@ architecture-sensitive, security-sensitive, irreversible, or public-contract
 decision. When escalating, recommend a direction, explain the material
 trade-offs, and propose the next step.
 
-Othman (`@offmann`) steers technical architecture and product trade-offs. Rob
-(`@bobberrisford`) steers affiliate-domain truth, product direction, and
-industry/customer judgement. Agents implement, validate, review, summarise, and
-recommend; they do not silently settle major decisions owned by either human.
+Rob (`@bobberrisford`) is the current maintainer and default decision owner for
+affiliate-domain truth, product direction, architecture, privacy, security,
+deployment, and cross-client trade-offs. Agents implement, validate, review,
+summarise, and recommend. They may make routine implementation choices, but
+major product, architecture, security, privacy, deployment, public-contract, or
+write-authority decisions require Rob's deliberate acceptance unless another
+maintainer or CODEOWNER is explicitly assigned.
 
 Project assumptions may evolve as requirements, usage evidence, architecture,
 or product direction change. Question an assumption when that change materially
@@ -254,11 +257,12 @@ make the change harder to understand or validate.
 
 Use risk-based work-in-progress lanes:
 
-- `active-risk`: at most one review-ready PR awaiting `@offmann` for
-  architecture, security, privacy, public-contract, write, deployment, or
-  cross-client judgement;
+- `active-risk`: at most one review-ready PR awaiting deliberate maintainer
+  judgement for architecture, security, privacy, public-contract, write,
+  deployment, release, or cross-client impact;
 - `routine`: at most two concurrent, decision-complete PRs in disjoint owning
-  domains that preserve public contracts and do not need `@offmann`'s review;
+  domains that preserve public contracts and do not need maintainer risk
+  review;
 - `exploration`: discovery or explicitly disposable prototype work behind an
   unresolved decision, never production implementation;
 - `blocked`, `queued-risk`, `merge-queued`, and `close-candidate`: work waiting
@@ -284,22 +288,31 @@ repair them before requesting review. Reviewers may repair or rerun CI when
 explicitly asked to unblock the PR, but should keep the fix on the existing
 branch and report the exact proof.
 
-Request `@offmann` for changes involving shared/public contracts,
-cross-network semantics, authentication or security, write actions or consent,
-payments or licensing, deployment architecture, cross-client architecture, or
-product-direction decisions with implementation consequences. Routine isolated
-changes do not require this risk-based review gate. A PR author must never be
-requested to review their own PR; when `@offmann` authors a risk-based change,
-request the maintainer instead.
+Risk-based review is required for changes involving shared/public contracts,
+cross-network semantics, authentication or security, privacy, write actions or
+consent, payments or licensing, releases, deployment architecture, cross-client
+architecture, or product-direction decisions with implementation consequences.
+Routine isolated changes do not require this risk-based review gate.
 
-The repository currently operates at agent-prepared autonomy: agents may
-implement, validate, repair, review, push, and recommend a merge, but every
-merge requires explicit human approval for that PR. Autonomous merge is a
-separate, evidence-gated policy change. It must start with an allowlisted,
-reversible low-risk scope, protected `main`, required checks, rollback proof,
-and measured post-merge outcomes. See
-`docs/decisions/2026-06-20-risk-based-delivery-system.md` for the accepted model,
-metrics, and future autonomy ladder.
+When Rob authors a risk-based PR, do not request `@offmann`. Use an independent
+agent review as the backstop: a fresh Claude/Codex review should inspect the
+complete diff, accepted decisions, changed tests, and CI before Rob decides
+whether to merge. If another human maintainer or CODEOWNER is available and
+owns the affected area, request them; otherwise Rob may self-review and
+self-merge after documenting the evidence and any accepted risk. External
+contributor PRs still require maintainer or CODEOWNER review before merge.
+
+The repository currently operates at maintainer-led, agent-assisted autonomy:
+agents may implement, validate, repair, review, push, and recommend a merge.
+Agents must not merge unless Rob or another maintainer explicitly asks them to
+merge that specific PR. Rob may merge his own PRs when the readiness gates are
+met, CI is green, the complete diff has been inspected, and any risk-based
+decision has been deliberately accepted. Broader autonomous merge remains a
+separate, evidence-gated policy change. See
+`docs/decisions/2026-06-26-rob-led-delivery-system.md` for the current
+maintainer-led model and
+`docs/decisions/2026-06-20-risk-based-delivery-system.md` for historical
+context and the autonomy ladder.
 
 Treat delivery as a learning system. At the end of meaningful implementation,
 review, or coordination work, briefly consider whether the interaction exposed

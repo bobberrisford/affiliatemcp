@@ -106,7 +106,7 @@ item.
 
 This is a privacy, deployment, shared-contract, cross-client, and
 product-direction decision with implementation consequences, and is a
-risk-based review item for `@offmann`.
+risk-based review item for maintainer review.
 
 ## Rejected alternatives
 

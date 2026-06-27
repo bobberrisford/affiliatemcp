@@ -43,6 +43,7 @@ const AGENCY_SKILLS = [
   'awin-application-auto-approval',
   'programme-health-check',
   'partner-outreach',
+  'brand-application-shortlist',
 ] as const;
 
 /** Crude but adequate YAML frontmatter parser — captures the leading `---` block. */
