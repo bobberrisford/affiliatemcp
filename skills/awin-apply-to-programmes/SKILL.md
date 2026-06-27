@@ -62,13 +62,20 @@ auth is not working, report exactly what is missing (most often a missing
 
 ## Step 3 — read the advisory strategy
 
-Call `affiliate_get_client_strategy`.
+A publisher applies across many brands, so discover what strategy context exists
+before reading any single one:
+
+1. Call `affiliate_list_client_strategies` (no arguments) to list the brands that
+   have a recorded strategy or KPI file (`slug`, `hasStrategy`, `hasKpi`).
+2. For a proposed programme whose brand matches a recorded `slug`, read it with
+   `affiliate_get_client_strategy({ brand: <slug> })`.
 
 Treat `strategy` prose and `kpi.targets` as advisory context only. They shape
 which programmes you propose and in what order; they never authorise an
 application. If `kpi.parseErrors` is non-empty, report each malformed line
-verbatim and exclude it. Never guess what a malformed line meant. If no strategy
-is recorded, say so and rank on the programme data alone.
+verbatim and exclude it. Never guess what a malformed line meant. Where no
+strategy is recorded for a brand, say so and rank that programme on its data
+alone.
 
 ## Step 4 — propose the application set
 

@@ -13,6 +13,8 @@ Called `affiliate_awin_list_programmes({ status: "available" })` → all three s
 
 Called `affiliate_list_actions({ network: "awin", effect: "write" })` → `applyToProgramme` is `ready`. Diagnostic confirms live auth and `AWIN_PUBLISHER_ID` set.
 
+Called `affiliate_list_client_strategies` → an outdoor/cycling strategy is recorded; read it with `affiliate_get_client_strategy({ brand: "outdoor-cycling" })` for advisory ranking only.
+
 Read each programme's **Terms** tab in your Awin session to build the review bundle below.
 
 ## Terms review — 3 programmes proposed
