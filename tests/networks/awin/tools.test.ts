@@ -21,6 +21,8 @@ describe('Awin-specific MCP tools', () => {
       'affiliate_awin_list_offers',
       'affiliate_awin_list_product_feeds',
       'affiliate_awin_list_transaction_queries',
+      'affiliate_awin_propose_application',
+      'affiliate_awin_report_application_result',
       'affiliate_awin_submit_proof_of_purchase_transaction',
     ]);
   });
