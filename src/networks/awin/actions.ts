@@ -14,9 +14,13 @@
  * This function is PURE. It builds a plan; it never calls `fetch`, the `awin`
  * client, `auth.ts`, or `withResilience`, and it touches no session, cookie, or
  * DOM. The mutation risk lives entirely in the consumer that carries out the
- * handoff, never in this repo. The starting URL is a CONSTANT Awin-owned origin
- * path defined here, never derived from caller input, so a hostile caller cannot
- * redirect the operator to an arbitrary page.
+ * handoff, never in this repo. The handoff URLs are built by reviewed code here
+ * from a fixed Awin-owned origin and path template. The only values interpolated
+ * are the operator's own `publisherId` (from their authenticated config, not the
+ * caller or model) and the numeric `advertiserId` target, each percent-encoded.
+ * A hostile caller cannot change the origin or inject a path, so the operator can
+ * only ever be sent to their own Awin publisher account on `ui.awin.com`. The
+ * exact paths were confirmed against a live Awin publisher tenant on 2026-06-27.
  *
  * Terms handling is deliberately NOT in this payload. Per decision §2, the
  * itemised terms-review evidence belongs to the consumer workflow and the audit
@@ -43,21 +47,52 @@ import type {
 const SLUG: NetworkSlug = 'awin';
 
 /**
- * The Awin publisher programme directory (the "advertisers" / joinable-programmes
- * listing). CONSTANT and Awin-owned: it is never derived from caller input, so
- * the handoff can only ever point the operator at this reviewed Awin origin path.
- * The consumer navigates from here to the specific advertiser using the
- * `advertiserId` carried in `inputs`.
- *
- * TODO(verify): the exact path is unverified against a live publisher tenant.
- * The origin (`https://ui.awin.com`) is the Awin publisher UI; confirm the
- * programme-directory and application path when a live tenant is available.
+ * The Awin publisher UI origin. CONSTANT and Awin-owned. Every handoff URL is
+ * built from this origin by reviewed code below; the origin is never taken from
+ * caller input, so a handoff can only ever target `ui.awin.com`.
  */
-const AWIN_PUBLISHER_PROGRAMME_DIRECTORY_URL =
-  'https://ui.awin.com/awin/publisher/programmes';
+const AWIN_PUBLISHER_UI_ORIGIN = 'https://ui.awin.com';
+
+/**
+ * The programme-detail ("merchant profile") page for one advertiser inside the
+ * operator's own publisher account. This is where a publisher reviews a
+ * programme's terms and clicks "Join Programme". Used as the handoff
+ * `startingUrl` so the consumer lands directly on the target programme.
+ *
+ * Verified against a live Awin publisher tenant on 2026-06-27. Awin scopes the
+ * publisher area under `/awin/affiliate/{publisherId}/` ("affiliate" is Awin's
+ * word for publisher) and the per-advertiser page is `/merchant-profile/{id}`.
+ * Both ids are percent-encoded; upstream validation already constrains them to
+ * positive integers.
+ */
+function programmeDetailUrl(publisherId: string, advertiserId: string): string {
+  return (
+    `${AWIN_PUBLISHER_UI_ORIGIN}/awin/affiliate/${encodeURIComponent(publisherId)}` +
+    `/merchant-profile/${encodeURIComponent(advertiserId)}`
+  );
+}
+
+/**
+ * The publisher's pending-applications list (the "Pending" tab of the merchant
+ * directory). A just-submitted application appears here as pending until the
+ * advertiser approves it. Used as the handoff `verify.url`.
+ *
+ * Verified against a live Awin publisher tenant on 2026-06-27.
+ */
+function pendingApplicationsUrl(publisherId: string): string {
+  return (
+    `${AWIN_PUBLISHER_UI_ORIGIN}/awin/affiliate/${encodeURIComponent(publisherId)}` +
+    `/merchant-directory/index/tab/pending/page/1`
+  );
+}
 
 /** Caller-supplied, non-secret inputs for a programme-application handoff. */
 export interface ProgrammeApplicationInput {
+  /**
+   * The operator's own Awin publisher id, from their authenticated config (not
+   * the caller or model). Scopes the handoff URLs to the operator's account.
+   */
+  publisherId: string;
   /** The Awin advertiser (programme) the publisher is applying to join. */
   advertiserId: string;
   /** The programme/brand display name, for an unambiguous handoff goal. */
@@ -90,7 +125,7 @@ function buildProgrammeApplicationHandoff(input: ProgrammeApplicationInput): Bro
   }
   return {
     goal: `Apply to the ${input.programmeName} programme (advertiser id ${input.advertiserId}) on Awin for brand ${input.brand}.`,
-    startingUrl: AWIN_PUBLISHER_PROGRAMME_DIRECTORY_URL,
+    startingUrl: programmeDetailUrl(input.publisherId, input.advertiserId),
     inputs,
     constraints: composeConstraints([
       `Apply only to advertiser ${input.advertiserId}; do not apply to any other programme.`,
@@ -100,8 +135,8 @@ function buildProgrammeApplicationHandoff(input: ProgrammeApplicationInput): Bro
     ]),
     mutates: true,
     verify: {
-      url: AWIN_PUBLISHER_PROGRAMME_DIRECTORY_URL,
-      expect: `the programme relationship for advertiser ${input.advertiserId} reads pending or joined.`,
+      url: pendingApplicationsUrl(input.publisherId),
+      expect: `advertiser ${input.advertiserId} appears in the pending-applications list, or the programme relationship reads pending or joined.`,
     },
   };
 }
@@ -150,5 +185,13 @@ export const awinActionDescriptors: ActionDescriptor[] = [
   },
 ];
 
-/** Exposed for tests: the constant starting URL is never derived from input. */
-export const _internals = { AWIN_PUBLISHER_PROGRAMME_DIRECTORY_URL };
+/**
+ * Exposed for tests: the fixed origin and the reviewed URL builders. The origin
+ * is constant; the builders interpolate only the operator's publisherId and the
+ * numeric advertiserId target, each percent-encoded.
+ */
+export const _internals = {
+  AWIN_PUBLISHER_UI_ORIGIN,
+  programmeDetailUrl,
+  pendingApplicationsUrl,
+};

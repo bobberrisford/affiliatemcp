@@ -20,7 +20,7 @@ import {
   listTransactionQueries,
   submitProofOfPurchaseTransaction,
 } from './endpoints/index.js';
-import { configError } from './endpoints/shared.js';
+import { configError, requirePublisherId } from './endpoints/shared.js';
 
 const EmptySchema = z.object({}).strict();
 const IdSchema = z.union([z.string(), z.number()]);
@@ -280,15 +280,21 @@ export function generateAwinTools(): ToolDefinition[] {
         'publisher. Awin exposes no public publisher application endpoint, so this emits a typed handoff ' +
         'for a human (or the authorised consumer skill) to carry out against their own Awin session; it ' +
         'performs no network write itself. Requires brand (a display label, not a binding), advertiserId, ' +
-        'and programmeName; accepts an optional promotionMethodSummary. Returns an ApiGapResponse carrying ' +
+        'and programmeName; accepts an optional promotionMethodSummary. Uses the configured AWIN_PUBLISHER_ID ' +
+        'to build the handoff URLs and returns a config error if it is not set. Returns an ApiGapResponse carrying ' +
         'the browser handoff (constraints, verify target, and inputs with no credentials). The consumer ' +
         "is responsible for surfacing the programme's terms for informed acceptance before any submit.",
       ProposeApplicationSchema,
       async (args) => {
         const input = ProposeApplicationSchema.parse(args ?? {});
         const advertiserId = String(input.advertiserId);
+        // The operator's own publisher id scopes the handoff URLs. Read it from
+        // config (never the caller); a clean config_error is thrown, before any
+        // audit line, when it is missing.
+        const publisherId = requirePublisherId('propose_application');
 
         const emitterInput: ProgrammeApplicationInput = {
+          publisherId,
           advertiserId,
           programmeName: input.programmeName,
           brand: input.brand,

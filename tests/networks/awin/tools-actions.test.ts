@@ -10,7 +10,7 @@
  * to brands they have not joined.
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Importing the networks aggregator registers every real adapter, including
 // the awin publisher adapter, so collectActionDescriptors sees it.
@@ -50,6 +50,49 @@ describe('Awin publisher action-map wiring', () => {
 });
 
 describe('affiliate_awin_propose_application tool', () => {
+  // The handoff URLs are scoped to the operator's own publisher account, read
+  // from AWIN_PUBLISHER_ID. Set it for the tests that emit a handoff; one test
+  // below deliberately unsets it to assert the config-error path.
+  const priorPublisherId = process.env['AWIN_PUBLISHER_ID'];
+  beforeEach(() => {
+    process.env['AWIN_PUBLISHER_ID'] = '555';
+  });
+  afterEach(() => {
+    if (priorPublisherId === undefined) delete process.env['AWIN_PUBLISHER_ID'];
+    else process.env['AWIN_PUBLISHER_ID'] = priorPublisherId;
+  });
+
+  it('config-errors (before any audit) when AWIN_PUBLISHER_ID is not set', async () => {
+    delete process.env['AWIN_PUBLISHER_ID'];
+    const auditSpy = vi.spyOn(auditModule, 'recordActionAudit').mockImplementation(() => {});
+    await expect(
+      (async () =>
+        proposeTool().handle({
+          brand: 'example-brand',
+          advertiserId: 1234,
+          programmeName: 'Example Brand',
+        }))(),
+    ).rejects.toThrow();
+    expect(auditSpy).not.toHaveBeenCalled();
+  });
+
+  it('scopes the handoff URLs to the configured publisher account', async () => {
+    vi.spyOn(auditModule, 'recordActionAudit').mockImplementation(() => {});
+    const result = (await proposeTool().handle({
+      brand: 'example-brand',
+      advertiserId: 1234,
+      programmeName: 'Example Brand',
+    })) as { browserFallback: { startingUrl: string; verify: { url: string } } | null };
+    const handoff = result.browserFallback;
+    if (!handoff) throw new Error('expected a browser fallback');
+    expect(handoff.startingUrl).toBe(
+      'https://ui.awin.com/awin/affiliate/555/merchant-profile/1234',
+    );
+    expect(handoff.verify.url).toBe(
+      'https://ui.awin.com/awin/affiliate/555/merchant-directory/index/tab/pending/page/1',
+    );
+  });
+
   it('is readOnlyHint with a strict schema requiring brand, advertiserId, programmeName', () => {
     const tool = proposeTool();
     expect(tool.annotations?.readOnlyHint).toBe(true);
