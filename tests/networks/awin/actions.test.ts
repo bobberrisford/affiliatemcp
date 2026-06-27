@@ -19,6 +19,7 @@ import {
 import { BROWSER_CONSTRAINT_FLOOR } from '../../../src/shared/browser-handoff.js';
 
 const baseInput = {
+  publisherId: '555',
   advertiserId: '1234',
   programmeName: 'Example Brand',
   brand: 'example-brand',
@@ -55,8 +56,21 @@ describe('Awin publisher programme-application emitter', () => {
     expect(handoff).not.toBeNull();
     if (!handoff) throw new Error('expected a browser fallback');
     expect(handoff.mutates).toBe(true);
-    expect(handoff.verify.url).toBe(_internals.AWIN_PUBLISHER_PROGRAMME_DIRECTORY_URL);
+    // verify.url is the publisher's own pending-applications list.
+    expect(handoff.verify.url).toBe(_internals.pendingApplicationsUrl('555'));
+    expect(handoff.verify.url).toBe(
+      'https://ui.awin.com/awin/affiliate/555/merchant-directory/index/tab/pending/page/1',
+    );
     expect(handoff.verify.expect).toContain('1234');
+  });
+
+  it('builds startingUrl as the per-advertiser programme-detail page in the operator account', () => {
+    const handoff = buildApplyToProgrammeHandoff(baseInput).browserFallback;
+    if (!handoff) throw new Error('expected a browser fallback');
+    expect(handoff.startingUrl).toBe(_internals.programmeDetailUrl('555', '1234'));
+    expect(handoff.startingUrl).toBe(
+      'https://ui.awin.com/awin/affiliate/555/merchant-profile/1234',
+    );
   });
 
   it('inherits every line of the shared constraint floor, then the Awin additions', () => {
@@ -99,18 +113,33 @@ describe('Awin publisher programme-application emitter', () => {
       promotionMethodSummary: 'cashback site',
     });
     expect(handoff.startingUrl.startsWith('https://ui.awin.com')).toBe(true);
+    // publisherId is used to scope the URLs, never echoed as a handoff input.
+    expect(Object.keys(handoff.inputs)).not.toContain('publisherId');
   });
 
-  it('uses a constant startingUrl that ignores a hostile startingUrl in input', () => {
+  it('builds URLs from input, ignoring a hostile startingUrl and staying on the Awin origin', () => {
     const hostile = {
       ...baseInput,
       startingUrl: 'https://evil.example/phish',
     } as unknown as typeof baseInput;
     const handoff = buildApplyToProgrammeHandoff(hostile).browserFallback;
     if (!handoff) throw new Error('expected a browser fallback');
-    expect(handoff.startingUrl).toBe(_internals.AWIN_PUBLISHER_PROGRAMME_DIRECTORY_URL);
+    // The emitter never reads a `startingUrl` field; it builds the URL itself.
+    expect(handoff.startingUrl).toBe(_internals.programmeDetailUrl('555', '1234'));
+    expect(handoff.startingUrl.startsWith('https://ui.awin.com/')).toBe(true);
     expect(handoff.startingUrl).not.toContain('evil.example');
+    expect(handoff.verify.url).not.toContain('evil.example');
     expect(Object.keys(handoff.inputs)).not.toContain('startingUrl');
+  });
+
+  it('percent-encodes ids so a non-numeric value cannot inject a path or escape the origin', () => {
+    const handoff = buildApplyToProgrammeHandoff({
+      ...baseInput,
+      advertiserId: '../../evil',
+    }).browserFallback;
+    if (!handoff) throw new Error('expected a browser fallback');
+    expect(handoff.startingUrl.startsWith('https://ui.awin.com/awin/affiliate/555/')).toBe(true);
+    expect(handoff.startingUrl).not.toContain('../');
   });
 
   it('declares one browser/write descriptor with the expected invariants', () => {
