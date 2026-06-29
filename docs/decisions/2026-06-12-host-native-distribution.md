@@ -30,7 +30,10 @@ The first implementation is a Claude Desktop MCP Bundle:
 - versioned GitHub releases carry the generated `.mcpb` artifact.
 
 The Electron setup app remains a compatibility fallback while the host-native
-path proves itself. It receives fixes but no new product scope.
+path proves itself. It receives fixes but no new product scope, with one narrow
+exception accepted later: a read-only data locker (view and export performance
+data, with Claude doing the analysis), scoped by
+`docs/decisions/2026-06-29-desktop-data-export.md`.
 
 ## Consequences And Follow-Ups
 
