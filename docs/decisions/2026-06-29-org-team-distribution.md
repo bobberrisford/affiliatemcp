@@ -1,7 +1,7 @@
 # Org and team distribution: native host allowlists, not the public Directory
 
 - **Date:** 2026-06-29
-- **Status:** Proposed (Path A selected by Rob, 2026-06-29; awaiting merge)
+- **Status:** Accepted (2026-06-29; Path A, selected by Rob)
 - **Affects:** Claude Desktop and Claude Code distribution, `DEPLOY.md`, the
   `.mcpb` manifest, `.claude-plugin/marketplace.json`, README install docs
 - **Builds on:** [`2026-06-12-host-native-distribution.md`](./2026-06-12-host-native-distribution.md)
