@@ -1,4 +1,4 @@
-# Hosted version for non-technical users — value-first scoping (2026-06-27)
+# Hosted version for non-technical users: value-first scoping (2026-06-27)
 
 > Status: discovery proposal, pre-decision. This document deliberately sets the
 > local-first README stance aside to look at the value a hosted version would
@@ -81,7 +81,7 @@ review:
   Hosting requires a real per-user boundary: authenticated identity, and
   request-scoped credential, token, brand, and strategy lookups keyed by user.
 
-- **Credential custody — the real decision.** This is the crux, not an
+- **Credential custody, the real decision.** This is the crux, not an
   implementation detail. Today the project never holds a user's network
   credentials. A hosted version that stores them takes on custody of live
   affiliate API keys for many tenants: encryption at rest, key rotation, breach
@@ -111,7 +111,7 @@ custody:
 
 | Option | Zero-install? | Credential custody | Verdict |
 |---|---|---|---|
-| **Assisted-local tunnel** (shipped design, `chatgpt-scoping.md`) | No — needs runtime + awake machine | None; keys stay local | Already the answer for semi-technical users. Does not reach the non-technical cohort. |
+| **Assisted-local tunnel** (shipped design, `chatgpt-scoping.md`) | No (needs runtime + awake machine) | None; keys stay local | Already the answer for semi-technical users. Does not reach the non-technical cohort. |
 | **Bring-your-own-key, hosted execution** | Yes | We store per-user encrypted keys, decrypt only at call time | Smallest hosted step that actually removes the wall. Custody is real but bounded to API keys. |
 | **Fully managed SaaS** (accounts, billing, dashboards) | Yes | Full, plus session-level for browser actions | Largest reversal and largest compliance surface. A separate company-scale commitment, not a feature. |
 
