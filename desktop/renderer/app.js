@@ -72,6 +72,28 @@ function mockApi() {
     getTelemetryConsent: () => wait({ ok: true, consent: 'unset' }),
     setTelemetryConsent: (enabled) => wait({ ok: true, enabled }),
     saveBrands: (_network, selections) => wait({ ok: true, count: (selections || []).length }),
+    // Cockpit preview: a configured summary so the dashboard renders in a plain
+    // browser. The real summary comes from the network reads via main.
+    cockpitSummary: () => wait({
+      ok: true,
+      summary: {
+        generatedAt: new Date().toISOString(),
+        network: 'awin',
+        configured: true,
+        headline: {
+          totalEarnings: 4218.55, currency: 'GBP',
+          byStatus: { pending: 1290.4, approved: 2680.15, reversed: 88.0, paid: 160.0, other: 0, currency: 'GBP' },
+          periodFrom: '2026-05-30', periodTo: '2026-06-29',
+        },
+        flags: [
+          { kind: 'unpaid_over_threshold', severity: 'warning', title: 'GBP 1290.40 unpaid past 90 days', detail: 'Oldest pending commission is 112 days old.' },
+          { kind: 'wow_swing', severity: 'warning', title: 'Earnings down 31% week-on-week', detail: 'GBP 720.00 to GBP 496.80.' },
+          { kind: 'pending_applications', severity: 'info', title: '3 pending applications', detail: 'Programmes awaiting a decision.' },
+          { kind: 'health', severity: 'info', title: 'Awin connected', detail: 'Signed in as Acme Outdoors.' },
+        ],
+      },
+    }, 600),
+    openClaudePrompt: (_text) => wait({ ok: true, target: 'desktop' }, 300),
     connectClaude: () => wait({ ok: true, action: 'added', backupPath: '…/claude_desktop_config.json.bak' }, 500),
     restartClaude: () => wait({ ok: true }),
     openExternal: (url) => { window.open(url, '_blank'); return wait({ ok: true }); },
@@ -110,6 +132,7 @@ const state = {
   envEntries: {},        // FIELD -> value, accumulated across verified networks
   update: { state: 'idle' }, // latest auto-update status from main (see setupUpdateEvents)
   telemetryEnabled: false,
+  cockpit: null,         // latest CockpitSummary (attention flags) from main
 };
 const app = document.getElementById('app');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -626,7 +649,10 @@ async function renderConnect() {
     if (failed(restarted)) return fail(`couldn’t restart Claude: ${restarted.error || 'restart it yourself to load the tools'}`);
 
     cs.innerHTML = `<span class="status"><span class="dot dot-pos"></span> done</span>`;
-    go('done');
+    // Land on the daily cockpit rather than a dead-end success screen: this is
+    // the dashboard the user comes back to. Force a fresh read.
+    state.cockpit = null;
+    go('cockpit');
   };
 }
 
@@ -653,10 +679,123 @@ function renderDone() {
   paintUpdateCard();
 }
 
+/* ---- cockpit (the daily dashboard) ------------------------------------ */
+/* The screen people come back to. It shows live "attention flags" computed on
+   this machine (no model, no tokens) and a grid of one-click buttons that
+   deep-link into Claude with a pre-written prompt — that's where the reasoning
+   and any "doing" happen, on the user's own Claude. */
+
+// Each button hands Claude a short instruction; the connector pulls the data.
+// Text is kept short on purpose (the deep-link q param is length-capped).
+const COCKPIT_ACTIONS = [
+  { label: 'earnings report', prompt: 'Show me my affiliate earnings for last month.' },
+  { label: 'chase unpaid', prompt: 'Which commissions haven’t been paid in more than 90 days? Draft the chase emails.' },
+  { label: 'find programmes to join', prompt: 'Build my Awin application shortlist.' },
+  { label: 'apply to programmes', prompt: 'Apply to my Awin shortlist.' },
+  { label: 'check my setup', prompt: 'Check my affiliate networks are working.' },
+];
+
+// Contextual "do something about it" action for a flag, where one fits.
+function flagAction(flag) {
+  switch (flag.kind) {
+    case 'unpaid_over_threshold':
+      return { label: 'chase these', prompt: 'Which commissions haven’t been paid in more than 90 days? Draft the chase emails.' };
+    case 'pending_applications':
+      return { label: 'review', prompt: 'Build my Awin application shortlist.' };
+    case 'wow_swing':
+      return { label: 'investigate', prompt: 'Why did my affiliate earnings change week-on-week? Break it down by programme.' };
+    default:
+      return null;
+  }
+}
+
+function money(value, currency) {
+  if (typeof value !== 'number') return '';
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: currency || 'GBP' }).format(value);
+  } catch {
+    return `${currency || ''} ${value.toFixed(2)}`;
+  }
+}
+
+const dotForSeverity = (sev) => (sev === 'error' ? 'dot-neg' : sev === 'warning' ? 'dot-pending' : 'dot-pos');
+
+async function renderCockpit() {
+  if (!state.cockpit) {
+    app.innerHTML = wrap(`
+      <h2 class="scr">loading your cockpit…</h2>
+      <p class="scr-lead">reading your latest numbers. this runs on this machine — nothing leaves it.</p>
+    `, true);
+    let res;
+    try { res = await api.cockpitSummary(); } catch (e) { res = { ok: false, error: String(e) }; }
+    state.cockpit = res && res.ok && res.summary
+      ? res.summary
+      : { network: 'awin', configured: false, flags: [{ kind: 'health', severity: 'error', title: 'couldn’t load your data', detail: (res && res.error) || 'unknown error' }] };
+  }
+  const c = state.cockpit;
+
+  const headline = c.headline ? `
+    <div class="ck-headline">
+      <div class="ck-total">${esc(money(c.headline.totalEarnings, c.headline.currency))}</div>
+      <div class="ck-sub">
+        last 30 days
+        <span class="status"><span class="dot dot-pending"></span> ${esc(money(c.headline.byStatus.pending, c.headline.byStatus.currency))} pending</span>
+        <span class="status"><span class="dot dot-pos"></span> ${esc(money(c.headline.byStatus.approved, c.headline.byStatus.currency))} approved</span>
+      </div>
+    </div>` : '';
+
+  const flagRows = (c.flags || []).map((f) => {
+    const action = flagAction(f);
+    const btn = action ? `<button class="btn btn-ghost ck-flag-act" data-prompt="${esc(action.prompt)}">${esc(action.label)} ▸</button>` : '';
+    return `<div class="ck-flag">
+      <span class="status"><span class="dot ${dotForSeverity(f.severity)}"></span></span>
+      <div class="ck-flag-body">
+        <div class="ck-flag-title">${esc(f.title)}</div>
+        ${f.detail ? `<div class="ck-flag-detail">${esc(f.detail)}</div>` : ''}
+      </div>${btn}
+    </div>`;
+  }).join('');
+
+  const actionGrid = COCKPIT_ACTIONS
+    .map((a) => `<button class="btn btn-primary ck-action" data-prompt="${esc(a.prompt)}">${esc(a.label)} ▸</button>`)
+    .join('');
+
+  app.innerHTML = `<div class="screen fade"><div class="scroll">
+    <div class="ck-top">
+      <h2 class="scr">your affiliate cockpit</h2>
+      <button class="btn btn-ghost" id="ck-refresh">refresh</button>
+    </div>
+    ${c.configured ? '' : `<div class="help" style="border-left-color:var(--magenta)">connect a network in setup to see your numbers here.</div>`}
+    ${headline}
+    <div class="ck-flags">${flagRows || '<div class="help">nothing needs your attention right now.</div>'}</div>
+    <div class="ck-divider">do something about it · opens in claude</div>
+    <div class="ck-actions">${actionGrid}</div>
+    <div class="ck-foot"><button class="btn btn-ghost" id="ck-add">add another network</button></div>
+  </div></div>`;
+
+  // Deep-link buttons: hand the prompt to main, which opens Claude pre-filled.
+  app.querySelectorAll('[data-prompt]').forEach((b) => b.addEventListener('click', async () => {
+    const prompt = b.getAttribute('data-prompt');
+    const original = b.textContent;
+    b.textContent = 'opening claude…';
+    let res;
+    try { res = await api.openClaudePrompt(prompt); } catch (e) { res = { ok: false, error: String(e) }; }
+    if (res && res.ok === false) {
+      b.textContent = `couldn’t open claude (${esc(res.error || 'blocked')})`;
+    } else {
+      b.textContent = 'opened in claude ✓';
+      setTimeout(() => { b.textContent = original; }, 1600);
+    }
+  }));
+  document.getElementById('ck-refresh').onclick = () => { state.cockpit = null; renderCockpit(); };
+  document.getElementById('ck-add').onclick = () => { state.selected = []; state.credIndex = 0; go('networks'); };
+}
+
 /* ---- router ----------------------------------------------------------- */
 const SCREENS = {
   welcome: renderWelcome, networks: renderNetworks,
-  credentials: renderCredentials, brands: renderBrands, connect: renderConnect, done: renderDone,
+  credentials: renderCredentials, brands: renderBrands, connect: renderConnect,
+  done: renderDone, cockpit: renderCockpit,
 };
 function go(name) { state.screen = name; (SCREENS[name] || renderWelcome)(); }
 
@@ -742,6 +881,23 @@ function setupUpdateEvents() {
   });
 }
 
-/* boot: the app is free — start straight at the welcome screen */
-setupUpdateEvents();
-go('welcome');
+/* boot: returning users with a configured network land on the cockpit; everyone
+   else starts onboarding. The configured check is network-free on the main side
+   (it inspects credential presence), so an unconfigured app reaches the welcome
+   screen without any outbound call. */
+async function boot() {
+  setupUpdateEvents();
+  try {
+    const res = await api.cockpitSummary?.();
+    const summary = res && res.ok ? res.summary : null;
+    if (summary && summary.configured) {
+      state.cockpit = summary;
+      go('cockpit');
+      return;
+    }
+  } catch {
+    // fall through to onboarding
+  }
+  go('welcome');
+}
+boot();

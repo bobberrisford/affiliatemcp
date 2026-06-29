@@ -154,5 +154,25 @@ h2.scr { font-family: var(--font-display); font-weight: 800; text-transform: low
 .q { display: flex; align-items: center; gap: 12px; background: var(--ink); color: var(--paper); border-radius: var(--r-xs); padding: 13px 15px; margin-bottom: 10px; font-family: var(--font-mono); font-size: .88rem; }
 .q .p { color: var(--blue-bright); font-weight: 800; }
 
+/* ---- cockpit (daily dashboard) --------------------------------------- */
+.ck-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.ck-top .scr { margin-bottom: var(--s-4); }
+
+.ck-headline { border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: var(--s-5); background: var(--ink); color: var(--paper); box-shadow: var(--shadow-acid); margin-bottom: var(--s-5); }
+.ck-total { font-family: var(--font-display); font-weight: 800; line-height: 1; font-size: var(--t-h1); }
+.ck-sub { font-family: var(--font-mono); font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; color: var(--blue-bright); margin-top: 10px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+
+.ck-flags { display: flex; flex-direction: column; gap: 10px; }
+.ck-flag { display: flex; align-items: center; gap: 12px; border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: 12px 14px; }
+.ck-flag-body { flex: 1; min-width: 0; }
+.ck-flag-title { font-family: var(--font-mono); font-weight: 800; font-size: .9rem; }
+.ck-flag-detail { font-size: .82rem; color: var(--fg-muted); margin-top: 4px; }
+.ck-flag-act { flex: none; }
+
+.ck-divider { font-family: var(--font-mono); font-weight: 700; font-size: var(--t-micro); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-muted); margin: var(--s-6) 0 var(--s-3); }
+.ck-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-3); }
+.ck-action { width: 100%; }
+.ck-foot { margin-top: var(--s-6); padding-top: var(--s-5); border-top: var(--rule) solid var(--ink); display: flex; justify-content: flex-end; }
+
 .fade { animation: fade .18s steps(3) both; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }

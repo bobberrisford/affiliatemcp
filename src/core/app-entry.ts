@@ -16,5 +16,10 @@
 //   saveEnv, saveBrands, connectClaudeDesktop, detectClients, telemetry consent.
 export * from './facade.js';
 
-// Config symbols main.js may reference as `config.*`:
-export { CONFIG_DIR } from '../shared/config.js';
+// Daily cockpit summary (attention flags) for the desktop dashboard. Read-only,
+// model-free; the desktop `cockpit:summary` IPC handler calls this.
+export { computeCockpit } from './cockpit.js';
+
+// Config symbols main.js may reference as `config.*`. `loadConfig` populates
+// process.env from `~/.affiliate-mcp/.env` before a cockpit read runs.
+export { CONFIG_DIR, loadConfig } from '../shared/config.js';

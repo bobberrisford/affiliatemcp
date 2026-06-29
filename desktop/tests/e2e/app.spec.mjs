@@ -183,6 +183,31 @@ test('saveBrands rejects duplicate nicknames instead of silently overwriting', a
   expect(String(res.error)).toMatch(/duplicate brand nickname/i);
 });
 
+test('cockpit:summary returns a structured summary over IPC (unconfigured here)', async () => {
+  // The sandbox config dir has no credentials, so the real Awin adapter is
+  // registered but unconfigured. computeCockpit must report that cleanly — a
+  // structured summary with configured:false and a flags array — without a
+  // single outbound network call (the configured check is credential-presence).
+  const res = await page.evaluate(() => window.affiliate.cockpitSummary());
+  expect(res.ok).toBe(true);
+  expect(res.summary).toBeTruthy();
+  expect(res.summary.configured).toBe(false);
+  expect(Array.isArray(res.summary.flags)).toBe(true);
+  expect(res.summary.flags.length).toBeGreaterThan(0);
+});
+
+test('claude:openPrompt refuses empty and over-length prompts (no open side-effect)', async () => {
+  // We assert only the refusal paths, which return before any shell.openExternal
+  // — exactly as the openExternal test above avoids triggering a real open. The
+  // happy path would launch Claude (or a browser fallback), so it isn't driven
+  // here; the renderer builds the URL only in the main process regardless.
+  const empty = await page.evaluate(() => window.affiliate.openClaudePrompt('   '));
+  expect(empty.ok).toBe(false);
+
+  const tooLong = await page.evaluate(() => window.affiliate.openClaudePrompt('x'.repeat(20_000)));
+  expect(tooLong.ok).toBe(false);
+});
+
 test('UI renders real network tiles from IPC (welcome → picker)', async () => {
   // Drive the actual UI, not the mock: the picker must populate from the real
   // listNetworks IPC call.
