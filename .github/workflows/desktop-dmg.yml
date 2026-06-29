@@ -2,14 +2,19 @@ name: Desktop DMG
 
 # Builds the Electron desktop app into a downloadable macOS .dmg on a GitHub
 # macOS runner, so a maintainer can install and test it without a local Mac
-# toolchain. The artifact is UNSIGNED and NOT notarised (no Apple credentials in
-# CI), so on first launch macOS Gatekeeper will block it: right-click the app
-# and choose Open, or run `xattr -dr com.apple.quarantine <app>`.
+# toolchain.
+#
+# Signing + notarisation happen automatically WHEN the repo's Actions secrets are
+# set (CSC_LINK, CSC_KEY_PASSWORD, APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD,
+# APPLE_TEAM_ID — see DEPLOY.md). With them, the dmg is signed, notarised and
+# stapled and opens with a normal double-click. Without them, electron-builder
+# degrades to an UNSIGNED dmg (no failure); Gatekeeper then blocks it on first
+# launch (System Settings > Privacy & Security > Open Anyway, or
+# `xattr -dr com.apple.quarantine <app>`).
 #
 # Interface: trigger manually from the Actions tab (workflow_dispatch) and pick
 # the branch/tag to build via the `ref` input. The push trigger below bootstraps
-# the first build from this branch and can be dropped once the workflow is on
-# main and dispatch is used.
+# the first build from this branch.
 
 on:
   workflow_dispatch:
@@ -52,16 +57,50 @@ jobs:
           npm ci
           npm run bundle
 
-      - name: Build unsigned, universal macOS dmg
+      - name: Detect signing credentials
+        id: signing
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+        run: |
+          if [ -n "$APPLE_ID" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::APPLE_ID secret present — building a signed, notarised dmg."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No APPLE_ID secret set — building an UNSIGNED dmg. Gatekeeper will block it on first launch."
+          fi
+
+      - name: Build the macOS dmg (signed + notarised when secrets are present)
         working-directory: desktop
         env:
-          # No signing identity or notarisation creds in CI: build unsigned so
-          # electron-builder does not try (and fail) to sign or notarise.
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-        run: npx electron-builder --mac dmg --universal --publish never -c.mac.notarize=false
+          # With these repo secrets set, electron-builder signs (CSC_*) and runs
+          # its built-in notarisation (mac.notarize: true reads APPLE_*). With them
+          # empty it degrades to an unsigned, un-notarised dmg — no failure.
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: npx electron-builder --mac dmg --universal --publish never
+
+      - name: Notarise and staple the dmg itself
+        # electron-builder notarises/staples the .app, not the .dmg container
+        # (see DEPLOY.md). Only runs when signing creds are present.
+        if: steps.signing.outputs.enabled == 'true'
+        working-directory: desktop
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          for dmg in dist/*.dmg; do
+            xcrun notarytool submit "$dmg" --apple-id "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+            xcrun stapler staple "$dmg"
+            xcrun stapler validate "$dmg"
+          done
 
       - name: Upload the dmg
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: affiliate-mcp-cockpit-dmg
           path: desktop/dist/*.dmg
