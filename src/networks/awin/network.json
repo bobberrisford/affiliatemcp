@@ -7,11 +7,12 @@
   "setup_time_estimate_minutes": 5,
   "setup_requires_approval": false,
   "known_limitations": [
-    "Click-level data is not exposed via the public publisher API; listClicks is unsupported."
+    "Click-level data is not exposed via the public publisher API; listClicks is unsupported.",
+    "Earnings and transaction operations were verified against an account with no commission activity in the test window: request, response, and mapping paths are confirmed, but status mapping for live (pending/approved/reversed/paid) commissions is not yet evidenced against a high-activity account."
   ],
-  "claim_status": "partial",
+  "claim_status": "production",
   "adapter_version": "0.1.0",
-  "last_verified": "2026-05-21",
+  "last_verified": "2026-06-29",
   "supports_brand_ops": false,
   "side": "publisher",
   "credential_scope": "single-brand",

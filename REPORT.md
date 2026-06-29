@@ -47,7 +47,7 @@ _a placeholder at the time of this report and is fleshed out in a later chunk._
 | Afilio | 10 | no | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-04 |
 | Amazon Creators | 10 | yes (~1 days) | 6 / 7 | 6 | experimental | 0.1.0 | 2026-06-05 |
 | AvantLink | 10 | no | 6 / 7 | 3 | experimental | 0.1.0 | 2026-06-05 |
-| Awin | 5 | no | 6 / 7 | 1 | partial | 0.1.0 | 2026-05-21 |
+| Awin | 5 | no | 6 / 7 | 2 | production | 0.1.0 | 2026-06-29 |
 | Awin (advertiser) | 6 | no | 7 / 7 | 6 | experimental | 0.1.0 | 2026-05-23 |
 | Belboon | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
 | CAKE | 10 | no | 6 / 7 | 5 | experimental | 0.1.0 | 2026-06-05 |
@@ -755,9 +755,9 @@ _No findings document was supplied at `docs/findings/avantlink.md`._
 - **Environment variables**: `AWIN_API_TOKEN`, `AWIN_PUBLISHER_ID`
 - **Setup time estimate**: 5 minutes
 - **Approval required**: no
-- **Claim status**: partial
+- **Claim status**: production
 - **Adapter version**: 0.1.0
-- **Last verified**: 2026-05-21
+- **Last verified**: 2026-06-29
 - **Documentation**: https://help.awin.com/apidocs/introduction-1
 
 ### Operations
@@ -775,6 +775,7 @@ _No findings document was supplied at `docs/findings/avantlink.md`._
 ### Known limitations
 
 - Click-level data is not exposed via the public publisher API; listClicks is unsupported.
+- Earnings and transaction operations were verified against an account with no commission activity in the test window: request, response, and mapping paths are confirmed, but status mapping for live (pending/approved/reversed/paid) commissions is not yet evidenced against a high-activity account.
 
 ### Findings
 
@@ -5950,4 +5951,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-29 08:37 UTC._
+_Last regenerated 2026-06-29 13:03 UTC._

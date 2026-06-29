@@ -108,13 +108,18 @@ const META: NetworkMeta = {
   authModel: 'bearer',
   docsUrl: 'https://help.awin.com/apidocs/introduction-1',
   adapterVersion: '0.1.0',
-  lastVerified: '2026-05-21',
-  // `partial` rather than `production`: listClicks is structurally unsupported
-  // by Awin and the adapter has not been validated against a real account at
-  // commit time. Bump to `production` after Chunk 8 acceptance testing.
-  claimStatus: 'partial',
+  lastVerified: '2026-06-29',
+  // `production` per the promotion gate (docs/decisions/2026-06-15-adapter-
+  // promotion-gates.md): every supported operation was verified live against a
+  // real account on 2026-06-29 (verifyAuth, listProgrammes, getProgramme,
+  // listTransactions, getEarningsSummary, generateTrackingLink). listClicks
+  // stays honestly declared unsupported, which does not block production. See
+  // the disclosure below: the test account had no commission activity, so
+  // live transaction status mapping is not yet evidenced.
+  claimStatus: 'production',
   knownLimitations: [
     'Click-level data is not exposed via the public Awin publisher API; listClicks is unsupported.',
+    'Earnings and transaction operations were verified against an account with no commission activity in the test window: request, response, and mapping paths are confirmed, but status mapping for live (pending/approved/reversed/paid) commissions is not yet evidenced against a high-activity account.',
   ],
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 5,
