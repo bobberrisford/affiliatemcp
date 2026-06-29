@@ -198,6 +198,9 @@ interface AwinProgrammeRaw {
   sectors?: Array<{ name?: string }>;
   validDomains?: string[];
   relationship?: string; // joined | notjoined | pending — from query
+  // /programmedetails (single-fetch) does not echo `status` or `relationship`;
+  // it carries the publisher relationship as `membershipStatus` (e.g. "Joined").
+  membershipStatus?: string;
 }
 
 interface AwinTransactionRaw {
@@ -273,12 +276,19 @@ function mapTransactionStatus(raw: AwinTransactionRaw): TransactionStatus {
  *   paused / suspended     → 'suspended'
  *   anything else          → 'unknown'
  *
+ * Source fields differ by endpoint: programme listings carry `status` (or the
+ * queried `relationship`); the single `/programmedetails` fetch carries neither
+ * and instead reports the publisher relationship as `membershipStatus`. We read
+ * all three so a single-fetched joined programme maps to 'joined' rather than
+ * 'unknown'. (The list path overrides status from the queried relationship, so
+ * this fallback only matters to getProgramme.)
+ *
  * Why we don't try to be exhaustive: Awin adds new states from time to time
  * (e.g. 'inactive' appeared around 2023). 'unknown' keeps us honest rather
  * than miscategorising.
  */
 function mapProgrammeStatus(raw: AwinProgrammeRaw): ProgrammeStatus {
-  const s = (raw.status ?? raw.relationship ?? '').toLowerCase();
+  const s = (raw.status ?? raw.relationship ?? raw.membershipStatus ?? '').toLowerCase();
   if (s === 'joined' || s === 'active') return 'joined';
   if (s === 'pending') return 'pending';
   if (s === 'declined' || s === 'refused' || s === 'rejected') return 'declined';
