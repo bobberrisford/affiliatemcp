@@ -172,7 +172,20 @@ h2.scr { font-family: var(--font-display); font-weight: 800; text-transform: low
 .ck-divider { font-family: var(--font-mono); font-weight: 700; font-size: var(--t-micro); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-muted); margin: var(--s-6) 0 var(--s-3); }
 .ck-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-3); }
 .ck-action { width: 100%; }
-.ck-foot { margin-top: var(--s-6); padding-top: var(--s-5); border-top: var(--rule) solid var(--ink); display: flex; justify-content: flex-end; }
+.ck-foot { margin-top: var(--s-6); padding-top: var(--s-5); border-top: var(--rule) solid var(--ink); display: flex; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+
+/* ---- data locker (read-only table) ----------------------------------- */
+/* Layout only; chips, buttons, status dots come from the design system. The
+   table is plain rows — the same columns a CSV export would carry. */
+.lk-nets { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-4); }
+.lk-range { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-5); }
+.lk-range label { font-family: var(--font-mono); font-weight: 700; font-size: .76rem; letter-spacing: .04em; text-transform: uppercase; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 6px; }
+.lk-range input { font-family: var(--font-mono); font-size: .82rem; padding: 8px 10px; border: var(--rule) solid var(--ink); border-radius: 3px; outline: none; color: var(--ink); background: var(--paper); }
+.lk-count { font-family: var(--font-mono); font-weight: 700; font-size: var(--t-micro); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-muted); margin-bottom: var(--s-3); }
+.lk-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: .82rem; }
+.lk-table th, .lk-table td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+.lk-table th { font-weight: 800; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-muted); border-bottom: var(--rule) solid var(--ink); }
+.lk-table td.num, .lk-table th.num { text-align: right; white-space: nowrap; }
 
 .fade { animation: fade .18s steps(3) both; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }

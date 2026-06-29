@@ -94,6 +94,25 @@ function mockApi() {
       },
     }, 600),
     openClaudePrompt: (_text) => wait({ ok: true, target: 'desktop' }, 300),
+    // Data-locker preview: one configured publisher network, a small earnings
+    // headline, and a couple of transaction rows so the table renders in a plain
+    // browser. The real data comes from the network reads via main.
+    lockerNetworks: () => wait([{ slug: 'awin', name: 'Awin', side: 'publisher', setupMinutes: 5, approval: false, multiBrand: false }], 300),
+    lockerEarnings: (_slug, _query, _brand) => wait({
+      ok: true,
+      data: {
+        network: 'awin', totalEarnings: 2840.15, currency: 'GBP',
+        byProgramme: [], byStatus: { pending: 420.0, approved: 2420.15, reversed: 0, paid: 0, other: 0, currency: 'GBP' },
+        periodFrom: '2026-05-30', periodTo: '2026-06-29',
+      },
+    }, 500),
+    lockerTransactions: (_slug, _query, _brand) => wait({
+      ok: true,
+      data: [
+        { id: 't1', network: 'awin', programmeId: 'p1', programmeName: 'Acme Outdoors', status: 'approved', amount: 120.0, currency: 'GBP', commission: 9.6, dateConverted: '2026-06-18', ageDays: 11, rawNetworkData: {} },
+        { id: 't2', network: 'awin', programmeId: 'p2', programmeName: 'Trailhead', status: 'pending', amount: 64.5, currency: 'GBP', commission: 5.16, dateConverted: '2026-06-22', ageDays: 7, rawNetworkData: {} },
+      ],
+    }, 500),
     connectClaude: () => wait({ ok: true, action: 'added', backupPath: '…/claude_desktop_config.json.bak' }, 500),
     restartClaude: () => wait({ ok: true }),
     openExternal: (url) => { window.open(url, '_blank'); return wait({ ok: true }); },
@@ -770,7 +789,10 @@ async function renderCockpit() {
     <div class="ck-flags">${flagRows || '<div class="help">nothing needs your attention right now.</div>'}</div>
     <div class="ck-divider">do something about it · opens in claude</div>
     <div class="ck-actions">${actionGrid}</div>
-    <div class="ck-foot"><button class="btn btn-ghost" id="ck-add">add another network</button></div>
+    <div class="ck-foot">
+      <button class="btn btn-primary" id="ck-data">browse your data ▸</button>
+      <button class="btn btn-ghost" id="ck-add">add another network</button>
+    </div>
   </div></div>`;
 
   // Deep-link buttons: hand the prompt to main, which opens Claude pre-filled.
@@ -788,14 +810,158 @@ async function renderCockpit() {
     }
   }));
   document.getElementById('ck-refresh').onclick = () => { state.cockpit = null; renderCockpit(); };
+  document.getElementById('ck-data').onclick = () => go('locker');
   document.getElementById('ck-add').onclick = () => { state.selected = []; state.credIndex = 0; go('networks'); };
+}
+
+/* ---- data locker (read-only: pull + view) ----------------------------- */
+/* Pulls performance data through the facade and renders it as plain rows — the
+   same columns a CSV would carry. The app surfaces the data; the analysis stays
+   in Claude (the cockpit's deep-link buttons). No charts, no scoring here —
+   that's the anti-dashboard line from
+   docs/decisions/2026-06-29-desktop-data-export.md. Publisher-side only for now;
+   advertiser pulls need brand selection (a follow-up; the facade supports it).
+   Export (CSV/JSON) lands in the next slice. */
+
+const ymd = (d) => d.toISOString().slice(0, 10);
+
+const lockerState = {
+  nets: null, // configured publisher networks (lazy-loaded once)
+  slug: null, // selected network
+  from: '',
+  to: '',
+  loading: false,
+  result: null, // { earnings, txns } on a successful pull
+  error: null, // honest failure line (envelope or string)
+};
+
+// A failure may be a NetworkErrorEnvelope (from the facade) or a plain string
+// (from the IPC wrapper). Render the most useful honest line either way; never
+// swallow it into an empty table.
+function errText(error) {
+  if (!error) return 'could not pull your data.';
+  if (typeof error === 'string') return error;
+  const where = error.network && error.operation ? `${esc(error.network)} ${esc(error.operation)}: ` : '';
+  return `${where}${esc(error.message || 'request failed')}`;
+}
+
+async function renderLocker() {
+  if (!lockerState.nets) {
+    app.innerHTML = wrap('<h2 class="scr">your data</h2><p class="scr-lead">finding your connected networks…</p>', true);
+    let nets;
+    try { nets = await api.lockerNetworks?.(); } catch { nets = null; }
+    lockerState.nets = (Array.isArray(nets) ? nets : []).filter((n) => n.side === 'publisher');
+    if (!lockerState.slug && lockerState.nets.length) lockerState.slug = lockerState.nets[0].slug;
+    if (!lockerState.to) {
+      const now = new Date();
+      lockerState.to = ymd(now);
+      lockerState.from = ymd(new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000));
+    }
+  }
+
+  if (!lockerState.nets.length) {
+    app.innerHTML = `<div class="screen fade"><div class="scroll">
+      <div class="ck-top"><h2 class="scr">your data</h2><button class="btn btn-ghost" id="lk-back">back</button></div>
+      <div class="help" style="border-left-color:var(--magenta)">no connected networks yet. add one in setup, then pull your data here.</div>
+      <div class="actions"><button class="btn btn-primary" id="lk-setup">connect a network ▸</button></div>
+    </div></div>`;
+    document.getElementById('lk-back').onclick = () => go('cockpit');
+    document.getElementById('lk-setup').onclick = () => { state.selected = []; state.credIndex = 0; go('networks'); };
+    return;
+  }
+
+  const chips = lockerState.nets.map((n) =>
+    `<button class="btn ${n.slug === lockerState.slug ? 'btn-primary' : 'btn-ghost'} lk-net" data-slug="${esc(n.slug)}">${esc(n.name)}</button>`,
+  ).join('');
+
+  let headline = '';
+  if (lockerState.result && lockerState.result.earnings) {
+    const e = lockerState.result.earnings;
+    headline = `<div class="ck-headline">
+      <div class="ck-total">${esc(money(e.totalEarnings, e.currency))}</div>
+      <div class="ck-sub">${esc(lockerState.from)} → ${esc(lockerState.to)}
+        <span class="status"><span class="dot dot-pending"></span> ${esc(money(e.byStatus.pending, e.byStatus.currency))} pending</span>
+        <span class="status"><span class="dot dot-pos"></span> ${esc(money(e.byStatus.approved, e.byStatus.currency))} approved</span>
+      </div></div>`;
+  }
+
+  let tableBlock;
+  if (lockerState.error) {
+    tableBlock = `<div class="help" style="border-left-color:var(--magenta)">${errText(lockerState.error)}</div>`;
+  } else if (lockerState.result && lockerState.result.txns) {
+    const rows = lockerState.result.txns;
+    if (!rows.length) {
+      tableBlock = '<div class="help">no transactions in this window.</div>';
+    } else {
+      const body = rows.map((t) => {
+        const dot = t.status === 'reversed' ? 'dot-neg' : t.status === 'pending' ? 'dot-pending' : 'dot-pos';
+        return `<tr>
+          <td>${esc((t.dateConverted || '').slice(0, 10))}</td>
+          <td>${esc(t.programmeName || t.programmeId || '')}</td>
+          <td><span class="status"><span class="dot ${dot}"></span> ${esc(t.status)}</span></td>
+          <td class="num">${esc(money(t.amount, t.currency))}</td>
+          <td class="num">${esc(money(t.commission, t.currency))}</td>
+        </tr>`;
+      }).join('');
+      tableBlock = `<div class="lk-count">${rows.length} transaction${rows.length === 1 ? '' : 's'}</div>
+        <table class="lk-table"><thead><tr><th>date</th><th>programme</th><th>status</th><th class="num">amount</th><th class="num">commission</th></tr></thead><tbody>${body}</tbody></table>`;
+    }
+  } else {
+    tableBlock = '<div class="help">pick a network and a date range, then pull your data. it stays on this machine.</div>';
+  }
+
+  app.innerHTML = `<div class="screen fade"><div class="scroll">
+    <div class="ck-top"><h2 class="scr">your data</h2><button class="btn btn-ghost" id="lk-back">back</button></div>
+    <p class="scr-lead">pull your performance data and view it here. the app shows and exports it — ask Claude to interpret it.</p>
+    <div class="lk-nets">${chips}</div>
+    <div class="lk-range">
+      <label>from <input type="date" id="lk-from" value="${esc(lockerState.from)}" /></label>
+      <label>to <input type="date" id="lk-to" value="${esc(lockerState.to)}" /></label>
+      <button class="btn btn-primary" id="lk-pull"${lockerState.loading ? ' disabled' : ''}>${lockerState.loading ? 'pulling…' : 'pull ▸'}</button>
+    </div>
+    ${headline}
+    ${tableBlock}
+  </div></div>`;
+
+  document.getElementById('lk-back').onclick = () => go('cockpit');
+  app.querySelectorAll('.lk-net').forEach((b) => { b.onclick = () => {
+    lockerState.slug = b.getAttribute('data-slug');
+    lockerState.result = null; lockerState.error = null;
+    renderLocker();
+  }; });
+  const fromEl = document.getElementById('lk-from');
+  const toEl = document.getElementById('lk-to');
+  fromEl.onchange = () => { lockerState.from = fromEl.value; };
+  toEl.onchange = () => { lockerState.to = toEl.value; };
+  document.getElementById('lk-pull').onclick = async () => {
+    lockerState.loading = true; lockerState.error = null; renderLocker();
+    const query = { from: lockerState.from, to: lockerState.to };
+    let earnings = null; let txns = []; let error = null;
+    try {
+      const [eRes, tRes] = await Promise.all([
+        api.lockerEarnings?.(lockerState.slug, query),
+        api.lockerTransactions?.(lockerState.slug, query),
+      ]);
+      // Surface the first real failure honestly; transactions are the table, so
+      // prefer their error if both fail.
+      if (tRes && tRes.ok === false) error = tRes.error;
+      else if (eRes && eRes.ok === false) error = eRes.error;
+      else { earnings = eRes && eRes.ok ? eRes.data : null; txns = tRes && tRes.ok ? tRes.data : []; }
+    } catch (e) {
+      error = String(e);
+    }
+    lockerState.loading = false;
+    lockerState.result = error ? null : { earnings, txns };
+    lockerState.error = error;
+    renderLocker();
+  };
 }
 
 /* ---- router ----------------------------------------------------------- */
 const SCREENS = {
   welcome: renderWelcome, networks: renderNetworks,
   credentials: renderCredentials, brands: renderBrands, connect: renderConnect,
-  done: renderDone, cockpit: renderCockpit,
+  done: renderDone, cockpit: renderCockpit, locker: renderLocker,
 };
 function go(name) { state.screen = name; (SCREENS[name] || renderWelcome)(); }
 

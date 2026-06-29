@@ -401,6 +401,34 @@ handle('cockpit:summary', async () => {
   return { ok: true, summary };
 });
 
+// ---- Data locker (read-only: pull, view; export comes later) ---------------
+
+// The locker pulls performance data through the SAME facade reads Claude's MCP
+// server uses, so the desktop and Claude share one cache store and one error
+// contract. Those reads already return a structured DataResult
+// ({ ok:true, data } | { ok:false, error: NetworkErrorEnvelope }); we return it
+// as-is. The app surfaces and exports this data — Claude interprets it.
+
+handle('locker:networks', async () => {
+  const { facade, config } = loadCore();
+  config.loadConfig();
+  return facade.listConfiguredNetworks();
+});
+
+handle('locker:earnings', async (_e, payload) => {
+  const { facade, config } = loadCore();
+  config.loadConfig();
+  const { slug, query, brand } = payload || {};
+  return facade.getEarnings(slug, query || {}, brand);
+});
+
+handle('locker:transactions', async (_e, payload) => {
+  const { facade, config } = loadCore();
+  config.loadConfig();
+  const { slug, query, brand } = payload || {};
+  return facade.listTransactions(slug, query || {}, brand);
+});
+
 // ---- Client detection ------------------------------------------------------
 
 handle('clients:detect', async () => {
