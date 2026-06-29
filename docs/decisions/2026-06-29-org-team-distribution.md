@@ -82,7 +82,9 @@ record.
   inside the org's own infrastructure (though not on the user's device) and
   could then list in the Directory. It is a genuinely new product surface
   (authentication, consent, who hosts, auditability) and needs its own decision
-  record before any work. Out of scope here.
+  record before any work. Out of scope here. See
+  `docs/product/hosted-version-scoping.md` for the discovery that explores this
+  hosted/remote direction and what it would take.
 - **A setup skill as the deployment mechanism.** Rejected: a skill is
   instructions Claude follows, not an installer. On Claude Desktop and the web
   it cannot register an MCP server at all; on Claude Code it would only re-run
