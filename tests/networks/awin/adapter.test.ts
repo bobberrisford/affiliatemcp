@@ -124,6 +124,66 @@ describe('Awin transformers (status normalisation, raw preservation)', () => {
 });
 
 // ---------------------------------------------------------------------------
+// listProgrammes: relationship → canonical status
+//
+// Regression guard for the discovery bug fixed 2026-06-29: real Awin rows carry
+// the ADVERTISER programme status ("Active"), never the publisher relationship.
+// The canonical status must come from the relationship we queried, otherwise
+// every not-joined/pending row maps to 'joined' and the client-side status
+// filter deletes the entire joinable catalogue (status:'available' → []).
+// ---------------------------------------------------------------------------
+
+describe('Awin.listProgrammes relationship → status', () => {
+  // Real-shaped Awin rows: status is "Active" (advertiser status), no per-row
+  // relationship field — exactly what the live API returns.
+  const awinRows = [
+    { id: 111, name: 'Joinable One', status: 'Active', currencyCode: 'GBP' },
+    { id: 222, name: 'Joinable Two', status: 'Active', currencyCode: 'USD' },
+  ];
+
+  it('returns joinable programmes stamped available (not []) for status:available', async () => {
+    const spy = mockFetchQueue([fakeResponse(awinRows)]);
+    const programmes = await awinAdapter.listProgrammes({ status: ['available'] });
+    expect(programmes.length).toBe(2);
+    expect(programmes.every((p) => p.status === 'available')).toBe(true);
+    // The server-side filter must use relationship=notjoined.
+    expect(String(spy.mock.calls[0]?.[0])).toContain('relationship=notjoined');
+  });
+
+  it('stamps joined for the default (no status) query', async () => {
+    const spy = mockFetchQueue([fakeResponse(awinRows)]);
+    const programmes = await awinAdapter.listProgrammes();
+    expect(programmes.length).toBe(2);
+    expect(programmes.every((p) => p.status === 'joined')).toBe(true);
+    expect(String(spy.mock.calls[0]?.[0])).toContain('relationship=joined');
+  });
+
+  it('stamps pending for status:pending', async () => {
+    mockFetchQueue([fakeResponse(awinRows)]);
+    const programmes = await awinAdapter.listProgrammes({ status: ['pending'] });
+    expect(programmes.length).toBe(2);
+    expect(programmes.every((p) => p.status === 'pending')).toBe(true);
+  });
+
+  it('maps a queried relationship to the canonical status', () => {
+    expect(_internals.relationshipToStatus('notjoined')).toBe('available');
+    expect(_internals.relationshipToStatus('joined')).toBe('joined');
+    expect(_internals.relationshipToStatus('pending')).toBe('pending');
+    expect(_internals.relationshipToStatus('suspended')).toBe('suspended');
+    expect(_internals.relationshipToStatus('rejected')).toBe('declined');
+    expect(_internals.relationshipToStatus('anything-else')).toBe('joined');
+  });
+
+  it('picks the Awin relationship param from a canonical status set', () => {
+    expect(_internals.pickAwinRelationship(['available'])).toBe('notjoined');
+    expect(_internals.pickAwinRelationship(['pending'])).toBe('pending');
+    expect(_internals.pickAwinRelationship(['suspended'])).toBe('suspended');
+    expect(_internals.pickAwinRelationship(['declined'])).toBe('rejected');
+    expect(_internals.pickAwinRelationship()).toBe('joined');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Cross-network normalisation fields (rollout: Awin reference)
 //
 // Five additive OPTIONAL fields land here first:
