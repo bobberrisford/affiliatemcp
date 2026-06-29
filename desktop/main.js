@@ -360,6 +360,47 @@ handle('shell:openExternal', async (_e, url) => {
   return { ok: true };
 });
 
+// ---- Deep-link into Claude with a pre-written prompt -----------------------
+
+// `claude://claude.ai/new?q=…` opens Claude Desktop with the prompt pre-filled
+// (the user reviews and sends it — it is never auto-submitted). This is a
+// deliberate, narrow exception to the https-only `shell:openExternal` handler
+// above: the MAIN process builds the whole URL from a fixed template and only
+// the prompt TEXT crosses from the renderer, so no caller-supplied scheme or
+// host is ever opened. Claude truncates `q` near 14k chars, so we refuse longer.
+const CLAUDE_PROMPT_MAX = 14000;
+handle('claude:openPrompt', async (_e, payload) => {
+  const text = payload && typeof payload.text === 'string' ? payload.text.trim() : '';
+  if (!text) {
+    return { ok: false, error: 'No prompt text to open.' };
+  }
+  if (text.length > CLAUDE_PROMPT_MAX) {
+    return { ok: false, error: 'That prompt is too long to open in Claude.' };
+  }
+  const q = encodeURIComponent(text);
+  try {
+    await shell.openExternal(`claude://claude.ai/new?q=${q}`);
+    return { ok: true, target: 'desktop' };
+  } catch {
+    // Claude Desktop isn't installed or the scheme isn't registered — fall back
+    // to the web app, which accepts the same `?q=` pre-fill.
+    await shell.openExternal(`https://claude.ai/new?q=${q}`);
+    return { ok: true, target: 'web' };
+  }
+});
+
+// ---- Cockpit (daily attention flags) ---------------------------------------
+
+// Compute the dashboard summary by calling the configured network's read
+// operations directly through the bundled core. No model call, no tokens. We
+// load credentials from the config dir first so the reads can authenticate.
+handle('cockpit:summary', async () => {
+  const { facade, config } = loadCore();
+  config.loadConfig();
+  const summary = await facade.computeCockpit();
+  return { ok: true, summary };
+});
+
 // ---- Client detection ------------------------------------------------------
 
 handle('clients:detect', async () => {
