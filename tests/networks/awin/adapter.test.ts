@@ -165,6 +165,14 @@ describe('Awin.listProgrammes relationship → status', () => {
     expect(programmes.every((p) => p.status === 'pending')).toBe(true);
   });
 
+  it('fetches only the highest-precedence relationship for a mixed-status query', async () => {
+    // Documents the known limitation: one relationship is fetched per request.
+    const spy = mockFetchQueue([fakeResponse(awinRows)]);
+    const programmes = await awinAdapter.listProgrammes({ status: ['available', 'joined'] });
+    expect(String(spy.mock.calls[0]?.[0])).toContain('relationship=joined');
+    expect(programmes.every((p) => p.status === 'joined')).toBe(true);
+  });
+
   it('maps a queried relationship to the canonical status', () => {
     expect(_internals.relationshipToStatus('notjoined')).toBe('available');
     expect(_internals.relationshipToStatus('joined')).toBe('joined');

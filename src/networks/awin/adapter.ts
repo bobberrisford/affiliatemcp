@@ -1178,10 +1178,13 @@ function toTransactionStatusList(
  * Map our canonical ProgrammeStatus to Awin's `relationship` query param.
  *
  * Awin's /programmes endpoint filters by `relationship`
- * (joined | notjoined | pending | suspended | rejected) server-side. We pick a
- * single relationship from the requested status set by precedence; the caller's
- * full status set is then applied client-side in listProgrammes. We default to
- * 'joined' because that's by far the most common user question.
+ * (joined | notjoined | pending | suspended | rejected) server-side, one
+ * relationship per request. We pick a SINGLE relationship from the requested
+ * status set by precedence and fetch only that one, so a request mixing
+ * statuses returns only the highest-precedence relationship's programmes (the
+ * others are not fetched; the client-side filter in listProgrammes can only
+ * narrow that single set, never broaden it). We default to 'joined' because
+ * that's by far the most common user question.
  */
 function pickAwinRelationship(statuses?: ProgrammeStatus[]): string {
   if (!statuses || statuses.length === 0) return 'joined';
