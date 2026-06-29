@@ -1,6 +1,6 @@
 # affiliate-mcp Report — the state of affiliate-network APIs in June 2026
 
-_Date-stamped: 2026-06-24._
+_Date-stamped: 2026-06-29._
 
 This report describes the current affiliate-mcp adapter surface as observed
 during construction and verification of the local MCP server. Each adapter
@@ -5950,4 +5950,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-24 15:57 UTC._
+_Last regenerated 2026-06-29 08:37 UTC._
