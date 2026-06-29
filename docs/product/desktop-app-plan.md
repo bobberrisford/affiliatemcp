@@ -195,7 +195,10 @@ it); the app only configures it.
 Everything here runs locally and reinforces the open core:
 - A "your networks" health view (status, last-verified, unpaid >90 days
   flags) — the anti-dashboard, rendered.
-- One-click local report export (CSV / the existing report).
+- A read-only data locker: pull performance data, view it as plain rows,
+  and export it locally (CSV / JSON). The app surfaces and exports the
+  data; Claude interprets it. Scope and the facade contract are settled in
+  `docs/decisions/2026-06-29-desktop-data-export.md`.
 - Link-audit surface for the audit skill.
 - Scheduled runs **while the app is open** (no hosting — honest about
   the laptop constraint).
