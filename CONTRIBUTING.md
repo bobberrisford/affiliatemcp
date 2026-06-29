@@ -196,7 +196,14 @@ Either way, the work per side is:
    `tests/networks/<slug>/`. Strip credentials and account IDs from
    the fixtures before committing — scrub then commit, not the other
    way round. The test suite never makes a live call; everything runs
-   against fixtures.
+   against fixtures. A fixture must mirror the **verbatim live response
+   shape**, including the fields the live API omits — do not hand-write
+   idealised values. A real-shaped fixture is what catches an adapter
+   that keys on a field the API does not actually return. (A live Awin
+   `notjoined` programmes query, for example, returns the advertiser's
+   `status: "Active"` and no per-row relationship field; a fixture that
+   invented relationship-style statuses hid a publisher-discovery bug
+   until it surfaced against a real account.)
 5. **Wire the adapter** into `src/networks/index.ts` (one import line).
 6. **For advertiser-side: implement `listBrands()`** if
    `credential_scope: 'multi-brand'`. The setup wizard's
