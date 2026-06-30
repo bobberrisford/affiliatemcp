@@ -108,6 +108,18 @@ describe('Awin transformers (status normalisation, raw preservation)', () => {
     expect(_internals.mapProgrammeStatus({ status: 'never-seen-before' })).toBe('unknown');
   });
 
+  it('derives status from membershipStatus when /programmedetails omits status', () => {
+    // The single-fetch (getProgramme) response carries neither `status` nor the
+    // queried `relationship`; only `membershipStatus`. Without this fallback a
+    // joined programme fetched by id mapped to 'unknown'.
+    expect(_internals.mapProgrammeStatus({ membershipStatus: 'Joined' })).toBe('joined');
+    expect(_internals.toProgramme({ id: 307, membershipStatus: 'Joined' }).status).toBe('joined');
+    // Explicit `status`/`relationship` still take precedence over membershipStatus.
+    expect(
+      _internals.mapProgrammeStatus({ status: 'pending', membershipStatus: 'Joined' }),
+    ).toBe('pending');
+  });
+
   it('computes ageDays from validationDate (preferred) or transactionDate', () => {
     const now = new Date('2026-05-21T00:00:00Z');
     const age1 = _internals.computeAgeDays(
