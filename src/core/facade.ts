@@ -50,7 +50,7 @@ import type {
 } from '../shared/types.js';
 import { BrandNotRegistered, buildErrorEnvelope, toErrorEnvelope } from '../shared/errors.js';
 import { cacheKey, credentialHashFor, pickTtl, withCache } from '../shared/cache.js';
-import { loadConfig } from '../shared/config.js';
+import { getCredential, loadConfig } from '../shared/config.js';
 import { CREDENTIAL_HELP } from './credential-help.js';
 import {
   recordTelemetry,
@@ -129,6 +129,26 @@ export function listNetworks(): NetworkSummary[] {
       multiBrand: a.meta.credentialScope === 'multi-brand',
     }))
     .sort((x, y) => x.name.localeCompare(y.name));
+}
+
+/**
+ * The registered networks whose credentials are already present, i.e. the ones
+ * a data read can actually authenticate against. Uses the same cheap,
+ * network-free check as the cockpit (every setup-step field has a value) and
+ * loads the stored `.env` first so it reflects a completed setup. Powers the
+ * data-locker picker, so the GUI offers only networks the user can pull from
+ * rather than the full registry.
+ */
+export function listConfiguredNetworks(): NetworkSummary[] {
+  loadConfig();
+  return listNetworks().filter((n) => {
+    const adapter = getAdapter(n.slug);
+    if (!adapter) return false;
+    return adapter.setupSteps().every((step) => {
+      const value = getCredential(step.field);
+      return value !== undefined && value !== '';
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------

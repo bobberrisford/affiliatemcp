@@ -23,6 +23,7 @@ import {
   getEarnings,
   getProgrammePerformance,
   listClicks,
+  listConfiguredNetworks,
   listNetworks,
   listTransactions,
   saveBrands,
@@ -597,5 +598,24 @@ describe('performance data reads', () => {
     const res = await getProgrammePerformance('pub-d', {});
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error.type).toBe('not_implemented');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// listConfiguredNetworks (the data-locker picker source)
+// ---------------------------------------------------------------------------
+
+describe('listConfiguredNetworks', () => {
+  it('lists only networks whose setup-step credentials are all present', () => {
+    registerAdapter(
+      makeFakeAdapter({ slug: 'has-creds', name: 'Has', steps: [step({ field: 'HAS_CREDS_TOKEN' })] }),
+    );
+    registerAdapter(
+      makeFakeAdapter({ slug: 'no-creds', name: 'No', steps: [step({ field: 'NO_CREDS_TOKEN' })] }),
+    );
+    process.env['HAS_CREDS_TOKEN'] = 'present';
+    const slugs = listConfiguredNetworks().map((n) => n.slug);
+    expect(slugs).toContain('has-creds');
+    expect(slugs).not.toContain('no-creds');
   });
 });

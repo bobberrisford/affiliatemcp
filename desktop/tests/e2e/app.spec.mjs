@@ -196,6 +196,25 @@ test('cockpit:summary returns a structured summary over IPC (unconfigured here)'
   expect(res.summary.flags.length).toBeGreaterThan(0);
 });
 
+test('locker:networks returns an array (empty in the unconfigured sandbox)', async () => {
+  // The data-locker picker lists only networks with credentials present. The
+  // sandbox config dir has none, so this is an empty array — never a thrown
+  // error turned into { ok:false } (the renderer .filter()s it directly).
+  const nets = await page.evaluate(() => window.affiliate.lockerNetworks());
+  expect(Array.isArray(nets)).toBe(true);
+  expect(nets.length).toBe(0);
+});
+
+test('locker:transactions surfaces a structured error for an unconfigured network', async () => {
+  // No credentials in the sandbox, so the real Awin read can't authenticate.
+  // The facade returns a structured DataResult with ok:false and a
+  // NetworkErrorEnvelope — never faked into success, never an empty table.
+  const res = await page.evaluate(() => window.affiliate.lockerTransactions('awin', { from: '2026-01-01', to: '2026-01-31' }));
+  expect(res.ok).toBe(false);
+  expect(res.error).toBeTruthy();
+  expect(typeof res.error.type).toBe('string');
+});
+
 test('claude:openPrompt refuses empty and over-length prompts (no open side-effect)', async () => {
   // We assert only the refusal paths, which return before any shell.openExternal
   // — exactly as the openExternal test above avoids triggering a real open. The
