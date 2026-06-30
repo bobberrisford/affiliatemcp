@@ -1,14 +1,19 @@
 /**
  * Brand Data Layer — the snapshot orchestrator.
  *
- * Pulls every network a brand is bound to, normalises and buckets the rows into
- * the four windows, computes per-currency totals and a per-programme breakdown,
- * and assembles a count-honest `BrandSnapshot`. Partial failure is surfaced, not
- * hidden: `byNetwork` carries one entry per *bound* network, and totals only
- * include networks that pulled successfully (brief §13).
+ * For each network a brand is bound to:
+ *   - pulls transactions once over the YTD range and buckets them by event date
+ *     into the four windows — the accurate commission status split and
+ *     conversion counts (brief §4) come from transactions, because the
+ *     advertiser performance report collapses its multi-status columns;
+ *   - pulls advertiser performance once per window range for the clicks (the EPC
+ *     denominator) — that report is range-aggregated per partner with no daily
+ *     series, so it is queried per window rather than bucketed by date.
  *
- * Clicks come from advertiser performance (the EPC denominator); commission,
- * its status split, conversions, and AOV come from transactions (brief §4).
+ * It then computes per-currency totals and a per-programme breakdown, and
+ * assembles a count-honest `BrandSnapshot`: `byNetwork` carries one entry per
+ * *bound* network, and totals only include networks that pulled successfully
+ * (brief §13).
  *
  * See `docs/decisions/2026-06-30-brand-data-layer.md`.
  */
@@ -29,7 +34,7 @@ import {
   type WindowSnapshot,
 } from './model.js';
 import { normalisePerformance, normaliseTransactions } from './normalise.js';
-import { pullForNetwork } from './pull.js';
+import { pullPerformanceRange, pullTransactions } from './pull.js';
 import { capTxnRows, type RowsCapResult } from './rows-cap.js';
 import { bucketByWindow, windowBounds } from './windows.js';
 
@@ -61,18 +66,18 @@ function boundNetworks(brand: string): NetworkSlug[] {
   return (file.brands[brand] ?? []).map((b) => b.network);
 }
 
+/** Build one window's view: per-currency totals + per-programme breakdown. */
 function buildWindow(
   key: WindowKey,
+  from: string,
+  to: string,
   txnRows: BrandTxnRow[],
   clicksRows: BrandClicksRow[],
-  asOf: string,
-  timezone: string,
 ): WindowSnapshot {
-  const bounds = windowBounds(asOf, timezone)[key];
   const totals = computeMetricsByCurrency(txnRows, clicksRows);
 
-  // Per-programme breakdown from transactions; clicks are at the publisher
-  // grain, so per-programme EPC is intentionally blank (null).
+  // Per-programme breakdown from transactions (commission/conversions); clicks
+  // live at the partner grain, so per-programme EPC is intentionally blank.
   const byProgramId = new Map<string, BrandTxnRow[]>();
   const programNames = new Map<string, string>();
   for (const row of txnRows) {
@@ -88,7 +93,7 @@ function buildWindow(
     }
   }
 
-  return { window: key, from: bounds.from, to: bounds.to, totals, byProgram };
+  return { window: key, from, to, totals, byProgram };
 }
 
 /**
@@ -103,43 +108,75 @@ export async function buildBrandSnapshot(
   const timezone = options.timezone ?? DEFAULT_BRAND_TIMEZONE;
   const asOf = options.asOf ?? new Date().toISOString();
   const networks = options.networks ?? boundNetworks(brand);
+  const bounds = windowBounds(asOf, timezone);
 
-  const txnRows: BrandTxnRow[] = [];
-  const clicksRows: BrandClicksRow[] = [];
+  const allTxnRows: BrandTxnRow[] = [];
+  const windowClicks: Record<WindowKey, BrandClicksRow[]> = {
+    yesterday: [],
+    last7d: [],
+    last30d: [],
+    ytd: [],
+  };
   const byNetwork: NetworkHealth[] = [];
 
   for (const network of networks) {
+    // Transactions are the core data (commission + conversions). A failure here
+    // means the network is genuinely unavailable: record it and exclude it.
     try {
-      const { transactions, performance } = await pullForNetwork(brand, network, asOf, timezone);
-      txnRows.push(...normaliseTransactions(transactions, brand));
-      clicksRows.push(...normalisePerformance(performance, network, brand));
-      // A successful pull with no performance rows is a valid empty result, not
-      // a degradation; note it so the UI can explain blank clicks/EPC without
-      // raising a false "needs attention" signal.
-      const health: NetworkHealth = { network, state: 'ok' };
-      if (performance.length === 0) {
-        health.note = 'no advertiser performance rows in range; clicks and EPC blank';
-      }
-      byNetwork.push(health);
+      const txns = await pullTransactions(brand, network, bounds.ytd.from, bounds.ytd.to);
+      // Append without spread: large accounts return tens of thousands of rows.
+      for (const row of normaliseTransactions(txns, brand)) allTxnRows.push(row);
     } catch (err) {
       byNetwork.push({
         network,
         state: 'failed',
         error: (err as { envelope?: unknown }).envelope ?? (err as Error).message,
-        note: `pull failed; totals exclude ${network}`,
+        note: `transaction pull failed; totals exclude ${network}`,
       });
+      continue;
     }
+
+    // Performance (clicks) is best-effort: if it fails or is unsupported, keep
+    // the network's commission and blank its clicks/EPC ("blank the gaps").
+    const localClicks: Record<WindowKey, BrandClicksRow[]> = {
+      yesterday: [],
+      last7d: [],
+      last30d: [],
+      ytd: [],
+    };
+    let clickError: string | undefined;
+    let clickRowCount = 0;
+    try {
+      for (const key of WINDOW_KEYS) {
+        const perf = await pullPerformanceRange(brand, network, bounds[key].from, bounds[key].to);
+        localClicks[key].push(...normalisePerformance(perf, network, brand));
+        clickRowCount += perf.length;
+      }
+    } catch (err) {
+      clickError = (err as Error).message;
+    }
+
+    const health: NetworkHealth = { network, state: 'ok' };
+    if (clickError) {
+      health.note = `clicks unavailable; EPC blank (${clickError})`;
+    } else {
+      for (const key of WINDOW_KEYS) windowClicks[key].push(...localClicks[key]);
+      if (clickRowCount === 0) {
+        health.note = 'no advertiser performance rows in range; clicks and EPC blank';
+      }
+    }
+    byNetwork.push(health);
   }
 
-  const windowsTxn = bucketByWindow(txnRows, (r) => r.eventDate, asOf, timezone);
-  const windowsClicks = bucketByWindow(clicksRows, (r) => r.date, asOf, timezone);
+  const windowTxn = bucketByWindow(allTxnRows, (r) => r.eventDate, asOf, timezone);
 
   const windows = {} as Record<WindowKey, WindowSnapshot>;
   for (const key of WINDOW_KEYS) {
-    windows[key] = buildWindow(key, windowsTxn[key], windowsClicks[key], asOf, timezone);
+    windows[key] = buildWindow(key, bounds[key].from, bounds[key].to, windowTxn[key], windowClicks[key]);
   }
 
-  const rows = capTxnRows(txnRows, undefined, timezone);
+  // rows-30d carries the last-30-day transaction grain for CSV/pivot.
+  const rows = capTxnRows(windowTxn.last30d, undefined, timezone);
 
   const snapshot: BrandSnapshot = {
     schemaVersion: BRAND_DATA_SCHEMA_VERSION,

@@ -80,6 +80,9 @@ async function main(): Promise<void> {
   out('Network health:');
   for (const h of snapshot.byNetwork) {
     out(`  ${h.network}: ${h.state}${h.note ? ` — ${h.note}` : ''}`);
+    if (h.state === 'failed' && h.error !== undefined) {
+      out(`    error: ${typeof h.error === 'string' ? h.error : JSON.stringify(h.error)}`);
+    }
   }
 
   const windowKeys: WindowKey[] = ['yesterday', 'last7d', 'last30d', 'ytd'];

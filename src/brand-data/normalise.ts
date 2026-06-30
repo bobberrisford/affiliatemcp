@@ -92,6 +92,7 @@ export function projectPerformanceRow(
     grossSale: row.grossSale,
     commission: row.commission,
     currency: row.currency,
+    status: row.status,
   };
 }
 

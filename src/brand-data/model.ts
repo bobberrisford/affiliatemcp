@@ -80,13 +80,20 @@ export interface BrandClicksRow {
   brandId: string;
   partnerId: string;
   partnerName: string;
-  /** The bucketing date — `ProgrammePerformanceRow.date` (ISO `YYYY-MM-DD`). */
+  /**
+   * `ProgrammePerformanceRow.date`. Note: some networks (Awin's advertiser
+   * publisher report among them) aggregate per partner over the queried range
+   * and leave this empty; the orchestrator therefore pulls performance once per
+   * window rather than bucketing a single pull by date.
+   */
   date: string;
   clicks: number;
   conversions: number;
   grossSale: number;
   commission: number;
   currency: string;
+  /** The 3-state performance status; drives the commission split on this side. */
+  status: 'pending' | 'approved' | 'reversed';
 }
 
 /**

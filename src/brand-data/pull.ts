@@ -1,14 +1,12 @@
 /**
  * Brand Data Layer — the pull layer.
  *
- * The only adapter-touching file in the module. Pulls one bound network's
- * transactions (last 30 days) and advertiser performance (1 January -> today),
- * each through the shared `withCache` so a refresh reuses the same store the MCP
- * tools use. Per the brief's pull strategy (§8):
- *   - transactions, row-level, last 30 days -> commission/status split for the
- *     yesterday/7d/30d windows and the CSV/pivot grain;
- *   - daily advertiser performance, YTD -> the clicks (EPC denominator) for all
- *     four windows.
+ * The only adapter-touching file in the module. Awin's advertiser performance
+ * report (and others like it) aggregates per partner over the queried range and
+ * does not return a daily series, so the orchestrator pulls performance once per
+ * window range rather than bucketing a single pull by date. Each pull goes
+ * through the shared `withCache` so a refresh reuses the same store the MCP
+ * tools use.
  *
  * See `docs/decisions/2026-06-30-brand-data-layer.md`.
  */
@@ -16,42 +14,25 @@
 import { buildAdapterCallContext } from '../shared/brand-resolver.js';
 import { cacheKey, credentialHashFor, pickTtl, withCache } from '../shared/cache.js';
 import { getAdapter } from '../shared/registry.js';
-import type { NetworkSlug, ProgrammePerformanceRow, Transaction } from '../shared/types.js';
-import { DEFAULT_BRAND_TIMEZONE } from './model.js';
-import { addDays, dayInZone, startOfYear } from './windows.js';
-
-export interface PullResult {
-  transactions: Transaction[];
-  performance: ProgrammePerformanceRow[];
-}
-
-export interface PullRanges {
-  /** Inclusive `YYYY-MM-DD` start of the 30-day transaction window. */
-  txnFrom: string;
-  /** Inclusive `YYYY-MM-DD` start of the YTD performance window. */
-  perfFrom: string;
-  /** Inclusive `YYYY-MM-DD` end (today in the canonical timezone). */
-  to: string;
-}
-
-/** The date ranges to request, anchored on `asOf` in the canonical timezone. */
-export function pullRanges(asOf: string, timezone: string = DEFAULT_BRAND_TIMEZONE): PullRanges {
-  const today = dayInZone(asOf, timezone);
-  return { txnFrom: addDays(today, -29), perfFrom: startOfYear(today), to: today };
-}
+import type {
+  NetworkSlug,
+  ProgrammePerformanceRow,
+  Transaction,
+} from '../shared/types.js';
+import { chunkDayRange } from './windows.js';
 
 /**
- * Pull transactions and advertiser performance for one bound `(brand, network)`.
- * Requires an advertiser-side adapter that implements `getProgrammePerformance`
- * (the clicks source); throws a clear error otherwise so the orchestrator can
- * record the network as `failed` rather than silently drop it.
+ * Pull advertiser performance for one `(brand, network)` over an inclusive
+ * `[from, to]` day range. Requires an advertiser-side adapter that implements
+ * `getProgrammePerformance` (the clicks/commission source); throws a clear
+ * error otherwise so the orchestrator can record the network as `failed`.
  */
-export async function pullForNetwork(
+export async function pullPerformanceRange(
   brand: string,
   network: NetworkSlug,
-  asOf: string,
-  timezone: string = DEFAULT_BRAND_TIMEZONE,
-): Promise<PullResult> {
+  from: string,
+  to: string,
+): Promise<ProgrammePerformanceRow[]> {
   const adapter = getAdapter(network);
   if (!adapter) {
     throw new Error(`No adapter registered for network "${network}".`);
@@ -60,29 +41,65 @@ export async function pullForNetwork(
   if (typeof getProgrammePerformance !== 'function') {
     throw new Error(
       `Adapter "${network}" does not implement getProgrammePerformance; advertiser-side ` +
-        `performance is the clicks source for the brand snapshot.`,
+        `performance is the clicks and commission source for the brand snapshot.`,
     );
   }
 
   const ctx = buildAdapterCallContext(brand, network);
-  const ranges = pullRanges(asOf, timezone);
+  const args = { from, to };
+  return withCache(
+    cacheKey({
+      network,
+      operation: 'getProgrammePerformance',
+      args: { ...args, brand },
+      adapterVersion: adapter.meta.adapterVersion,
+      credentialHash: credentialHashFor(network),
+    }),
+    pickTtl('getProgrammePerformance', args, new Date(), true),
+    () => getProgrammePerformance.call(adapter, args, ctx),
+  );
+}
+
+/**
+ * Pull transactions for one `(brand, network)` over an inclusive `[from, to]`
+ * day range, through the shared `withCache`. Transactions carry the accurate
+ * per-transaction status (the advertiser performance report collapses its
+ * multi-status columns into one value), so the commission split and conversion
+ * counts come from here, not from performance.
+ */
+export async function pullTransactions(
+  brand: string,
+  network: NetworkSlug,
+  from: string,
+  to: string,
+): Promise<Transaction[]> {
+  const adapter = getAdapter(network);
+  if (!adapter) {
+    throw new Error(`No adapter registered for network "${network}".`);
+  }
+  const ctx = buildAdapterCallContext(brand, network);
   const adapterVersion = adapter.meta.adapterVersion;
   const credentialHash = credentialHashFor(network);
-  const now = new Date();
 
-  const txnArgs = { from: ranges.txnFrom, to: ranges.to };
-  const transactions = await withCache(
-    cacheKey({ network, operation: 'listTransactions', args: { ...txnArgs, brand }, adapterVersion, credentialHash }),
-    pickTtl('listTransactions', txnArgs, now, true),
-    () => adapter.listTransactions(txnArgs, ctx),
-  );
-
-  const perfArgs = { from: ranges.perfFrom, to: ranges.to };
-  const performance = await withCache(
-    cacheKey({ network, operation: 'getProgrammePerformance', args: { ...perfArgs, brand }, adapterVersion, credentialHash }),
-    pickTtl('getProgrammePerformance', perfArgs, now, true),
-    () => getProgrammePerformance.call(adapter, perfArgs, ctx),
-  );
-
-  return { transactions, performance };
+  // Chunk into <=31-day slices: Awin's transaction endpoints reject wider
+  // ranges, and the advertiser adapter does not chunk internally.
+  const out: Transaction[] = [];
+  for (const slice of chunkDayRange(from, to)) {
+    const args = { from: slice.from, to: slice.to };
+    const rows = await withCache(
+      cacheKey({
+        network,
+        operation: 'listTransactions',
+        args: { ...args, brand },
+        adapterVersion,
+        credentialHash,
+      }),
+      pickTtl('listTransactions', args, new Date(), true),
+      () => adapter.listTransactions(args, ctx),
+    );
+    // Append without spread: a slice can be tens of thousands of rows, and
+    // `push(...rows)` would overflow the argument stack on large accounts.
+    for (const row of rows) out.push(row);
+  }
+  return out;
 }
