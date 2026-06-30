@@ -371,7 +371,7 @@ production work.
 | Afilio | 10 min | no | 6 / 7 | no clicks |
 | Amazon Creators | 10 min | yes (~1 days) | 6 / 7 | no clicks |
 | AvantLink | 10 min | no | 6 / 7 | no clicks |
-| Awin | 5 min | no | 6 / 7 | clicks gated |
+| Awin | 5 min | no | 6 / 7 | no clicks |
 | Awin (advertiser) | 6 min | no | 7 / 7 | see notes |
 | Belboon | 10 min | no | 6 / 7 | no clicks |
 | CAKE | 10 min | no | 6 / 7 | no clicks |

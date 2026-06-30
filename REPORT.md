@@ -775,7 +775,7 @@ _No findings document was supplied at `docs/findings/avantlink.md`._
 ### Known limitations
 
 - Click-level data is not exposed via the public publisher API; listClicks is unsupported.
-- Earnings and transaction operations were verified against an account with no commission activity in the test window: request, response, and mapping paths are confirmed, but status mapping for live (pending/approved/reversed/paid) commissions is not yet evidenced against a high-activity account.
+- Earnings and transaction operations were verified against an account with no commission activity in the test window: request, response, and mapping paths are confirmed, but mapping of live commission statuses (pending, approved, reversed, and settled) is not yet evidenced against a high-activity account.
 
 ### Findings
 
@@ -5951,4 +5951,4 @@ When credentials for one or more networks are present in the environment,
 the live diagnostic suite is invoked and its results are folded into the
 per-network operations tables.
 
-_Last regenerated 2026-06-29 13:03 UTC._
+_Last regenerated 2026-06-29 13:13 UTC._

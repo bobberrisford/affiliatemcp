@@ -119,7 +119,7 @@ const META: NetworkMeta = {
   claimStatus: 'production',
   knownLimitations: [
     'Click-level data is not exposed via the public Awin publisher API; listClicks is unsupported.',
-    'Earnings and transaction operations were verified against an account with no commission activity in the test window: request, response, and mapping paths are confirmed, but status mapping for live (pending/approved/reversed/paid) commissions is not yet evidenced against a high-activity account.',
+    'Earnings and transaction operations were verified against an account with no commission activity in the test window: request, response, and mapping paths are confirmed, but mapping of live commission statuses (pending, approved, reversed, and settled) is not yet evidenced against a high-activity account.',
   ],
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 5,
