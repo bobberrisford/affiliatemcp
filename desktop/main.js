@@ -12,7 +12,7 @@
  * file (`build/core.cjs`) we require() once and cache. There are no mocks in
  * the Electron path — if the bundle is missing we fail loudly.
  */
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -427,6 +427,29 @@ handle('locker:transactions', async (_e, payload) => {
   config.loadConfig();
   const { slug, query, brand } = payload || {};
   return facade.listTransactions(slug, query || {}, brand);
+});
+
+// Save the already-pulled data the renderer hands us to a user-chosen local
+// file. The renderer builds the CSV/JSON string (it has the rows); the main
+// process owns the save dialog and the write — a renderer cannot touch the
+// filesystem. Local only: nothing leaves the machine, and the user picks the
+// path. The renderer never receives a path it didn't choose.
+handle('locker:export', async (_e, payload) => {
+  const content = payload && typeof payload.content === 'string' ? payload.content : '';
+  if (!content) {
+    return { ok: false, error: 'Nothing to export.' };
+  }
+  const suggestedName =
+    payload && typeof payload.suggestedName === 'string' && payload.suggestedName.trim()
+      ? payload.suggestedName.trim()
+      : 'affiliate-export.csv';
+  const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+  const { canceled, filePath } = await dialog.showSaveDialog(win, { defaultPath: suggestedName });
+  if (canceled || !filePath) {
+    return { ok: false, canceled: true };
+  }
+  fs.writeFileSync(filePath, content, 'utf8');
+  return { ok: true, path: filePath };
 });
 
 // ---- Client detection ------------------------------------------------------

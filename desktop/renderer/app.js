@@ -113,6 +113,7 @@ function mockApi() {
         { id: 't2', network: 'awin', programmeId: 'p2', programmeName: 'Trailhead', status: 'pending', amount: 64.5, currency: 'GBP', commission: 5.16, dateConverted: '2026-06-22', ageDays: 7, rawNetworkData: {} },
       ],
     }, 500),
+    lockerExport: (suggestedName, _content) => wait({ ok: true, path: `~/Downloads/${suggestedName || 'export.csv'}` }, 300),
     connectClaude: () => wait({ ok: true, action: 'added', backupPath: '…/claude_desktop_config.json.bak' }, 500),
     restartClaude: () => wait({ ok: true }),
     openExternal: (url) => { window.open(url, '_blank'); return wait({ ok: true }); },
@@ -845,6 +846,34 @@ function errText(error) {
   return `${where}${esc(error.message || 'request failed')}`;
 }
 
+// Quote a CSV field only when it contains a comma, quote, or newline; double
+// embedded quotes. RFC-4180-ish, dependency-free.
+function csvField(v) {
+  const s = v === undefined || v === null ? '' : String(v);
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+// Flat CSV of the canonical transaction columns (rawNetworkData is omitted; the
+// JSON export carries the full objects for anyone who needs it).
+function transactionsToCsv(rows) {
+  const cols = ['id', 'network', 'programmeId', 'programmeName', 'status', 'amount', 'commission', 'currency', 'dateConverted', 'ageDays'];
+  const lines = rows.map((t) => cols.map((c) => csvField(t[c])).join(','));
+  return [cols.join(','), ...lines].join('\r\n');
+}
+
+// JSON export: the full pull (network, window, earnings, and complete
+// transaction objects including rawNetworkData).
+function lockerExportJson() {
+  const r = lockerState.result || {};
+  return JSON.stringify({
+    network: lockerState.slug,
+    periodFrom: lockerState.from,
+    periodTo: lockerState.to,
+    earnings: r.earnings || null,
+    transactions: r.txns || [],
+  }, null, 2);
+}
+
 async function renderLocker() {
   if (!lockerState.nets) {
     app.innerHTML = wrap('<h2 class="scr">your data</h2><p class="scr-lead">finding your connected networks…</p>', true);
@@ -910,6 +939,17 @@ async function renderLocker() {
     tableBlock = '<div class="help">pick a network and a date range, then pull your data. it stays on this machine.</div>';
   }
 
+  // Export + handoff appear only once there are rows to act on. Export writes a
+  // local file; "continue in Claude" hands the analysis to Claude — the app
+  // surfaces and exports, Claude interprets.
+  const hasRows = !!(lockerState.result && lockerState.result.txns && lockerState.result.txns.length);
+  const exportBlock = hasRows ? `<div class="lk-actions">
+      <button class="btn btn-ghost lk-exp" data-fmt="csv">export CSV</button>
+      <button class="btn btn-ghost lk-exp" data-fmt="json">export JSON</button>
+      <button class="btn btn-primary" id="lk-claude">continue in Claude ▸</button>
+    </div>
+    <div class="lk-status" id="lk-status"></div>` : '';
+
   app.innerHTML = `<div class="screen fade"><div class="scroll">
     <div class="ck-top"><h2 class="scr">your data</h2><button class="btn btn-ghost" id="lk-back">back</button></div>
     <p class="scr-lead">pull your performance data and view it here. the app shows and exports it — ask Claude to interpret it.</p>
@@ -920,6 +960,7 @@ async function renderLocker() {
       <button class="btn btn-primary" id="lk-pull"${lockerState.loading ? ' disabled' : ''}>${lockerState.loading ? 'pulling…' : 'pull ▸'}</button>
     </div>
     ${headline}
+    ${exportBlock}
     ${tableBlock}
   </div></div>`;
 
@@ -954,6 +995,39 @@ async function renderLocker() {
     lockerState.result = error ? null : { earnings, txns };
     lockerState.error = error;
     renderLocker();
+  };
+
+  // Export the pulled rows to a local file, and the Claude handoff. Both are
+  // present only when a successful pull produced rows.
+  app.querySelectorAll('.lk-exp').forEach((b) => { b.onclick = async () => {
+    const rows = (lockerState.result && lockerState.result.txns) || [];
+    if (!rows.length) return;
+    const fmt = b.getAttribute('data-fmt');
+    const name = `${lockerState.slug}-transactions-${lockerState.from}_${lockerState.to}.${fmt}`;
+    const content = fmt === 'json' ? lockerExportJson() : transactionsToCsv(rows);
+    const status = document.getElementById('lk-status');
+    if (status) status.textContent = 'saving…';
+    let res;
+    try { res = await api.lockerExport?.(name, content); } catch (e) { res = { ok: false, error: String(e) }; }
+    if (!status) return;
+    if (res && res.ok) status.innerHTML = `<span class="status"><span class="dot dot-pos"></span> saved to ${esc(res.path)}</span>`;
+    else if (res && res.canceled) status.textContent = 'export cancelled.';
+    else status.innerHTML = `<span class="status"><span class="dot dot-neg"></span> ${esc((res && res.error) || 'export failed')}</span>`;
+  }; });
+
+  const claudeBtn = document.getElementById('lk-claude');
+  if (claudeBtn) claudeBtn.onclick = async () => {
+    const promptText = `Analyse my ${lockerState.slug} affiliate transactions from ${lockerState.from} to ${lockerState.to}: spot trends, anomalies, and any commissions worth chasing.`;
+    const original = claudeBtn.textContent;
+    claudeBtn.textContent = 'opening claude…';
+    let res;
+    try { res = await api.openClaudePrompt?.(promptText); } catch (e) { res = { ok: false, error: String(e) }; }
+    if (res && res.ok === false) {
+      claudeBtn.textContent = `couldn’t open claude (${(res.error) || 'blocked'})`;
+    } else {
+      claudeBtn.textContent = 'opened in claude ✓';
+      setTimeout(() => { claudeBtn.textContent = original; }, 1600);
+    }
   };
 }
 

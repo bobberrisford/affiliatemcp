@@ -215,6 +215,14 @@ test('locker:transactions surfaces a structured error for an unconfigured networ
   expect(typeof res.error.type).toBe('string');
 });
 
+test('locker:export refuses empty content before opening a save dialog', async () => {
+  // The happy path opens a native save dialog (and would block the run), so we
+  // assert only the refusal — it returns before any dialog, exactly as the
+  // openExternal/openPrompt tests avoid real side-effects.
+  const res = await page.evaluate(() => window.affiliate.lockerExport('x.csv', ''));
+  expect(res.ok).toBe(false);
+});
+
 test('claude:openPrompt refuses empty and over-length prompts (no open side-effect)', async () => {
   // We assert only the refusal paths, which return before any shell.openExternal
   // — exactly as the openExternal test above avoids triggering a real open. The

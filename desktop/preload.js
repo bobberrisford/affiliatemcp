@@ -24,6 +24,8 @@ contextBridge.exposeInMainWorld('affiliate', {
   lockerNetworks: () => ipcRenderer.invoke('locker:networks'),
   lockerEarnings: (slug, query, brand) => ipcRenderer.invoke('locker:earnings', { slug, query, brand }),
   lockerTransactions: (slug, query, brand) => ipcRenderer.invoke('locker:transactions', { slug, query, brand }),
+  // Save already-pulled rows to a user-chosen local file (main owns the dialog).
+  lockerExport: (suggestedName, content) => ipcRenderer.invoke('locker:export', { suggestedName, content }),
   // Open Claude with a pre-written prompt (the main process builds the URL).
   openClaudePrompt: (text) => ipcRenderer.invoke('claude:openPrompt', { text }),
   connectClaude: () => ipcRenderer.invoke('claude:connect'),

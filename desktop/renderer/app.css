@@ -186,6 +186,8 @@ h2.scr { font-family: var(--font-display); font-weight: 800; text-transform: low
 .lk-table th, .lk-table td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); }
 .lk-table th { font-weight: 800; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-muted); border-bottom: var(--rule) solid var(--ink); }
 .lk-table td.num, .lk-table th.num { text-align: right; white-space: nowrap; }
+.lk-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-3); }
+.lk-status { min-height: 22px; margin-bottom: var(--s-4); font-family: var(--font-mono); font-size: .8rem; color: var(--fg-muted); word-break: break-all; }
 
 .fade { animation: fade .18s steps(3) both; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
