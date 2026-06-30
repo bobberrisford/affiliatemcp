@@ -637,6 +637,78 @@ describe('affiliate_list_networks — operationClaimStatuses (review feedback)',
 });
 
 // ---------------------------------------------------------------------------
+// affiliate_list_networks surfaces configuration readiness
+// ---------------------------------------------------------------------------
+
+describe('affiliate_list_networks — configuration readiness', () => {
+  function adapterNeedingToken(slug: string, name: string): NetworkAdapter {
+    const a = fakeAdapter(slug, name);
+    (a as { setupSteps: () => unknown }).setupSteps = () => [
+      { field: 'DEMO_TOKEN', label: 'API token', description: 'The token.', type: 'password' },
+    ];
+    return a;
+  }
+
+  type Row = {
+    slug: string;
+    configured: boolean;
+    missingCredentials: string[];
+    setupAction?: string;
+  };
+
+  async function listRows(): Promise<Row[]> {
+    const tool = generateMetaTools().find((t) => t.name === 'affiliate_list_networks')!;
+    return (await tool.handle({})) as Row[];
+  }
+
+  afterEach(() => {
+    delete process.env['DEMO_TOKEN'];
+  });
+
+  it('reports unconfigured with a setupAction when the credential is absent', async () => {
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(adapterNeedingToken('demo', 'Demo Network'));
+    delete process.env['DEMO_TOKEN'];
+
+    const row = (await listRows())[0]!;
+    expect(row.configured).toBe(false);
+    expect(row.missingCredentials).toEqual(['DEMO_TOKEN']);
+    expect(row.setupAction).toBeTruthy();
+    expect(row.setupAction).toContain('DEMO_TOKEN');
+  });
+
+  it('treats an unresolved bundle placeholder as unconfigured', async () => {
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(adapterNeedingToken('demo', 'Demo Network'));
+    process.env['DEMO_TOKEN'] = '${user_config.demo_token}';
+
+    const row = (await listRows())[0]!;
+    expect(row.configured).toBe(false);
+    expect(row.missingCredentials).toEqual(['DEMO_TOKEN']);
+  });
+
+  it('reports configured with no setupAction once the credential is present', async () => {
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(adapterNeedingToken('demo', 'Demo Network'));
+    process.env['DEMO_TOKEN'] = 'a-real-token';
+
+    const row = (await listRows())[0]!;
+    expect(row.configured).toBe(true);
+    expect(row.missingCredentials).toEqual([]);
+    expect(row.setupAction).toBeUndefined();
+  });
+
+  it('treats an adapter with no setupSteps as configured', async () => {
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(fakeAdapter('quiet', 'Quiet Network'));
+
+    const row = (await listRows())[0]!;
+    expect(row.configured).toBe(true);
+    expect(row.missingCredentials).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Workstream 1: affiliate_run_diagnostic preserves per-op claimStatus
 // ---------------------------------------------------------------------------
 
