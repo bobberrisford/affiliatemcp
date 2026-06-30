@@ -240,7 +240,7 @@ async function main(argv: string[]): Promise<number> {
     }
     case 'update': {
       const { runUpdate } = await import('./cli/update.js');
-      return await runUpdate({ check: rest.includes('--check') });
+      return await runUpdate();
     }
     case 'validate': {
       const slug = rest[0];

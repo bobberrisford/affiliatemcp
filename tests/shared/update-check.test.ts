@@ -10,23 +10,35 @@ import {
   compareVersions,
   fetchLatestVersion,
   formatUpdateNotice,
+  REGISTRY_LATEST_URL,
   updateCheckEnabled,
   updateInstructionForSurface,
 } from '../../src/shared/update-check.js';
 
 const NEWER = `${Number.parseInt(PACKAGE_VERSION.split('.')[0] ?? '0', 10) + 1}.0.0`;
 
-/** A `fetch` stand-in that records call count and returns a fixed registry body. */
-function fakeRegistry(version: string | null, ok = true): { fn: typeof fetch; calls: () => number } {
+interface FakeRegistry {
+  fn: typeof fetch;
+  calls: () => number;
+  lastUrl: () => unknown;
+  lastInit: () => RequestInit | undefined;
+}
+
+/** A `fetch` stand-in that records its call args and returns a fixed registry body. */
+function fakeRegistry(version: string | null, ok = true): FakeRegistry {
   let count = 0;
-  const fn = (async () => {
+  let url: unknown;
+  let init: RequestInit | undefined;
+  const fn = (async (u: unknown, i?: RequestInit) => {
     count += 1;
+    url = u;
+    init = i;
     return {
       ok,
       json: async () => (version === null ? {} : { version }),
     };
   }) as unknown as typeof fetch;
-  return { fn, calls: () => count };
+  return { fn, calls: () => count, lastUrl: () => url, lastInit: () => init };
 }
 
 const NOW = new Date('2026-06-30T10:00:00Z');
@@ -88,6 +100,18 @@ describe('fetchLatestVersion', () => {
       throw new Error('offline');
     }) as unknown as typeof fetch;
     expect(await fetchLatestVersion(thrower)).toBeUndefined();
+  });
+
+  it('issues an anonymous, header-only GET to the registry endpoint', async () => {
+    const reg = fakeRegistry('0.12.0');
+    await fetchLatestVersion(reg.fn);
+    expect(reg.lastUrl()).toBe(REGISTRY_LATEST_URL);
+    const init = reg.lastInit();
+    // No method override means GET; no body and no auth/cookie headers — the
+    // same shape npm itself uses, so nothing identifying is sent.
+    expect(init?.method).toBeUndefined();
+    expect(init?.body).toBeUndefined();
+    expect(init?.headers).toEqual({ accept: 'application/json' });
   });
 });
 

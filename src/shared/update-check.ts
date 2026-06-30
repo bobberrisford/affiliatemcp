@@ -67,6 +67,13 @@ export function updateCheckFilePath(): string {
  * Compare two version strings. Returns 1 when `a` is newer, -1 when older, 0
  * when equal or unparseable. Unparseable input returns 0 so a malformed version
  * never produces a false "update available" claim (Principle 4.1 — never invent).
+ *
+ * Core `major.minor.patch` segments are compared numerically. Prerelease tags
+ * are compared lexicographically, not by semver's per-identifier numeric rules
+ * (so `-beta.10` sorts before `-beta.2`). That only affects ordering between two
+ * prereleases of the same core version and never yields a false update against a
+ * released version, which is all this check needs; full semver prerelease
+ * ordering is deliberately out of scope.
  */
 export function compareVersions(a: string, b: string): number {
   const pa = parseVersion(a);
@@ -141,6 +148,10 @@ export async function checkForUpdate(opts: CheckOptions = {}): Promise<UpdateInf
         latest = fetched;
         writeState({ lastCheckedDay: today, latestVersion: fetched });
       }
+      // Note: on a failed fetch we deliberately do NOT advance lastCheckedDay,
+      // so an offline session keeps retrying on subsequent launches (each bounded
+      // by the 2s timeout and fired non-blocking) rather than going silent for a
+      // day. We fall back to the cached version below if we have one.
     }
 
     if (!latest) return undefined;
