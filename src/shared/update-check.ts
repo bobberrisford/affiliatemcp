@@ -328,6 +328,15 @@ function releaseAgeHours(now: Date): number | undefined {
 export async function autoApplyOnLaunch(opts: ApplyOptions = {}): Promise<void> {
   try {
     if (!autoUpdateEnabled()) return;
+    // Only silently self-apply on the npm/npx surface. A host bundle reads as
+    // `mcpb`/`desktop-bundle` (or `unknown` if it failed to declare its surface);
+    // in every non-npm case fall back to the notice rather than running
+    // `npm install -g` under a runtime we do not own. Explicit `update` from the
+    // CLI is unaffected — that path is a deliberate user action.
+    if (telemetrySurface() !== 'npm') {
+      await notifyIfUpdateAvailable(opts);
+      return;
+    }
     logApplyOutcome(await applyUpdate(opts));
   } catch {
     // Auto-update must never affect package behaviour.

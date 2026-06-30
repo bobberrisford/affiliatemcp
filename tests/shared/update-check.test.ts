@@ -7,6 +7,7 @@ import { PACKAGE_VERSION } from '../../src/shared/telemetry.js';
 import {
   _readUpdateCheckStateForTests,
   applyUpdate,
+  autoApplyOnLaunch,
   autoUpdateEnabled,
   checkForUpdate,
   type CommandRunner,
@@ -206,6 +207,8 @@ describe('auto-apply', () => {
       AFFILIATE_MCP_AUTO_UPDATE: process.env['AFFILIATE_MCP_AUTO_UPDATE'],
       AFFILIATE_MCP_AUTO_UPDATE_MIN_AGE_HOURS: process.env['AFFILIATE_MCP_AUTO_UPDATE_MIN_AGE_HOURS'],
       AFFILIATE_MCP_SURFACE: process.env['AFFILIATE_MCP_SURFACE'],
+      npm_execpath: process.env['npm_execpath'],
+      npm_config_user_agent: process.env['npm_config_user_agent'],
     };
     process.env['AFFILIATE_MCP_CONFIG_DIR'] = mkdtempSync(path.join(tmpdir(), 'amcp-apply-'));
     delete process.env['AFFILIATE_MCP_UPDATE_CHECK'];
@@ -307,6 +310,34 @@ describe('auto-apply', () => {
       ignoreSoak: true,
     });
     expect(result.reason).toBe('up_to_date');
+    expect(runner.calls()).toHaveLength(0);
+  });
+
+  it('autoApplyOnLaunch does nothing when the opt-in is off', async () => {
+    await seed();
+    const runner = fakeRunner(true);
+    await autoApplyOnLaunch({ now: SOAKED, fetchFn: fakeRegistry(NEWER).fn, runner: runner.fn });
+    expect(runner.calls()).toHaveLength(0);
+  });
+
+  it('autoApplyOnLaunch applies on the npm surface once enabled and soaked', async () => {
+    setAutoUpdate(true);
+    await seed();
+    const runner = fakeRunner(true);
+    await autoApplyOnLaunch({ now: SOAKED, fetchFn: fakeRegistry(NEWER).fn, runner: runner.fn });
+    expect(runner.calls()).toHaveLength(1);
+  });
+
+  it('autoApplyOnLaunch never runs npm on a non-npm/unknown surface', async () => {
+    setAutoUpdate(true);
+    // Force telemetrySurface() to resolve to 'unknown': no explicit surface and
+    // none of the npm launcher env vars present.
+    delete process.env['AFFILIATE_MCP_SURFACE'];
+    delete process.env['npm_execpath'];
+    delete process.env['npm_config_user_agent'];
+    await seed();
+    const runner = fakeRunner(true);
+    await autoApplyOnLaunch({ now: SOAKED, fetchFn: fakeRegistry(NEWER).fn, runner: runner.fn });
     expect(runner.calls()).toHaveLength(0);
   });
 });
