@@ -1,7 +1,9 @@
 # Unconfigured-credential guidance: turn a confusing 401 into a clear next step
 
 - **Date:** 2026-06-30
-- **Status:** Proposed (decision pending)
+- **Status:** Accepted (2026-06-30, by Rob). Implemented in the same change: PR 1
+  (placeholder recognition + surface-aware hints) and PR 2 (configuration
+  readiness on `affiliate_list_networks`). PR 3 (docs) follows.
 - **Affects:** the shared credential-loading contract (`src/shared/config.ts`,
   marked STABLE), the `affiliate_list_networks` meta-tool output shape
   (`src/tools/generate.ts`), the `NetworkErrorEnvelope` `hint` content
