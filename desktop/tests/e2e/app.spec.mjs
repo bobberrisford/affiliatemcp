@@ -183,6 +183,58 @@ test('saveBrands rejects duplicate nicknames instead of silently overwriting', a
   expect(String(res.error)).toMatch(/duplicate brand nickname/i);
 });
 
+test('cockpit:summary returns a structured summary over IPC (unconfigured here)', async () => {
+  // The sandbox config dir has no credentials, so the real Awin adapter is
+  // registered but unconfigured. computeCockpit must report that cleanly — a
+  // structured summary with configured:false and a flags array — without a
+  // single outbound network call (the configured check is credential-presence).
+  const res = await page.evaluate(() => window.affiliate.cockpitSummary());
+  expect(res.ok).toBe(true);
+  expect(res.summary).toBeTruthy();
+  expect(res.summary.configured).toBe(false);
+  expect(Array.isArray(res.summary.flags)).toBe(true);
+  expect(res.summary.flags.length).toBeGreaterThan(0);
+});
+
+test('locker:networks returns an array (empty in the unconfigured sandbox)', async () => {
+  // The data-locker picker lists only networks with credentials present. The
+  // sandbox config dir has none, so this is an empty array — never a thrown
+  // error turned into { ok:false } (the renderer .filter()s it directly).
+  const nets = await page.evaluate(() => window.affiliate.lockerNetworks());
+  expect(Array.isArray(nets)).toBe(true);
+  expect(nets.length).toBe(0);
+});
+
+test('locker:transactions surfaces a structured error for an unconfigured network', async () => {
+  // No credentials in the sandbox, so the real Awin read can't authenticate.
+  // The facade returns a structured DataResult with ok:false and a
+  // NetworkErrorEnvelope — never faked into success, never an empty table.
+  const res = await page.evaluate(() => window.affiliate.lockerTransactions('awin', { from: '2026-01-01', to: '2026-01-31' }));
+  expect(res.ok).toBe(false);
+  expect(res.error).toBeTruthy();
+  expect(typeof res.error.type).toBe('string');
+});
+
+test('locker:export refuses empty content before opening a save dialog', async () => {
+  // The happy path opens a native save dialog (and would block the run), so we
+  // assert only the refusal — it returns before any dialog, exactly as the
+  // openExternal/openPrompt tests avoid real side-effects.
+  const res = await page.evaluate(() => window.affiliate.lockerExport('x.csv', ''));
+  expect(res.ok).toBe(false);
+});
+
+test('claude:openPrompt refuses empty and over-length prompts (no open side-effect)', async () => {
+  // We assert only the refusal paths, which return before any shell.openExternal
+  // — exactly as the openExternal test above avoids triggering a real open. The
+  // happy path would launch Claude (or a browser fallback), so it isn't driven
+  // here; the renderer builds the URL only in the main process regardless.
+  const empty = await page.evaluate(() => window.affiliate.openClaudePrompt('   '));
+  expect(empty.ok).toBe(false);
+
+  const tooLong = await page.evaluate(() => window.affiliate.openClaudePrompt('x'.repeat(20_000)));
+  expect(tooLong.ok).toBe(false);
+});
+
 test('UI renders real network tiles from IPC (welcome → picker)', async () => {
   // Drive the actual UI, not the mock: the picker must populate from the real
   // listNetworks IPC call.

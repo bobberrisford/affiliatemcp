@@ -12,7 +12,7 @@
  * file (`build/core.cjs`) we require() once and cache. There are no mocks in
  * the Electron path — if the bundle is missing we fail loudly.
  */
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -358,6 +358,98 @@ handle('shell:openExternal', async (_e, url) => {
   }
   await shell.openExternal(parsed.toString());
   return { ok: true };
+});
+
+// ---- Deep-link into Claude with a pre-written prompt -----------------------
+
+// `claude://claude.ai/new?q=…` opens Claude Desktop with the prompt pre-filled
+// (the user reviews and sends it — it is never auto-submitted). This is a
+// deliberate, narrow exception to the https-only `shell:openExternal` handler
+// above: the MAIN process builds the whole URL from a fixed template and only
+// the prompt TEXT crosses from the renderer, so no caller-supplied scheme or
+// host is ever opened. Claude truncates `q` near 14k chars, so we refuse longer.
+const CLAUDE_PROMPT_MAX = 14000;
+handle('claude:openPrompt', async (_e, payload) => {
+  const text = payload && typeof payload.text === 'string' ? payload.text.trim() : '';
+  if (!text) {
+    return { ok: false, error: 'No prompt text to open.' };
+  }
+  if (text.length > CLAUDE_PROMPT_MAX) {
+    return { ok: false, error: 'That prompt is too long to open in Claude.' };
+  }
+  const q = encodeURIComponent(text);
+  try {
+    await shell.openExternal(`claude://claude.ai/new?q=${q}`);
+    return { ok: true, target: 'desktop' };
+  } catch {
+    // Claude Desktop isn't installed or the scheme isn't registered — fall back
+    // to the web app, which accepts the same `?q=` pre-fill.
+    await shell.openExternal(`https://claude.ai/new?q=${q}`);
+    return { ok: true, target: 'web' };
+  }
+});
+
+// ---- Cockpit (daily attention flags) ---------------------------------------
+
+// Compute the dashboard summary by calling the configured network's read
+// operations directly through the bundled core. No model call, no tokens. We
+// load credentials from the config dir first so the reads can authenticate.
+handle('cockpit:summary', async () => {
+  const { facade, config } = loadCore();
+  config.loadConfig();
+  const summary = await facade.computeCockpit();
+  return { ok: true, summary };
+});
+
+// ---- Data locker (read-only: pull, view; export comes later) ---------------
+
+// The locker pulls performance data through the SAME facade reads Claude's MCP
+// server uses, so the desktop and Claude share one cache store and one error
+// contract. Those reads already return a structured DataResult
+// ({ ok:true, data } | { ok:false, error: NetworkErrorEnvelope }); we return it
+// as-is. The app surfaces and exports this data — Claude interprets it.
+
+handle('locker:networks', async () => {
+  const { facade, config } = loadCore();
+  config.loadConfig();
+  return facade.listConfiguredNetworks();
+});
+
+handle('locker:earnings', async (_e, payload) => {
+  const { facade, config } = loadCore();
+  config.loadConfig();
+  const { slug, query, brand } = payload || {};
+  return facade.getEarnings(slug, query || {}, brand);
+});
+
+handle('locker:transactions', async (_e, payload) => {
+  const { facade, config } = loadCore();
+  config.loadConfig();
+  const { slug, query, brand } = payload || {};
+  return facade.listTransactions(slug, query || {}, brand);
+});
+
+// Save the already-pulled data the renderer hands us to a user-chosen local
+// file. The renderer builds the CSV/JSON string (it has the rows); the main
+// process owns the save dialog and the write — a renderer cannot touch the
+// filesystem. Local only: nothing leaves the machine, and the user picks the
+// path. The renderer never receives a path it didn't choose.
+handle('locker:export', async (_e, payload) => {
+  const content = payload && typeof payload.content === 'string' ? payload.content : '';
+  if (!content) {
+    return { ok: false, error: 'Nothing to export.' };
+  }
+  const suggestedName =
+    payload && typeof payload.suggestedName === 'string' && payload.suggestedName.trim()
+      ? payload.suggestedName.trim()
+      : 'affiliate-export.csv';
+  const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+  const { canceled, filePath } = await dialog.showSaveDialog(win, { defaultPath: suggestedName });
+  if (canceled || !filePath) {
+    return { ok: false, canceled: true };
+  }
+  fs.writeFileSync(filePath, content, 'utf8');
+  return { ok: true, path: filePath };
 });
 
 // ---- Client detection ------------------------------------------------------
