@@ -31,9 +31,11 @@ import { isErrorEnvelope, NetworkError, toErrorEnvelope } from './shared/errors.
 import { createLogger } from './shared/logging.js';
 import {
   flushTelemetry,
+  PACKAGE_VERSION,
   recordTelemetry,
   telemetryOutcomeFromErrorType,
 } from './shared/telemetry.js';
+import { notifyIfUpdateAvailable } from './shared/update-check.js';
 
 // Side-effect import: registers every network adapter with the shared registry.
 // Must precede any code path that calls `getAdapters()` / `getAdapter()`.
@@ -43,7 +45,10 @@ const log = createLogger('server');
 
 const SERVER_INFO = {
   name: 'affiliate-mcp',
-  version: '0.1.0',
+  // Single source of truth, kept in sync with package.json by the release
+  // process and a version-sync test. Previously hardcoded to a stale '0.1.0',
+  // which both misreported to clients and would mislead the update check.
+  version: PACKAGE_VERSION,
 } as const;
 
 export interface TelemetryToolClassification {
@@ -63,6 +68,7 @@ const META_TOOL_OPERATIONS = new Map<string, string>([
 
 export async function startServer(): Promise<void> {
   void flushTelemetry();
+  void notifyIfUpdateAvailable();
   recordTelemetry('lifecycle', 'server_start', 'success');
   const tools = generateAllTools();
   const toolMap = new Map<string, ToolDefinition>(tools.map((t) => [t.name, t]));
