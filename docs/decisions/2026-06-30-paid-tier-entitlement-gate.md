@@ -69,7 +69,7 @@ tier with one local entitlement check.
   opaque transport error. This honours Principle 4.1: a refusal is surfaced
   honestly, not faked into a success or collapsed into a generic error.
 - **Observability via existing machinery.** A denied call records the existing
-  audit outcome `write_denied` with a `reason: 'entitlement'` field (reusing the
+  audit outcome `write_denied` with a `reasonCode: 'entitlement'` field (reusing the
   structured audit line rather than extending the shared audit union) and emits
   telemetry through the existing meta-tool dispatch path. No new telemetry field
   carries credentials, affiliate data, or account identifiers; `PRIVACY.md`
