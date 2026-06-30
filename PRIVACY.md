@@ -102,6 +102,17 @@ is cached in `~/.affiliate-mcp/update-check.json` (mode `0600`). The check is
 `AFFILIATE_MCP_UPDATE_CHECK=0` (or `false`/`no`/`off`). It is independent of
 telemetry consent.
 
+Silent auto-apply is **off by default** and separate from the check above. When
+you turn it on (`affiliate-networks-mcp update enable`, or
+`AFFILIATE_MCP_AUTO_UPDATE=1`), the server updates itself on launch for npm/npx
+installs by running `npm install -g affiliate-networks-mcp@latest`, so the next
+launch runs the new version. It never applies on host-managed surfaces (the
+`.mcpb` bundle or desktop app, which update through their own channels), only
+applies a release it has known about for at least 24 hours (a soak window,
+configurable via `AFFILIATE_MCP_AUTO_UPDATE_MIN_AGE_HOURS`), and falls back to a
+notice if the install fails. No data leaves your machine beyond the same
+anonymous registry request and the standard `npm install` it performs.
+
 Remove a network by deleting its keys from `~/.affiliate-mcp/.env`. Delete
 locally cached results with `affiliate-networks-mcp cache clear`. To remove
 everything, run `npx affiliate-networks-mcp uninstall` (or

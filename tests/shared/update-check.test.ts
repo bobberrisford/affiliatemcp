@@ -6,11 +6,16 @@ import path from 'node:path';
 import { PACKAGE_VERSION } from '../../src/shared/telemetry.js';
 import {
   _readUpdateCheckStateForTests,
+  applyUpdate,
+  autoApplyOnLaunch,
+  autoUpdateEnabled,
   checkForUpdate,
+  type CommandRunner,
   compareVersions,
   fetchLatestVersion,
   formatUpdateNotice,
   REGISTRY_LATEST_URL,
+  setAutoUpdate,
   updateCheckEnabled,
   updateInstructionForSurface,
 } from '../../src/shared/update-check.js';
@@ -178,6 +183,162 @@ describe('checkForUpdate', () => {
     const nextDay = new Date('2026-07-01T10:00:00Z');
     const info = await checkForUpdate({ now: nextDay, fetchFn: fakeRegistry(null, false).fn });
     expect(info).toMatchObject({ latest: NEWER, updateAvailable: true });
+  });
+});
+
+function fakeRunner(ok: boolean): { fn: CommandRunner; calls: () => string[][] } {
+  const recorded: string[][] = [];
+  const fn: CommandRunner = async (command, args) => {
+    recorded.push([command, ...args]);
+    return { ok, code: ok ? 0 : 1, stderr: ok ? '' : 'npm error: EACCES' };
+  };
+  return { fn, calls: () => recorded };
+}
+
+describe('auto-apply', () => {
+  let restoreEnv: Record<string, string | undefined>;
+  const SEED = new Date('2026-06-30T10:00:00Z');
+  const SOAKED = new Date('2026-07-01T12:00:00Z'); // >24h later, different UTC day
+
+  beforeEach(() => {
+    restoreEnv = {
+      AFFILIATE_MCP_CONFIG_DIR: process.env['AFFILIATE_MCP_CONFIG_DIR'],
+      AFFILIATE_MCP_UPDATE_CHECK: process.env['AFFILIATE_MCP_UPDATE_CHECK'],
+      AFFILIATE_MCP_AUTO_UPDATE: process.env['AFFILIATE_MCP_AUTO_UPDATE'],
+      AFFILIATE_MCP_AUTO_UPDATE_MIN_AGE_HOURS: process.env['AFFILIATE_MCP_AUTO_UPDATE_MIN_AGE_HOURS'],
+      AFFILIATE_MCP_SURFACE: process.env['AFFILIATE_MCP_SURFACE'],
+      npm_execpath: process.env['npm_execpath'],
+      npm_config_user_agent: process.env['npm_config_user_agent'],
+    };
+    process.env['AFFILIATE_MCP_CONFIG_DIR'] = mkdtempSync(path.join(tmpdir(), 'amcp-apply-'));
+    delete process.env['AFFILIATE_MCP_UPDATE_CHECK'];
+    delete process.env['AFFILIATE_MCP_AUTO_UPDATE'];
+    delete process.env['AFFILIATE_MCP_AUTO_UPDATE_MIN_AGE_HOURS'];
+    process.env['AFFILIATE_MCP_SURFACE'] = 'npm';
+  });
+
+  afterEach(() => {
+    for (const [k, v] of Object.entries(restoreEnv)) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+  });
+
+  /** Seed the cache so a newer version has been "first seen" at SEED. */
+  async function seed(): Promise<void> {
+    await checkForUpdate({ now: SEED, fetchFn: fakeRegistry(NEWER).fn });
+  }
+
+  it('reads the opt-in from env then persisted state, defaulting off', () => {
+    expect(autoUpdateEnabled()).toBe(false);
+    setAutoUpdate(true);
+    expect(autoUpdateEnabled()).toBe(true);
+    process.env['AFFILIATE_MCP_AUTO_UPDATE'] = 'off'; // env overrides state
+    expect(autoUpdateEnabled()).toBe(false);
+  });
+
+  it('applies via npm install -g once the release has soaked', async () => {
+    await seed();
+    const runner = fakeRunner(true);
+    const result = await applyUpdate({ now: SOAKED, fetchFn: fakeRegistry(NEWER).fn, runner: runner.fn });
+    expect(result).toMatchObject({ applied: true, reason: 'applied', latest: NEWER });
+    expect(runner.calls()).toHaveLength(1);
+    expect(runner.calls()[0]).toEqual([
+      process.platform === 'win32' ? 'npm.cmd' : 'npm',
+      'install',
+      '-g',
+      `affiliate-networks-mcp@${NEWER}`,
+    ]);
+  });
+
+  it('holds back a release that has not soaked, without running npm', async () => {
+    await seed();
+    const runner = fakeRunner(true);
+    // Same instant as seed → age 0h < 24h soak.
+    const result = await applyUpdate({ now: SEED, fetchFn: fakeRegistry(NEWER).fn, runner: runner.fn });
+    expect(result.reason).toBe('too_new');
+    expect(result.applied).toBe(false);
+    expect(runner.calls()).toHaveLength(0);
+  });
+
+  it('ignoreSoak applies immediately (explicit user action)', async () => {
+    await seed();
+    const runner = fakeRunner(true);
+    const result = await applyUpdate({
+      now: SEED,
+      fetchFn: fakeRegistry(NEWER).fn,
+      runner: runner.fn,
+      ignoreSoak: true,
+    });
+    expect(result.applied).toBe(true);
+    expect(runner.calls()).toHaveLength(1);
+  });
+
+  it('never self-applies on a host-managed surface', async () => {
+    process.env['AFFILIATE_MCP_SURFACE'] = 'mcpb';
+    await seed();
+    const runner = fakeRunner(true);
+    const result = await applyUpdate({
+      now: SOAKED,
+      fetchFn: fakeRegistry(NEWER).fn,
+      runner: runner.fn,
+      ignoreSoak: true,
+    });
+    expect(result.reason).toBe('host_managed');
+    expect(runner.calls()).toHaveLength(0);
+  });
+
+  it('reports command_failed and keeps the current version when npm fails', async () => {
+    await seed();
+    const runner = fakeRunner(false);
+    const result = await applyUpdate({
+      now: SOAKED,
+      fetchFn: fakeRegistry(NEWER).fn,
+      runner: runner.fn,
+      ignoreSoak: true,
+    });
+    expect(result).toMatchObject({ applied: false, reason: 'command_failed' });
+    expect(result.detail).toContain('EACCES');
+  });
+
+  it('reports up_to_date and never runs npm when already current', async () => {
+    const runner = fakeRunner(true);
+    const result = await applyUpdate({
+      now: SOAKED,
+      fetchFn: fakeRegistry(PACKAGE_VERSION).fn,
+      runner: runner.fn,
+      ignoreSoak: true,
+    });
+    expect(result.reason).toBe('up_to_date');
+    expect(runner.calls()).toHaveLength(0);
+  });
+
+  it('autoApplyOnLaunch does nothing when the opt-in is off', async () => {
+    await seed();
+    const runner = fakeRunner(true);
+    await autoApplyOnLaunch({ now: SOAKED, fetchFn: fakeRegistry(NEWER).fn, runner: runner.fn });
+    expect(runner.calls()).toHaveLength(0);
+  });
+
+  it('autoApplyOnLaunch applies on the npm surface once enabled and soaked', async () => {
+    setAutoUpdate(true);
+    await seed();
+    const runner = fakeRunner(true);
+    await autoApplyOnLaunch({ now: SOAKED, fetchFn: fakeRegistry(NEWER).fn, runner: runner.fn });
+    expect(runner.calls()).toHaveLength(1);
+  });
+
+  it('autoApplyOnLaunch never runs npm on a non-npm/unknown surface', async () => {
+    setAutoUpdate(true);
+    // Force telemetrySurface() to resolve to 'unknown': no explicit surface and
+    // none of the npm launcher env vars present.
+    delete process.env['AFFILIATE_MCP_SURFACE'];
+    delete process.env['npm_execpath'];
+    delete process.env['npm_config_user_agent'];
+    await seed();
+    const runner = fakeRunner(true);
+    await autoApplyOnLaunch({ now: SOAKED, fetchFn: fakeRegistry(NEWER).fn, runner: runner.fn });
+    expect(runner.calls()).toHaveLength(0);
   });
 });
 
