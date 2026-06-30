@@ -35,7 +35,7 @@ import {
   recordTelemetry,
   telemetryOutcomeFromErrorType,
 } from './shared/telemetry.js';
-import { notifyIfUpdateAvailable } from './shared/update-check.js';
+import { runStartupUpdateCheck } from './shared/update-check.js';
 
 // Side-effect import: registers every network adapter with the shared registry.
 // Must precede any code path that calls `getAdapters()` / `getAdapter()`.
@@ -68,7 +68,7 @@ const META_TOOL_OPERATIONS = new Map<string, string>([
 
 export async function startServer(): Promise<void> {
   void flushTelemetry();
-  void notifyIfUpdateAvailable();
+  void runStartupUpdateCheck();
   recordTelemetry('lifecycle', 'server_start', 'success');
   const tools = generateAllTools();
   const toolMap = new Map<string, ToolDefinition>(tools.map((t) => [t.name, t]));

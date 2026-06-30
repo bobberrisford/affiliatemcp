@@ -44,7 +44,10 @@ function printHelp(): void {
   write('  affiliate-networks-mcp test            Friendly diagnostic against configured networks');
   write('  affiliate-networks-mcp doctor          Verbose diagnostic with raw responses');
   write('  affiliate-networks-mcp telemetry       View or change anonymous telemetry consent');
-  write('  affiliate-networks-mcp update          Check whether a newer release is available');
+  write('  affiliate-networks-mcp update          Apply an available update now');
+  write('  affiliate-networks-mcp update check    Report current vs latest without applying');
+  write('  affiliate-networks-mcp update enable   Turn on silent auto-apply on launch (opt-in)');
+  write('  affiliate-networks-mcp update disable  Turn off silent auto-apply');
   write('  affiliate-networks-mcp cowork-mirror   Create a private GitHub mirror for Claude Cowork');
   write('  affiliate-networks-mcp validate <slug> Run the full validation suite against one network');
   write('  affiliate-networks-mcp cache clear     Delete every cached response');
@@ -240,7 +243,7 @@ async function main(argv: string[]): Promise<number> {
     }
     case 'update': {
       const { runUpdate } = await import('./cli/update.js');
-      return await runUpdate();
+      return await runUpdate(rest[0]);
     }
     case 'validate': {
       const slug = rest[0];
