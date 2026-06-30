@@ -44,6 +44,7 @@ function printHelp(): void {
   write('  affiliate-networks-mcp test            Friendly diagnostic against configured networks');
   write('  affiliate-networks-mcp doctor          Verbose diagnostic with raw responses');
   write('  affiliate-networks-mcp telemetry       View or change anonymous telemetry consent');
+  write('  affiliate-networks-mcp update          Check whether a newer release is available');
   write('  affiliate-networks-mcp cowork-mirror   Create a private GitHub mirror for Claude Cowork');
   write('  affiliate-networks-mcp validate <slug> Run the full validation suite against one network');
   write('  affiliate-networks-mcp cache clear     Delete every cached response');
@@ -236,6 +237,10 @@ async function main(argv: string[]): Promise<number> {
     case 'telemetry': {
       const { runTelemetry } = await import('./cli/telemetry.js');
       return runTelemetry(rest[0]);
+    }
+    case 'update': {
+      const { runUpdate } = await import('./cli/update.js');
+      return await runUpdate({ check: rest.includes('--check') });
     }
     case 'validate': {
       const slug = rest[0];
