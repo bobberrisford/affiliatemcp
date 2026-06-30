@@ -74,7 +74,7 @@ canonical five-state enum, not a type change**:
 | `approved` | confirmed |
 | `reversed` | declined |
 | `paid` | confirmed (settled) |
-| `other` | residual — surfaced, never dropped, never miscounted as one of the three |
+| `other` | residual: surfaced, never dropped, never miscounted as one of the three |
 
 "Total tracked" commission = pending + confirmed (which includes paid). Declined
 never enters totals. The `other` residual is shown in the snapshot health block
@@ -94,11 +94,11 @@ side maps into the same shape in later work without changing the contract.
 
 ### Time windows and currency
 
-Four windows — yesterday, rolling 7d, rolling 30d, YTD — bucketed by `eventDate`
+Four windows (yesterday, rolling 7d, rolling 30d, YTD) bucketed by `eventDate`
 (`dateConverted` for transactions, `date` for clicks rows) in one canonical brand
 timezone, default `Europe/London`, midnight-to-midnight. Minor day-boundary bleed
 from networks reporting in their own zone is footnoted, not engineered away. No
-live FX in v1: program tables stay in native currency; only a cross-network
+live FX in v1: programme tables stay in native currency; only a cross-network
 roll-up total may convert, using a fixed rate stored in brand config, with a
 visible "converted to {ccy} at {rate}, {date}" note. `reportingCurrency` and an
 optional `fxRates` go into brand config now regardless.
@@ -119,11 +119,11 @@ snapshot carries `rowsTruncated: true` (coarser pivot, survives).
 
 Registered the existing way (`META_TOOL_OPERATIONS` + `generateMetaTools`):
 
-- `affiliate_build_brand_snapshot` — pull, normalise, bucket, compute, persist,
+- `affiliate_build_brand_snapshot`: pull, normalise, bucket, compute, persist,
   return the `BrandSnapshot` (four windows x per-currency metrics, count-honest
   `byNetwork` health, `rowsTruncated`, `generatedAt`, `schemaVersion`).
-- `affiliate_get_brand_rows` — CSV-grade rows from the store, `format: rows | csv`.
-- `affiliate_get_brand_action_bundle` — the AI-action input contract: snapshot +
+- `affiliate_get_brand_rows`: CSV-grade rows from the store, `format: rows | csv`.
+- `affiliate_get_brand_action_bundle`, the AI-action input contract: snapshot +
   recorded strategy/KPI (reusing `loadClientStrategy`) + the brand's action-map
   readiness slice (reusing `collectActionDescriptors` / `computeReadiness`) +
   entitlement state. It never receives the raw 30-day rows.
@@ -137,7 +137,7 @@ the free and paid surfaces cannot drift.
 Any network pull can partly fail. `snapshot.byNetwork` carries one entry per
 *bound* network, never per *successful* network, with state `ok | degraded |
 failed` and the verbatim `NetworkErrorEnvelope` when failed. Totals state which
-networks they exclude ("CJ unavailable — totals exclude CJ"). A four-of-five pull
+networks they exclude ("CJ unavailable, totals exclude CJ"). A four-of-five pull
 is never presented as five. A wrong number in a QBR is a client-trust incident;
 partial-but-honest beats complete-but-wrong.
 
@@ -152,7 +152,7 @@ sub-id cut from v1 (captured on the row if cheap, never a pivot).
 
 - **User outcome.** A brand operator sees one brand's performance across up to
   five networks, normalised and time-windowed, as free pivotable tables, and can
-  export CSV and generate a QBR or weekly report on the paid tier — without
+  export CSV and generate a QBR or weekly report on the paid tier, without
   bouncing between network dashboards.
 - **Owning domains.** Brand-data module (new); MCP tool/server surface (additive);
   the four reporting skills (rewired as consumers); the gate (companion record).
@@ -172,7 +172,7 @@ sub-id cut from v1 (captured on the row if cheap, never a pivot).
   numbers via the new tool with no aggregation rebuilt.
 - **Stop conditions.** No code (PR-1+) until both 0a and 0b merge. No network
   promoted in PR-3 until its reconciliation PASSes. No payment or licence
-  verification logic anywhere — `isEntitled` stays a stub. No new fields on the
+  verification logic anywhere; `isEntitled` stays a stub. No new fields on the
   frozen shared types. No aggregation re-implemented in skills once the tool
   exists.
 
