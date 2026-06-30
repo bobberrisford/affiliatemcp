@@ -247,3 +247,66 @@ npm run lint:design
 - **Manual smoke:** open the built `.dmg`, run the setup app end to end against a
   real network, confirm it writes `~/.affiliate-mcp/.env` and the Claude Desktop
   config entry, then confirm Claude can call an affiliate tool after the restart.
+
+---
+
+## 7. Org / IT team rollout (host-native)
+
+For a central IT team that wants to deploy affiliate-mcp to a whole
+organisation, **do not use the public Connectors Directory.** It accepts remote
+HTTPS connectors only; a local stdio server has no resolvable config there and
+surfaces as `ant.dir.ant.<hash>.affiliate-networks-mcp: No server configuration
+found`. Use each host's org-admin surface instead. The server stays local and
+each user supplies their own credentials on-device. See
+`docs/decisions/2026-06-29-org-team-distribution.md`.
+
+### Claude Desktop — Desktop Extensions allowlist
+
+1. Build the `.mcpb` bundle (see `mcpb/README.md`).
+2. In the Claude org admin settings, open the **Desktop Extensions allowlist**
+   and upload the `.mcpb`, then enable it for the team.
+3. Each user installs it from Claude Desktop → Settings → Connectors → Desktop,
+   and fills the per-network credential fields the manifest prompts for (Awin,
+   CJ, Impact, Partnerize; sensitive fields are stored by Claude Desktop's
+   secret storage). Every other adapter still works through the user's own
+   `~/.affiliate-mcp/.env`.
+
+Nothing is hosted and no credential leaves the user's machine. **Open:** confirm
+whether the allowlist requires a signed `.mcpb` (ties into the signing identity
+question in §3) and record the answer here.
+
+### Claude Code — managed settings
+
+Distribute the private marketplace and let managed settings pin it. In the
+org's managed `settings.json` (server-managed or MDM-delivered):
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "affiliatemcp": {
+      "source": { "source": "github", "repo": "bobberrisford/affiliatemcp" }
+    }
+  },
+  "strictKnownMarketplaces": true
+}
+```
+
+The plugin (`.claude-plugin/plugin.json`) already declares the stdio server, so
+installing the plugin connects it. For an exclusive, fixed set where users may
+not add other servers, deploy a `managed-mcp.json` instead (macOS:
+`/Library/Application Support/ClaudeCode/managed-mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "affiliate": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "affiliate-networks-mcp"]
+    }
+  }
+}
+```
+
+Credentials are still per-user (env vars or `~/.affiliate-mcp/.env` on each
+machine); the managed config carries no secrets.

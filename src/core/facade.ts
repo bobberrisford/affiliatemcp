@@ -34,7 +34,23 @@ import {
 } from '../cli/install/claude-desktop.js';
 import { detectClients as detectClientsImpl } from '../cli/install/detect.js';
 import { NotImplementedError } from '../shared/types.js';
-import type { CredentialValidationResult } from '../shared/types.js';
+import type {
+  AdapterCallContext,
+  Click,
+  ClickQuery,
+  CredentialValidationResult,
+  EarningsSummary,
+  NetworkAdapter,
+  NetworkErrorEnvelope,
+  NetworkSlug,
+  ProgrammePerformanceQuery,
+  ProgrammePerformanceRow,
+  Transaction,
+  TransactionQuery,
+} from '../shared/types.js';
+import { BrandNotRegistered, buildErrorEnvelope, toErrorEnvelope } from '../shared/errors.js';
+import { cacheKey, credentialHashFor, pickTtl, withCache } from '../shared/cache.js';
+import { getCredential, loadConfig } from '../shared/config.js';
 import { CREDENTIAL_HELP } from './credential-help.js';
 import {
   recordTelemetry,
@@ -113,6 +129,26 @@ export function listNetworks(): NetworkSummary[] {
       multiBrand: a.meta.credentialScope === 'multi-brand',
     }))
     .sort((x, y) => x.name.localeCompare(y.name));
+}
+
+/**
+ * The registered networks whose credentials are already present, i.e. the ones
+ * a data read can actually authenticate against. Uses the same cheap,
+ * network-free check as the cockpit (every setup-step field has a value) and
+ * loads the stored `.env` first so it reflects a completed setup. Powers the
+ * data-locker picker, so the GUI offers only networks the user can pull from
+ * rather than the full registry.
+ */
+export function listConfiguredNetworks(): NetworkSummary[] {
+  loadConfig();
+  return listNetworks().filter((n) => {
+    const adapter = getAdapter(n.slug);
+    if (!adapter) return false;
+    return adapter.setupSteps().every((step) => {
+      const value = getCredential(step.field);
+      return value !== undefined && value !== '';
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -334,4 +370,201 @@ export async function connectClaudeDesktop(
     forceOverwrite: opts.forceOverwrite ?? false,
     entryValue,
   });
+}
+
+// ---------------------------------------------------------------------------
+// Read-only performance data
+// ---------------------------------------------------------------------------
+//
+// These power the desktop "data locker" (decision
+// docs/decisions/2026-06-29-desktop-data-export.md): pull performance data,
+// view it, export it. The app surfaces and exports data; it does NOT interpret
+// it — analysis stays with Claude and the skills. So this facade is read-only
+// and additive; it changes no existing signature and adds no MCP tool.
+//
+// It deliberately reuses the SAME shared primitives the MCP tools layer uses
+// (src/tools/generate.ts): `pickTtl`/`cacheKey`/`credentialHashFor`/`withCache`
+// for caching, `buildAdapterCallContext` for advertiser brand resolution, and
+// `toErrorEnvelope` for Principle 4.1 error coercion. No domain logic is copied
+// into this client — only thin glue over those primitives, so the desktop and
+// Claude's server share one cache store and one error contract rather than
+// drifting apart.
+
+/**
+ * Structured-clone-safe result for a read. The error branch carries a
+ * `NetworkErrorEnvelope` (Principle 4.1) rather than throwing, so a failure
+ * crosses the IPC boundary intact and is never faked into success. Mirrors the
+ * discriminated-union style of `verifyAuth`/`validateField`.
+ */
+export type DataResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; error: NetworkErrorEnvelope };
+
+type ReadOperation =
+  | 'getEarningsSummary'
+  | 'listTransactions'
+  | 'listClicks'
+  | 'getProgrammePerformance';
+
+/**
+ * Shared cached-read core for the four public reads below.
+ *
+ * Loads stored credentials into `process.env` (adapters authenticate from env,
+ * exactly as they do under the MCP server), resolves the adapter, threads
+ * advertiser brand context, applies the same TTL/cache policy as the tools
+ * layer, and coerces any failure into a `NetworkErrorEnvelope`.
+ */
+async function readOperation<T>(
+  slug: string,
+  operation: ReadOperation,
+  query: Record<string, unknown>,
+  invoke: (adapter: NetworkAdapter, ctx?: AdapterCallContext) => Promise<T>,
+  brand?: string,
+): Promise<DataResult<T>> {
+  // Idempotent and non-overwriting (`process.env` wins), so calling it per read
+  // is safe: it makes the locker self-sufficient after setup without forcing
+  // every caller to bootstrap env first.
+  loadConfig();
+
+  const adapter = getAdapter(slug);
+  if (!adapter) {
+    return {
+      ok: false,
+      error: buildErrorEnvelope({
+        type: 'config_error',
+        network: slug as NetworkSlug,
+        operation,
+        message: `No adapter registered for network "${slug}".`,
+      }),
+    };
+  }
+  const network = adapter.slug;
+  const advertiserSide = adapter.meta.side === 'advertiser';
+
+  try {
+    let ctx: AdapterCallContext | undefined;
+    let cacheArgs: Record<string, unknown> = query;
+
+    if (advertiserSide) {
+      if (!brand) {
+        return {
+          ok: false,
+          error: buildErrorEnvelope({
+            type: 'config_error',
+            network,
+            operation,
+            message: `Network "${slug}" is advertiser-side; a brand is required to address the right account.`,
+          }),
+        };
+      }
+      // Resolves (brand, network) -> networkBrandId; throws BrandNotRegistered
+      // BEFORE any network call, matching the tools layer. Dynamic import so
+      // publisher-only use never loads the resolver.
+      const { buildAdapterCallContext } = await import('../shared/brand-resolver.js');
+      ctx = buildAdapterCallContext(brand, network);
+      // Separate cache entries per brand under one credential set.
+      cacheArgs = { ...query, __networkBrandId: ctx.networkBrandId };
+    }
+
+    const ttl = pickTtl(operation, query, new Date(), advertiserSide);
+    const run = (): Promise<T> => invoke(adapter, ctx);
+    if (ttl <= 0) {
+      return { ok: true, data: await run() };
+    }
+    const key = cacheKey({
+      network,
+      operation,
+      args: cacheArgs,
+      adapterVersion: adapter.meta.adapterVersion,
+      credentialHash: credentialHashFor(network),
+    });
+    return { ok: true, data: await withCache(key, ttl, run) };
+  } catch (err) {
+    // Brand resolution fails before any network call; surface it as the same
+    // config_error the MCP layer reports rather than a generic API error.
+    if (err instanceof BrandNotRegistered) {
+      return {
+        ok: false,
+        error: buildErrorEnvelope({ type: 'config_error', network, operation, message: err.message }),
+      };
+    }
+    return { ok: false, error: toErrorEnvelope(err, { network, operation }) };
+  }
+}
+
+/**
+ * Earnings summary for one network over a window, with by-programme and
+ * by-status breakdowns. Pass `brand` for advertiser-side networks.
+ */
+export function getEarnings(
+  slug: string,
+  query: TransactionQuery = {},
+  brand?: string,
+): Promise<DataResult<EarningsSummary>> {
+  return readOperation(
+    slug,
+    'getEarningsSummary',
+    query as Record<string, unknown>,
+    (a, ctx) => a.getEarningsSummary(query, ctx),
+    brand,
+  );
+}
+
+/**
+ * Transactions for one network (the rows behind an export). Pass `brand` for
+ * advertiser-side networks.
+ */
+export function listTransactions(
+  slug: string,
+  query: TransactionQuery = {},
+  brand?: string,
+): Promise<DataResult<Transaction[]>> {
+  return readOperation(
+    slug,
+    'listTransactions',
+    query as Record<string, unknown>,
+    (a, ctx) => a.listTransactions(query, ctx),
+    brand,
+  );
+}
+
+/** Clicks for one network. Pass `brand` for advertiser-side networks. */
+export function listClicks(
+  slug: string,
+  query: ClickQuery = {},
+  brand?: string,
+): Promise<DataResult<Click[]>> {
+  return readOperation(
+    slug,
+    'listClicks',
+    query as Record<string, unknown>,
+    (a, ctx) => a.listClicks(query, ctx),
+    brand,
+  );
+}
+
+/**
+ * Per-publisher performance rows for an advertiser-side network. `brand` is
+ * required. Returns a `not_implemented` envelope for adapters (publisher-side,
+ * or advertisers that do not expose it) that lack the operation.
+ */
+export function getProgrammePerformance(
+  slug: string,
+  query: ProgrammePerformanceQuery = {},
+  brand?: string,
+): Promise<DataResult<ProgrammePerformanceRow[]>> {
+  return readOperation(
+    slug,
+    'getProgrammePerformance',
+    query as Record<string, unknown>,
+    (a, ctx) => {
+      if (typeof a.getProgrammePerformance !== 'function') {
+        throw new NotImplementedError(
+          `Adapter "${a.slug}" does not implement getProgrammePerformance.`,
+        );
+      }
+      return a.getProgrammePerformance(query, ctx);
+    },
+    brand,
+  );
 }

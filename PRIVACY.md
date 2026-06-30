@@ -88,6 +88,31 @@ machine where you cannot rely on file permissions to keep other users out of
 your home directory, leave caching off so transaction-level results are never
 written to disk.
 
+## Update check
+
+The server checks for a newer release so you are not stranded on an old build.
+Once per day it reads the package's latest published version from the npm
+registry (`https://registry.npmjs.org`). The request is anonymous: it carries no
+credentials, account identifiers, affiliate data, or usage counters — only a
+standard HTTP request for a public package's version, the same request `npm`
+itself makes. The npm registry, like any web server, sees the originating IP
+address of that request; this project does not receive or store it. The result
+is cached in `~/.affiliate-mcp/update-check.json` (mode `0600`). The check is
+**on by default** and fails silently when offline. Disable it by setting
+`AFFILIATE_MCP_UPDATE_CHECK=0` (or `false`/`no`/`off`). It is independent of
+telemetry consent.
+
+Silent auto-apply is **off by default** and separate from the check above. When
+you turn it on (`affiliate-networks-mcp update enable`, or
+`AFFILIATE_MCP_AUTO_UPDATE=1`), the server updates itself on launch for npm/npx
+installs by running `npm install -g affiliate-networks-mcp@latest`, so the next
+launch runs the new version. It never applies on host-managed surfaces (the
+`.mcpb` bundle or desktop app, which update through their own channels), only
+applies a release it has known about for at least 24 hours (a soak window,
+configurable via `AFFILIATE_MCP_AUTO_UPDATE_MIN_AGE_HOURS`), and falls back to a
+notice if the install fails. No data leaves your machine beyond the same
+anonymous registry request and the standard `npm install` it performs.
+
 Remove a network by deleting its keys from `~/.affiliate-mcp/.env`. Delete
 locally cached results with `affiliate-networks-mcp cache clear`. To remove
 everything, run `npx affiliate-networks-mcp uninstall` (or

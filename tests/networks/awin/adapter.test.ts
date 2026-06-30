@@ -531,4 +531,23 @@ describe('§15.4 error transparency', () => {
       expect(env.type).toBe('auth_error');
     }
   });
+
+  it('treats an unresolved bundle placeholder as unconfigured, not a 401', async () => {
+    // The Claude Desktop bundle passes the literal placeholder when a field is
+    // left blank. It must surface as config_error with setup guidance, and the
+    // request must never reach the network.
+    process.env['AWIN_API_TOKEN'] = '${user_config.awin_api_token}';
+    const fetchSpy = mockFetchQueue([]);
+    try {
+      await awinAdapter.listProgrammes();
+      throw new Error('expected to throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(NetworkError);
+      const env = (err as NetworkError).envelope;
+      expect(env.type).toBe('config_error');
+      expect(env.operation).toBe('listProgrammes');
+      expect(env.hint).toBeTruthy();
+    }
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
 });
