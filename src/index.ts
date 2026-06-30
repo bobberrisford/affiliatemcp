@@ -2,9 +2,13 @@
 /**
  * affiliate-mcp CLI entry point.
  *
- * - With no arguments: detect first-run (no `~/.affiliate-mcp/.env`). If
- *   first-run, print a friendly pointer to `affiliate-mcp setup` and exit.
- *   Otherwise start the MCP server on stdio.
+ * - With no arguments: start the MCP server on stdio. The one exception is an
+ *   interactive terminal on first run (no `~/.affiliate-mcp/.env`): there we
+ *   print a friendly pointer to `affiliate-mcp setup` and exit, since a human
+ *   did not ask for a stdio server. When launched by an MCP client (stdin is a
+ *   pipe, not a TTY) we always start, even unconfigured — exiting would read to
+ *   the client as "Server disconnected", and unconfigured networks surface as
+ *   per-tool `config_error` envelopes the client can show instead.
  * - Subcommands: `setup`, `test`, `doctor`, `validate <slug>`. At v0.1 most
  *   are stubs printing "implemented in chunk N" — the orchestrator wires the
  *   real behaviour in later chunks.
@@ -13,11 +17,15 @@
  * is the protocol channel). User-facing CLI text goes to stderr.
  */
 
+import { shouldShowFirstRunBanner } from './cli/first-run.js';
 import { isFirstRun, loadConfig, resolveConfigEnvFile } from './shared/config.js';
+import { createLogger } from './shared/logging.js';
 
 // Side-effect import: registers every network adapter with the shared registry.
 // Must precede any subcommand path (validate/setup/test/doctor) that consults it.
 import './networks/index.js';
+
+const log = createLogger('cli');
 
 function write(line: string): void {
   process.stderr.write(line.endsWith('\n') ? line : `${line}\n`);
@@ -163,9 +171,21 @@ async function main(argv: string[]): Promise<number> {
 
   switch (cmd) {
     case undefined: {
-      if (isFirstRun()) {
+      const firstRun = isFirstRun();
+      if (shouldShowFirstRunBanner({ firstRun, interactive: Boolean(process.stdin.isTTY) })) {
         printFirstRunBanner();
         return 0;
+      }
+      // Launched by an MCP client, or already configured: start the server.
+      // Starting unconfigured keeps the client connected — unconfigured networks
+      // return `config_error` envelopes per call instead of the process exiting
+      // and the client reporting "Server disconnected". Surface a stderr pointer
+      // to `setup`; it shows up in the client's MCP/developer log panel.
+      if (firstRun) {
+        log.warn(
+          { configFile: resolveConfigEnvFile() },
+          'starting unconfigured; run `affiliate-networks-mcp setup` to add credentials',
+        );
       }
       const { startServer } = await import('./server.js');
       await startServer();

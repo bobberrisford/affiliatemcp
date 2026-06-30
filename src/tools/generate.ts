@@ -25,6 +25,7 @@ import type {
 } from '../shared/types.js';
 import { NotImplementedError } from '../shared/types.js';
 import { getAdapters } from '../shared/registry.js';
+import { getCredential, setupInstructionForSurface } from '../shared/config.js';
 import { computeReadiness, snapshotCredentials } from '../shared/action-map.js';
 import { collectActionDescriptors } from './action-map.js';
 import { isValidBrandSlug, loadBrands } from '../shared/brands.js';
@@ -53,6 +54,18 @@ export type RunDiagnosticMetaResult = DiagnosticResult;
 export type ListNetworksMetaResult = Array<
   NetworkMeta & {
     operationClaimStatuses: Record<string, OperationCapability['claimStatus']>;
+    /** True when every credential the adapter asks for in setupSteps() is present. */
+    configured: boolean;
+    /**
+     * The env-var names the adapter declares in setupSteps() that are absent or
+     * set to an unresolved placeholder / example sentinel. Empty when configured.
+     */
+    missingCredentials: string[];
+    /**
+     * Surface-aware next step to configure this network. Present only when the
+     * network is not configured; omitted otherwise.
+     */
+    setupAction?: string;
   }
 >;
 
@@ -452,9 +465,9 @@ export function generateMetaTools(): ToolDefinition[] {
     {
       name: 'affiliate_list_networks',
       description:
-        'List the affiliate networks this server has adapters registered for, along with their adapter version and claim_status. ' +
-        'Use this to discover which networks are wired up before invoking a per-network tool. ' +
-        'Returns a NetworkMeta[] array (additively extended with `operationClaimStatuses` — per-op claim-status overrides emitted by an adapter\'s capabilities()); pair with affiliate_run_diagnostic for live capability data.',
+        'List the affiliate networks this server has adapters registered for, along with their adapter version, claim_status, and whether the user has configured credentials for each. ' +
+        'Use this to discover which networks are wired up, and to tell the user which networks still need setup before invoking a per-network tool (so they avoid a confusing upstream auth error). ' +
+        'Returns a NetworkMeta[] array additively extended with `operationClaimStatuses` (per-op claim-status overrides), `configured` (boolean), `missingCredentials` (env-var names still needed), and `setupAction` (the surface-correct next step when not configured); pair with affiliate_run_diagnostic for live capability data.',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
       handle: async (): Promise<ListNetworksMetaResult> => {
         // Additive shape: original NetworkMeta fields are preserved verbatim;
@@ -476,7 +489,25 @@ export function generateMetaTools(): ToolDefinition[] {
               // The diagnostic tool is the right place to expose that failure.
               operationClaimStatuses = {};
             }
-            return { ...a.meta, operationClaimStatuses };
+            // Configuration readiness: the credentials the adapter asks for in
+            // setupSteps() that getCredential reports as present. getCredential
+            // already treats unresolved ${user_config.*} placeholders and
+            // example sentinels as missing, so a Desktop-bundle user who left a
+            // field blank reads as unconfigured here rather than appearing ready
+            // and then hitting an upstream 401.
+            const fields = a.setupSteps().map((s) => s.field);
+            const missingCredentials = fields.filter((f) => getCredential(f) === undefined);
+            const configured = missingCredentials.length === 0;
+            const setupAction = configured
+              ? undefined
+              : setupInstructionForSurface(missingCredentials.join(', '));
+            return {
+              ...a.meta,
+              operationClaimStatuses,
+              configured,
+              missingCredentials,
+              ...(setupAction ? { setupAction } : {}),
+            };
           }),
         );
         return enriched;

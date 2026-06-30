@@ -108,6 +108,18 @@ describe('Awin transformers (status normalisation, raw preservation)', () => {
     expect(_internals.mapProgrammeStatus({ status: 'never-seen-before' })).toBe('unknown');
   });
 
+  it('derives status from membershipStatus when /programmedetails omits status', () => {
+    // The single-fetch (getProgramme) response carries neither `status` nor the
+    // queried `relationship`; only `membershipStatus`. Without this fallback a
+    // joined programme fetched by id mapped to 'unknown'.
+    expect(_internals.mapProgrammeStatus({ membershipStatus: 'Joined' })).toBe('joined');
+    expect(_internals.toProgramme({ id: 307, membershipStatus: 'Joined' }).status).toBe('joined');
+    // Explicit `status`/`relationship` still take precedence over membershipStatus.
+    expect(
+      _internals.mapProgrammeStatus({ status: 'pending', membershipStatus: 'Joined' }),
+    ).toBe('pending');
+  });
+
   it('computes ageDays from validationDate (preferred) or transactionDate', () => {
     const now = new Date('2026-05-21T00:00:00Z');
     const age1 = _internals.computeAgeDays(
@@ -518,5 +530,24 @@ describe('§15.4 error transparency', () => {
       const env = (err as NetworkError).envelope;
       expect(env.type).toBe('auth_error');
     }
+  });
+
+  it('treats an unresolved bundle placeholder as unconfigured, not a 401', async () => {
+    // The Claude Desktop bundle passes the literal placeholder when a field is
+    // left blank. It must surface as config_error with setup guidance, and the
+    // request must never reach the network.
+    process.env['AWIN_API_TOKEN'] = '${user_config.awin_api_token}';
+    const fetchSpy = mockFetchQueue([]);
+    try {
+      await awinAdapter.listProgrammes();
+      throw new Error('expected to throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(NetworkError);
+      const env = (err as NetworkError).envelope;
+      expect(env.type).toBe('config_error');
+      expect(env.operation).toBe('listProgrammes');
+      expect(env.hint).toBeTruthy();
+    }
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
