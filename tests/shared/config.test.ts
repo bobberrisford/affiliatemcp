@@ -40,10 +40,13 @@ describe('placeholder / example credential recognition', () => {
     expect(isPlaceholderCredential('${user_config.awin_publisher_id}')).toBe(true);
   });
 
-  it('recognises an unedited example sentinel', () => {
+  it('recognises an unedited example sentinel in either separator style', () => {
     expect(isPlaceholderCredential('your-token-here')).toBe(true);
     expect(isPlaceholderCredential('your-id-here')).toBe(true);
     expect(isPlaceholderCredential('YOUR-PUBLISHER-ID-HERE')).toBe(true);
+    // Underscore-style sentinels also appear in the network docs.
+    expect(isPlaceholderCredential('your_secret_key_here')).toBe(true);
+    expect(isPlaceholderCredential('your_bearer_token_here')).toBe(true);
   });
 
   it('treats real-looking values as configured', () => {

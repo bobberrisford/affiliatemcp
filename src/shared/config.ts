@@ -119,8 +119,9 @@ export function _resetConfigForTests(): void {
 const PLACEHOLDER_CREDENTIAL_PATTERNS: readonly RegExp[] = [
   // Unresolved Claude Desktop bundle placeholder, e.g. `${user_config.awin_api_token}`.
   /^\$\{user_config\.[^}]*\}$/,
-  // Unedited example sentinel from docs/examples, e.g. `your-token-here`, `your-id-here`.
-  /^your-[\w-]*-here$/i,
+  // Unedited example sentinel from docs/examples. Both separator styles appear
+  // across the network docs: `your-token-here` and `your_secret_key_here`.
+  /^your[_-][\w-]*[_-]here$/i,
 ];
 
 /**

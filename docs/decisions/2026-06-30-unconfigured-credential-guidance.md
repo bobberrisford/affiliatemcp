@@ -186,12 +186,15 @@ Keep all dependent implementation in draft until this record is accepted.
   PR 2. If the placeholder pattern proves host-version-specific, narrow the test
   and document the exact Desktop versions covered rather than broadening it.
 
-## Open questions for the maintainer
+## Resolved at acceptance
 
-- **Example sentinels:** treat the documented `your-token-here` / `your-id-here`
-  examples as missing too (recommended, since copy-paste-without-editing is a
-  real failure mode), or only the `${user_config.*}` host placeholders?
-- **Readiness home:** confirm `affiliate_list_networks` is the right surface for
-  configuration readiness, versus a dedicated `affiliate_setup_status` tool.
-- **Manifest fields:** leave bundle credential fields `required: false` as this
-  record assumes, or revisit requiredness as a separate Desktop-UX decision?
+Rob accepted these on 2026-06-30:
+
+- **Example sentinels:** yes, treat documented example sentinels as missing, in
+  both separator styles found across the network docs (`your-token-here` and
+  `your_secret_key_here`), not only the `${user_config.*}` host placeholders.
+- **Readiness home:** extend `affiliate_list_networks`; do not add a dedicated
+  `affiliate_setup_status` tool.
+- **Manifest fields:** leave bundle credential fields `required: false`; fix the
+  runtime behaviour rather than the manifest contract. Requiredness remains a
+  separate Desktop-UX decision if revisited later.
