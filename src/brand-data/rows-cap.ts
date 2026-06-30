@@ -10,9 +10,8 @@
  */
 
 import type { BrandTxnRow, StatusBucket } from './model.js';
-import { ROWS_CAP } from './model.js';
+import { DEFAULT_BRAND_TIMEZONE, ROWS_CAP } from './model.js';
 import { dayInZone } from './windows.js';
-import { DEFAULT_BRAND_TIMEZONE } from './model.js';
 
 /** One collapsed bucket when full rows exceed the cap. */
 export interface AggregatedTxnRow {

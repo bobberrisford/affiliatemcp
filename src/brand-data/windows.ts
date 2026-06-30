@@ -23,14 +23,24 @@ export interface WindowBounds {
 /**
  * The calendar day (`YYYY-MM-DD`) an ISO instant falls on in `timezone`.
  * Uses `Intl` so no date dependency is needed; `en-CA` yields ISO order.
+ *
+ * Formatters are cached per timezone — `dayInZone` is called once per row when
+ * bucketing or aggregating, so constructing a formatter each call would be the
+ * hot path at the 10k-row cap.
  */
+const dayFormatters = new Map<string, Intl.DateTimeFormat>();
+
 export function dayInZone(iso: string, timezone: string = DEFAULT_BRAND_TIMEZONE): string {
-  const fmt = new Intl.DateTimeFormat('en-CA', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
+  let fmt = dayFormatters.get(timezone);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    dayFormatters.set(timezone, fmt);
+  }
   // en-CA formats as YYYY-MM-DD.
   return fmt.format(new Date(iso));
 }
