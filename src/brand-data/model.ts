@@ -139,3 +139,41 @@ export interface NetworkHealth {
   /** Free-text note, e.g. "clicks unavailable; EPC blank". */
   note?: string;
 }
+
+/** Per-(programme, currency) commission breakdown within a window. */
+export interface ProgramBreakdownRow {
+  programId: string;
+  programName: string;
+  metrics: WindowMetrics;
+}
+
+/**
+ * One window's computed view: grand totals (one entry per currency) plus a
+ * per-programme breakdown. Clicks live at the publisher grain on the advertiser
+ * side, so per-programme EPC is blank; the headline EPC is on the totals.
+ */
+export interface WindowSnapshot {
+  window: WindowKey;
+  /** Inclusive day bounds in the canonical timezone (`YYYY-MM-DD`). */
+  from: string;
+  to: string;
+  totals: WindowMetrics[];
+  byProgram: ProgramBreakdownRow[];
+}
+
+/**
+ * The persisted, count-honest brand snapshot returned by
+ * `affiliate_build_brand_snapshot`. `byNetwork` carries one entry per *bound*
+ * network, never per *successful* one, so a four-of-five pull is never
+ * presented as five (brief §13).
+ */
+export interface BrandSnapshot {
+  schemaVersion: number;
+  brandId: string;
+  /** The pull instant — the "as of" the figures should be read against. */
+  generatedAt: string;
+  timezone: string;
+  windows: Record<WindowKey, WindowSnapshot>;
+  byNetwork: NetworkHealth[];
+  rowsTruncated: boolean;
+}
