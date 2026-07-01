@@ -12,8 +12,14 @@
  * on Node 20+ (WebCrypto Ed25519), the same algorithm the Worker and app use.
  */
 
+// base64 over raw bytes using btoa — a runtime global in both Node 20+ (where
+// this script runs via tsx) and the Workers runtime, so no Node type deps are
+// needed (the Worker's tsconfig types are @cloudflare/workers-types only).
 function toB64(buf: ArrayBuffer): string {
-  return Buffer.from(new Uint8Array(buf)).toString('base64');
+  const bytes = new Uint8Array(buf);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i] as number);
+  return btoa(bin);
 }
 
 async function main(): Promise<void> {
@@ -24,7 +30,7 @@ async function main(): Promise<void> {
   const pkcs8 = await crypto.subtle.exportKey('pkcs8', pair.privateKey);
   const spki = await crypto.subtle.exportKey('spki', pair.publicKey);
 
-  process.stdout.write(
+  console.log(
     [
       '# Ed25519 keypair for affiliate-mcp entitlement tokens',
       '',
