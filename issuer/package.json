@@ -1,0 +1,26 @@
+{
+  "name": "affiliate-mcp-issuer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Entitlement-issuer Cloudflare Worker for affiliate-mcp: Stripe Billing subscription + short-lived Ed25519 entitlement tokens. Holds subscription records (KV) and the signing key only — no affiliate credentials or data.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "wrangler deploy --dry-run --outdir dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "gen-keypair": "tsx scripts/gen-keypair.ts"
+  },
+  "dependencies": {
+    "stripe": "^18.5.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250101.0",
+    "tsx": "^4.22.3",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "wrangler": "^3.90.0"
+  }
+}

@@ -1,0 +1,35 @@
+name = "affiliate-mcp-issuer"
+main = "src/index.ts"
+compatibility_date = "2026-03-25"
+# nodejs_compat gives the Node-style globals the Stripe fetch client is happiest
+# with; the signing path uses WebCrypto Ed25519 (built in) and needs no deps.
+compatibility_flags = ["nodejs_compat"]
+
+# ── KV: subscription records ───────────────────────────────────────────────
+# Stores (NO affiliate credentials, NO affiliate data — subscription state only):
+#   acc:<accountKey>  -> JSON { status, customerId, subscriptionId, email? }
+#   sub:<subId>       -> <accountKey>   (reverse index for subscription webhooks)
+#   evt:<eventId>     -> "1"            (idempotency marker, TTL'd)
+# Create a FRESH namespace before first deploy (the old paid-tier one is gone):
+#   npx wrangler kv namespace create ENTITLEMENTS
+#   npx wrangler kv namespace create ENTITLEMENTS --preview
+# then paste the returned ids below.
+[[kv_namespaces]]
+binding = "ENTITLEMENTS"
+id = "REPLACE_WITH_NEW_KV_ID"
+preview_id = "REPLACE_WITH_NEW_PREVIEW_KV_ID"
+
+# ── Non-secret vars (override per-env or in the dashboard) ─────────────────
+[vars]
+# The £20/mo recurring Price id created in the Stripe dashboard (Billing).
+STRIPE_PRICE_ID = "price_REPLACE_WITH_20GBP_MONTHLY"
+SUCCESS_URL = "https://affiliate-mcp-issuer.robertberrisford.workers.dev/success"
+CANCEL_URL = "https://affiliate-mcp-issuer.robertberrisford.workers.dev/cancel"
+PORTAL_RETURN_URL = "https://affiliate-mcp-issuer.robertberrisford.workers.dev/success"
+# Entitlement token lifetime; default 8 days (> the app's 7-day offline grace).
+ENTITLEMENT_TTL_SECONDS = "691200"
+
+# ── Secrets — set via `wrangler secret put <NAME>` (NEVER commit) ──────────
+#   STRIPE_SECRET_KEY      sk_live_… / sk_test_…
+#   STRIPE_WEBHOOK_SECRET  whsec_…   (from the registered webhook endpoint)
+#   LICENCE_SIGNING_KEY    Ed25519 PKCS8 DER, base64 (the PRIVATE key; see `npm run gen-keypair`)

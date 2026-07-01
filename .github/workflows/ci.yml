@@ -81,3 +81,18 @@ jobs:
           cache-dependency-path: telemetry-cloudflare/package-lock.json
       - run: npm ci --prefix telemetry-cloudflare
       - run: npm --prefix telemetry-cloudflare run typecheck
+
+  # The entitlement-issuer Worker (payments + Ed25519 crypto) has its own
+  # workspace, so it needs its own gate — the root build never sees it.
+  issuer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: issuer/package-lock.json
+      - run: npm ci --prefix issuer
+      - run: npm --prefix issuer run typecheck
+      - run: npm --prefix issuer test
