@@ -772,6 +772,53 @@ export function generateMetaTools(): ToolDefinition[] {
         return { brand: parsed.brand, format: 'rows' as const, rowCount: rows.length, rows };
       },
     },
+    {
+      name: 'affiliate_get_brand_action_bundle',
+      description:
+        'Assemble the input bundle for the brand AI deliverables (a quarterly business review or a weekly report): the latest persisted snapshot, the brand\'s recorded strategy and KPI targets, the action-map readiness for the brand\'s networks, and the entitlement state. ' +
+        'Use this to hand Claude one clean, structured input for a client-ready write-up; build a snapshot first with affiliate_build_brand_snapshot, and note it deliberately excludes the raw transaction rows (too large and unnecessary for a narrative). ' +
+        'This is a paid brand-data tool gated by the local entitlement check; without entitlement it returns a structured entitlement_required result rather than data.',
+      inputSchema: {
+        type: 'object',
+        properties: { brand: { type: 'string', minLength: 1 } },
+        required: ['brand'],
+        additionalProperties: false,
+      },
+      handle: async (args) => {
+        const parsed = z.object({ brand: z.string().min(1) }).strict().parse(args ?? {});
+        const { loadSnapshot } = await import('../brand-data/store.js');
+        const { entitlementState } = await import('../brand-data/entitlement.js');
+        const snapshot = loadSnapshot(parsed.brand);
+        const strategy = loadClientStrategy(parsed.brand);
+        const registeredNetworks = new Set(getAdapters().map((a) => a.slug));
+        const brandNetworks = new Set(
+          (loadBrands().brands[parsed.brand] ?? [])
+            .map((b) => b.network)
+            .filter((n) => registeredNetworks.has(n)),
+        );
+        const actions = collectActionDescriptors()
+          .filter((d) => brandNetworks.has(d.network))
+          .map((d) => {
+            const credentials = snapshotCredentials(d);
+            return {
+              descriptor: d,
+              readiness: computeReadiness(credentials, {
+                brandProvided: true,
+                brandBoundToNetwork: brandNetworks.has(d.network),
+              }),
+              credentials,
+            };
+          });
+        return {
+          brand: parsed.brand,
+          entitlement: entitlementState(),
+          snapshotPresent: snapshot !== null,
+          snapshot,
+          strategy,
+          actions,
+        };
+      },
+    },
   ];
 }
 

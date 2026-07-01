@@ -68,6 +68,7 @@ const META_TOOL_OPERATIONS = new Map<string, string>([
   ['affiliate_list_actions', 'list_actions'],
   ['affiliate_build_brand_snapshot', 'build_brand_snapshot'],
   ['affiliate_get_brand_rows', 'get_brand_rows'],
+  ['affiliate_get_brand_action_bundle', 'get_brand_action_bundle'],
 ]);
 
 export async function startServer(): Promise<void> {
