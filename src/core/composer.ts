@@ -4,10 +4,17 @@
  * A guided composer that turns a few enumerated choices (archetype, networks,
  * data operations, name + trigger) into a valid `SKILL.md`. It never adds a
  * tool surface and never references a tool that does not exist: the operation
- * choices come straight from `generateToolsFor`, the same source of truth the
- * MCP tool registry uses, and `composeSkill` rejects any operation that is not
- * a real tool for the chosen networks. That is the whole guardrail — a composed
- * skill orchestrates existing generated tools only.
+ * choices come from `generateToolsFor` (real, registered tool names), and
+ * `composeSkill` rejects any operation not in that set for the chosen networks.
+ * That is the guardrail — a composed skill orchestrates existing generated
+ * tools only.
+ *
+ * Scope note (honest limitation): `generateToolsFor` returns each adapter's
+ * STANDARD canonical operations. The live MCP registry additionally registers a
+ * handful of per-network CUSTOM tools (e.g. Awin/Impact extras added in
+ * `generateAllTools`). The composer does not offer those custom tools yet, so a
+ * composed skill can only orchestrate the standard operation set — over-strict,
+ * never permissive. Widening to the full per-network set is a follow-up.
  *
  * IPC-safe: every returned shape is a plain object. Local file write only, no
  * network (D4). UK spelling in user-facing strings.
@@ -77,10 +84,12 @@ export function listSkillArchetypes(): SkillArchetype[] {
 // ---------------------------------------------------------------------------
 
 /**
- * The generated tools a network exposes, as `{ toolName, description }`. Reuses
- * `generateToolsFor` so the names (including the advertiser-slug shortening
- * rule) are identical to what the MCP server registers. Throws for an unknown
- * network rather than returning an empty list that would hide the mistake.
+ * A network's STANDARD canonical operations, as `{ toolName, description }`.
+ * Reuses `generateToolsFor` so the names (including the advertiser-slug
+ * shortening rule) match what the MCP server registers for those operations.
+ * Does NOT include the per-network custom tools the registry adds separately
+ * (see the scope note in the file header). Throws for an unknown network rather
+ * than returning an empty list that would hide the mistake.
  */
 export function listNetworkOperations(slug: string): NetworkOperation[] {
   const adapter = getAdapter(slug);
