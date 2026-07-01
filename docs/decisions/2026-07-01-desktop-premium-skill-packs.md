@@ -66,8 +66,11 @@ skills step. Everything the app does today stays free.
 
 ### Paid tier — £20/month
 
-- Access to premium, maintained skill packs: specialised agency, QBR, vertical,
-  and multi-network workflows beyond the free core set.
+- Access to premium, maintained skill packs. The launch library is **agency,
+  QBR, and vertical** packs: specialised multi-network workflows beyond the free
+  core set, grown and maintained over time.
+- **No annual option and no free trial.** The free tier plus the composer are the
+  "try before you buy".
 - Delivered as local `SKILL.md` folders through the existing skills "pick" flow,
   shown on a clearly labelled premium shelf, gated by an active subscription.
 - The value proposition is **currency and maintenance** (packs kept working as
@@ -75,9 +78,11 @@ skills step. Everything the app does today stays free.
 
 ### Enforcement — online-checked entitlement
 
-- The app verifies subscription status online **on launch and roughly every 30
-  days**, with an **offline grace window** (proposed 30 days) so transient
-  offline use never locks out a paying user.
+- The app verifies subscription status online **on launch** and refreshes the
+  entitlement token. If offline, the last good token keeps premium unlocked for a
+  **7-day grace window**, after which premium locks until the app can
+  re-verify. So a paying user must reach the endpoint at least once a week; a
+  flaky connection never locks them out mid-week.
 - Entitlement is a **short-lived signed token** (Ed25519), refreshed online. Its
   expiry is what makes cancellation enforceable; a permanent licence could not.
 - **Only paid, signed-in users make this call.** Free-tier users still make zero
@@ -148,10 +153,13 @@ No paid feature runs on our infra; the backend only sells and verifies.
    exactly what the entitlement check sends: an account token, never affiliate
    data), and `DEPLOY.md`.
 
-## Open questions for Rob
+## Resolved parameters (2026-07-01)
 
-- Which specialised workflows are the **first premium pack(s)**.
-- **Annual option or free trial?** No trial matches the old stance; the free tier
-  plus the composer already serve as "try before you buy".
-- **Offline grace window** length (proposed 30 days).
-- Is the composer **fully free**, or basic-free with advanced generation paid.
+- **Launch premium library:** agency, QBR, and vertical skill packs.
+- **No annual option, no free trial.** Free tier plus composer are the trial.
+- **Offline grace window:** 7 days.
+- **Composer is fully free** — the adoption hook that shows the packs' value.
+
+Remaining open item: authoring and maintenance process for the packs, and the
+published free-versus-premium boundary (an implementation follow-up, not a
+blocker for accepting this decision).
