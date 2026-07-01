@@ -113,17 +113,20 @@ main{flex:1;display:flex;align-items:center}
 </div></footer>
 
 <script>
-// One CTA, adapted to the detected OS. No tracking — this only swaps the label.
-// The download is a single universal .dmg (Apple Silicon + Intel), so there's no
-// architecture choice to make on a Mac.
+// One CTA, adapted to the detected OS and always pointed at the newest signed
+// desktop release. No tracking. The href in the markup is a static fallback
+// (current at publish time); on load we resolve the latest `desktop-v*` release
+// from the GitHub API so the page never goes stale between releases. If the API
+// is unavailable (offline, rate-limited), the fallback href stands.
 (function () {
+  var REPO = 'bobberrisford/affiliatemcp';
   var ua = navigator.userAgent || '';
   var plat = (navigator.platform || '') + ' ' + ua;
-  var isMac = /Mac/i.test(plat) && !/iPhone|iPad|iPod/i.test(ua);
   var isWin = /Win/i.test(plat);
   var cta = document.getElementById('cta');
   var meta = document.getElementById('meta-text');
   var alts = document.getElementById('alts');
+  var baseMeta = meta ? meta.textContent : '';
 
   if (isWin) {
     cta.textContent = 'windows — coming soon';
@@ -132,8 +135,40 @@ main{flex:1;display:flex;align-items:center}
     cta.style.pointerEvents = 'none';
     meta.textContent = 'the macOS app ships first';
     alts.innerHTML = '<a href="get-started.html">use the CLI on Windows today</a>';
+    return; // no Mac download to resolve
   }
-  // macOS and other desktop OSes keep the universal Mac CTA as-is.
+  // macOS and other desktop OSes keep the universal Mac CTA.
+
+  // Resolve the newest STABLE desktop-v* release and repoint the CTA at its
+  // universal .dmg. Mirrors the app's own release-channel selection: stable
+  // desktop-vX.Y.Z only (never a server vX.Y.Z tag), highest version wins.
+  function parseVersion(tag) {
+    var m = /^desktop-v(\d+)\.(\d+)\.(\d+)$/.exec(tag || '');
+    return m ? [+m[1], +m[2], +m[3]] : null;
+  }
+  function isNewer(a, b) { // a > b?
+    for (var i = 0; i < 3; i++) { if (a[i] !== b[i]) return a[i] > b[i]; }
+    return false;
+  }
+  try {
+    fetch('https://api.github.com/repos/' + REPO + '/releases?per_page=30', {
+      headers: { Accept: 'application/vnd.github+json' }
+    }).then(function (r) { return r.ok ? r.json() : null; }).then(function (rels) {
+      if (!rels || !rels.length) return;
+      var best = null, bestV = null;
+      rels.forEach(function (rel) {
+        if (rel.draft || rel.prerelease) return;
+        var v = parseVersion(rel.tag_name);
+        if (v && (!bestV || isNewer(v, bestV))) { bestV = v; best = rel; }
+      });
+      if (!best) return;
+      var assets = best.assets || [];
+      var dmg = assets.filter(function (a) { return /universal.*\.dmg$/i.test(a.name || ''); })[0]
+             || assets.filter(function (a) { return /\.dmg$/i.test(a.name || ''); })[0];
+      if (dmg && dmg.browser_download_url) cta.href = dmg.browser_download_url;
+      if (meta && bestV) meta.textContent = 'v' + bestV.join('.') + ' · ' + baseMeta;
+    }).catch(function () { /* keep the static fallback href */ });
+  } catch (e) { /* keep the static fallback href */ }
 })();
 </script>
 </body>
