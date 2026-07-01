@@ -50,9 +50,12 @@ const AWIN_ADVERTISER_UI_ORIGIN = 'https://app.awin.com';
  * caller cannot redirect the operator to an arbitrary host or path. Mirrors the
  * publisher-side `applyToProgramme` URL builder.
  *
- * TODO(verify): confirm the id in this path equals the API accountId returned
- * by `listBrands`. The live example used advertiser 74386; if Awin uses a
- * distinct account-vs-advertiser id in the app URL, the handoff needs the UI id.
+ * Confirmed 2026-07-01: the id in this path is the API advertiser accountId. The
+ * operator's own dashboard URL for "Late Rooms" (advertiser 74386, one of the
+ * accounts listBrands returns for this token) is
+ * app.awin.com/en/awin/advertiser/74386/partnerships/all — the same id the API
+ * uses. So interpolating input.programmeId (the API advertiser id) yields the
+ * operator's real partnerships URL; no separate UI id is needed.
  */
 function partnershipsAllUrl(advertiserId: string): string {
   return `${AWIN_ADVERTISER_UI_ORIGIN}/en/awin/advertiser/${encodeURIComponent(advertiserId)}/partnerships/all`;

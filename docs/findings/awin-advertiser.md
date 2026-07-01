@@ -83,11 +83,14 @@ verify URL as `https://app.awin.com/en/awin/advertiser/{advertiserId}/partnershi
 interpolating the advertiser id (the previous `ui.awin.com/.../publishers/pending`
 constant was wrong on host, path, and was not brand-scoped).
 
-Open `// TODO(verify)`: confirm the advertiser id in that path equals the API
-accountId from `listBrands`. The live example used advertiser **74386**, while
-the demo API brand queried was **19011**; `listBrands` returned two accounts, so
-these may be two different advertisers, or Awin may use distinct account-vs-URL
-ids. Resolve before promoting the handoff URL to verified.
+Confirmed 2026-07-01: the advertiser id in that path is the API advertiser
+accountId. The two ids seen (**19011** = the demo account queried via the API,
+**74386** = "Late Rooms") are two different brands the token can access, not an
+account-vs-URL id mismatch: 74386 is both an API account and the id in its own
+dashboard URL (`.../advertiser/74386/partnerships/all`). So interpolating the
+API advertiser id yields the operator's real partnerships URL. What still needs
+a manual pass is only that the page loads and the approve/decline action behaves
+as described (there were 0 pending applicants on the demo).
 
 The publisher-side `awin.applyToProgramme` URLs (`ui.awin.com/awin/affiliate/...`)
 are a separate surface and remain unverified; the token's publisher account was
