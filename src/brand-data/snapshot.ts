@@ -20,7 +20,7 @@
 
 import { listBrandsForNetwork, loadBrands } from '../shared/brands.js';
 import type { NetworkSlug } from '../shared/types.js';
-import { computeMetricsByCurrency } from './metrics.js';
+import { computePerfMetricsByCurrency } from './metrics.js';
 import {
   BRAND_DATA_SCHEMA_VERSION,
   DEFAULT_BRAND_TIMEZONE,
@@ -66,30 +66,30 @@ function boundNetworks(brand: string): NetworkSlug[] {
   return (file.brands[brand] ?? []).map((b) => b.network);
 }
 
-/** Build one window's view: per-currency totals + per-programme breakdown. */
+/** Build one window's view from its performance rows: per-currency totals + per-partner breakdown. */
 function buildWindow(
   key: WindowKey,
   from: string,
   to: string,
-  txnRows: BrandTxnRow[],
   clicksRows: BrandClicksRow[],
 ): WindowSnapshot {
-  const totals = computeMetricsByCurrency(txnRows, clicksRows);
+  const totals = computePerfMetricsByCurrency(clicksRows);
 
-  // Per-programme breakdown from transactions (commission/conversions); clicks
-  // live at the partner grain, so per-programme EPC is intentionally blank.
-  const byProgramId = new Map<string, BrandTxnRow[]>();
-  const programNames = new Map<string, string>();
-  for (const row of txnRows) {
-    const bucket = byProgramId.get(row.programId);
+  // Per-partner (publisher) breakdown from the performance rows. On the
+  // advertiser side the report is per publisher, so this is the natural grain;
+  // programId/programName carry the publisher identity.
+  const byPartnerId = new Map<string, BrandClicksRow[]>();
+  const partnerNames = new Map<string, string>();
+  for (const row of clicksRows) {
+    const bucket = byPartnerId.get(row.partnerId);
     if (bucket) bucket.push(row);
-    else byProgramId.set(row.programId, [row]);
-    programNames.set(row.programId, row.programName);
+    else byPartnerId.set(row.partnerId, [row]);
+    partnerNames.set(row.partnerId, row.partnerName);
   }
   const byProgram: ProgramBreakdownRow[] = [];
-  for (const [programId, rows] of byProgramId) {
-    for (const metrics of computeMetricsByCurrency(rows, [])) {
-      byProgram.push({ programId, programName: programNames.get(programId) ?? programId, metrics });
+  for (const [partnerId, rows] of byPartnerId) {
+    for (const metrics of computePerfMetricsByCurrency(rows)) {
+      byProgram.push({ programId: partnerId, programName: partnerNames.get(partnerId) ?? partnerId, metrics });
     }
   }
 
@@ -120,62 +120,61 @@ export async function buildBrandSnapshot(
   const byNetwork: NetworkHealth[] = [];
 
   for (const network of networks) {
-    // Transactions are the core data (commission + conversions). A failure here
-    // means the network is genuinely unavailable: record it and exclude it.
-    try {
-      const txns = await pullTransactions(brand, network, bounds.ytd.from, bounds.ytd.to);
-      // Append without spread: large accounts return tens of thousands of rows.
-      for (const row of normaliseTransactions(txns, brand)) allTxnRows.push(row);
-    } catch (err) {
-      byNetwork.push({
-        network,
-        state: 'failed',
-        error: (err as { envelope?: unknown }).envelope ?? (err as Error).message,
-        note: `transaction pull failed; totals exclude ${network}`,
-      });
-      continue;
-    }
-
-    // Performance (clicks) is best-effort: if it fails or is unsupported, keep
-    // the network's commission and blank its clicks/EPC ("blank the gaps").
+    // Advertiser performance is the metric source: one report call per window
+    // carries clicks, conversions, and the commission status split (accurate per
+    // tier since #282), so there is no year-long row-level transaction pull. A
+    // failure here means the network is genuinely unavailable: exclude it.
     const localClicks: Record<WindowKey, BrandClicksRow[]> = {
       yesterday: [],
       last7d: [],
       last30d: [],
       ytd: [],
     };
-    let clickError: string | undefined;
-    let clickRowCount = 0;
+    let perfRowCount = 0;
     try {
       for (const key of WINDOW_KEYS) {
         const perf = await pullPerformanceRange(brand, network, bounds[key].from, bounds[key].to);
         localClicks[key].push(...normalisePerformance(perf, network, brand));
-        clickRowCount += perf.length;
+        perfRowCount += perf.length;
       }
     } catch (err) {
-      clickError = (err as Error).message;
+      byNetwork.push({
+        network,
+        state: 'failed',
+        error: (err as { envelope?: unknown }).envelope ?? (err as Error).message,
+        note: `performance pull failed; totals exclude ${network}`,
+      });
+      continue;
     }
+    for (const key of WINDOW_KEYS) windowClicks[key].push(...localClicks[key]);
 
     const health: NetworkHealth = { network, state: 'ok' };
-    if (clickError) {
-      health.note = `clicks unavailable; EPC blank (${clickError})`;
-    } else {
-      for (const key of WINDOW_KEYS) windowClicks[key].push(...localClicks[key]);
-      if (clickRowCount === 0) {
-        health.note = 'no advertiser performance rows in range; clicks and EPC blank';
-      }
+    if (perfRowCount === 0) {
+      health.note = 'no advertiser performance rows in range';
+    }
+
+    // Transactions are pulled only for the last 30 days, and only to populate the
+    // transaction-grain drill-down / CSV rows — never the totals. Best-effort: a
+    // failure blanks the drill-down but leaves the totals intact.
+    try {
+      const txns = await pullTransactions(brand, network, bounds.last30d.from, bounds.last30d.to);
+      // Append without spread: large accounts return tens of thousands of rows.
+      for (const row of normaliseTransactions(txns, brand)) allTxnRows.push(row);
+    } catch {
+      health.note = health.note
+        ? `${health.note}; transaction drill-down unavailable`
+        : 'transaction drill-down unavailable';
     }
     byNetwork.push(health);
   }
 
-  const windowTxn = bucketByWindow(allTxnRows, (r) => r.eventDate, asOf, timezone);
-
   const windows = {} as Record<WindowKey, WindowSnapshot>;
   for (const key of WINDOW_KEYS) {
-    windows[key] = buildWindow(key, bounds[key].from, bounds[key].to, windowTxn[key], windowClicks[key]);
+    windows[key] = buildWindow(key, bounds[key].from, bounds[key].to, windowClicks[key]);
   }
 
   // rows-30d carries the last-30-day transaction grain for CSV/pivot.
+  const windowTxn = bucketByWindow(allTxnRows, (r) => r.eventDate, asOf, timezone);
   const rows = capTxnRows(windowTxn.last30d, undefined, timezone);
 
   const snapshot: BrandSnapshot = {

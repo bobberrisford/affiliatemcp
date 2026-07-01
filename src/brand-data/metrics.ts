@@ -92,6 +92,62 @@ export function computeWindowMetrics(
   };
 }
 
+/**
+ * Full window metrics computed directly from advertiser performance rows, in one
+ * currency. On the advertiser side each `BrandClicksRow` already carries its
+ * status tier, sale value, commission, conversions, and clicks (Awin's report,
+ * fixed in #282, splits these accurately per tier), so the whole window ties out
+ * to the network's own dashboard without a separate transaction pull. Status
+ * maps pending -> pending, approved -> confirmed, reversed -> declined; there is
+ * no paid/residual tier on this side.
+ */
+export function computePerfWindowMetrics(rows: BrandClicksRow[], currency: string): WindowMetrics {
+  let clicks = 0;
+  let conversions = 0;
+  let declinedConversions = 0;
+  let saleTotal = 0;
+  const commission: CommissionSplit = {
+    pending: 0,
+    confirmed: 0,
+    declined: 0,
+    residual: 0,
+    settled: 0,
+    totalTracked: 0,
+  };
+  for (const row of rows) {
+    clicks += row.clicks;
+    if (row.status === 'reversed') {
+      declinedConversions += row.conversions;
+      commission.declined += row.commission;
+      continue;
+    }
+    conversions += row.conversions;
+    saleTotal += row.grossSale;
+    if (row.status === 'pending') commission.pending += row.commission;
+    else commission.confirmed += row.commission; // approved
+  }
+  commission.totalTracked = commission.pending + commission.confirmed;
+  return {
+    currency,
+    clicks,
+    conversions,
+    declinedConversions,
+    saleTotal,
+    commission,
+    epc: ratio(commission.totalTracked, clicks),
+    confirmedEpc: ratio(commission.confirmed, clicks),
+    conversionRate: ratio(conversions, clicks),
+    aov: ratio(saleTotal, conversions),
+  };
+}
+
+/** Per-currency performance-window metrics for a window's clicks rows. */
+export function computePerfMetricsByCurrency(rows: BrandClicksRow[]): WindowMetrics[] {
+  return [...groupByCurrency(rows).entries()].map(([ccy, group]) =>
+    computePerfWindowMetrics(group, ccy),
+  );
+}
+
 /** Group rows by their `currency` field, preserving first-seen order. */
 export function groupByCurrency<T extends { currency: string }>(rows: T[]): Map<string, T[]> {
   const out = new Map<string, T[]>();
