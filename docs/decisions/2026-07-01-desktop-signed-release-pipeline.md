@@ -1,7 +1,7 @@
 # Signed desktop release pipeline (CI-published auto-update feed)
 
 - **Date:** 2026-07-01
-- **Status:** Proposed
+- **Status:** Accepted (merged 2026-07-01, PR #294)
 - **Affects:** `.github/workflows/` (new `desktop-release.yml`; `desktop-dmg.yml`
   kept as-is for test builds), `desktop/package.json` (version + `build.mac.target`
   + `build.publish`), `DEPLOY.md` (runbook shifts from local to CI dispatch), and

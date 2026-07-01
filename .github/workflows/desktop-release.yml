@@ -143,11 +143,19 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # nullglob: blockmaps are an optional differential-download extra and
+          # aren't emitted for every target. Without it an unmatched `*.blockmap`
+          # literal would fail `gh` AFTER the bump is already pushed to main,
+          # leaving main bumped-but-unreleased. The required feed files
+          # (.dmg / -mac.zip / latest-mac.yml) are already checked above.
+          shopt -s nullglob
+          assets=(dist/*.dmg dist/*-mac.zip dist/latest-mac.yml dist/*.blockmap)
+          echo "uploading: ${assets[*]}"
           gh release create "desktop-v$NEW" \
             --target main \
             --title "Agentic Affiliate Desktop v$NEW" \
             --notes "Signed, notarised desktop build. In-app auto-update: existing installs will offer \"relaunch to update\" on next launch." \
-            dist/*.dmg dist/*-mac.zip dist/latest-mac.yml dist/*.blockmap
+            "${assets[@]}"
 
       - name: Summary
         run: |
