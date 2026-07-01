@@ -16,3 +16,5 @@ export * from './rows-cap.js';
 export * from './pull.js';
 export * from './snapshot.js';
 export * from './store.js';
+export * from './entitlement.js';
+export * from './csv.js';

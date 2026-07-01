@@ -27,6 +27,8 @@ import {
 
 import { generateAllTools, type ToolDefinition } from './tools/generate.js';
 import { getPrompt, listPrompts } from './prompts/generate.js';
+import { buildEntitlementRequired, GATED_TOOLS, isEntitled } from './brand-data/entitlement.js';
+import { recordActionAudit } from './shared/audit.js';
 import { isErrorEnvelope, NetworkError, toErrorEnvelope } from './shared/errors.js';
 import { createLogger } from './shared/logging.js';
 import {
@@ -65,6 +67,7 @@ const META_TOOL_OPERATIONS = new Map<string, string>([
   ['affiliate_list_client_strategies', 'list_client_strategies'],
   ['affiliate_list_actions', 'list_actions'],
   ['affiliate_build_brand_snapshot', 'build_brand_snapshot'],
+  ['affiliate_get_brand_rows', 'get_brand_rows'],
 ]);
 
 export async function startServer(): Promise<void> {
@@ -108,6 +111,31 @@ export async function startServer(): Promise<void> {
               2,
             ),
           },
+        ],
+      };
+    }
+
+    // Entitlement gate: one choke point for the paid brand-data tools, applied
+    // after the tool resolves and before its handler runs. Dormant by default
+    // (isEntitled() returns true in v1); a denied call is surfaced as a
+    // structured entitlement_required result, audited, and counted — never faked
+    // into success or collapsed into an opaque error (Principle 4.1). Gated
+    // tools stay registered and visible in ListTools (visible-but-locked).
+    if (GATED_TOOLS.has(name) && !isEntitled()) {
+      recordActionAudit({
+        event: 'write_denied',
+        action: `brand-data.${name}`,
+        network: 'meta',
+        reasonCode: 'entitlement',
+        summary: `${name} requires the paid brand-data tier`,
+      });
+      const telemetry = classifyToolForTelemetry(name);
+      recordTelemetry(telemetry.network, telemetry.operation, 'other_error');
+      log.info({ tool: name }, 'entitlement gate: denied');
+      return {
+        isError: true,
+        content: [
+          { type: 'text' as const, text: JSON.stringify(buildEntitlementRequired(name), null, 2) },
         ],
       };
     }
