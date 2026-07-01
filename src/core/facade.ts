@@ -114,6 +114,18 @@ export type {
   ComposedSkill,
 } from './composer.js';
 
+// Re-export the desktop entitlement client (entitlement:* IPC channels). Paid
+// tier only — a free-tier user (no account key) triggers no outbound calls.
+export {
+  entitlementStatus,
+  refreshEntitlement,
+  startCheckout,
+  openPortal,
+  signOutEntitlement,
+  verifyEntitlementToken,
+} from './entitlement.js';
+export type { EntitlementStatus, EntitlementState, EntitlementPayload } from './entitlement.js';
+
 export function getTelemetryConsent(): 'enabled' | 'disabled' | 'unset' {
   return telemetryConsent();
 }
