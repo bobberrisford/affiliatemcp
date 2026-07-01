@@ -100,6 +100,20 @@ export type { DesktopEditResult };
 export { listSkills, installSkills } from './skills.js';
 export type { SkillSummary, SkillSide, InstallSkillsResult } from './skills.js';
 
+// Re-export the skill composer surface (composer:* IPC channels).
+export {
+  listSkillArchetypes,
+  listNetworkOperations,
+  composeSkill,
+  saveComposedSkill,
+} from './composer.js';
+export type {
+  SkillArchetype,
+  NetworkOperation,
+  ComposeSkillInput,
+  ComposedSkill,
+} from './composer.js';
+
 export function getTelemetryConsent(): 'enabled' | 'disabled' | 'unset' {
   return telemetryConsent();
 }

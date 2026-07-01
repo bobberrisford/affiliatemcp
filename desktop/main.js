@@ -521,6 +521,33 @@ handle('skills:install', async (_e, payload) => {
   return { ok: true, ...result };
 });
 
+// ---- Skill composer (build-your-own; free) --------------------------------
+
+// The composer orchestrates existing generated tools only — it never adds a
+// tool surface. The core validates every chosen operation against real tool
+// names and writes a valid SKILL.md; a thrown validation error surfaces via
+// the handle() wrapper as { ok:false, error }.
+handle('composer:archetypes', async () => {
+  const { facade } = await loadCore();
+  return { ok: true, archetypes: facade.listSkillArchetypes() };
+});
+
+handle('composer:operations', async (_e, slug) => {
+  const { facade } = await loadCore();
+  return { ok: true, operations: facade.listNetworkOperations(slug) };
+});
+
+handle('composer:compose', async (_e, input) => {
+  const { facade } = await loadCore();
+  return { ok: true, ...facade.composeSkill(input || {}) };
+});
+
+handle('composer:save', async (_e, payload) => {
+  const { facade } = await loadCore();
+  const { slug, content } = payload || {};
+  return { ok: true, ...facade.saveComposedSkill(slug, content) };
+});
+
 // ---- Config + brands persistence ------------------------------------------
 
 handle('config:saveEnv', async (_e, entries) => {
