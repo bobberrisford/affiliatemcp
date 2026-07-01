@@ -59,12 +59,12 @@
     "@types/node": "^20.14.10",
     "@typescript-eslint/eslint-plugin": "^7.16.0",
     "@typescript-eslint/parser": "^7.16.0",
-    "esbuild": "0.28.0",
+    "esbuild": "^0.28.1",
     "eslint": "^8.57.0",
     "pino-pretty": "^11.2.2",
     "prettier": "^3.3.3",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3",
-    "vitest": "^2.0.2"
+    "vitest": "^4.1.9"
   }
 }
