@@ -743,6 +743,35 @@ export function generateMetaTools(): ToolDefinition[] {
         return result.snapshot;
       },
     },
+    {
+      name: 'affiliate_get_brand_rows',
+      description:
+        'Return the persisted 30-day, transaction-grain rows for a brand, either as structured rows or as CSV for export. ' +
+        'Use this for transaction-level drill-down and to hand a spreadsheet-ready export to the operator; it reads the local store written by affiliate_build_brand_snapshot, so build a snapshot first. ' +
+        'This is a paid brand-data tool gated by the local entitlement check; without entitlement it returns a structured entitlement_required result rather than data.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          brand: { type: 'string', minLength: 1 },
+          format: { type: 'string', enum: ['rows', 'csv'] },
+        },
+        required: ['brand'],
+        additionalProperties: false,
+      },
+      handle: async (args) => {
+        const parsed = z
+          .object({ brand: z.string().min(1), format: z.enum(['rows', 'csv']).optional() })
+          .strict()
+          .parse(args ?? {});
+        const { loadRows } = await import('../brand-data/store.js');
+        const rows = loadRows(parsed.brand) as Array<Record<string, unknown>>;
+        if (parsed.format === 'csv') {
+          const { toCsv } = await import('../brand-data/csv.js');
+          return { brand: parsed.brand, format: 'csv' as const, rowCount: rows.length, csv: toCsv(rows) };
+        }
+        return { brand: parsed.brand, format: 'rows' as const, rowCount: rows.length, rows };
+      },
+    },
   ];
 }
 
