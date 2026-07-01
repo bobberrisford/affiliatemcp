@@ -67,6 +67,11 @@ onboarding. MCP prompts currently ship separately and are Awin-specific.
   recruitment outreach for a brand, grounded in real performance figures
   and the recorded plan. Drafts only; never sends and never invents
   contact details.
+- [`programme-fraud-review/`](./programme-fraud-review) — scan a brand's
+  pending Awin transactions for suspected fraud and low-quality
+  conversions before validation, with the evidence behind each flag and a
+  recommended hold, decline, or validate. Read-only; never validates or
+  declines.
 
 A capability-aware roadmap of brand/agency deliverables, including which
 outcomes should extend shipped skills rather than create new ones, lives in
