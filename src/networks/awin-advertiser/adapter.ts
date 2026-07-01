@@ -211,25 +211,40 @@ interface AwinAdvPublisherRaw {
   promotionType?: string;
 }
 
+/**
+ * A row of Awin's advertiser publisher report
+ * (`GET /advertisers/{id}/reports/publisher`). Verified against the live Demo
+ * Account (UK) response: each publisher row carries the number, sale value, and
+ * commission for each status tier — `pending`, `confirmed`, `bonus`, and
+ * `declined` — plus a `total` that is `pending + confirmed (+ bonus)` and
+ * excludes declined. Clicks/impressions are per-publisher, not per-tier.
+ */
 interface AwinAdvReportRow {
+  advertiserId?: number | string;
+  advertiserName?: string;
   publisherId?: number | string;
   publisherName?: string;
+  region?: string;
   /** Awin reports return one of: an ISO datetime, a `YYYY-MM-DD`, or `YYYY-MM` bucket. */
   date?: string;
   startDate?: string;
   impressions?: number | string;
   clicks?: number | string;
-  conversions?: number | string;
   pendingNo?: number | string;
-  declinedNo?: number | string;
-  validationNo?: number | string;
-  commission?: number | string;
-  pendingComm?: number | string;
-  declinedComm?: number | string;
-  saleValue?: number | string;
-  validationValue?: number | string;
   pendingValue?: number | string;
+  pendingComm?: number | string;
+  confirmedNo?: number | string;
+  confirmedValue?: number | string;
+  confirmedComm?: number | string;
+  bonusNo?: number | string;
+  bonusValue?: number | string;
+  bonusComm?: number | string;
+  totalNo?: number | string;
+  totalValue?: number | string;
+  totalComm?: number | string;
+  declinedNo?: number | string;
   declinedValue?: number | string;
+  declinedComm?: number | string;
   currency?: string;
 }
 
@@ -282,22 +297,6 @@ function mapPublisherStatus(raw: AwinAdvPublisherRaw): MediaPartner['status'] {
   return 'unknown';
 }
 
-/**
- * Map Awin's per-row report state to the 3-value performance status. The
- * pre-built report endpoint returns aggregate columns (pendingNo, validationNo,
- * declinedNo) rather than a per-row status — we pick the most-news-worthy of
- * the three:
- *   - any declined → 'reversed'
- *   - any pending  → 'pending'
- *   - otherwise    → 'approved'
- */
-function mapReportRowStatus(raw: AwinAdvReportRow): ProgrammePerformanceRow['status'] {
-  const declined = toNumber(raw.declinedNo);
-  const pending = toNumber(raw.pendingNo);
-  if (declined > 0) return 'reversed';
-  if (pending > 0) return 'pending';
-  return 'approved';
-}
 
 function toNumber(v: string | number | undefined): number {
   if (v === undefined || v === null) return 0;
@@ -501,7 +500,26 @@ function toMediaPartner(raw: AwinAdvPublisherRaw): MediaPartner {
   };
 }
 
-function toPerformanceRow(raw: AwinAdvReportRow): ProgrammePerformanceRow {
+/**
+ * Project one Awin publisher-report row into up to three canonical
+ * `ProgrammePerformanceRow`s, one per status tier that has activity:
+ *
+ *   - `pending`  ← pendingNo / pendingValue / pendingComm
+ *   - `approved` ← confirmed (+ bonus) No / Value / Comm
+ *   - `reversed` ← declinedNo / declinedValue / declinedComm
+ *
+ * `ProgrammePerformanceRow` carries a single `status`, so the previous mapping
+ * collapsed the report's multi-tier columns into one "most news-worthy" value
+ * and lost the split (issue #282). Splitting into one row per tier keeps the
+ * canonical single-status shape while letting a consumer sum sale/commission/
+ * conversions accurately by status; `total = pending + confirmed` ties out.
+ *
+ * Clicks and impressions are per-publisher, not per-tier, so they attach to the
+ * `approved` row only (which is always emitted) — that keeps a per-publisher
+ * click total exact when a consumer sums across the emitted rows, rather than
+ * triple-counting.
+ */
+function toPerformanceRows(raw: AwinAdvReportRow): ProgrammePerformanceRow[] {
   // Normalise date down to yyyy-mm-dd (or yyyy-mm).
   const rawDate = raw.date ?? raw.startDate ?? '';
   let date = '';
@@ -514,38 +532,50 @@ function toPerformanceRow(raw: AwinAdvReportRow): ProgrammePerformanceRow {
     }
   }
 
-  // Awin's report returns totals split by status. For canonical reporting we
-  // sum approved + pending sale value (declined is excluded from `grossSale`
-  // because it's been actively rejected). Commission similarly sums approved
-  // + pending.
-  const approvedSale = Math.max(
-    toNumber(raw.validationValue) - toNumber(raw.declinedValue),
-    0,
-  );
-  const pendingSale = toNumber(raw.pendingValue);
-  const grossSale = approvedSale + pendingSale > 0
-    ? approvedSale + pendingSale
-    : toNumber(raw.saleValue);
-
-  const approvedComm = Math.max(
-    toNumber(raw.commission) - toNumber(raw.declinedComm),
-    0,
-  );
-  const pendingComm = toNumber(raw.pendingComm);
-  const commission = approvedComm + pendingComm > 0 ? approvedComm + pendingComm : toNumber(raw.commission);
-
-  return {
+  const base = {
     date,
     publisherId: String(raw.publisherId ?? ''),
     publisherName: raw.publisherName ?? '',
-    clicks: toNumber(raw.clicks),
-    conversions: toNumber(raw.conversions ?? raw.validationNo ?? 0),
-    grossSale,
-    commission,
     currency: raw.currency ?? 'GBP',
-    status: mapReportRowStatus(raw),
     rawNetworkData: raw,
   };
+  const row = (
+    status: ProgrammePerformanceRow['status'],
+    conversions: number,
+    grossSale: number,
+    commission: number,
+    clicks: number,
+  ): ProgrammePerformanceRow => ({ ...base, status, clicks, conversions, grossSale, commission });
+
+  const out: ProgrammePerformanceRow[] = [];
+
+  // Approved (confirmed + bonus) — always emitted; carries the clicks so the
+  // per-publisher click total is attributed exactly once.
+  out.push(
+    row(
+      'approved',
+      toNumber(raw.confirmedNo) + toNumber(raw.bonusNo),
+      toNumber(raw.confirmedValue) + toNumber(raw.bonusValue),
+      toNumber(raw.confirmedComm) + toNumber(raw.bonusComm),
+      toNumber(raw.clicks),
+    ),
+  );
+
+  const pendingNo = toNumber(raw.pendingNo);
+  const pendingValue = toNumber(raw.pendingValue);
+  const pendingComm = toNumber(raw.pendingComm);
+  if (pendingNo || pendingValue || pendingComm) {
+    out.push(row('pending', pendingNo, pendingValue, pendingComm, 0));
+  }
+
+  const declinedNo = toNumber(raw.declinedNo);
+  const declinedValue = toNumber(raw.declinedValue);
+  const declinedComm = toNumber(raw.declinedComm);
+  if (declinedNo || declinedValue || declinedComm) {
+    out.push(row('reversed', declinedNo, declinedValue, declinedComm, 0));
+  }
+
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -829,7 +859,7 @@ export class AwinAdvertiserAdapter implements NetworkAdapter {
           ? ((envelope as { data: AwinAdvReportRow[] }).data)
           : [];
 
-    let rows = list.map(toPerformanceRow);
+    let rows = list.flatMap(toPerformanceRows);
     if (query?.publisherId) {
       rows = rows.filter((r) => r.publisherId === query.publisherId);
     }
@@ -989,10 +1019,9 @@ export const _internals = {
   toDiscoveredBrand,
   toTransaction,
   toMediaPartner,
-  toPerformanceRow,
+  toPerformanceRows,
   mapTransactionStatus,
   mapPublisherStatus,
-  mapReportRowStatus,
   parseAwinDate,
   zonedNaiveToUtcIso,
   registrableDomain,
