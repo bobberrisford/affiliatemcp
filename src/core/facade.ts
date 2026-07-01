@@ -96,6 +96,10 @@ export type VerifyAuthResult =
 export { detectClientsImpl as detectClients };
 export type { DesktopEditResult };
 
+// Re-export the skills catalogue + local deploy surface (skills:* IPC channels).
+export { listSkills, installSkills } from './skills.js';
+export type { SkillSummary, SkillSide, InstallSkillsResult } from './skills.js';
+
 export function getTelemetryConsent(): 'enabled' | 'disabled' | 'unset' {
   return telemetryConsent();
 }
