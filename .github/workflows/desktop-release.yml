@@ -78,14 +78,15 @@ jobs:
             fi
           fi
 
-      - name: Bump desktop version + commit to main
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          ( cd desktop && npm version "$NEW" --no-git-tag-version )
-          git add desktop/package.json desktop/package-lock.json
-          git commit -m "chore(desktop): release v$NEW"
-          git push origin main
+      - name: Set desktop version for this build
+        # `main` is protected by a repository ruleset (required `build` check), so
+        # CI must NOT push a bump commit. Set the release version at build time
+        # from the input (idempotent — no error if already at that version); the
+        # tag is created on main by `gh release create` below. Keep
+        # desktop/package.json on main in step via a normal, check-passing bump PR
+        # (this release's bump rides in the PR that added this step).
+        working-directory: desktop
+        run: npm pkg set version="$NEW"
 
       - name: Install root deps + build core
         run: |
