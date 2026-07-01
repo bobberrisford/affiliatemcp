@@ -80,13 +80,20 @@ export interface BrandClicksRow {
   brandId: string;
   partnerId: string;
   partnerName: string;
-  /** The bucketing date — `ProgrammePerformanceRow.date` (ISO `YYYY-MM-DD`). */
+  /**
+   * `ProgrammePerformanceRow.date`. Note: some networks (Awin's advertiser
+   * publisher report among them) aggregate per partner over the queried range
+   * and leave this empty; the orchestrator therefore pulls performance once per
+   * window rather than bucketing a single pull by date.
+   */
   date: string;
   clicks: number;
   conversions: number;
   grossSale: number;
   commission: number;
   currency: string;
+  /** The 3-state performance status; drives the commission split on this side. */
+  status: 'pending' | 'approved' | 'reversed';
 }
 
 /**
@@ -138,4 +145,42 @@ export interface NetworkHealth {
   error?: unknown;
   /** Free-text note, e.g. "clicks unavailable; EPC blank". */
   note?: string;
+}
+
+/** Per-(programme, currency) commission breakdown within a window. */
+export interface ProgramBreakdownRow {
+  programId: string;
+  programName: string;
+  metrics: WindowMetrics;
+}
+
+/**
+ * One window's computed view: grand totals (one entry per currency) plus a
+ * per-programme breakdown. Clicks live at the publisher grain on the advertiser
+ * side, so per-programme EPC is blank; the headline EPC is on the totals.
+ */
+export interface WindowSnapshot {
+  window: WindowKey;
+  /** Inclusive day bounds in the canonical timezone (`YYYY-MM-DD`). */
+  from: string;
+  to: string;
+  totals: WindowMetrics[];
+  byProgram: ProgramBreakdownRow[];
+}
+
+/**
+ * The persisted, count-honest brand snapshot returned by
+ * `affiliate_build_brand_snapshot`. `byNetwork` carries one entry per *bound*
+ * network, never per *successful* one, so a four-of-five pull is never
+ * presented as five (brief §13).
+ */
+export interface BrandSnapshot {
+  schemaVersion: number;
+  brandId: string;
+  /** The pull instant — the "as of" the figures should be read against. */
+  generatedAt: string;
+  timezone: string;
+  windows: Record<WindowKey, WindowSnapshot>;
+  byNetwork: NetworkHealth[];
+  rowsTruncated: boolean;
 }

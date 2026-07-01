@@ -707,6 +707,42 @@ export function generateMetaTools(): ToolDefinition[] {
         });
       },
     },
+    {
+      name: 'affiliate_build_brand_snapshot',
+      description:
+        'Pull one brand\'s affiliate performance across the networks it is bound to in brands.json, normalise it into a single time-windowed dataset (yesterday, rolling 7-day, rolling 30-day, and year-to-date), persist it locally, and return the snapshot. ' +
+        'Clicks come from advertiser performance and the commission status split from transactions; per-network health is count-honest, so a partial pull is reported as such and never totalled as if every network responded. ' +
+        'This snapshot powers the free tables; the CSV export and the AI-action bundle are separate tools. Requires the brand to be bound to advertiser-side networks that report programme performance.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          brand: { type: 'string', minLength: 1 },
+          networks: { type: 'array', items: { type: 'string' } },
+          timezone: { type: 'string' },
+        },
+        required: ['brand'],
+        additionalProperties: false,
+      },
+      handle: async (args) => {
+        const parsed = z
+          .object({
+            brand: z.string().min(1),
+            networks: z.array(z.string()).optional(),
+            timezone: z.string().optional(),
+          })
+          .strict()
+          .parse(args ?? {});
+        const { buildBrandSnapshot } = await import('../brand-data/snapshot.js');
+        const { persistSnapshotResult } = await import('../brand-data/store.js');
+        const opts = {
+          ...(parsed.networks ? { networks: parsed.networks } : {}),
+          ...(parsed.timezone ? { timezone: parsed.timezone } : {}),
+        };
+        const result = await buildBrandSnapshot(parsed.brand, opts);
+        persistSnapshotResult(parsed.brand, result);
+        return result.snapshot;
+      },
+    },
   ];
 }
 

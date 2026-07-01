@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addDays,
   bucketByWindow,
+  chunkDayRange,
   dayInBounds,
   dayInZone,
   startOfYear,
@@ -49,6 +50,26 @@ describe('dayInBounds', () => {
     expect(dayInBounds('2026-06-30', bounds)).toBe(true);
     expect(dayInBounds('2026-05-31', bounds)).toBe(false);
     expect(dayInBounds('2026-07-01', bounds)).toBe(false);
+  });
+});
+
+describe('chunkDayRange', () => {
+  it('splits a range into <=maxDays inclusive slices covering it exactly', () => {
+    expect(chunkDayRange('2026-01-01', '2026-01-10', 31)).toEqual([
+      { from: '2026-01-01', to: '2026-01-10' },
+    ]);
+    const slices = chunkDayRange('2026-01-01', '2026-03-15', 31);
+    expect(slices).toEqual([
+      { from: '2026-01-01', to: '2026-01-31' },
+      { from: '2026-02-01', to: '2026-03-03' },
+      { from: '2026-03-04', to: '2026-03-15' },
+    ]);
+    // Contiguous, no gaps or overlaps.
+    expect(slices[0]?.to && addDays(slices[0].to, 1)).toBe(slices[1]?.from);
+  });
+
+  it('returns [] when from is after to', () => {
+    expect(chunkDayRange('2026-02-01', '2026-01-01')).toEqual([]);
   });
 });
 

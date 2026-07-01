@@ -96,6 +96,7 @@ describe('tool generator', () => {
     const meta = generateMetaTools();
     const names = meta.map((t) => t.name).sort();
     expect(names).toEqual([
+      'affiliate_build_brand_snapshot',
       'affiliate_get_client_strategy',
       'affiliate_list_actions',
       'affiliate_list_client_strategies',
@@ -109,6 +110,7 @@ describe('tool generator', () => {
   it('with no adapters registered, only meta tools are present', () => {
     const all = generateAllTools();
     expect(all.map((t) => t.name).sort()).toEqual([
+      'affiliate_build_brand_snapshot',
       'affiliate_get_client_strategy',
       'affiliate_list_actions',
       'affiliate_list_client_strategies',

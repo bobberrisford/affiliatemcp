@@ -31,6 +31,11 @@ export interface WindowBounds {
 const dayFormatters = new Map<string, Intl.DateTimeFormat>();
 
 export function dayInZone(iso: string, timezone: string = DEFAULT_BRAND_TIMEZONE): string {
+  const date = new Date(iso);
+  // A malformed or empty date (some networks aggregate over a range and leave
+  // the field empty) must not crash the snapshot. Return '' so the row matches
+  // no window rather than throwing on Intl.format.
+  if (Number.isNaN(date.getTime())) return '';
   let fmt = dayFormatters.get(timezone);
   if (!fmt) {
     fmt = new Intl.DateTimeFormat('en-CA', {
@@ -42,7 +47,7 @@ export function dayInZone(iso: string, timezone: string = DEFAULT_BRAND_TIMEZONE
     dayFormatters.set(timezone, fmt);
   }
   // en-CA formats as YYYY-MM-DD.
-  return fmt.format(new Date(iso));
+  return fmt.format(date);
 }
 
 /**
@@ -65,6 +70,25 @@ export function addDays(day: string, n: number): string {
 /** First day of the calendar year of `day`. */
 export function startOfYear(day: string): string {
   return `${day.slice(0, 4)}-01-01`;
+}
+
+/**
+ * Split an inclusive `[from, to]` day range into consecutive slices of at most
+ * `maxDays` days each. Awin's transaction endpoints (advertiser and publisher)
+ * cap a single query at ~31 days; the brand-data pull chunks here because the
+ * advertiser adapter, unlike the publisher one, does not chunk internally.
+ */
+export function chunkDayRange(from: string, to: string, maxDays = 31): WindowBounds[] {
+  if (from > to) return [];
+  const out: WindowBounds[] = [];
+  let start = from;
+  while (start <= to) {
+    let end = addDays(start, maxDays - 1);
+    if (end > to) end = to;
+    out.push({ from: start, to: end });
+    start = addDays(end, 1);
+  }
+  return out;
 }
 
 /**

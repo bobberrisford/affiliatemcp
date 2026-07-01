@@ -13,3 +13,6 @@ export * from './normalise.js';
 export * from './windows.js';
 export * from './metrics.js';
 export * from './rows-cap.js';
+export * from './pull.js';
+export * from './snapshot.js';
+export * from './store.js';
