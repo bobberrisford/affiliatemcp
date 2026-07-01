@@ -58,6 +58,10 @@
       {
         "from": "../skills",
         "to": "skills"
+      },
+      {
+        "from": "../premium-skills",
+        "to": "premium-skills"
       }
     ],
     "mac": {

@@ -169,6 +169,10 @@ h2.scr { font-family: var(--font-display); font-weight: 800; text-transform: low
 .net.net-build { border-style: dashed; border-color: var(--line-strong); cursor: pointer; }
 .net.net-build .nm { color: var(--blue); }
 .preview { font-family: var(--font-mono); font-size: .78rem; line-height: 1.5; background: var(--ink); color: var(--paper); border-radius: var(--r-xs); padding: 16px; margin-top: 12px; max-height: 320px; overflow: auto; white-space: pre-wrap; }
+#premium-shelf { margin-top: 20px; border-top: var(--rule) dashed var(--line-strong); padding-top: 18px; }
+#premium-shelf .shelf-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+#premium-shelf .mut { color: var(--fg-muted); font-family: var(--font-mono); font-size: .78rem; margin: 0 0 10px; }
+#premium-shelf .grid { margin-top: 10px; }
 
 /* ---- credential fields ------------------------------------------------ */
 .field { margin-bottom: var(--s-5); }

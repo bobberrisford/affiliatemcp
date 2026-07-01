@@ -84,6 +84,13 @@ function bundledSkillsDir() {
     : path.join(__dirname, '..', 'skills');
 }
 
+/** The bundled premium-skills tree (gated behind an active subscription). */
+function bundledPremiumSkillsDir() {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'premium-skills')
+    : path.join(__dirname, '..', 'premium-skills');
+}
+
 /** @type {{ facade: any, config: any } | null} */
 let core = null;
 
@@ -518,6 +525,32 @@ handle('skills:install', async (_e, payload) => {
   const { facade } = await loadCore();
   const slugs = Array.isArray(payload?.slugs) ? payload.slugs : [];
   const result = facade.installSkills(slugs, { skillsDir: bundledSkillsDir() });
+  return { ok: true, ...result };
+});
+
+// Premium packs: the catalogue plus the live entitlement flag, so the shelf
+// can render locked or unlocked.
+handle('skills:listPremium', async () => {
+  const { facade } = await loadCore();
+  const status = await facade.entitlementStatus();
+  return {
+    ok: true,
+    skills: facade.listSkills({ skillsDir: bundledPremiumSkillsDir() }),
+    entitled: status.entitled,
+  };
+});
+
+// Install premium packs — ENFORCED server-side: refuse unless entitled, so the
+// gate isn't just a UI affordance. (The app is open source, so this is a
+// deliberate, accepted convenience gate, per the decision.)
+handle('skills:installPremium', async (_e, payload) => {
+  const { facade } = await loadCore();
+  const status = await facade.entitlementStatus();
+  if (!status.entitled) {
+    return { ok: false, error: 'Premium is not active. Subscribe to install premium packs.' };
+  }
+  const slugs = Array.isArray(payload?.slugs) ? payload.slugs : [];
+  const result = facade.installSkills(slugs, { skillsDir: bundledPremiumSkillsDir() });
   return { ok: true, ...result };
 });
 
