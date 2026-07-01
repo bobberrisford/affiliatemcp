@@ -157,12 +157,15 @@ h2.scr { font-family: var(--font-display); font-weight: 800; text-transform: low
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-3); }
 .net { border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: 14px; background: var(--paper); position: relative; cursor: pointer; transition: box-shadow .08s steps(2); }
 .net:hover { box-shadow: var(--shadow); }
-.net .nm { font-family: var(--font-mono); font-weight: 800; font-size: .95rem; }
+.net .nm { font-family: var(--font-mono); font-weight: 800; font-size: .95rem; padding-right: 26px; }
 .net .mt { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .04em; color: var(--fg-muted); text-transform: uppercase; margin-top: 6px; }
 .net.sel { background: var(--ink); color: var(--paper); box-shadow: var(--shadow-acid); }
 .net.sel .mt { color: var(--blue-bright); }
 .net .tick { position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; background: var(--blue); color: #fff; display: none; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 800; font-size: 13px; border-radius: 3px; }
 .net.sel .tick { display: flex; }
+.net.greyed { opacity: .45; cursor: not-allowed; }
+.net.greyed:hover { box-shadow: none; }
+.net.greyed .mt { text-transform: none; letter-spacing: 0; color: var(--fg-muted); }
 
 /* ---- credential fields ------------------------------------------------ */
 .field { margin-bottom: var(--s-5); }
