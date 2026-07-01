@@ -114,6 +114,16 @@ function mockApi() {
       ],
     }, 500),
     lockerExport: (suggestedName, _content) => wait({ ok: true, path: `~/Downloads/${suggestedName || 'export.csv'}` }, 300),
+    listSkills: () => wait({
+      ok: true,
+      skills: [
+        { slug: 'affiliate-earnings-report', name: 'affiliate-earnings-report', description: '', trigger: 'show my affiliate earnings' },
+        { slug: 'affiliate-network-status', name: 'affiliate-network-status', description: '', trigger: 'check my affiliate networks' },
+        { slug: 'audit-affiliate-links', name: 'audit-affiliate-links', description: '', trigger: 'audit my affiliate links' },
+        { slug: 'agency-portfolio-rollup', name: 'agency-portfolio-rollup', description: '', trigger: 'show revenue across all clients', side: 'brand' },
+      ],
+    }, 300),
+    installSkills: (slugs) => wait({ ok: true, installed: slugs || [], skipped: [], targetDir: '~/.claude/skills' }, 400),
     connectClaude: () => wait({ ok: true, action: 'added', backupPath: '…/claude_desktop_config.json.bak' }, 500),
     restartClaude: () => wait({ ok: true }),
     openExternal: (url) => { window.open(url, '_blank'); return wait({ ok: true }); },
@@ -153,6 +163,8 @@ const state = {
   update: { state: 'idle' }, // latest auto-update status from main (see setupUpdateEvents)
   telemetryEnabled: false,
   cockpit: null,         // latest CockpitSummary (attention flags) from main
+  skills: [],            // bundled skill catalogue (SkillSummary[])
+  selectedSkills: [],    // slugs chosen in the skills step
 };
 const app = document.getElementById('app');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -161,7 +173,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 // same rule before submitting and treats a short write `count` as a failure.
 const BRAND_SLUG_RE = /^[a-z0-9-]+$/;
 
-const FLOW = ['networks', 'credentials', 'brands', 'connect'];
+const FLOW = ['networks', 'credentials', 'brands', 'skills', 'connect'];
 function rail(current) {
   const i = FLOW.indexOf(current);
   return `<div class="steps"><span class="stepno">step ${i + 1} / ${FLOW.length}</span>` +
@@ -397,7 +409,7 @@ async function renderCredentials() {
       setTimeout(() => {
         if (!last) { state.credIndex++; go('credentials'); }
         else if (anyBrandSide()) { state.brandIndex = 0; go('brands'); }
-        else go('connect');
+        else go('skills');
       }, 550);
     } else {
       vs.innerHTML = `<span class="status"><span class="dot dot-neg"></span> ${esc((res && res.reason) || 'could not verify')}</span>`;
@@ -414,7 +426,7 @@ const brandSideSlugs = () => state.selected.filter((s) => (state.networks.find((
 async function renderBrands() {
   const brandSlugs = brandSideSlugs();
   // Defensive: nothing brand-side to do (shouldn't happen via the normal flow).
-  if (!brandSlugs.length) { go('connect'); return; }
+  if (!brandSlugs.length) { go('skills'); return; }
   if (state.brandIndex < 0) state.brandIndex = 0;
   if (state.brandIndex > brandSlugs.length - 1) state.brandIndex = brandSlugs.length - 1;
 
@@ -578,7 +590,7 @@ async function renderBrands() {
       return;
     }
     if (!isLastBrand) { state.brandIndex++; renderBrands(); }
-    else go('connect');
+    else go('skills');
   };
 }
 
@@ -606,6 +618,77 @@ function renderBrandsError(net, slug, msg) {
   };
 }
 
+/* ---- skills step (deploy bundled playbooks) --------------------------- */
+/* A card picker after the brands step. Skills whose required side isn't
+   configured are greyed with a reason, never hidden. Selections install in the
+   connect step, before the single Claude restart. Free feature. */
+async function renderSkills() {
+  const hasPub = state.selected.some(
+    (s) => (state.networks.find((n) => n.slug === s) || {}).side === 'publisher',
+  );
+  const hasBrand = anyBrandSide();
+  const lockReason = (s) => {
+    if (s.side === 'publisher' && !hasPub) return 'needs a publisher network';
+    if ((s.side === 'brand' || s.side === 'agency') && !hasBrand) return 'needs a brand-side network';
+    return null;
+  };
+
+  if (!state.skills.length) {
+    const res = await api.listSkills();
+    state.skills = (res && res.skills) || [];
+    // First visit: default every available skill on.
+    state.selectedSkills = state.skills.filter((s) => !lockReason(s)).map((s) => s.slug);
+  }
+
+  app.innerHTML = wrap(`
+    ${rail('skills')}
+    <h2 class="scr">add skills.</h2>
+    <p class="scr-lead">skills are ready-made playbooks — ask Claude in plain English and it knows the steps. pick the ones you’ll use.</p>
+    <div class="picker-scroll"><div class="grid" id="skill-grid"></div></div>
+    <div class="actions">
+      <button class="btn btn-ghost" id="back">back</button>
+      <button class="btn btn-primary" id="next"></button>
+    </div>
+  `);
+
+  const grid = document.getElementById('skill-grid');
+  const nextBtn = /** @type {HTMLButtonElement} */ (document.getElementById('next'));
+
+  function paint() {
+    grid.innerHTML = state.skills
+      .map((s) => {
+        const reason = lockReason(s);
+        const on = state.selectedSkills.includes(s.slug);
+        const sub = reason ? esc(reason) : s.trigger ? `try: “${esc(s.trigger)}”` : '';
+        return `<div class="net ${on ? 'sel' : ''} ${reason ? 'greyed' : ''}" data-slug="${esc(s.slug)}" ${reason ? 'data-locked="1"' : ''}>
+          <div class="nm">${esc(s.name)}</div>
+          <div class="mt">${sub}</div>
+          <span class="tick">✓</span>
+        </div>`;
+      })
+      .join('');
+    grid.querySelectorAll('.net').forEach((tile) => {
+      if (tile.getAttribute('data-locked')) return;
+      tile.addEventListener('click', () => {
+        const slug = tile.getAttribute('data-slug');
+        const i = state.selectedSkills.indexOf(slug);
+        if (i >= 0) state.selectedSkills.splice(i, 1);
+        else state.selectedSkills.push(slug);
+        paint();
+      });
+    });
+    const n = state.selectedSkills.length;
+    nextBtn.textContent = n ? `add ${n} skill${n === 1 ? '' : 's'} — continue ▸` : 'skip — just the tools ▸';
+  }
+
+  document.getElementById('back').onclick = () => {
+    if (anyBrandSide()) { state.brandIndex = brandSideSlugs().length - 1; go('brands'); }
+    else { state.credIndex = state.selected.length - 1; go('credentials'); }
+  };
+  nextBtn.onclick = () => go('connect');
+  paint();
+}
+
 async function renderConnect() {
   const det = await api.detectClients();
   const telemetry = await api.getTelemetryConsent();
@@ -631,10 +714,7 @@ async function renderConnect() {
       <button class="btn btn-primary" id="go" ${present ? '' : 'disabled'}>connect &amp; restart Claude ▸</button>
     </div>
   `);
-  document.getElementById('back').onclick = () => {
-    if (anyBrandSide()) { state.brandIndex = brandSideSlugs().length - 1; go('brands'); }
-    else go('credentials');
-  };
+  document.getElementById('back').onclick = () => go('skills');
   const goBtn = document.getElementById('go');
   if (goBtn) goBtn.onclick = async () => {
     const cs = document.getElementById('cstatus');
@@ -661,6 +741,14 @@ async function renderConnect() {
     cs.innerHTML = `<span class="status"><span class="dot dot-pending"></span> writing Claude config…</span>`;
     const connected = await api.connectClaude();
     if (failed(connected)) return fail(`couldn’t update Claude’s config: ${connected.error || 'unknown error'}`);
+
+    // Deploy selected skills before the single restart, so Claude loads tools
+    // and skills together (a local file copy — no network).
+    if (state.selectedSkills.length && api.installSkills) {
+      cs.innerHTML = `<span class="status"><span class="dot dot-pending"></span> installing skills…</span>`;
+      const skillsRes = await api.installSkills(state.selectedSkills);
+      if (failed(skillsRes)) return fail(`couldn’t install skills: ${skillsRes.error || 'unknown error'}`);
+    }
 
     cs.innerHTML = `<span class="status"><span class="dot dot-pending"></span> restarting Claude…</span>`;
     const restarted = await api.restartClaude();
@@ -1030,7 +1118,7 @@ async function renderLocker() {
 /* ---- router ----------------------------------------------------------- */
 const SCREENS = {
   welcome: renderWelcome, networks: renderNetworks,
-  credentials: renderCredentials, brands: renderBrands, connect: renderConnect,
+  credentials: renderCredentials, brands: renderBrands, skills: renderSkills, connect: renderConnect,
   done: renderDone, cockpit: renderCockpit, locker: renderLocker,
 };
 function go(name) { state.screen = name; (SCREENS[name] || renderWelcome)(); }

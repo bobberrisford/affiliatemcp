@@ -182,6 +182,26 @@ test('saveBrands rejects duplicate nicknames instead of silently overwriting', a
   expect(String(res.error)).toMatch(/duplicate brand nickname/i);
 });
 
+test('skills:list returns the bundled catalogue over IPC', async () => {
+  // Reads the real bundled skills/ tree (dev path). Each entry is a plain,
+  // structured-clone-safe summary with a slug + name; the picker relies on this
+  // being a populated array, never a thrown error turned into { ok:false }.
+  const res = await page.evaluate(() => window.affiliate.listSkills());
+  expect(res.ok).toBe(true);
+  expect(Array.isArray(res.skills)).toBe(true);
+  expect(res.skills.length).toBeGreaterThan(0);
+  expect(typeof res.skills[0].slug).toBe('string');
+  expect(typeof res.skills[0].name).toBe('string');
+});
+
+test('skills:install with an empty selection is a safe no-op', async () => {
+  // Guards the "skip — just the tools" path: an empty selection must return a
+  // clean result with nothing installed, and must not write to the skills dir.
+  const res = await page.evaluate(() => window.affiliate.installSkills([]));
+  expect(res.ok).toBe(true);
+  expect(res.installed).toEqual([]);
+});
+
 test('cockpit:summary returns a structured summary over IPC (unconfigured here)', async () => {
   // The sandbox config dir has no credentials, so the real Awin adapter is
   // registered but unconfigured. computeCockpit must report that cleanly — a
