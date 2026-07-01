@@ -18,12 +18,15 @@
  *   npx tsx scripts/verify-awin-live.ts
  *
  * Provide only the token(s) for the side(s) you want to check. AWIN_PUBLISHER_ID
- * and AWIN_BRAND_ID default to 19011 (the Awin UK demo account).
+ * is optional and auto-derived from the token's own account (override only to
+ * force a specific publisher). AWIN_BRAND_ID is the advertiser account to read
+ * and defaults to 19011 (the Awin UK demo account).
  */
 
 import '../src/networks/index.js';
 import { getAdapter } from '../src/shared/registry.js';
 import { registerBrand } from '../src/shared/brands.js';
+import { verifyAuth as awinAuthVerify } from '../src/networks/awin/auth.js';
 import { awinActionDescriptors } from '../src/networks/awin/actions.js';
 import { awinAdvertiserActionDescriptors } from '../src/networks/awin-advertiser/actions.js';
 import type { AdapterCallContext, NetworkAdapter } from '../src/shared/types.js';
@@ -67,9 +70,18 @@ async function verifyPublisher(adapter: NetworkAdapter): Promise<void> {
   let firstJoinedAdvertiserId: string | undefined;
 
   await check('verifyAuth', async () => {
-    const r = await adapter.verifyAuth();
+    // Use the auth module directly so we can read derivedValues and auto-fill
+    // the token's OWN publisher id. A publisher token can only read its own
+    // publisher, so forcing an unrelated id (e.g. an advertiser account) yields
+    // a correct access_denied. Auto-derive unless the operator forced one.
+    const r = await awinAuthVerify();
     if (!r.ok) throw new Error(r.reason);
-    return r.identity ? `identity ${r.identity}` : 'authenticated';
+    const derived = r.derivedValues?.AWIN_PUBLISHER_ID;
+    if (derived && !process.env['AWIN_PUBLISHER_ID']) {
+      process.env['AWIN_PUBLISHER_ID'] = derived;
+    }
+    const pid = process.env['AWIN_PUBLISHER_ID'] ?? 'unknown';
+    return `${r.identity ?? 'authenticated'} (publisher id ${pid})`;
   });
 
   await check('listProgrammes', async () => {
@@ -165,7 +177,8 @@ async function main(): Promise<void> {
   }
 
   if (pubToken) {
-    if (!process.env['AWIN_PUBLISHER_ID']) process.env['AWIN_PUBLISHER_ID'] = '19011';
+    // Do NOT default a publisher id. verifyPublisher auto-derives the token's
+    // own id; AWIN_PUBLISHER_ID is honoured only if the operator sets it.
     const adapter = getAdapter('awin');
     if (adapter) await verifyPublisher(adapter);
     else write('awin adapter not registered');
