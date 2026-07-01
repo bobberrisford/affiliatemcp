@@ -67,17 +67,31 @@ manual pass in a logged-in dashboard (see below).
   programmes are UI-configured and not enumerable on every tenant.
 - `declined` maps to canonical `reversed`.
 
-## Browser-handoff URLs to verify manually
+## Browser-handoff URLs
 
-An API token cannot exercise these. Open each in a logged-in Awin session and
-confirm the page and the verify target, then replace any wrong `// TODO(verify)`
-constant in the relevant `actions.ts`:
+The advertiser dashboard URLs were corrected on 2026-07-01 from the operator's
+live session. The advertiser dashboard is served from `https://app.awin.com`,
+and partner views live under
+`/en/awin/advertiser/{advertiserId}/partnerships/{view}`:
 
-- `awin-advertiser.approvePublisher` / `declinePublisher` start and verify URL:
-  `https://ui.awin.com/awin/advertiser/publishers/pending`
-- `awin.applyToProgramme` (publisher side) start URL:
-  `https://ui.awin.com/awin/affiliate/{publisherId}/merchant-profile/{advertiserId}`,
-  verify URL: `https://ui.awin.com/awin/affiliate/{publisherId}/merchant-directory/index/tab/pending/page/1`
+- `.../partnerships/all` — the full partner list including pending applicants
+  (the approve/decline queue and verify target).
+- `.../partnerships/profile` — the advertiser profile.
+
+`awin-advertiser.approvePublisher` / `declinePublisher` now build the start and
+verify URL as `https://app.awin.com/en/awin/advertiser/{advertiserId}/partnerships/all`,
+interpolating the advertiser id (the previous `ui.awin.com/.../publishers/pending`
+constant was wrong on host, path, and was not brand-scoped).
+
+Open `// TODO(verify)`: confirm the advertiser id in that path equals the API
+accountId from `listBrands`. The live example used advertiser **74386**, while
+the demo API brand queried was **19011**; `listBrands` returned two accounts, so
+these may be two different advertisers, or Awin may use distinct account-vs-URL
+ids. Resolve before promoting the handoff URL to verified.
+
+The publisher-side `awin.applyToProgramme` URLs (`ui.awin.com/awin/affiliate/...`)
+are a separate surface and remain unverified; the token's publisher account was
+not used to check them.
 
 `scripts/verify-awin-live.ts` prints the full handoff payloads (goal, start URL,
 verify URL, expect, constraints) so they can be followed by hand or by a

@@ -58,7 +58,7 @@ describe('Awin advertiser publisher-decision emitters', () => {
       expect(handoff).not.toBeNull();
       if (!handoff) throw new Error('expected a browser fallback');
       expect(handoff.mutates).toBe(true);
-      expect(handoff.verify.url).toBe(_internals.AWIN_PENDING_PUBLISHERS_URL);
+      expect(handoff.verify.url).toBe(_internals.partnershipsAllUrl(baseInput.programmeId));
       expect(typeof handoff.verify.expect).toBe('string');
       expect(handoff.verify.expect).toContain('12345');
     }
@@ -108,21 +108,31 @@ describe('Awin advertiser publisher-decision emitters', () => {
       programmeId: 'prog-1',
       declineReason: 'out of category',
     });
-    expect(handoff.startingUrl.startsWith('https://ui.awin.com')).toBe(true);
+    expect(handoff.startingUrl.startsWith('https://app.awin.com')).toBe(true);
   });
 
-  it('uses a constant startingUrl that ignores a hostile startingUrl in input', () => {
+  it('builds startingUrl from the fixed template and ignores a hostile startingUrl in input', () => {
     // startingUrl is NOT part of the input contract; a smuggled value must be
-    // ignored. The emitted url is always the module constant.
+    // ignored. The emitted url is always built from the fixed origin/template
+    // and the advertiser id, never from a caller-supplied startingUrl.
     const hostile = {
       ...baseInput,
       startingUrl: 'https://evil.example/phish',
     } as unknown as typeof baseInput;
     const handoff = buildApprovePublisherHandoff(hostile).browserFallback;
     if (!handoff) throw new Error('expected a browser fallback');
-    expect(handoff.startingUrl).toBe(_internals.AWIN_PENDING_PUBLISHERS_URL);
+    expect(handoff.startingUrl).toBe(_internals.partnershipsAllUrl(baseInput.programmeId));
     expect(handoff.startingUrl).not.toContain('evil.example');
     expect(Object.keys(handoff.inputs)).not.toContain('startingUrl');
+  });
+
+  it('interpolates the advertiser id into the fixed partnerships URL template', () => {
+    const handoff = buildApprovePublisherHandoff({ ...baseInput, programmeId: '74386' })
+      .browserFallback;
+    if (!handoff) throw new Error('expected a browser fallback');
+    expect(handoff.startingUrl).toBe(
+      'https://app.awin.com/en/awin/advertiser/74386/partnerships/all',
+    );
   });
 
   it('declares two browser/write descriptors with the expected invariants', () => {

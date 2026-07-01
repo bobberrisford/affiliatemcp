@@ -12,9 +12,10 @@
  * These functions are PURE. They build a plan; they never call `fetch`, the
  * `awin-advertiser` client, `auth.ts`, or `withResilience`, and they touch no
  * session, cookie, or DOM. The mutation risk lives entirely in the consumer
- * that carries out the handoff, never in this repo. The starting URL is a
- * CONSTANT Awin-owned origin path defined here, never derived from caller
- * input, so a hostile caller cannot redirect the operator to an arbitrary page.
+ * that carries out the handoff, never in this repo. The starting URL is built
+ * from a FIXED, reviewed Awin origin and path template; only the advertiser id
+ * (a controlled, non-secret input) is interpolated and percent-encoded, so a
+ * hostile caller cannot redirect the operator to an arbitrary host or page.
  *
  * Cardinal rules honoured:
  *   1. NEVER call fetch. These emitters call nothing.
@@ -33,15 +34,29 @@ import type {
 } from '../../shared/types.js';
 
 /**
- * The Awin advertiser pending-publishers queue. CONSTANT and Awin-owned: it is
- * never derived from caller input, so the handoff can only ever point the
- * operator at this reviewed Awin origin path.
- *
- * TODO(verify): the exact path is unverified against a live Accelerate/Advanced
- * tenant. The origin (`https://ui.awin.com`) is the Awin advertiser UI; confirm
- * the queue path when a live tenant is available.
+ * The Awin advertiser dashboard origin. FIXED and reviewed here; never taken
+ * from caller input. Verified live on 2026-07-01: the advertiser dashboard is
+ * served from `https://app.awin.com`, and partner views live under
+ * `/en/awin/advertiser/{advertiserId}/partnerships/{view}` (for example
+ * `/partnerships/all` for the full partner list including pending applicants,
+ * and `/partnerships/profile` for the advertiser profile).
  */
-const AWIN_PENDING_PUBLISHERS_URL = 'https://ui.awin.com/awin/advertiser/publishers/pending';
+const AWIN_ADVERTISER_UI_ORIGIN = 'https://app.awin.com';
+
+/**
+ * The advertiser's partnerships list (all partners, including pending
+ * applicants). The ORIGIN and PATH TEMPLATE are fixed; only the advertiser id
+ * (a controlled, non-secret input) is interpolated and percent-encoded, so a
+ * caller cannot redirect the operator to an arbitrary host or path. Mirrors the
+ * publisher-side `applyToProgramme` URL builder.
+ *
+ * TODO(verify): confirm the id in this path equals the API accountId returned
+ * by `listBrands`. The live example used advertiser 74386; if Awin uses a
+ * distinct account-vs-advertiser id in the app URL, the handoff needs the UI id.
+ */
+function partnershipsAllUrl(advertiserId: string): string {
+  return `${AWIN_ADVERTISER_UI_ORIGIN}/en/awin/advertiser/${encodeURIComponent(advertiserId)}/partnerships/all`;
+}
 
 /** Caller-supplied, non-secret inputs for a publisher-decision handoff. */
 export interface PublisherDecisionInput {
@@ -70,6 +85,7 @@ function buildPublisherDecisionHandoff(
   decision: PublisherDecision,
 ): BrowserHandoff {
   const verb = decision === 'approve' ? 'Approve' : 'Decline';
+  const queueUrl = partnershipsAllUrl(input.programmeId);
   const inputs: Record<string, unknown> = {
     publisherId: input.publisherId,
     publisherName: input.publisherName,
@@ -82,7 +98,7 @@ function buildPublisherDecisionHandoff(
   }
   return {
     goal: `${verb} publisher ${input.publisherName} (id ${input.publisherId}) on the Awin programme for brand ${input.brand}.`,
-    startingUrl: AWIN_PENDING_PUBLISHERS_URL,
+    startingUrl: queueUrl,
     inputs,
     constraints: composeConstraints([
       `Operate only on publisher ${input.publisherId}; do not approve or decline any other applicant.`,
@@ -92,8 +108,8 @@ function buildPublisherDecisionHandoff(
     ]),
     mutates: true,
     verify: {
-      url: AWIN_PENDING_PUBLISHERS_URL,
-      expect: `publisher ${input.publisherId} no longer appears in the pending queue; its status reads ${decision === 'approve' ? 'approved' : 'declined'}.`,
+      url: queueUrl,
+      expect: `publisher ${input.publisherName} (id ${input.publisherId}) no longer shows as a pending applicant on the partnerships list; its status reads ${decision === 'approve' ? 'active/joined' : 'declined'}.`,
     },
   };
 }
@@ -170,5 +186,5 @@ export const awinAdvertiserActionDescriptors: ActionDescriptor[] = [
   },
 ];
 
-/** Exposed for tests: the constant starting URL is never derived from input. */
-export const _internals = { AWIN_PENDING_PUBLISHERS_URL };
+/** Exposed for tests: the fixed origin and the advertiser-scoped URL builder. */
+export const _internals = { AWIN_ADVERTISER_UI_ORIGIN, partnershipsAllUrl };
