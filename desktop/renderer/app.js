@@ -124,6 +124,16 @@ function mockApi() {
       ],
     }, 300),
     installSkills: (slugs) => wait({ ok: true, installed: slugs || [], skipped: [], targetDir: '~/.claude/skills' }, 400),
+    listPremiumSkills: () => wait({
+      ok: true,
+      entitled: mockEnt.entitled,
+      skills: [
+        { slug: 'qbr-prep-pack', name: 'qbr-prep-pack', description: '', trigger: 'prep the QBR for Acme' },
+        { slug: 'agency-portfolio-deepdive', name: 'agency-portfolio-deepdive', description: '', trigger: 'deep dive the whole portfolio' },
+        { slug: 'vertical-benchmark-pack', name: 'vertical-benchmark-pack', description: '', trigger: 'benchmark Acme against its vertical' },
+      ],
+    }, 200),
+    installPremiumSkills: (slugs) => wait(mockEnt.entitled ? { ok: true, installed: slugs || [], skipped: [], targetDir: '~/.claude/skills' } : { ok: false, error: 'Premium is not active.' }, 300),
     listSkillArchetypes: () => wait({
       ok: true,
       archetypes: [
@@ -199,6 +209,9 @@ const state = {
   skills: [],            // bundled skill catalogue (SkillSummary[])
   selectedSkills: [],    // bundled slugs chosen in the skills step
   composedSkills: [],    // [{ slug, name, trigger }] built + saved via the composer
+  premiumSkills: [],     // premium pack catalogue (SkillSummary[])
+  premiumEntitled: false,// live entitlement flag for the premium shelf
+  selectedPremium: [],   // premium pack slugs chosen (only when entitled)
 };
 // Composer wizard state (build-your-own), persisted across its steps.
 const composer = { step: 1, archetypeId: null, archetypes: [], networks: [], opsByNet: {}, ops: [], name: '', trigger: '' };
@@ -675,12 +688,21 @@ async function renderSkills() {
     // First visit: default every available skill on.
     state.selectedSkills = state.skills.filter((s) => !lockReason(s)).map((s) => s.slug);
   }
+  // Premium packs + live entitlement (locked shelf when not subscribed).
+  if (api.listPremiumSkills) {
+    const pr = await api.listPremiumSkills();
+    if (pr && pr.ok) {
+      state.premiumSkills = pr.skills || [];
+      state.premiumEntitled = !!pr.entitled;
+      if (!state.premiumEntitled) state.selectedPremium = [];
+    }
+  }
 
   app.innerHTML = wrap(`
     ${rail('skills')}
     <h2 class="scr">add skills.</h2>
     <p class="scr-lead">skills are ready-made playbooks — ask Claude in plain English and it knows the steps. pick the ones you’ll use.</p>
-    <div class="picker-scroll"><div class="grid" id="skill-grid"></div></div>
+    <div class="picker-scroll"><div class="grid" id="skill-grid"></div><div id="premium-shelf"></div></div>
     <div class="actions">
       <button class="btn btn-ghost" id="back">back</button>
       <button class="btn btn-primary" id="next"></button>
@@ -733,8 +755,54 @@ async function renderSkills() {
         paint();
       });
     });
-    const n = state.selectedSkills.length + state.composedSkills.length;
+    paintPremium();
+    const n = state.selectedSkills.length + state.composedSkills.length + state.selectedPremium.length;
     nextBtn.textContent = n ? `add ${n} skill${n === 1 ? '' : 's'} — continue ▸` : 'skip — just the tools ▸';
+  }
+
+  // The premium shelf: selectable when subscribed, a locked upsell otherwise.
+  function paintPremium() {
+    const shelf = document.getElementById('premium-shelf');
+    if (!shelf || !state.premiumSkills.length) return;
+    if (state.premiumEntitled) {
+      shelf.innerHTML =
+        `<div class="shelf-head"><span class="stamp" style="color:var(--blue)">PREMIUM</span><span class="mut">included with your subscription</span></div>
+         <div class="grid">` +
+        state.premiumSkills
+          .map((s) => {
+            const on = state.selectedPremium.includes(s.slug);
+            return `<div class="net ${on ? 'sel' : ''}" data-premium="${esc(s.slug)}">
+              <div class="nm">${esc(s.name)}</div>
+              <div class="mt">${s.trigger ? `try: “${esc(s.trigger)}”` : 'premium pack'}</div>
+              <span class="tick">✓</span>
+            </div>`;
+          })
+          .join('') +
+        `</div>`;
+      shelf.querySelectorAll('[data-premium]').forEach((t) =>
+        t.addEventListener('click', () => {
+          const slug = t.getAttribute('data-premium');
+          const i = state.selectedPremium.indexOf(slug);
+          if (i >= 0) state.selectedPremium.splice(i, 1);
+          else state.selectedPremium.push(slug);
+          paint();
+        }),
+      );
+    } else {
+      shelf.innerHTML =
+        `<div class="shelf-head"><span class="stamp" style="color:var(--magenta)">PREMIUM · £20/MO</span></div>
+         <p class="mut">maintained agency packs — QBR prep, portfolio deep-dive, vertical benchmark. the free skills above stay free.</p>
+         <div class="grid">` +
+        state.premiumSkills
+          .map(
+            (s) => `<div class="net greyed"><div class="nm">${esc(s.name)}</div><div class="mt">locked</div></div>`,
+          )
+          .join('') +
+        `</div>
+         <button class="btn btn-primary" id="premium-unlock" style="margin-top:14px">unlock premium ▸</button>`;
+      const unlock = document.getElementById('premium-unlock');
+      if (unlock) unlock.onclick = () => go('account');
+    }
   }
 
   document.getElementById('back').onclick = () => {
@@ -1048,6 +1116,11 @@ async function renderConnect() {
       cs.innerHTML = `<span class="status"><span class="dot dot-pending"></span> installing skills…</span>`;
       const skillsRes = await api.installSkills(state.selectedSkills);
       if (failed(skillsRes)) return fail(`couldn’t install skills: ${skillsRes.error || 'unknown error'}`);
+    }
+    if (state.selectedPremium.length && api.installPremiumSkills) {
+      cs.innerHTML = `<span class="status"><span class="dot dot-pending"></span> installing premium packs…</span>`;
+      const premRes = await api.installPremiumSkills(state.selectedPremium);
+      if (failed(premRes)) return fail(`couldn’t install premium packs: ${premRes.error || 'unknown error'}`);
     }
 
     cs.innerHTML = `<span class="status"><span class="dot dot-pending"></span> restarting Claude…</span>`;

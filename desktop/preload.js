@@ -18,6 +18,9 @@ contextBridge.exposeInMainWorld('affiliate', {
   // detected client's skills dir.
   listSkills: () => ipcRenderer.invoke('skills:list'),
   installSkills: (slugs) => ipcRenderer.invoke('skills:install', { slugs }),
+  // Premium packs: catalogue + live entitlement flag; install is gated server-side.
+  listPremiumSkills: () => ipcRenderer.invoke('skills:listPremium'),
+  installPremiumSkills: (slugs) => ipcRenderer.invoke('skills:installPremium', { slugs }),
   // Skill composer (build-your-own): archetype palette, per-network operations,
   // preview a generated SKILL.md, and save it locally.
   listSkillArchetypes: () => ipcRenderer.invoke('composer:archetypes'),
