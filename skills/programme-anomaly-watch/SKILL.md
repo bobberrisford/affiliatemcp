@@ -25,6 +25,12 @@ This is **advisory** context that reshapes severity (Step 4); it never changes w
 
 Default period: the last 7 days, ending today. Comparison window: the 7 days immediately prior. Express all dates as ISO `YYYY-MM-DD`. Honour explicit user overrides ("this month vs last month", named dates).
 
+## Step 2b — use the snapshot for the current-window health signal
+
+Before fanning out, you may call `affiliate_build_brand_snapshot({ brand })` per brand for the current window (the 7-day default is `last7d`). Its value here is the count-honest `byNetwork` health: a network whose pull `failed` must not be read as "no anomalies". Treat a `failed` network exactly like a Step 3 binding failure — report it under `Failures` and say its absence of anomalies is not safe to assume.
+
+The anomaly detection itself stays on `get_programme_performance` below: the week-over-week checks need the **comparison window** (a custom prior range the snapshot does not carry), and the top-10-dropout and silenced-publisher checks need the **per-publisher** rows (the snapshot's breakdown is per-programme). So the snapshot informs health, not the anomaly maths.
+
 ## Step 3 — fan out per binding
 
 For each `(brand, network)` binding, call the network's performance tool twice — current window and comparison window. Tool names follow `affiliate_<network>_get_programme_performance`:
