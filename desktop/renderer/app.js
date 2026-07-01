@@ -149,6 +149,12 @@ function mockApi() {
       content: `---\nname: ${(input.name || 'skill').toLowerCase().replace(/[^a-z0-9]+/g, '-')}\ndescription: |\n  Use this skill for a ${input.archetypeId} across ${(input.networks || []).join(', ')}.\n  Trigger on: "${input.trigger}".\n---\n\n# ${input.name}\n\n## Tools this skill may call\n${(input.operations || []).map((t) => '- `' + t + '`').join('\n')}\n`,
     }, 300),
     saveComposedSkill: (_slug, _content) => wait({ ok: true, path: `~/.claude/skills/${_slug}/SKILL.md` }, 300),
+    // Entitlement mock: walks none -> (subscribe) inactive -> (check) active.
+    entitlementStatus: () => wait({ ok: true, status: { ...mockEnt } }, 150),
+    startCheckout: () => { mockEnt.hasAccount = true; mockEnt.state = 'inactive'; window.open('https://checkout.stripe.com/mock', '_blank'); return wait({ ok: true, url: 'https://checkout.stripe.com/mock' }, 300); },
+    refreshEntitlement: () => { mockEnt.state = 'active'; mockEnt.entitled = true; mockEnt.hasAccount = true; return wait({ ok: true, status: { ...mockEnt } }, 400); },
+    openPortal: () => { window.open('https://billing.stripe.com/mock', '_blank'); return wait({ ok: true, url: 'https://billing.stripe.com/mock' }, 200); },
+    signOutEntitlement: () => { mockEnt.state = 'none'; mockEnt.entitled = false; mockEnt.hasAccount = false; return wait({ ok: true }, 100); },
     connectClaude: () => wait({ ok: true, action: 'added', backupPath: '…/claude_desktop_config.json.bak' }, 500),
     restartClaude: () => wait({ ok: true }),
     openExternal: (url) => { window.open(url, '_blank'); return wait({ ok: true }); },
@@ -171,6 +177,8 @@ function mockApi() {
 }
 /** Holds the renderer's update-status callback when running on the browser mock. */
 let mockUpdateCb = null;
+/** Mutable entitlement state for the browser mock (real status comes from IPC). */
+const mockEnt = { state: 'none', entitled: false, hasAccount: false };
 const api = window.affiliate || mockApi();
 
 /* ---- state ------------------------------------------------------------ */
@@ -915,6 +923,72 @@ async function renderComposer() {
   };
 }
 
+/* ---- account / premium subscription ----------------------------------- */
+/* Shows subscription status and the subscribe / manage / sign-out actions.
+   Free-tier users can ignore this entirely — the free skills and composer work
+   without it. Gating of the premium shelf (PR-5) reads entitlementStatus. */
+async function renderAccount() {
+  let status = { state: 'none', entitled: false, hasAccount: false };
+  if (api.entitlementStatus) {
+    const res = await api.entitlementStatus();
+    if (res && res.status) status = res.status;
+  }
+  const active = status.state === 'active';
+
+  const body = active
+    ? `<div class="detect"><span class="ico">✓</span>
+        <span class="meta"><div class="a">premium active</div><div class="b">your premium skill packs are unlocked</div></span>
+        <span class="status"><span class="dot dot-pos"></span> subscribed</span></div>
+       <div class="actions">
+         <button class="btn btn-ghost" id="a-back">back</button>
+         <span style="display:flex;gap:10px">
+           <button class="btn btn-ghost" id="a-signout">sign out</button>
+           <button class="btn btn-primary" id="a-manage">manage subscription ▸</button>
+         </span>
+       </div>`
+    : `<div class="q"><span class="p">&gt;</span> ${status.hasAccount ? 'your subscription isn’t active right now.' : 'unlock a growing library of maintained premium skill packs.'}</div>
+       <p class="scr-lead">£20/month, cancel any time. the free skills and the composer stay free forever.</p>
+       <div class="verify-row" id="a-status"></div>
+       <div class="actions">
+         <button class="btn btn-ghost" id="a-back">back</button>
+         <span style="display:flex;gap:10px">
+           ${status.hasAccount ? '<button class="btn btn-ghost" id="a-refresh">I’ve paid — check now</button>' : ''}
+           <button class="btn btn-primary" id="a-sub">subscribe — £20/mo ▸</button>
+         </span>
+       </div>`;
+
+  app.innerHTML = wrap(`
+    ${rail('skills')}
+    <h2 class="scr">premium.</h2>
+    ${body}
+  `);
+
+  const back = document.getElementById('a-back');
+  if (back) back.onclick = () => go('skills');
+  const sub = document.getElementById('a-sub');
+  if (sub) sub.onclick = async () => {
+    const s = document.getElementById('a-status');
+    s.innerHTML = `<span class="status"><span class="dot dot-pending"></span> opening checkout…</span>`;
+    const res = await api.startCheckout?.();
+    if (!res || res.ok === false) {
+      s.innerHTML = `<span class="status"><span class="dot dot-neg"></span> ${esc((res && res.error) || 'could not start checkout')}</span>`;
+      return;
+    }
+    renderAccount(); // account key now stored → reveals "I've paid — check now"
+  };
+  const refresh = document.getElementById('a-refresh');
+  if (refresh) refresh.onclick = async () => {
+    const s = document.getElementById('a-status');
+    s.innerHTML = `<span class="status"><span class="dot dot-pending"></span> checking…</span>`;
+    await api.refreshEntitlement?.();
+    renderAccount();
+  };
+  const manage = document.getElementById('a-manage');
+  if (manage) manage.onclick = () => api.openPortal?.();
+  const signout = document.getElementById('a-signout');
+  if (signout) signout.onclick = async () => { await api.signOutEntitlement?.(); renderAccount(); };
+}
+
 async function renderConnect() {
   const det = await api.detectClients();
   const telemetry = await api.getTelemetryConsent();
@@ -1344,7 +1418,7 @@ async function renderLocker() {
 /* ---- router ----------------------------------------------------------- */
 const SCREENS = {
   welcome: renderWelcome, networks: renderNetworks,
-  credentials: renderCredentials, brands: renderBrands, skills: renderSkills, composer: renderComposer, connect: renderConnect,
+  credentials: renderCredentials, brands: renderBrands, skills: renderSkills, composer: renderComposer, account: renderAccount, connect: renderConnect,
   done: renderDone, cockpit: renderCockpit, locker: renderLocker,
 };
 function go(name) { state.screen = name; (SCREENS[name] || renderWelcome)(); }
@@ -1459,6 +1533,9 @@ function setupUpdateEvents() {
     if (api.checkForUpdates) check.onclick = onCheckForUpdates;
     else check.hidden = true; // no bridge (browser preview with no mock)
   }
+  // Titlebar "premium" opens the account/subscription screen.
+  const premium = document.getElementById('tb-premium');
+  if (premium) premium.onclick = () => go('account');
   if (!api.onUpdateStatus) return; // browser preview / mock: no push channel.
   api.onUpdateStatus((s) => {
     if (!s || !s.state) return;
