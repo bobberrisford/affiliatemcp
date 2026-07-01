@@ -362,6 +362,25 @@ describe('Awin.listTransactions', () => {
     delete process.env['AWIN_API_TOKEN'];
     await expect(awinAdapter.listTransactions({})).rejects.toBeInstanceOf(NetworkError);
   });
+
+  it('handles a very large single-chunk result without a stack overflow', async () => {
+    // Regression: a busy publisher can return >150k transactions in one 31-day
+    // window. The adapter used to merge chunks with `allRaw.push(...chunk)`,
+    // which spreads every row as a call argument and throws "Maximum call stack
+    // size exceeded" past ~150k. Confirmed live on 2026-07-01. The element-wise
+    // append must handle this cleanly.
+    const bigChunk = Array.from({ length: 200_000 }, (_, i) => ({
+      id: i,
+      commissionStatus: 'approved',
+      transactionDate: '2026-05-01T00:00:00Z',
+    }));
+    mockFetchQueue([fakeResponse(bigChunk)]);
+    const txns = await awinAdapter.listTransactions({
+      from: '2026-05-01T00:00:00Z',
+      to: '2026-05-21T00:00:00Z', // single ≤31-day slice
+    });
+    expect(txns.length).toBe(200_000);
+  });
 });
 
 // ---------------------------------------------------------------------------

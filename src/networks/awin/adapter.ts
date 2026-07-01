@@ -771,7 +771,14 @@ export class AwinAdapter implements NetworkAdapter {
         },
         resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
       });
-      if (Array.isArray(chunk)) allRaw.push(...chunk);
+      // Append element-by-element, NOT `allRaw.push(...chunk)`: spreading a
+      // large chunk as call arguments overflows the engine's argument limit
+      // ("Maximum call stack size exceeded") on busy accounts — a single 31-day
+      // window can return tens of thousands of transactions. A loop has no such
+      // ceiling. Confirmed live 2026-07-01 against a high-volume publisher.
+      if (Array.isArray(chunk)) {
+        for (const row of chunk) allRaw.push(row);
+      }
     }
 
     let transactions = allRaw.map((r) => toTransaction(r, now));
