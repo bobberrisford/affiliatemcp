@@ -124,6 +124,31 @@ function mockApi() {
       ],
     }, 300),
     installSkills: (slugs) => wait({ ok: true, installed: slugs || [], skipped: [], targetDir: '~/.claude/skills' }, 400),
+    listSkillArchetypes: () => wait({
+      ok: true,
+      archetypes: [
+        { id: 'report', label: 'Report', summary: 'Pull data across the chosen networks and present one consolidated summary.' },
+        { id: 'health-check', label: 'Health check', summary: 'Verify auth and reachability across the chosen networks.' },
+        { id: 'anomaly-scan', label: 'Watch / anomaly scan', summary: 'Compare the current period with the prior one and flag changes.' },
+        { id: 'link-audit', label: 'Link audit', summary: 'Check that tracking links still resolve to active programmes.' },
+        { id: 'custom', label: 'Custom prompt (advanced)', summary: 'A free-form instruction that still calls only the tools you pick.' },
+      ],
+    }, 200),
+    listNetworkOperations: (slug) => wait({
+      ok: true,
+      operations: [
+        { toolName: `affiliate_${slug}_get_earnings_summary`, description: '' },
+        { toolName: `affiliate_${slug}_list_transactions`, description: '' },
+        { toolName: `affiliate_${slug}_verify_auth`, description: '' },
+      ],
+    }, 200),
+    composeSkill: (input) => wait({
+      ok: true,
+      slug: (input.name || 'skill').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
+      targetPath: `~/.claude/skills/${(input.name || 'skill').toLowerCase().replace(/[^a-z0-9]+/g, '-')}/SKILL.md`,
+      content: `---\nname: ${(input.name || 'skill').toLowerCase().replace(/[^a-z0-9]+/g, '-')}\ndescription: |\n  Use this skill for a ${input.archetypeId} across ${(input.networks || []).join(', ')}.\n  Trigger on: "${input.trigger}".\n---\n\n# ${input.name}\n\n## Tools this skill may call\n${(input.operations || []).map((t) => '- `' + t + '`').join('\n')}\n`,
+    }, 300),
+    saveComposedSkill: (_slug, _content) => wait({ ok: true, path: `~/.claude/skills/${_slug}/SKILL.md` }, 300),
     connectClaude: () => wait({ ok: true, action: 'added', backupPath: '…/claude_desktop_config.json.bak' }, 500),
     restartClaude: () => wait({ ok: true }),
     openExternal: (url) => { window.open(url, '_blank'); return wait({ ok: true }); },
@@ -164,8 +189,11 @@ const state = {
   telemetryEnabled: false,
   cockpit: null,         // latest CockpitSummary (attention flags) from main
   skills: [],            // bundled skill catalogue (SkillSummary[])
-  selectedSkills: [],    // slugs chosen in the skills step
+  selectedSkills: [],    // bundled slugs chosen in the skills step
+  composedSkills: [],    // [{ slug, name, trigger }] built + saved via the composer
 };
+// Composer wizard state (build-your-own), persisted across its steps.
+const composer = { step: 1, archetypeId: null, archetypes: [], networks: [], opsByNet: {}, ops: [], name: '', trigger: '' };
 const app = document.getElementById('app');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // Mirrors BRAND_SLUG_RE in src/shared/brands.ts. saveBrands silently skips
@@ -655,7 +683,7 @@ async function renderSkills() {
   const nextBtn = /** @type {HTMLButtonElement} */ (document.getElementById('next'));
 
   function paint() {
-    grid.innerHTML = state.skills
+    const bundledHtml = state.skills
       .map((s) => {
         const reason = lockReason(s);
         const on = state.selectedSkills.includes(s.slug);
@@ -667,8 +695,28 @@ async function renderSkills() {
         </div>`;
       })
       .join('');
+    // Skills the user composed this session are already written to disk, so
+    // they show as saved (ticked, not toggleable).
+    const composedHtml = state.composedSkills
+      .map(
+        (c) => `<div class="net sel" data-composed="1">
+          <div class="nm">${esc(c.name)}</div>
+          <div class="mt">saved · try: “${esc(c.trigger)}”</div>
+          <span class="tick">✓</span>
+        </div>`,
+      )
+      .join('');
+    const buildHtml = `<div class="net net-build" id="skill-build">
+        <div class="nm">+ build your own</div>
+        <div class="mt">compose a skill from your tools</div>
+      </div>`;
+    grid.innerHTML = composedHtml + bundledHtml + buildHtml;
     grid.querySelectorAll('.net').forEach((tile) => {
-      if (tile.getAttribute('data-locked')) return;
+      if (tile.getAttribute('data-locked') || tile.getAttribute('data-composed')) return;
+      if (tile.id === 'skill-build') {
+        tile.addEventListener('click', () => go('composer'));
+        return;
+      }
       tile.addEventListener('click', () => {
         const slug = tile.getAttribute('data-slug');
         const i = state.selectedSkills.indexOf(slug);
@@ -677,7 +725,7 @@ async function renderSkills() {
         paint();
       });
     });
-    const n = state.selectedSkills.length;
+    const n = state.selectedSkills.length + state.composedSkills.length;
     nextBtn.textContent = n ? `add ${n} skill${n === 1 ? '' : 's'} — continue ▸` : 'skip — just the tools ▸';
   }
 
@@ -687,6 +735,184 @@ async function renderSkills() {
   };
   nextBtn.onclick = () => go('connect');
   paint();
+}
+
+/* ---- composer (build-your-own skill) ---------------------------------- */
+/* A guided wizard: archetype -> networks -> operations -> name+trigger ->
+   preview. Every choice is enumerated and real, so the generated SKILL.md only
+   ever references tools that exist. Free feature. */
+function composerShell(inner) {
+  app.innerHTML = wrap(`
+    ${rail('skills')}
+    <h2 class="scr">build a skill.</h2>
+    ${inner}
+  `);
+}
+function composerBar(backLabel, nextLabel, nextDisabled) {
+  return `<div class="actions">
+    <button class="btn btn-ghost" id="c-back">${backLabel}</button>
+    <button class="btn btn-primary" id="c-next" ${nextDisabled ? 'disabled' : ''}>${nextLabel}</button>
+  </div>`;
+}
+function prettyOp(toolName) {
+  // affiliate_awin_list_transactions -> list transactions
+  return String(toolName).replace(/^affiliate_[a-z0-9-]+_/, '').replace(/_/g, ' ');
+}
+
+async function renderComposer() {
+  const step = composer.step;
+
+  // Step 1 — archetype
+  if (step === 1) {
+    if (!composer.archetypes.length) {
+      const res = await api.listSkillArchetypes();
+      composer.archetypes = (res && res.archetypes) || [];
+    }
+    const tiles = composer.archetypes
+      .map(
+        (a) => `<div class="net ${composer.archetypeId === a.id ? 'sel' : ''}" data-arche="${esc(a.id)}">
+          <div class="nm">${esc(a.label)}</div>
+          <div class="mt">${esc(a.summary)}</div>
+          <span class="tick">✓</span>
+        </div>`,
+      )
+      .join('');
+    composerShell(`<p class="scr-lead">what should it do? pick a shape — the app writes the playbook from real tools, you never wire anything by hand.</p>
+      <div class="picker-scroll"><div class="grid">${tiles}</div></div>
+      ${composerBar('back', 'next ▸', !composer.archetypeId)}`);
+    document.querySelectorAll('[data-arche]').forEach((t) =>
+      t.addEventListener('click', () => { composer.archetypeId = t.getAttribute('data-arche'); renderComposer(); }),
+    );
+    document.getElementById('c-back').onclick = () => go('skills');
+    document.getElementById('c-next').onclick = () => { if (composer.archetypeId) { composer.step = 2; renderComposer(); } };
+    return;
+  }
+
+  // Step 2 — networks (from the ones the user configured)
+  if (step === 2) {
+    if (!composer.networks.length) composer.networks = [...state.selected];
+    const tiles = state.selected
+      .map((slug) => {
+        const net = state.networks.find((n) => n.slug === slug) || { name: slug };
+        const on = composer.networks.includes(slug);
+        return `<div class="net ${on ? 'sel' : ''}" data-net="${esc(slug)}">
+          <div class="nm">${esc(net.name)}</div>
+          <div class="mt">${esc(slug)}</div>
+          <span class="tick">✓</span>
+        </div>`;
+      })
+      .join('');
+    composerShell(`<p class="scr-lead">across which networks? we’ll only offer data from the ones you configured.</p>
+      <div class="picker-scroll"><div class="grid">${tiles}</div></div>
+      ${composerBar('back', 'next ▸', !composer.networks.length)}`);
+    document.querySelectorAll('[data-net]').forEach((t) =>
+      t.addEventListener('click', () => {
+        const slug = t.getAttribute('data-net');
+        const i = composer.networks.indexOf(slug);
+        if (i >= 0) composer.networks.splice(i, 1); else composer.networks.push(slug);
+        renderComposer();
+      }),
+    );
+    document.getElementById('c-back').onclick = () => { composer.step = 1; renderComposer(); };
+    document.getElementById('c-next').onclick = () => { if (composer.networks.length) { composer.step = 3; renderComposer(); } };
+    return;
+  }
+
+  // Step 3 — data operations (real tool names for the chosen networks)
+  if (step === 3) {
+    for (const slug of composer.networks) {
+      if (!composer.opsByNet[slug]) {
+        const res = await api.listNetworkOperations(slug);
+        composer.opsByNet[slug] = (res && res.operations) || [];
+      }
+    }
+    const allOps = [];
+    for (const slug of composer.networks) for (const op of composer.opsByNet[slug]) allOps.push(op.toolName);
+    const uniqueOps = [...new Set(allOps)];
+    // Default: everything on, first time in.
+    if (!composer.ops.length) composer.ops = [...uniqueOps];
+    const tiles = uniqueOps
+      .map((toolName) => {
+        const on = composer.ops.includes(toolName);
+        return `<div class="net ${on ? 'sel' : ''}" data-op="${esc(toolName)}">
+          <div class="nm">${esc(prettyOp(toolName))}</div>
+          <div class="mt">${esc(toolName)}</div>
+          <span class="tick">✓</span>
+        </div>`;
+      })
+      .join('');
+    composerShell(`<p class="scr-lead">using which data? the skill can only call the tools you tick here — it never invents one.</p>
+      <div class="picker-scroll"><div class="grid">${tiles}</div></div>
+      ${composerBar('back', 'next ▸', false)}`);
+    document.querySelectorAll('[data-op]').forEach((t) =>
+      t.addEventListener('click', () => {
+        const op = t.getAttribute('data-op');
+        const i = composer.ops.indexOf(op);
+        if (i >= 0) composer.ops.splice(i, 1); else composer.ops.push(op);
+        renderComposer();
+      }),
+    );
+    document.getElementById('c-back').onclick = () => { composer.step = 2; renderComposer(); };
+    document.getElementById('c-next').onclick = () => { composer.step = 4; renderComposer(); };
+    return;
+  }
+
+  // Step 4 — name + trigger
+  if (step === 4) {
+    composerShell(`<p class="scr-lead">name it, and give it a trigger phrase — that’s what you say to Claude to run it.</p>
+      <div class="kv"><span class="pre">name</span><input id="c-name" type="text" placeholder="my awin report" value="${esc(composer.name)}" autocomplete="off" /></div>
+      <div class="kv" style="margin-top:12px"><span class="pre">say</span><input id="c-trigger" type="text" placeholder="run my awin report" value="${esc(composer.trigger)}" autocomplete="off" /></div>
+      <div class="verify-row" id="c-err"></div>
+      ${composerBar('back', 'preview ▸', false)}`);
+    const nameEl = /** @type {HTMLInputElement} */ (document.getElementById('c-name'));
+    const trigEl = /** @type {HTMLInputElement} */ (document.getElementById('c-trigger'));
+    nameEl.addEventListener('input', () => { composer.name = nameEl.value; });
+    trigEl.addEventListener('input', () => { composer.trigger = trigEl.value; });
+    document.getElementById('c-back').onclick = () => { composer.step = 3; renderComposer(); };
+    document.getElementById('c-next').onclick = () => {
+      composer.name = nameEl.value.trim();
+      composer.trigger = trigEl.value.trim();
+      const err = document.getElementById('c-err');
+      if (!composer.name || !composer.trigger) {
+        err.innerHTML = `<span class="status"><span class="dot dot-neg"></span> give it a name and a trigger phrase</span>`;
+        return;
+      }
+      composer.step = 5; renderComposer();
+    };
+    return;
+  }
+
+  // Step 5 — preview + save
+  const res = await api.composeSkill({
+    archetypeId: composer.archetypeId,
+    networks: composer.networks,
+    operations: composer.ops,
+    name: composer.name,
+    trigger: composer.trigger,
+  });
+  if (!res || res.ok === false) {
+    composerShell(`<div class="verify-row"><span class="status"><span class="dot dot-neg"></span> ${esc((res && res.error) || 'could not build the skill')}</span></div>
+      ${composerBar('back', 'save skill ▸', true)}`);
+    document.getElementById('c-back').onclick = () => { composer.step = 4; renderComposer(); };
+    return;
+  }
+  composerShell(`<p class="scr-lead">this is the playbook. it writes to <code>${esc(res.targetPath)}</code>.</p>
+    <pre class="preview">${esc(res.content)}</pre>
+    <div class="verify-row" id="c-err"></div>
+    ${composerBar('back to tweak', 'save skill ▸', false)}`);
+  document.getElementById('c-back').onclick = () => { composer.step = 4; renderComposer(); };
+  document.getElementById('c-next').onclick = async () => {
+    const err = document.getElementById('c-err');
+    const saved = await api.saveComposedSkill(res.slug, res.content);
+    if (!saved || saved.ok === false) {
+      err.innerHTML = `<span class="status"><span class="dot dot-neg"></span> ${esc((saved && saved.error) || 'could not save')}</span>`;
+      return;
+    }
+    state.composedSkills.push({ slug: res.slug, name: composer.name, trigger: composer.trigger });
+    // Reset the wizard for a possible next build.
+    composer.step = 1; composer.archetypeId = null; composer.networks = []; composer.opsByNet = {}; composer.ops = []; composer.name = ''; composer.trigger = '';
+    go('skills');
+  };
 }
 
 async function renderConnect() {
@@ -1118,7 +1344,7 @@ async function renderLocker() {
 /* ---- router ----------------------------------------------------------- */
 const SCREENS = {
   welcome: renderWelcome, networks: renderNetworks,
-  credentials: renderCredentials, brands: renderBrands, skills: renderSkills, connect: renderConnect,
+  credentials: renderCredentials, brands: renderBrands, skills: renderSkills, composer: renderComposer, connect: renderConnect,
   done: renderDone, cockpit: renderCockpit, locker: renderLocker,
 };
 function go(name) { state.screen = name; (SCREENS[name] || renderWelcome)(); }

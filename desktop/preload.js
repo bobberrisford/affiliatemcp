@@ -18,6 +18,12 @@ contextBridge.exposeInMainWorld('affiliate', {
   // detected client's skills dir.
   listSkills: () => ipcRenderer.invoke('skills:list'),
   installSkills: (slugs) => ipcRenderer.invoke('skills:install', { slugs }),
+  // Skill composer (build-your-own): archetype palette, per-network operations,
+  // preview a generated SKILL.md, and save it locally.
+  listSkillArchetypes: () => ipcRenderer.invoke('composer:archetypes'),
+  listNetworkOperations: (slug) => ipcRenderer.invoke('composer:operations', slug),
+  composeSkill: (input) => ipcRenderer.invoke('composer:compose', input),
+  saveComposedSkill: (slug, content) => ipcRenderer.invoke('composer:save', { slug, content }),
   saveEnv: (entries) => ipcRenderer.invoke('config:saveEnv', entries),
   getTelemetryConsent: () => ipcRenderer.invoke('telemetry:getConsent'),
   setTelemetryConsent: (enabled) => ipcRenderer.invoke('telemetry:setConsent', enabled),

@@ -166,6 +166,9 @@ h2.scr { font-family: var(--font-display); font-weight: 800; text-transform: low
 .net.greyed { opacity: .45; cursor: not-allowed; }
 .net.greyed:hover { box-shadow: none; }
 .net.greyed .mt { text-transform: none; letter-spacing: 0; color: var(--fg-muted); }
+.net.net-build { border-style: dashed; border-color: var(--line-strong); cursor: pointer; }
+.net.net-build .nm { color: var(--blue); }
+.preview { font-family: var(--font-mono); font-size: .78rem; line-height: 1.5; background: var(--ink); color: var(--paper); border-radius: var(--r-xs); padding: 16px; margin-top: 12px; max-height: 320px; overflow: auto; white-space: pre-wrap; }
 
 /* ---- credential fields ------------------------------------------------ */
 .field { margin-bottom: var(--s-5); }
