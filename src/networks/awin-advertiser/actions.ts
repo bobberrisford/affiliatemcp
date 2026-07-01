@@ -61,6 +61,26 @@ function partnershipsAllUrl(advertiserId: string): string {
   return `${AWIN_ADVERTISER_UI_ORIGIN}/en/awin/advertiser/${encodeURIComponent(advertiserId)}/partnerships/all`;
 }
 
+/**
+ * The LEGACY Awin dashboard origin. Some accounts are still on the legacy UI
+ * (verified 2026-07-01: the demo advertiser 19011 is legacy-only while Late
+ * Rooms 74386 is on the new dashboard), so the handoff carries the legacy
+ * equivalent in `hints` for the consumer to fall back to. Legacy calls an
+ * advertiser a "merchant" and keys the partner-management page by the SAME
+ * advertiser id (ids are consistent across both dashboards).
+ */
+const AWIN_LEGACY_ORIGIN = 'https://ui.awin.com';
+
+/**
+ * Legacy partner-management page for an advertiser ("merchant"). Same fixed
+ * origin + template rule: only the advertiser id is interpolated and encoded.
+ * // TODO(verify): confirm pending applicants surface on this page (or note the
+ * legacy pending sub-tab) during the manual browser pass.
+ */
+function legacyPartnersUrl(advertiserId: string): string {
+  return `${AWIN_LEGACY_ORIGIN}/awin/merchant/${encodeURIComponent(advertiserId)}/current-affiliates`;
+}
+
 /** Caller-supplied, non-secret inputs for a publisher-decision handoff. */
 export interface PublisherDecisionInput {
   /** Operator's logical brand slug; echoed for display, never a network id. */
@@ -114,6 +134,13 @@ function buildPublisherDecisionHandoff(
       url: queueUrl,
       expect: `publisher ${input.publisherName} (id ${input.publisherId}) no longer shows as a pending applicant on the partnerships list; its status reads ${decision === 'approve' ? 'active/joined' : 'declined'}.`,
     },
+    // Awin runs two dashboards. `startingUrl`/`verify.url` target the new one
+    // (app.awin.com); accounts still on the legacy dashboard use the equivalent
+    // below. Same advertiser id on both. Act and verify on whichever dashboard
+    // this account uses.
+    hints: [
+      `Legacy Awin dashboard equivalent (older accounts): ${legacyPartnersUrl(input.programmeId)}`,
+    ],
   };
 }
 
@@ -189,5 +216,10 @@ export const awinAdvertiserActionDescriptors: ActionDescriptor[] = [
   },
 ];
 
-/** Exposed for tests: the fixed origin and the advertiser-scoped URL builder. */
-export const _internals = { AWIN_ADVERTISER_UI_ORIGIN, partnershipsAllUrl };
+/** Exposed for tests: the fixed origins and the advertiser-scoped URL builders. */
+export const _internals = {
+  AWIN_ADVERTISER_UI_ORIGIN,
+  AWIN_LEGACY_ORIGIN,
+  partnershipsAllUrl,
+  legacyPartnersUrl,
+};

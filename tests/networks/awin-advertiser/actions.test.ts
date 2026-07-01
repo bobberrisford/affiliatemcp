@@ -135,6 +135,18 @@ describe('Awin advertiser publisher-decision emitters', () => {
     );
   });
 
+  it('carries the legacy dashboard URL in hints, keyed by the same advertiser id', () => {
+    const handoff = buildApprovePublisherHandoff({ ...baseInput, programmeId: '19011' })
+      .browserFallback;
+    if (!handoff) throw new Error('expected a browser fallback');
+    expect(handoff.hints).toBeDefined();
+    const legacy = 'https://ui.awin.com/awin/merchant/19011/current-affiliates';
+    expect(handoff.hints?.some((h) => h.includes(legacy))).toBe(true);
+    expect(handoff.hints).toEqual([_internals.legacyPartnersUrl('19011')].map((u) =>
+      `Legacy Awin dashboard equivalent (older accounts): ${u}`,
+    ));
+  });
+
   it('declares two browser/write descriptors with the expected invariants', () => {
     const ids = awinAdvertiserActionDescriptors.map((d) => d.id);
     expect(ids).toEqual([

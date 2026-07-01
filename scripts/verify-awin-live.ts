@@ -224,6 +224,7 @@ function emitHandoffsForBrowserTest(): void {
     write(`  VERIFY EXPECT: ${h.verify.expect}`);
     write(`  MUTATES:     ${h.mutates}`);
     write(`  CONSTRAINTS: ${h.constraints.length} rule(s) (payment/MFA/terms floor + per-action)`);
+    for (const hint of h.hints ?? []) write(`  HINT:        ${hint}`);
   }
   write('');
   write('  Checklist:');

@@ -92,9 +92,27 @@ API advertiser id yields the operator's real partnerships URL. What still needs
 a manual pass is only that the page loads and the approve/decline action behaves
 as described (there were 0 pending applicants on the demo).
 
-The publisher-side `awin.applyToProgramme` URLs (`ui.awin.com/awin/affiliate/...`)
-are a separate surface and remain unverified; the token's publisher account was
-not used to check them.
+### Two dashboards (both covered)
+
+Awin runs two dashboards and accounts are split across them: the demo advertiser
+19011 is on the legacy dashboard, Late Rooms 74386 is on the new one. IDs are
+consistent across both (74386 is the advertiser id everywhere; 1270075 is an
+affiliate/publisher id). Legacy calls an advertiser a "merchant". So the
+approve/decline handoff carries both:
+
+- new (startingUrl / verify.url):
+  `https://app.awin.com/en/awin/advertiser/{advertiserId}/partnerships/all`
+- legacy (in `hints`):
+  `https://ui.awin.com/awin/merchant/{advertiserId}/current-affiliates`
+
+`// TODO(verify)`: confirm pending applicants surface on the legacy
+`current-affiliates` page (or note the legacy pending sub-tab) during the manual
+browser pass.
+
+The publisher-side `awin.applyToProgramme` URLs use the legacy
+`ui.awin.com/awin/affiliate/{publisherId}/...` surface. A new-dashboard publisher
+path is not covered because no publisher account on the new dashboard was
+available to verify one against.
 
 `scripts/verify-awin-live.ts` prints the full handoff payloads (goal, start URL,
 verify URL, expect, constraints) so they can be followed by hand or by a
