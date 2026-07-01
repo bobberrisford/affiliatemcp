@@ -1,257 +1,282 @@
 # Awin account-manager doing layer: automate and verify the agency AM job
 
-> Status: proposal (planning). Owner decision required before implementation
+> Status: proposal (planning). Owner decision required before the T4 write build
 > (see "Decisions required"). Scope: Awin only, advertiser-side first.
 > Front end: the desktop app. Doing and reasoning: Claude.
 
 ## The outcome
 
-An agency account manager who runs brand programmes on Awin should be able to
-get through their day from one surface. The desktop app shows what needs
-attention, computed locally with no model call and no tokens. One click hands
-the task to Claude with the work pre-written. Claude reads the data, decides,
-carries out the action (by API where Awin exposes one, by a guided browser
-handoff where it does not), then verifies the result and records an honest audit
-line. Nothing is claimed done until it has been checked.
+An agency account manager who runs brand programmes on Awin should get through
+their day from one surface. The desktop app shows what needs attention, computed
+locally with no model call and no tokens. One click hands the task to Claude with
+the work pre-written. Claude reads the data, decides, carries out the action (by
+API where Awin exposes one, by a guided Claude-in-Chrome handoff where it does
+not), then verifies the result and records an honest audit line. Nothing is
+claimed done until it has been checked.
 
-The target cohort is the advertiser/agency AM: managing one or many brand
-programmes, recruiting and vetting publishers, validating transactions, watching
+Target cohort: the advertiser/agency AM managing one or many brand programmes,
+recruiting and vetting publishers, validating transactions, watching
 performance, and reporting to clients.
 
 ## How the pieces fit: surface, decide, do, verify
 
-The division of labour is fixed and the same for every task:
+The division of labour is fixed and identical for every task:
 
 1. **Surface (desktop app, local).** The cockpit calls Awin read operations
    through the core facade and folds them into attention flags. No model, no
    tokens, no writes. Each flag carries a "do this in Claude" button.
 2. **Decide (Claude).** The button deep-links into Claude via
    `claude://claude.ai/new?q=...` (web fallback `https://claude.ai/new?q=...`)
-   with a task-specific prompt. The user reviews the prompt; it is never
-   auto-submitted. Claude runs the Awin MCP tools to read and reason.
+   with a task-specific prompt. The user reviews it; it is never auto-submitted.
+   Claude runs the Awin MCP tools to read and reason.
 3. **Do (Claude).** Where Awin has a write API, Claude calls it and the server
-   observes the outcome. Where Awin has no write API, the adapter emits a typed
-   `BrowserHandoff`; a Claude-in-Chrome consumer carries it out against the
+   observes the outcome. Where Awin has none, the adapter emits a typed
+   `BrowserHandoff`; a Claude-in-Chrome consumer skill carries it out against the
    user's own authenticated Awin session, honouring the shared constraint floor
    and confirm-before-submit.
 4. **Verify (Claude).** The consumer revisits the handoff's `verify.url`, checks
-   `verify.expect`, and reports back, closing the audit arc
-   `handoff_emitted -> verified | verify_failed`. API writes close with
-   `write_verified` after a re-read.
+   `verify.expect`, and reports back, closing the arc
+   `handoff_emitted -> verified | verify_failed`.
 
 The desktop app is the launcher and the proof-of-attention surface. It never
-drives a browser and never interprets data. All doing and all reasoning live in
-Claude. This keeps the app a thin client of the shared core.
+drives a browser and never interprets data. This keeps it a thin client of the
+shared core.
 
-## What already exists (the substrate)
+## What already exists (the substrate is deeper than first assumed)
 
-This plan is mostly wiring, not green-field. Confirmed in the codebase today:
-
-- **Awin advertiser reads (API-backed), `claim_status: experimental`:**
-  `listBrands`, `listTransactions`, `listMediaPartners`,
-  `getProgrammePerformance`, and a synthetic `listProgrammes`
-  (`src/networks/awin-advertiser/adapter.ts`). Read-only at v0.1; the client
-  refuses non-GET.
-- **Awin publisher reads (API-backed), `claim_status: production`:**
-  `listProgrammes`, `getProgramme`, `listTransactions`, `getEarningsSummary`,
-  deterministic `generateTrackingLink`, plus rich tools including commission
-  groups, transaction queries and disputes, and performance reports
-  (`src/networks/awin/`).
-- **Write emitters (pure browser-handoff functions, no network call):**
-  advertiser `approvePublisher` and `declinePublisher`
-  (`src/networks/awin-advertiser/actions.ts`); publisher `applyToProgramme`
-  (`src/networks/awin/actions.ts`). Each carries a constraint floor, `mutates`,
-  and a structured `verify` block.
-- **Emit and verify tool surface:**
-  `affiliate_awin-advertiser_propose_publisher_decision` and
-  `affiliate_awin-advertiser_report_publisher_decision_result`; the publisher
-  equivalents `propose_application` and `report_application_result`.
-- **Audit vocabulary, fixed before its consumers exist** (`src/shared/audit.ts`):
-  `handoff_emitted`, `verified`, `verify_failed`, `write_dispatched`,
-  `write_verified`, `write_unknown`, `write_denied`, `write_rejected`. The rule
-  that `succeeded` is never recorded for a handoff is already enforced. Storage
-  is stderr only today; a persistent store can sit behind `recordActionAudit`
-  later.
+- **The Claude-in-Chrome consumer is already the standard pattern**, not a gap.
+  Four skills drive it end to end today: `awin-application-auto-approval`,
+  `awin-apply-to-programmes`, `partner-application-queue`, `partner-roster-audit`.
+  They read the queue from the API, propose decisions from the recorded advisory
+  strategy, take one explicit human confirmation (the Tier-3 gate), emit the
+  handoff, drive `mcp__Claude_in_Chrome__*`, then verify and close the audit arc.
+- **Awin advertiser reads (API), `claim_status: experimental`:** `listBrands`,
+  `listTransactions`, `listMediaPartners`, `getProgrammePerformance`, synthetic
+  `listProgrammes` (`src/networks/awin-advertiser/adapter.ts`). Read-only at
+  v0.1; the client refuses non-GET.
+- **Awin publisher reads (API), `claim_status: production`** with rich tools
+  (commission groups, transaction queries and disputes, performance reports).
+- **Write emitters (pure handoffs):** advertiser `approvePublisher`,
+  `declinePublisher`; publisher `applyToProgramme`. Each with a constraint floor,
+  `mutates`, and a structured `verify` block.
+- **Emit and verify tool surface:** `propose_publisher_decision` +
+  `report_publisher_decision_result` (advertiser); the publisher equivalents.
+- **Audit vocabulary fixed** (`src/shared/audit.ts`): `handoff_emitted`,
+  `verified`, `verify_failed`, plus the API-write events. `succeeded` for a
+  handoff is already forbidden. Storage is stderr only today.
 - **Constraint floor** (`src/shared/browser-handoff.ts`): payment/payout never
   touched, stop on login/MFA, no repeat of a completed mutation, summarise and
   confirm before submitting, never accept unseen terms.
-- **Desktop facade reads** (`src/core/facade.ts`): `listConfiguredNetworks`,
-  `getEarnings`, `listTransactions`, `getProgrammePerformance`, all returning
-  `DataResult<T>` over IPC; `computeCockpit` for local attention flags.
-- **Cockpit flags already scaffolded** (`src/core/cockpit.ts`):
-  `unpaid_over_threshold`, `wow_swing`, `pending_applications`, `health`.
+- **Desktop facade reads + cockpit** (`src/core/facade.ts`, `src/core/cockpit.ts`):
+  `getEarnings`, `listTransactions`, `getProgrammePerformance`,
+  `listConfiguredNetworks`, `computeCockpit`; flag kinds `unpaid_over_threshold`,
+  `wow_swing`, `pending_applications`, `health`.
 - **The front-end to Claude seam** (`desktop/main.js`, `desktop/preload.js`):
   `openClaudePrompt(text)` builds `claude://claude.ai/new?q=...`, reviewed not
-  auto-sent, 14k character cap, web fallback. The data locker and cockpit
-  screens already use it.
+  auto-sent, 14k cap, web fallback. Cockpit and locker already use it.
+- **Task skills already authored:** `programme-performance-report`,
+  `programme-anomaly-watch`, `publisher-performance-review`,
+  `programme-health-check`, `chase-unpaid-commissions`,
+  `programme-reversal-report`, `agency-portfolio-rollup`, `client-onboarding`,
+  `partner-outreach`, `partner-roster-audit`.
 
-## The gap (what is actually missing)
+## The task decisions (this pass)
 
-1. **The consumer.** Nothing drives Claude-in-Chrome to execute a
-   `BrowserHandoff`. Today every handoff degrades to guided manual steps the
-   user follows by hand. This is the single highest-value missing piece.
-2. **The verify loop, exercised.** The report-back tools exist but nothing
-   automatically revisits `verify.url` and records `verified` / `verify_failed`.
-   Verification is what converts an emitted plan into trustworthy done-ness.
-3. **Awin-specific cockpit population.** The flag kinds exist; the advertiser-AM
-   flags (pending publishers, ageing pending transactions, performance swings
-   per brand) need to be computed and wired to the right Claude prompts.
-4. **Transaction validation has no emitter.** Approving or declining pending
-   sales in the validation queue is a top AM task with no Awin write API and no
-   handoff builder yet.
-5. **Unverified advertiser URLs.** The pending-publishers queue URL in the
-   approve/decline emitters is `TODO(verify)` against a live Accelerate or
-   Advanced tenant.
-6. **No persistent audit store or consent caps.** Deliberately deferred; needed
-   before unattended or batched writes.
+| # | Task | Decision | Do channel | Status |
+|---|------|----------|------------|--------|
+| T1 | Approve/decline pending publisher applications | Confirmed working; verify + promote | Browser handoff | Built end to end (`awin-application-auto-approval`); needs live-tenant verification |
+| T2 | Monitor performance, spot anomalies | Do | API read + Claude | Skills exist; wire cockpit + prompt |
+| T3 | Commission reconciliation | Do | API read + Claude | Skills exist; wire cockpit + locker |
+| T4 | Fraud review then validate/decline transactions | Build (new) | Read + new browser handoff | New: fraud-signal skill + `validateTransaction` emitter + consumer + gates |
+| T5 | Client reporting and QBR prep | Do | API + Claude skills | Skills exist; wire "prep report" button |
+| T6 | Publisher recruitment | Do | Read + draft + browser handoff | Drafting exists (`partner-outreach`); discovery + invite are gaps |
+| T7 | Commission/terms/bonus/tenancy changes | Excluded | n/a | Human-only; constraint floor forbids |
 
-## The top AM tasks, ranked, with the build picture
+### T1 Publisher applications — confirmed working, needs verification not build
 
-Ranked by frequency times pain times safety-of-automating, against what already
-exists. Channel is chosen per task by whether Awin exposes a write API, not by
-preference.
+The full assisted loop already ships in `awin-application-auto-approval`: resolve
+brand, check `affiliate_list_actions` readiness, read the pending queue from the
+API (never the dashboard), propose approve/decline/ask from the recorded
+strategy, take one batch confirmation, then per decision emit the handoff, drive
+Claude-in-Chrome, verify against the pending-queue URL, and record
+`verified`/`verify_failed`.
 
-| # | Task | Frequency | Read channel | Do channel | Build status |
-|---|------|-----------|--------------|------------|--------------|
-| T1 | Approve/decline pending publisher applications | Daily/weekly, high volume | UI queue only (no API list) | Browser handoff (emitters exist) | Needs consumer + verify + cockpit flag |
-| T2 | Monitor programme performance, spot anomalies | Daily | `getProgrammePerformance` (API) | Read + Claude analysis | Needs cockpit swing flag + prompt |
-| T3 | Reconcile commissions: pending, ageing, reversed | Ongoing | `listTransactions` (API) | Read + Claude analysis | Mostly assembly (locker + cockpit) |
-| T4 | Validate pending transactions (approve/decline sales) | Weekly/monthly, high volume | `listTransactions(status=pending)` (API) | Browser handoff (no emitter yet) | New emitter + careful gating |
-| T5 | Client reporting and QBR prep | Weekly to quarterly | Reads (API) | Claude skills (exist) | Assembly + "prep report" button |
-| T6 | Publisher outreach and relationship management | Ongoing | `listMediaPartners`, performance (API) | Draft in Claude now; send later | Drafting only; sending out of scope for now |
-| T7 | Commission/terms/bonus/tenancy changes | Occasional, high risk | n/a | Excluded | Keep human; constraint floor forbids |
+What remains is not build, it is proof and hardening:
+- Verify the advertiser pending-queue URL against a live Accelerate/Advanced
+  tenant. It is still `TODO(verify)` in the emitter.
+- Promote the advertiser adapter reads from `experimental` after a live
+  acceptance test.
+- Confirm the `mcp__Claude_in_Chrome__*` tool suite is present in the target
+  client, and that the tenant is on a supported Awin plan.
 
-### Per-task detail
+### T2 Performance monitoring — do
 
-**T1 Publisher applications.** Awin exposes no API to list or decide
-applications. The AM sees the pending queue in the dashboard. Plan: cockpit
-`pending_applications` flag (count per brand) links into Claude; Claude reads
-`listMediaPartners` to give context, then for each decision emits
-`approvePublisher` / `declinePublisher`; the consumer carries it out with
-confirm-before-submit and verifies against the pending-queue URL. Note the
-constraint floor stops the flow if approval would require setting commission or
-contract terms, which is correct: terms are a human decision.
+`getProgrammePerformance` returns a pre-built per-publisher report. Skills exist
+(`programme-performance-report`, `programme-anomaly-watch`,
+`publisher-performance-review`). Work: cockpit `wow_swing` flag per brand wired
+to a prompt that explains the swing, names the publishers behind it, and proposes
+next steps. Read only, zero mutation risk.
 
-**T2 Performance monitoring.** `getProgrammePerformance` returns a pre-built
-per-publisher report (impressions, clicks, conversions, commission, sale value).
-Plan: cockpit `wow_swing` flag per brand; the button hands Claude a prompt to
-explain the swing, name the publishers behind it, and propose next steps. Read
-only, zero mutation risk, high daily value.
+### T3 Commission reconciliation — do
 
-**T3 Commission reconciliation.** `listTransactions` carries status
-(`pending`, `approved`, `reversed`, `paid`), age, and `declineReason`. Plan:
-cockpit `unpaid_over_threshold` and ageing flags; the locker exports the rows;
-Claude interprets and drafts any follow-up. Read only.
+`listTransactions` carries status, age, and `declineReason`. Skills exist
+(`chase-unpaid-commissions`, `programme-reversal-report`). Work: cockpit
+`unpaid_over_threshold` and ageing flags, locker export of the rows, and a prompt
+that hands Claude the reconciliation and any follow-up drafting. Read only.
 
-**T4 Transaction validation.** Awin advertisers validate pending sales, often on
-a schedule, and Awin has no public write endpoint for it. Plan: a new
-`validateTransaction` (approve/decline) browser-handoff emitter mirroring the
-publisher-decision emitter, batch-aware so a verified set of pending sales can be
-confirmed in one reviewed summary. This is money-adjacent, so it inherits write
-authority tier 3, the confirm-before-submit floor, and per-decision verify, and
-should wait for the persistent audit store and consent caps.
+### T4 Fraud review then validate/decline — the one real new build
 
-**T5 Client reporting and QBR.** The skills already exist
-(`programme-performance-report`, `agency-portfolio-rollup`). Plan: a cockpit
-"prep client report" button per brand that hands Claude the brand, the period,
-and the skill to run. Reads plus Claude assembly.
+Awin makes advertisers validate pending sales, and exposes no public write
+endpoint for it. Rob's framing: find likely-fraudulent transactions first, then
+plan the validate/decline. The workflow:
 
-**T6 Outreach.** Drafting messages in Claude is safe and useful now. Actually
-sending through the Awin dashboard is a brittle browser handoff and is out of
-scope until the consumer and verify loop are proven on T1.
+1. **Signal (read, API).** Pull pending and recently validated transactions:
+   `affiliate_awin-advertiser_list_transactions({ brand, status: "pending" })`.
+   Each row carries id, sale amount, commission, currency, publisher,
+   `clickDate`, `transactionDate`, `validationDate`, `ageDays`, `declineReason`,
+   landing `url`, `merchantKey`.
+2. **Score (Claude, deterministic heuristics plus reasoning).** Surface
+   suspected-fraud signals an AM checks before validating, each with its evidence
+   and a confidence:
+   - velocity spike: a publisher's pending count or value far above its own
+     baseline (compare to a prior window via `get_programme_performance`);
+   - order-value outliers well above the programme's normal basket;
+   - implausible click-to-convert timing (near-zero, or a missing click),
+     the classic cookie-stuffing/direct-linking tell;
+   - duplicate clusters: repeated identical amounts or the same landing URL in a
+     burst;
+   - risky publisher history: a high historical reversal rate (reuse
+     `programme-reversal-report`) on the same partner;
+   - a new or unknown publisher driving sudden volume.
+   Honesty rule, inherited from `programme-reversal-report`: never assert fraud
+   from a single label or signal. Mark items "suspected" with the evidence, and
+   default to **hold/ask** when uncertain. The human decides.
+3. **Confirm (human, Tier-3).** Show two groups: the suspected set with evidence
+   and a recommended decline/hold, and the clean set eligible for bulk validate.
+   Resolve every ask, then take one explicit confirmation of the whole batch.
+4. **Do (browser handoff, NEW).** Add a `validateTransaction` emitter
+   (approve/decline a pending sale), batch-aware, mirroring the publisher-decision
+   emitter: a constant Awin validation-queue URL, per-transaction non-secret
+   inputs, the constraint floor (never touch payment or terms, stop on MFA, do
+   not re-decide a settled transaction, confirm before submit), `mutates: true`,
+   and a `verify` block that revisits the transaction and confirms the new
+   status. A consumer skill drives Claude-in-Chrome per confirmed decision.
+5. **Verify + audit.** Revisit the verify target, confirm approved/declined,
+   record `verified`/`verify_failed`. Money-adjacent, so this waits on the
+   persistent audit store and per-day consent caps.
 
-**T7 Terms and commission changes.** Explicitly excluded. The constraint floor
-forbids changing commission, payout, or contract terms, and these are
-high-regret. They stay a human action in the dashboard.
+T4 is the only task needing new domain code and a risk-based review: a new write
+action (action-authority tier 3), a fraud-signal skill, a consumer skill, and the
+audit-store/consent-cap dependency. The read-only fraud scan (steps 1 to 3) can
+ship first with zero write risk.
+
+### T5 Client reporting and QBR — do
+
+Skills exist (`programme-performance-report`, `agency-portfolio-rollup`,
+`client-onboarding`). Work: a cockpit "prep client report" button per brand that
+hands Claude the brand, period, and skill to run. Reads plus Claude assembly.
+
+### T6 Publisher recruitment — do
+
+Renamed from outreach to recruitment. Drafting already exists: `partner-outreach`
+writes recruitment and re-engagement copy grounded in real numbers and the
+recorded strategy, and never sends. Supporting skills: `partner-roster-audit`
+(dormant worklist), `publisher-performance-review` (partner numbers). Two gaps:
+- **Discovery of prospects on the advertiser side.** `brand-application-shortlist`
+  is publisher-side (brands to join). The advertiser analogue, finding publishers
+  worth recruiting, has no directory read in the adapter; candidates come from
+  performance gaps, roster audit, and operator-supplied context for now.
+- **The recruit/invite action.** Awin has no comms or invite API, so an actual
+  in-dashboard invite is a future browser handoff. For this pass, recruitment is
+  discover-plus-draft; sending stays the operator's action, as the skill states.
+
+### T7 Terms and commission changes — excluded
+
+The constraint floor forbids changing commission, payout, or contract terms, and
+these are high-regret. They remain a human action in the dashboard.
 
 ## Phasing and dependency order
 
-Each phase is independently coherent and shippable. Land in order.
+**Phase 0: verify and decide (docs and discovery).**
+- Verify the Awin advertiser pending-queue URL (T1) and, for T4, the
+  validation-queue URL, against a live Accelerate/Advanced tenant. Replace the
+  `TODO(verify)` constants.
+- Write the T4 action-authority decision record: the new `validateTransaction`
+  write, its tier, the persistent audit store, and per-day consent caps.
 
-**Phase 0: decision and verification (docs and discovery).**
-- Confirm scope and channel choices with the maintainer (see "Decisions
-  required").
-- Verify the advertiser pending-queue URL and the publisher pending-applications
-  URL against a live Accelerate/Advanced tenant. Replace the `TODO(verify)`
-  constants.
-- Write the consumer decision record: how the Claude-in-Chrome consumer reads a
-  `BrowserHandoff`, enforces the floor, confirms before submit, and reports back.
-  This is the risk-based review item flagged in the browser-handoff contract.
+**Phase 1: the read surface (no new write risk).**
+- Populate advertiser cockpit flags per configured brand: `pending_applications`
+  (T1), `wow_swing` (T2), `unpaid_over_threshold` and ageing (T3), plus a
+  suspected-fraud count (T4 read-only scan) and a "prep report" entry (T5).
+- Wire each flag to its task-specific Claude prompt via `openClaudePrompt`.
+- Extend the locker to advertiser brands.
+- Acceptance: against a real Awin advertiser account, every flag computes and
+  each button opens Claude with the right brand and period.
 
-**Phase 1: read surface for the AM (no new write risk).**
-- Populate cockpit flags for the advertiser side: `pending_applications`,
-  `wow_swing`, `unpaid_over_threshold`, `health`, per configured brand.
-- Wire each flag to a task-specific Claude prompt via `openClaudePrompt`.
-- Extend the locker to advertiser brands (it already calls the facade reads).
-- Acceptance: against a real Awin advertiser account, every flag computes
-  correctly and each button opens Claude with the right brand and period.
+**Phase 2: T1 live acceptance.**
+- Run the `awin-application-auto-approval` loop against a real pending applicant.
+- Acceptance: an approve and a decline each close as `verified`, never
+  `succeeded`; an MFA challenge cleanly stops and hands back. Promote the
+  advertiser reads from `experimental`.
 
-**Phase 2: the consumer and the verify loop (the doing layer).**
-- Build the general Claude-in-Chrome consumer skill: read `BrowserHandoff`,
-  enforce the constraint floor, summarise and confirm, drive the user's session,
-  revisit `verify.url`, and call the report-back tool to record
-  `verified` / `verify_failed`.
-- Prove it on T1 (approve/decline publisher) end to end, since those emitters
-  already exist.
-- Acceptance: a real pending publisher is approved through the loop and the
-  audit trail shows `handoff_emitted` then `verified`, never `succeeded`. A
-  decline is verified the same way. A login/MFA challenge cleanly stops and
-  hands back.
+**Phase 3: T4 fraud scan (read-only half).**
+- Ship the fraud-signal skill: pull pending transactions, score with the
+  heuristics above, output the suspected and clean groups with evidence. No
+  writes.
+- Acceptance: on real data the scan flags plausible cases with traceable
+  evidence and holds the uncertain ones.
 
-**Phase 3: transaction validation (new emitter, gated).**
-- Add the `validateTransaction` emitter (batch-aware) and its tool surface.
-- Add the persistent audit store and per-day consent caps before enabling it.
-- Acceptance: a reviewed set of pending sales is validated through the consumer
-  with one confirmation, each decision individually verified, and the day's cap
-  enforced.
+**Phase 4: T4 validate/decline (the write half, gated).**
+- Add the `validateTransaction` emitter and tool surface, the consumer skill, the
+  persistent audit store, and per-day consent caps.
+- Acceptance: a reviewed batch is validated/declined through the consumer with one
+  confirmation, each decision individually verified, and the day's cap enforced.
 
-**Phase 4: reporting and outreach assembly.**
-- Cockpit "prep client report" and "draft outreach" buttons wired to the
-  existing skills.
-- Acceptance: a QBR draft and an outreach draft are produced from real data with
-  no manual data wrangling.
+**Phase 5: T6 recruitment doing (optional).**
+- Advertiser-side prospect discovery and, if wanted, an in-dashboard invite
+  handoff. Until then, recruitment is discover-plus-draft.
+
+Phases 1 and 2 can run alongside Phase 3, which carries no write risk. Only
+Phase 4 needs the maintainer's risk decision first.
 
 ## Decisions required from the maintainer
 
-1. **Consumer surface.** Commit to Claude-in-Chrome as the primary driver for
-   Awin handoffs. It rides the user's authenticated session, so it solves
-   login and MFA for free and adds no credential-storage surface. The emitters
-   and verify contract stay driver-agnostic, so the consumer is swappable later.
-2. **Transaction validation as a new write.** Approve T4's new emitter and its
-   tier-3 treatment, or defer it. It is money-adjacent and needs the audit store
-   and consent caps first.
-3. **Audit persistence and consent caps.** Approve building the persistent store
-   behind `recordActionAudit` and per-day caps, which T4 depends on.
-4. **Advertiser plan gating.** Awin's advertiser API is limited to Accelerate
-   and Advanced plans and capped at 20 calls per minute per user. Confirm the
-   target tenants are on a supported plan and accept the cockpit's rate budget.
-5. **Promotion gate.** The advertiser adapter is `experimental`. Confirm the
-   live acceptance test that would promote the reads consumed here.
+1. **T4 as a new write.** Approve the `validateTransaction` emitter and its
+   tier-3 treatment, or keep T4 read-only (fraud scan that hands the AM a
+   decline list to action by hand). Recommended: ship the read-only scan first
+   regardless, decide the write after seeing it.
+2. **Audit persistence and consent caps.** Approve building the persistent store
+   behind `recordActionAudit` and per-day caps, which the T4 write depends on.
+3. **Advertiser plan gating.** Confirm target tenants are on Awin Accelerate or
+   Advanced (the advertiser API is gated) and accept the 20-calls-per-minute
+   budget for the cockpit.
+4. **Promotion gate.** Confirm the live acceptance test that promotes the
+   advertiser reads from `experimental`.
 
 ## Deliberately excluded
 
-- The desktop app driving a browser. It stays the surface and the launcher; the
+- The desktop app driving a browser. It stays the surface and launcher; the
   consumer is a Claude skill.
-- Commission, payout, terms, bonus, and tenancy changes. Human-only.
-- Sending outreach through the dashboard, until the consumer and verify loop are
-  proven on T1.
-- Any model call or data interpretation inside the app shell. Analysis is
-  Claude's job.
+- Commission, payout, terms, bonus, and tenancy changes (T7). Human-only.
+- Sending recruitment messages through the dashboard, until the discover-plus-
+  draft flow is proven and an invite handoff is deliberately added.
+- Any model call or data interpretation inside the app shell.
 
 ## Risks
 
-- **Selector and DOM brittleness** in the consumer. Mitigation: bounded `hints`
-  per action maintained beside each emitter; the consumer stays general.
-- **Unverified URLs** would point the operator at the wrong page. Mitigation:
-  verify against a live tenant in Phase 0 before any consumer work.
-- **Rate limit** (20/min) can stall a multi-brand cockpit. Mitigation: the
-  client already token-buckets; stagger cockpit reads and cache aggressively.
-- **Single-consumer dependency.** Mitigation: invest in emitter coverage and
-  verify semantics, which are durable; keep the consumer thin and replaceable.
+- **Selector and DOM brittleness** in the consumers. Mitigation: bounded `hints`
+  per action beside each emitter; the consumer stays general.
+- **Unverified URLs** misdirect the operator. Mitigation: verify against a live
+  tenant in Phase 0 before relying on T1 or building T4's write.
+- **False fraud positives** could decline legitimate commission. Mitigation: the
+  suspected/clean split, evidence per flag, default-to-hold, and the mandatory
+  human confirmation before any decline.
+- **Rate limit** (20/min) can stall a multi-brand cockpit. Mitigation: the client
+  already token-buckets; stagger reads and cache aggressively.
 
 ## The one metric that proves value
 
-Share of emitted mutating handoffs that reach `verified`. If users abandon at
-the confirm step, the prompt or the summary is wrong. If they reach `verified`,
-the loop has measurably removed dashboard work. This number decides when to widen
-the task set beyond T1.
+Share of emitted mutating handoffs that reach `verified`. If users abandon at the
+confirm step, the prompt or the summary is wrong. If they reach `verified`, the
+loop has measurably removed dashboard work. For T4, track the decline
+false-positive rate as the safety counterpart.
