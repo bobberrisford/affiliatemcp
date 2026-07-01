@@ -14,6 +14,10 @@ contextBridge.exposeInMainWorld('affiliate', {
   validateField: (slug, field, value) => ipcRenderer.invoke('networks:validateField', { slug, field, value }),
   verifyAuth: (slug, values) => ipcRenderer.invoke('networks:verifyAuth', { slug, values }),
   discoverBrands: (slug) => ipcRenderer.invoke('networks:discoverBrands', slug),
+  // Skills: the bundled catalogue for the picker, and a local deploy into the
+  // detected client's skills dir.
+  listSkills: () => ipcRenderer.invoke('skills:list'),
+  installSkills: (slugs) => ipcRenderer.invoke('skills:install', { slugs }),
   saveEnv: (entries) => ipcRenderer.invoke('config:saveEnv', entries),
   getTelemetryConsent: () => ipcRenderer.invoke('telemetry:getConsent'),
   setTelemetryConsent: (enabled) => ipcRenderer.invoke('telemetry:setConsent', enabled),

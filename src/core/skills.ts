@@ -20,7 +20,6 @@
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 // ---------------------------------------------------------------------------
 // Public DTOs — plain shapes only.
@@ -60,15 +59,16 @@ export interface InstallSkillsResult {
 /**
  * Where the bundled `skills/` tree lives. Honours `AFFILIATE_MCP_SKILLS_DIR`
  * (tests and the packaged desktop app set it to the resources copy). Otherwise
- * resolves relative to this module: `src/core/` -> repo `skills/`, which holds
- * after the build too (`dist/core/` -> `dist/../skills`). The desktop layer
- * always passes an explicit dir, so this default is only used by the CLI/tests.
+ * falls back to `skills/` under the current working directory (the repo root
+ * for a CLI run). The desktop layer always passes an explicit dir, and tests
+ * set the env or pass `skillsDir`, so this bare-cwd default is only a last
+ * resort — deliberately avoiding `import.meta.url`, which does not survive the
+ * CJS bundle the desktop ships.
  */
 export function resolveBundledSkillsDir(): string {
   const override = process.env['AFFILIATE_MCP_SKILLS_DIR'];
   if (override && override.trim() !== '') return override;
-  const here = path.dirname(fileURLToPath(import.meta.url));
-  return path.resolve(here, '../../skills');
+  return path.resolve(process.cwd(), 'skills');
 }
 
 /**

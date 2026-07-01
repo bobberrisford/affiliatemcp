@@ -48,6 +48,8 @@ const facadeFns = [
   'validateField',
   'verifyAuth',
   'discoverBrands',
+  'listSkills',
+  'installSkills',
   'saveEnv',
   'saveBrands',
   'connectClaudeDesktop',

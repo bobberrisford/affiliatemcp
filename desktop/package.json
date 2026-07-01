@@ -54,6 +54,10 @@
       {
         "from": "../design-system",
         "to": "design-system"
+      },
+      {
+        "from": "../skills",
+        "to": "skills"
       }
     ],
     "mac": {

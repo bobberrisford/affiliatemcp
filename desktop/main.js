@@ -72,6 +72,18 @@ function serverEntrypoint() {
   return bundlePath('server.cjs');
 }
 
+/**
+ * Absolute path to the bundled `skills/` tree that `skills:list` /
+ * `skills:install` read from.
+ * - dev: the repo `skills/` one level up from `desktop/`.
+ * - packaged: shipped under resourcesPath via `extraResources`.
+ */
+function bundledSkillsDir() {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'skills')
+    : path.join(__dirname, '..', 'skills');
+}
+
 /** @type {{ facade: any, config: any } | null} */
 let core = null;
 
@@ -489,6 +501,24 @@ handle('networks:verifyAuth', async (_e, { slug, values }) => {
 handle('networks:discoverBrands', async (_e, slug) => {
   const { facade } = await loadCore();
   return facade.discoverBrands(slug);
+});
+
+// ---- Skills catalogue + local deploy --------------------------------------
+
+// The bundled skills/ tree, summarised for the picker. Local read only.
+handle('skills:list', async () => {
+  const { facade } = await loadCore();
+  return { ok: true, skills: facade.listSkills({ skillsDir: bundledSkillsDir() }) };
+});
+
+// Copy the selected skill folders into the detected client's skills dir. A
+// local file copy, idempotent; the renderer calls this in the connect step
+// before the single Claude restart so tools and skills load together.
+handle('skills:install', async (_e, payload) => {
+  const { facade } = await loadCore();
+  const slugs = Array.isArray(payload?.slugs) ? payload.slugs : [];
+  const result = facade.installSkills(slugs, { skillsDir: bundledSkillsDir() });
+  return { ok: true, ...result };
 });
 
 // ---- Config + brands persistence ------------------------------------------
