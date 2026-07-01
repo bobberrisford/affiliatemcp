@@ -130,21 +130,20 @@ test('preload exposes the auto-update bridge (subscribe + the two actions)', asy
   expect(surface.openUpdateDownload).toBe('function');
 });
 
-test('the welcome update card round-trips a check (dev build reports up to date)', async () => {
-  // The welcome screen shows a "check for updates" button. Clicking it round-trips
-  // through the real update:check IPC. In the unpackaged e2e build there's no
-  // signed feed, so main reports "current" and the card settles on "latest
-  // version" with a "check again" button — it must NOT hang on "checking…".
-  // This exercises the full button → IPC → onUpdateStatus → repaint loop.
-  await page.waitForSelector('#update-card #u-check', { timeout: 5_000 });
-  await page.click('#update-card #u-check');
+test('the titlebar update check round-trips into the pill (dev build reports up to date)', async () => {
+  // The titlebar "check for updates" control round-trips through the real
+  // update:check IPC. In the unpackaged e2e build there's no signed feed, so
+  // main reports "current" and the persistent pill settles on "up to date" — it
+  // must NOT hang on "checking…". Exercises button → IPC → onUpdateStatus →
+  // repaint. (The pill self-dismisses after a few seconds; we assert well inside
+  // that window.)
+  await page.waitForSelector('#tb-check', { timeout: 5_000 });
+  await page.click('#tb-check');
   await page.waitForFunction(
-    () => /latest version/i.test(document.getElementById('update-card')?.textContent || ''),
+    () => /up to date/i.test(document.getElementById('update-pill')?.textContent || ''),
     null,
     { timeout: 5_000 },
   );
-  const hasCheckAgain = await page.locator('#update-card #u-check').count();
-  expect(hasCheckAgain).toBe(1);
 });
 
 test('discoverBrands returns an array for a multi-brand network with no list endpoint', async () => {
