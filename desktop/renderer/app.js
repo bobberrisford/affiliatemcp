@@ -178,10 +178,8 @@ function renderWelcome() {
     <div class="trust"><span class="chip">● NO HOSTED ACCOUNT</span><span class="chip">● LOCAL-FIRST</span><span class="chip acid">OPEN SOURCE</span></div>
     <button class="btn btn-primary" id="start">get started ▸</button>
     <div class="stepno" style="margin-top:24px">~5 minutes · you’ll need your network logins</div>
-    <div id="update-card" class="update-card"></div>
   `, true);
   document.getElementById('start').onclick = () => go('networks');
-  paintUpdateCard();
 }
 
 // Network-picker view state (transient: query string + active filters). Kept
@@ -692,11 +690,9 @@ function renderDone() {
       <button class="btn btn-ghost" id="again">add another network</button>
       <button class="btn btn-primary" id="quit">done — close</button>
     </div>
-    <div id="update-card" class="update-card"></div>
   `);
   document.getElementById('again').onclick = () => go('networks');
   document.getElementById('quit').onclick = () => api.quit();
-  paintUpdateCard();
 }
 
 /* ---- cockpit (the daily dashboard) ------------------------------------ */
@@ -1039,85 +1035,121 @@ const SCREENS = {
 };
 function go(name) { state.screen = name; (SCREENS[name] || renderWelcome)(); }
 
-/* ---- auto-update: click-to-update buttons in the main UI -------------- */
+/* ---- auto-update: persistent "relaunch to update" pill ---------------- */
 /* The main process pushes status over `onUpdateStatus`; the user can also
-   re-check with `checkForUpdates`. We render the latest state.update into an
-   `#update-card` slot that the welcome + done screens include. The browser mock
-   has no bridge, so the card stays empty there. Setup never waits on any of this.
-   States: idle | checking | downloading | ready | manual | current. */
+   re-check from the titlebar (`#tb-check`). We render the latest state.update
+   into the window-level `#update-pill` (bottom-left), so a download that
+   finishes mid-flow surfaces "relaunch to update" on whatever screen is
+   mounted — the pill outlives the per-screen re-renders.
 
-// Build the card's contents (status + an optional click-to-update button) for
-// the current state.update.
-function updateCardHTML() {
-  const u = state.update || { state: 'idle' };
-  let dot = '';
-  let text = '';
-  let btn = null; // { id, label, cls }
+   Quiet by contract: informational states (checking / downloading) are low-key,
+   "up to date" confirms then fades, and the pill only turns loud (primary /
+   alert action) when there's something to click. Nothing here ever blocks the
+   app; ignoring the pill still installs the update on quit.
+   States: idle | checking | downloading | ready | manual | current | unavailable. */
+
+// The brand mark as an inline tile: riso-blue for the healthy path, hot pink to
+// signal the degraded manual-download fallback.
+const MARK_TILE = '<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="120" height="120" rx="14" fill="#2B2BFF"/><polyline points="34,38 58,60 34,82" fill="none" stroke="#fff" stroke-width="13" stroke-linecap="square" stroke-linejoin="miter"/><rect x="66" y="68" width="24" height="14" fill="#fff"/></svg>';
+const MARK_TILE_ALERT = '<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect width="120" height="120" rx="14" fill="#FF2E88"/><polyline points="34,38 58,60 34,82" fill="none" stroke="#fff" stroke-width="13" stroke-linecap="square" stroke-linejoin="miter"/><rect x="66" y="68" width="24" height="14" fill="#fff"/></svg>';
+
+// Handle for the auto-fade of transient states (current / unavailable).
+let updateFadeTimer = null;
+
+// Describe the pill for the given update state, or null to hide it entirely.
+function updatePillSpec(u) {
   switch (u.state) {
     case 'checking':
-      dot = 'dot-pending'; text = 'checking for updates…'; break;
+      return { tone: 'quiet', tile: 'spin', title: 'checking for updates' };
     case 'downloading': {
-      dot = 'dot-pending';
-      const pct = typeof u.percent === 'number' && u.percent > 0 ? ` ${u.percent}%` : '';
-      text = `downloading update${pct}…`; break;
+      const pct = typeof u.percent === 'number' && u.percent > 0 ? u.percent : null;
+      const meta = [u.version ? `v${u.version}` : '', pct != null ? `${pct}%` : ''].filter(Boolean).join(' · ');
+      return { tone: 'quiet', tile: 'spin', title: 'downloading update', meta, progress: pct };
     }
     case 'ready':
-      dot = 'dot-pos';
-      text = `update${u.version ? ` v${u.version}` : ''} ready to install`;
-      btn = { id: 'u-restart', label: 'restart & install ▸', cls: 'btn-primary' };
-      break;
+      return { tone: 'ready', tile: 'mark', title: 'relaunch to update',
+        meta: u.version ? `v${u.version} ready` : 'ready',
+        action: { id: 'u-restart', glyph: '→', label: 'restart & install' } };
     case 'manual':
-      dot = 'dot-neg';
-      text = `a new version${u.version ? ` (v${u.version})` : ''} is available`;
-      btn = { id: 'u-dl', label: 'download ▸', cls: 'btn-primary' };
-      break;
+      return { tone: 'alert', tile: 'alert', title: 'new version available',
+        meta: `${u.version ? `v${u.version} · ` : ''}download`,
+        action: { id: 'u-dl', glyph: '↗', label: 'open download page' } };
     case 'current':
-      dot = 'dot-pos'; text = 'you’re on the latest version';
-      btn = { id: 'u-check', label: 'check again', cls: 'btn-ghost' };
-      break;
+      return { tone: 'ok', tile: 'mark', title: 'up to date', dot: 'dot-pos',
+        meta: u.version ? `v${u.version}` : '', fade: 4000 };
     case 'unavailable':
-      dot = 'dot-neg'; text = 'couldn’t check for updates';
-      btn = { id: 'u-check', label: 'try again', cls: 'btn-ghost' };
-      break;
-    default: // idle: no status yet — just offer the check.
-      btn = { id: 'u-check', label: 'check for updates', cls: 'btn-ghost' };
+      return { tone: 'neg', tile: 'mark', title: 'couldn’t check for updates', dot: 'dot-neg',
+        action: { id: 'u-check', glyph: '↻', label: 'try again' }, fade: 8000 };
+    default: // idle: nothing to show yet (the launch check runs automatically).
+      return null;
   }
-  const status = text ? `<span class="status"><span class="dot ${dot}"></span> ${esc(text)}</span>` : '';
-  const button = btn ? `<button class="btn ${btn.cls}" id="${btn.id}">${esc(btn.label)}</button>` : '';
-  return status + button;
 }
 
-// Render state.update into the #update-card slot of the current screen (if it
-// has one) and wire whichever button is present. Safe to call from any screen.
-function paintUpdateCard() {
-  const card = document.getElementById('update-card');
-  if (!card) return; // current screen doesn't show the update card.
-  card.innerHTML = updateCardHTML();
-  const check = document.getElementById('u-check');
-  if (check) check.onclick = onCheckForUpdates;
+// Render state.update into the window-level #update-pill and wire its action.
+// Safe to call from anywhere; the pill lives outside the screen router.
+function paintUpdatePill() {
+  const pill = document.getElementById('update-pill');
+  if (!pill) return;
+  if (updateFadeTimer) { clearTimeout(updateFadeTimer); updateFadeTimer = null; }
+
+  const u = state.update || { state: 'idle' };
+  const spec = updatePillSpec(u);
+  if (!spec) { pill.hidden = true; pill.innerHTML = ''; return; }
+
+  const tile = spec.tile === 'spin' ? '<span class="pill-spin"></span>'
+    : spec.tile === 'alert' ? MARK_TILE_ALERT
+    : MARK_TILE;
+  const dot = spec.dot ? `<span class="dot ${spec.dot}"></span>` : '';
+  const meta = (dot || spec.meta) ? `<div class="pill-meta">${dot}${spec.meta ? esc(spec.meta) : ''}</div>` : '';
+  const action = spec.action
+    ? `<button class="pill-go${spec.tone === 'alert' ? ' alert' : ''}" id="${spec.action.id}" title="${esc(spec.action.label)}" aria-label="${esc(spec.action.label)}">${spec.action.glyph}</button>`
+    : '';
+  const bar = typeof spec.progress === 'number' ? `<span class="pill-bar" style="width:${spec.progress}%"></span>` : '';
+
+  pill.className = `update-pill tone-${spec.tone}`;
+  pill.hidden = false;
+  pill.innerHTML = `<span class="pill-tile">${tile}</span><div class="pill-txt"><div class="pill-title">${esc(spec.title)}</div>${meta}</div>${action}${bar}`;
+
   const restart = document.getElementById('u-restart');
   if (restart && api.restartToUpdate) restart.onclick = () => api.restartToUpdate();
   const dl = document.getElementById('u-dl');
   if (dl && api.openUpdateDownload) dl.onclick = () => api.openUpdateDownload();
+  const check = document.getElementById('u-check');
+  if (check) check.onclick = onCheckForUpdates;
+
+  if (spec.fade) {
+    updateFadeTimer = setTimeout(() => {
+      // Only dismiss if the state hasn't moved on since this paint.
+      if (state.update && state.update.state === u.state) {
+        state.update = { state: 'idle' };
+        paintUpdatePill();
+      }
+    }, spec.fade);
+  }
 }
 
-// "Check for updates" click: optimistically show "checking…" then ask main.
-// Progress arrives back over onUpdateStatus.
+// Manual "check for updates" (titlebar): optimistically show "checking…" then
+// ask main. Progress arrives back over onUpdateStatus.
 function onCheckForUpdates() {
   if (!api.checkForUpdates) return;
   state.update = { state: 'checking' };
-  paintUpdateCard();
+  paintUpdatePill();
   api.checkForUpdates();
 }
 
 // Subscribe once at boot. Each status event becomes the new state.update and
-// repaints the card on whatever screen is mounted.
+// repaints the persistent pill. Also wire the titlebar re-check control.
 function setupUpdateEvents() {
-  if (!api.onUpdateStatus) return; // browser preview / mock: no updates.
+  const check = document.getElementById('tb-check');
+  if (check) {
+    if (api.checkForUpdates) check.onclick = onCheckForUpdates;
+    else check.hidden = true; // no bridge (browser preview with no mock)
+  }
+  if (!api.onUpdateStatus) return; // browser preview / mock: no push channel.
   api.onUpdateStatus((s) => {
     if (!s || !s.state) return;
     state.update = s;
-    paintUpdateCard();
+    paintUpdatePill();
   });
 }
 
