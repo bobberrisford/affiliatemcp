@@ -27,9 +27,20 @@ Call `affiliate_get_client_strategy({ brand })`. This returns the operator's rec
 - **Targets** (`kpi.targets`): each is `{ metric, comparator, value, unit?, period? }`. Use them in Step 4 to turn deltas into verdicts. Metrics map onto the data as: `revenue` -> total grossSale, `commission` -> total commission, `conversions` -> total conversions, `epc` -> commission / clicks when clicks are nonzero, `aov` -> grossSale / conversions when conversions are nonzero, `reversal_rate`/`approval_rate` -> from the status split. If a denominator is zero, report that the derived metric is unavailable rather than inventing zero.
 - **Unsupported per network**: if a target names a metric a bound network cannot supply (for example a network with no `get_programme_performance`), say so for that network and exclude it from that network's verdict. Do not substitute zero, and do not blend it into a cross-network total without naming the gap.
 
+## Step 1c — prefer the brand snapshot for the standard cadences
+
+For the standard cadences (daily = yesterday, weekly = last 7 days, month ≈ last 30 days, QBR = year-to-date), do **not** rebuild the cross-network aggregation by hand. Call `affiliate_build_brand_snapshot({ brand })` once. It pulls every network the brand is bound to, normalises the result into the four windows (`yesterday`, `last7d`, `last30d`, `ytd`), and returns, per window: per-currency totals, a per-programme breakdown, and a count-honest `byNetwork` health block. Read those figures directly for the headline, the windows, and the commission status split.
+
+Two things this buys you:
+
+- **Accuracy.** The snapshot sources the commission status split (`pending` / `confirmed` = approved+paid / `declined` = reversed) from transactions, which carry an exact per-transaction status. The per-publisher performance report collapses its multi-status columns into one value (see issue #282), so a status split read from it is lossy. Prefer the snapshot's split.
+- **Honesty.** `snapshot.byNetwork` lists one entry per *bound* network with `state` (`ok` / `degraded` / `failed`) and the verbatim error envelope on failure. Surface it exactly: never total four networks and present as five. When a network is `failed`, say "totals exclude <network>".
+
+Use the snapshot for the headline, windows, and status split below. Keep the per-network `get_programme_performance` calls in Step 3 for the two things the snapshot does not carry: the **per-publisher** Top-10 (the snapshot's breakdown is per-programme), and **custom windows** the four fixed windows do not cover ("Q1", "last month", named dates). For those custom windows, fall back to Step 3 entirely.
+
 ## Step 2 — pick the windows
 
-Default period: the last 30 days, ending today. Honour explicit user windows ("Q1", "last month", named dates).
+Default period: the last 30 days, ending today. Honour explicit user windows ("Q1", "last month", named dates). When the requested period is one of the four snapshot windows, take its figures from Step 1c rather than recomputing.
 
 Compute a comparison window of the same length immediately prior. Express all dates as ISO `YYYY-MM-DD`. Surface both windows in the final report so the user can confirm.
 
@@ -95,8 +106,14 @@ they only asked "how is [brand] doing", use the full report above.
 - Output: a presentation-ready narrative in this order: executive summary (three to five sentences covering the QoQ direction and the one or two things that moved the number); monthly trend table; partner mix and top contributors with each contributor's share of the total (flag any single partner above ~30% as a concentration risk); wins; risks and watch items; and two to four recommended actions for next quarter. Every recommendation must follow from the data shown; do not propose actions the figures do not support.
 - Triggers: "Prepare Acme's QBR", "Build the Q2 review for Acme".
 
-Every profile has the same `get_programme_performance` basis as Step 3; only the
-dates, comparison, supporting reads, and depth of the written output change.
+The daily, weekly, month-close, and QBR profiles map onto the snapshot windows
+(`yesterday`, `last7d`, `last30d`, `ytd`): take the headline, windows, and status
+split from `affiliate_build_brand_snapshot` (Step 1c) and use
+`get_programme_performance` only for the per-publisher Top-10 and any custom
+window. The comparison window and the month-by-month QBR trend are custom ranges
+the snapshot does not carry, so fetch those from `get_programme_performance` as
+Step 3 describes. Only the dates, comparison, supporting reads, and depth of the
+written output change across profiles.
 The currency, no-invented-figures, failure, and per-network rules apply to all
 of them. So does the recorded plan: when `Strategy.md` names a reporting voice,
 audience, cadence, or escalation threshold, shape the output to it: lead the

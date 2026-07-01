@@ -29,6 +29,12 @@ Default period: the last 7 days, ending today. Honour explicit user windows ("th
 
 Compute a comparison window of the same length immediately prior. Express all dates as ISO `YYYY-MM-DD`. Surface both windows in the final report so the user can confirm.
 
+## Step 2b — prefer per-brand snapshots for the standard windows
+
+When the requested window is one of the snapshot windows (yesterday, last 7 days, last 30 days, year-to-date — the 7-day default is `last7d`), call `affiliate_build_brand_snapshot({ brand })` once per brand instead of fanning out `get_programme_performance` per binding. Each brand's snapshot already aggregates across that brand's networks into the four windows with per-currency totals and a count-honest `byNetwork` health block, so you skip the manual per-network fan-out and the Step 4 by-brand aggregation. Take the per-brand headline straight from `snapshot.windows.<window>.totals` (per currency), and surface any `byNetwork` entry that is not `ok` on that brand's line so a brand whose book is missing a network is never silently under-counted.
+
+Fall back to the per-network fan-out below for **custom windows** the four fixed windows do not cover, and to compute the **comparison window** (a custom prior range the snapshot does not carry).
+
 ## Step 3 — fan out the performance calls
 
 For each `(brand, network)` binding, call the network's performance tool twice — current window and comparison window. Tool names follow `affiliate_<network>_get_programme_performance`:
