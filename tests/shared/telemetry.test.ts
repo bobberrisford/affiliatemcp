@@ -93,6 +93,16 @@ describe('telemetry consent and privacy boundary', () => {
     expect(_readTelemetryStateForTests()?.monthlyInstallId).not.toBe(before);
   });
 
+  it('keys the monthly identifier off the record day, not the wall clock', () => {
+    // Deterministic regardless of the real date: a counter recorded for a June
+    // day belongs to June's month, so the id does not depend on when the test
+    // runs. Previously the id was stamped from the wall clock, so recording a
+    // past day in the current month produced the current month's id.
+    setTelemetryConsent(true);
+    recordTelemetry('lifecycle', 'server_start', 'success', 1, '2026-06-15');
+    expect(_readTelemetryStateForTests()?.month).toBe('2026-06');
+  });
+
   it('honours environment overrides and maps only coarse error categories', () => {
     process.env['AFFILIATE_MCP_TELEMETRY'] = 'true';
     expect(telemetryConsent()).toBe('enabled');
