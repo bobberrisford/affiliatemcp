@@ -24,6 +24,13 @@ contextBridge.exposeInMainWorld('affiliate', {
   listNetworkOperations: (slug) => ipcRenderer.invoke('composer:operations', slug),
   composeSkill: (input) => ipcRenderer.invoke('composer:compose', input),
   saveComposedSkill: (slug, content) => ipcRenderer.invoke('composer:save', { slug, content }),
+  // Entitlement (paid tier). status/refresh are cheap; checkout/portal open the
+  // system browser. Free-tier users (no account) never trigger a network call.
+  entitlementStatus: () => ipcRenderer.invoke('entitlement:status'),
+  refreshEntitlement: () => ipcRenderer.invoke('entitlement:refresh'),
+  startCheckout: () => ipcRenderer.invoke('entitlement:checkout'),
+  openPortal: () => ipcRenderer.invoke('entitlement:portal'),
+  signOutEntitlement: () => ipcRenderer.invoke('entitlement:signout'),
   saveEnv: (entries) => ipcRenderer.invoke('config:saveEnv', entries),
   getTelemetryConsent: () => ipcRenderer.invoke('telemetry:getConsent'),
   setTelemetryConsent: (enabled) => ipcRenderer.invoke('telemetry:setConsent', enabled),

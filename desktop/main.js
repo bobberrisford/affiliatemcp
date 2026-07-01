@@ -548,6 +548,43 @@ handle('composer:save', async (_e, payload) => {
   return { ok: true, ...facade.saveComposedSkill(slug, content) };
 });
 
+// ---- Entitlement (paid tier only; free tier makes no calls) ----------------
+
+// Local, offline read of the cached entitlement. No network.
+handle('entitlement:status', async () => {
+  const { facade } = await loadCore();
+  return { ok: true, status: await facade.entitlementStatus() };
+});
+
+// Online refresh against the issuer (only calls out if an account key exists).
+handle('entitlement:refresh', async () => {
+  const { facade } = await loadCore();
+  return { ok: true, status: await facade.refreshEntitlement() };
+});
+
+// Start a subscription: get a Checkout URL from the issuer and open it in the
+// system browser. The URL comes from our own issuer, so main opens it directly
+// rather than via the network-dashboard allowlist.
+handle('entitlement:checkout', async () => {
+  const { facade } = await loadCore();
+  const res = await facade.startCheckout();
+  if (res.ok) await shell.openExternal(res.url);
+  return res;
+});
+
+// Open the Stripe billing portal (manage/cancel).
+handle('entitlement:portal', async () => {
+  const { facade } = await loadCore();
+  const res = await facade.openPortal();
+  if (res.ok) await shell.openExternal(res.url);
+  return res;
+});
+
+handle('entitlement:signout', async () => {
+  const { facade } = await loadCore();
+  return facade.signOutEntitlement();
+});
+
 // ---- Config + brands persistence ------------------------------------------
 
 handle('config:saveEnv', async (_e, entries) => {
