@@ -1,13 +1,16 @@
 # Desktop premium skill packs — a paid local subscription tier
 
 - **Date:** 2026-07-01
-- **Status:** Proposed (decision pending)
+- **Status:** Accepted (2026-07-01, Rob)
 - **Affects:** desktop app (`desktop/`), `src/core/facade.ts`, the bundled
   `skills/` tree, a new billing and entitlement backend, the marketing site,
   `PRIVACY.md`, `DEPLOY.md`
 - **Amends:** [`2026-06-09-desktop-app-free.md`](./2026-06-09-desktop-app-free.md)
   and the D3/D4 boundary rules in
   [`../product/desktop-app-plan.md`](../product/desktop-app-plan.md)
+- **Relates to:** [`2026-06-30-paid-tier-entitlement-gate.md`](./2026-06-30-paid-tier-entitlement-gate.md)
+  — a separate (still Proposed) paid gate for brand-data MCP features. Same
+  entitlement family, distinct scope (MCP dispatch path, not desktop skill packs).
 - **Builds on:** [`2026-06-09-desktop-skill-deployment.md`](./2026-06-09-desktop-skill-deployment.md)
   (the skills "pick" and "build" flow), which should be accepted and land first.
 
