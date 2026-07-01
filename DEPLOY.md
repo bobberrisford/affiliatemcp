@@ -33,6 +33,24 @@ nothing phones home.
 
 ## 2. Building the desktop `.dmg`
 
+**Primary path — the CI release pipeline.** Cutting a release is a
+`workflow_dispatch` on the **Desktop Release** workflow
+(`.github/workflows/desktop-release.yml`), which owns the whole flow: it bumps
+`desktop/package.json` on `main`, builds the signed + notarised universal
+`.dmg` + `.zip` on a GitHub macOS runner, staples the dmg, and publishes the
+`.dmg` + `-mac.zip` + `latest-mac.yml` feed to a non-draft `desktop-v<version>`
+release so in-app auto-update works. Trigger it with a forward-only version:
+
+```sh
+gh workflow run desktop-release.yml -f version=0.1.3   # must exceed the latest desktop-v*
+```
+
+See the decision record
+[`docs/decisions/2026-07-01-desktop-signed-release-pipeline.md`](docs/decisions/2026-07-01-desktop-signed-release-pipeline.md).
+`desktop-dmg.yml` remains the artifact-only **test** build (no release, no feed).
+
+The manual local build below is the **fallback** when CI is unavailable.
+
 ```sh
 # 1) Build the bundled MCP server (root) — produces dist/
 npm run build
