@@ -49,8 +49,9 @@ describe('entitlementState', () => {
 });
 
 describe('GATED_TOOLS / buildEntitlementRequired', () => {
-  it('gates get_brand_rows but not the free snapshot tool', () => {
+  it('gates the paid tools but not the free snapshot tool', () => {
     expect(GATED_TOOLS.has('affiliate_get_brand_rows')).toBe(true);
+    expect(GATED_TOOLS.has('affiliate_get_brand_action_bundle')).toBe(true);
     expect(GATED_TOOLS.has('affiliate_build_brand_snapshot')).toBe(false);
   });
 

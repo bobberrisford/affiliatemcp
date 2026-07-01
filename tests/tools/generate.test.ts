@@ -97,6 +97,7 @@ describe('tool generator', () => {
     const names = meta.map((t) => t.name).sort();
     expect(names).toEqual([
       'affiliate_build_brand_snapshot',
+      'affiliate_get_brand_action_bundle',
       'affiliate_get_brand_rows',
       'affiliate_get_client_strategy',
       'affiliate_list_actions',
@@ -112,6 +113,7 @@ describe('tool generator', () => {
     const all = generateAllTools();
     expect(all.map((t) => t.name).sort()).toEqual([
       'affiliate_build_brand_snapshot',
+      'affiliate_get_brand_action_bundle',
       'affiliate_get_brand_rows',
       'affiliate_get_client_strategy',
       'affiliate_list_actions',
