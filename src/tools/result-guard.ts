@@ -32,6 +32,12 @@ export interface TruncatedListResult {
   truncated: true;
   returnedCount: number;
   totalCount: number;
+  /**
+   * Where the next slice starts: the request's own offset (0 when absent)
+   * plus the items returned. List tools accept an `offset` input, so the
+   * caller repeats the call with this value to continue.
+   */
+  nextOffset: number;
   hint: string;
 }
 
@@ -53,7 +59,7 @@ export interface GuardedResult {
 }
 
 const TRUNCATED_HINT =
-  'The full result exceeds the client tool-result size limit. Narrow the date window or status filter, or pass a smaller limit, and repeat the call.';
+  'The full result exceeds the client tool-result size limit. Repeat the call with offset set to nextOffset to continue, or narrow the date window, filters, or limit.';
 
 const TOO_LARGE_HINT =
   'The result exceeds the client tool-result size limit and has no list shape the server can truncate honestly. Narrow the query (date window, filters, limit) and repeat the call.';
@@ -80,12 +86,17 @@ function stringify(value: unknown, pretty: boolean): string {
   return JSON.stringify(value, null, pretty ? 2 : 0) ?? 'null';
 }
 
-function buildTruncatedEnvelope(items: unknown[], totalCount: number): TruncatedListResult {
+function buildTruncatedEnvelope(
+  items: unknown[],
+  totalCount: number,
+  baseOffset: number,
+): TruncatedListResult {
   return {
     items,
     truncated: true,
     returnedCount: items.length,
     totalCount,
+    nextOffset: baseOffset + items.length,
     hint: TRUNCATED_HINT,
   };
 }
@@ -95,13 +106,20 @@ function buildTruncatedEnvelope(items: unknown[], totalCount: number): Truncated
  * found by binary search on the prefix length. Returns null when not even a
  * one-item envelope fits (a single oversized record).
  */
-function truncateListToBudget(result: unknown[], budgetBytes: number): string | null {
+function truncateListToBudget(
+  result: unknown[],
+  budgetBytes: number,
+  baseOffset: number,
+): string | null {
   let low = 1;
   let high = result.length;
   let best: string | null = null;
   while (low <= high) {
     const mid = Math.floor((low + high) / 2);
-    const candidate = stringify(buildTruncatedEnvelope(result.slice(0, mid), result.length), false);
+    const candidate = stringify(
+      buildTruncatedEnvelope(result.slice(0, mid), result.length, baseOffset),
+      false,
+    );
     if (utf8Bytes(candidate) <= budgetBytes) {
       best = candidate;
       low = mid + 1;
@@ -121,6 +139,11 @@ export function guardToolResult(
   toolName: string,
   result: unknown,
   budgetBytes: number = resultBudgetBytes(),
+  /**
+   * The request's own `offset` argument, when the tool was called with one,
+   * so the envelope's `nextOffset` continues from the right place.
+   */
+  baseOffset = 0,
 ): GuardedResult {
   const pretty = stringify(result, true);
   if (utf8Bytes(pretty) <= Math.min(PRETTY_PRINT_LIMIT_BYTES, budgetBytes)) {
@@ -134,7 +157,7 @@ export function guardToolResult(
   }
 
   if (Array.isArray(result) && result.length > 0) {
-    const truncated = truncateListToBudget(result, budgetBytes);
+    const truncated = truncateListToBudget(result, budgetBytes, baseOffset);
     if (truncated !== null) {
       return { text: truncated, outcome: 'truncated_list' };
     }
