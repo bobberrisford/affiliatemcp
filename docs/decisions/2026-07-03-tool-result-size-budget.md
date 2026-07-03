@@ -1,7 +1,7 @@
 # Tool-result size budget: keep large account pulls under the client limit
 
 - **Date:** 2026-07-03
-- **Status:** Proposed (decision pending)
+- **Status:** Accepted (Rob, 2026-07-03; recorded ahead of this record's merge)
 - **Affects:** the tool dispatch path in `src/server.ts`, the tool layer in
   `src/tools/generate.ts`, the brand-data module (`src/brand-data/`, including
   a new gated meta-tool `affiliate_query_brand_data` and a bytes-based store
@@ -311,17 +311,20 @@ descoped to a follow-up issue rather than built speculatively. If Rob rejects
 the truncated-list envelope as a contract addition, the guard falls back to
 `result_too_large` only, and the query tool plus paging become the remedies.
 
-Open questions for Rob before PR 2:
+All open questions were resolved by Rob on 2026-07-03; none remain:
 
-1. Is 800,000 bytes the right default budget, and is
-   `AFFILIATE_MCP_MAX_RESULT_BYTES` the right override name?
-2. Is the honest truncated-list envelope acceptable as an overflow-only
-   contract addition, or should overflow always be a hard `result_too_large`?
-3. Should a future `includeRaw` opt-out for `rawNetworkData` be queued as its
-   own decision now, or wait for evidence that the query tool and paging are
-   not enough?
+1. The default budget is 800,000 bytes (accepted; it leaves headroom under the
+   1 MB client limit for the MCP envelope while wasting little of the budget),
+   overridable via `AFFILIATE_MCP_MAX_RESULT_BYTES`.
+2. The honest truncated-list envelope is accepted as the overflow-only
+   contract addition for list-shaped results; `result_too_large` remains the
+   shape for everything else.
+3. An `includeRaw` opt-out for `rawNetworkData` is deferred: wait for evidence
+   that the query tool and paging are not enough, then raise it as its own
+   decision.
+4. `affiliate_query_brand_data` is paid in the desktop app and free in the
+   open source server (implemented as `GATED_TOOLS` membership with the gate
+   dormant in open source).
+5. The persisted row-grain window stays at a rolling 30 days.
 
-Resolved by Rob, 2026-07-03: `affiliate_query_brand_data` is paid in the
-desktop app and free in the open source server (implemented as `GATED_TOOLS`
-membership with the gate dormant in open source), and the persisted row-grain
-window stays at a rolling 30 days.
+This record is decision-complete; implementation may start once it merges.
