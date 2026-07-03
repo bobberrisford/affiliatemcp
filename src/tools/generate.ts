@@ -746,21 +746,21 @@ export function generateMetaTools(): ToolDefinition[] {
     {
       name: 'affiliate_get_brand_rows',
       description:
-        'Return the persisted 30-day, transaction-grain rows for a brand, either as structured rows or as CSV for export. ' +
-        'Use this for transaction-level drill-down and to hand a spreadsheet-ready export to the operator; it reads the local store written by affiliate_build_brand_snapshot, so build a snapshot first. ' +
+        'Return the persisted 30-day, transaction-grain rows for a brand: as structured rows, as inline CSV, or (format "file") written to a local CSV file with a small manifest returned instead of the data. ' +
+        'Use this for transaction-level drill-down and to hand a spreadsheet-ready export to the operator; it reads the local store written by affiliate_build_brand_snapshot, so build a snapshot first, and prefer format "file" on large accounts where the inline result would exceed the client tool-result size limit. ' +
         'This is a paid brand-data tool gated by the local entitlement check; without entitlement it returns a structured entitlement_required result rather than data.',
       inputSchema: {
         type: 'object',
         properties: {
           brand: { type: 'string', minLength: 1 },
-          format: { type: 'string', enum: ['rows', 'csv'] },
+          format: { type: 'string', enum: ['rows', 'csv', 'file'] },
         },
         required: ['brand'],
         additionalProperties: false,
       },
       handle: async (args) => {
         const parsed = z
-          .object({ brand: z.string().min(1), format: z.enum(['rows', 'csv']).optional() })
+          .object({ brand: z.string().min(1), format: z.enum(['rows', 'csv', 'file']).optional() })
           .strict()
           .parse(args ?? {});
         const { loadRows } = await import('../brand-data/store.js');
@@ -768,6 +768,22 @@ export function generateMetaTools(): ToolDefinition[] {
         if (parsed.format === 'csv') {
           const { toCsv } = await import('../brand-data/csv.js');
           return { brand: parsed.brand, format: 'csv' as const, rowCount: rows.length, csv: toCsv(rows) };
+        }
+        if (parsed.format === 'file') {
+          // File spill (decision 2026-07-03 §6): the export is written locally
+          // and only a manifest crosses the tool result, so a large account's
+          // full-grain CSV never has to fit inside the client size limit.
+          const { toCsv } = await import('../brand-data/csv.js');
+          const { writeRowsExport } = await import('../brand-data/store.js');
+          const written = writeRowsExport(parsed.brand, toCsv(rows));
+          return {
+            brand: parsed.brand,
+            format: 'file' as const,
+            path: written.path,
+            bytes: written.bytes,
+            rowCount: rows.length,
+            preview: rows.slice(0, 5),
+          };
         }
         return { brand: parsed.brand, format: 'rows' as const, rowCount: rows.length, rows };
       },
