@@ -70,6 +70,7 @@ const META_TOOL_OPERATIONS = new Map<string, string>([
   ['affiliate_build_brand_snapshot', 'build_brand_snapshot'],
   ['affiliate_get_brand_rows', 'get_brand_rows'],
   ['affiliate_get_brand_action_bundle', 'get_brand_action_bundle'],
+  ['affiliate_query_brand_data', 'query_brand_data'],
 ]);
 
 export async function startServer(): Promise<void> {

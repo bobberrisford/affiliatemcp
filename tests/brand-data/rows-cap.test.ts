@@ -4,22 +4,23 @@ import { normaliseTransactions } from '../../src/brand-data/normalise.js';
 import { makeTxn } from './fixtures.js';
 
 describe('capTxnRows', () => {
-  it('keeps full rows when within the cap', () => {
+  it('keeps full rows while the serialised size is within the byte cap', () => {
     const rows = normaliseTransactions([makeTxn({ id: 'a' }), makeTxn({ id: 'b' })], 'acme');
-    const result = capTxnRows(rows, 10);
+    const result = capTxnRows(rows, 100_000);
     expect(result.mode).toBe('rows');
     expect(result.rowsTruncated).toBe(false);
     expect(result.rows).toHaveLength(2);
   });
 
-  it('falls back to aggregates and flags truncation when over the cap', () => {
+  it('falls back to aggregates and flags truncation when over the byte cap', () => {
     const rows = normaliseTransactions(
       Array.from({ length: 5 }, (_, i) =>
         makeTxn({ id: `t${i}`, status: 'approved', commission: 2, amount: 20 }),
       ),
       'acme',
     );
-    const result = capTxnRows(rows, 2);
+    // Five serialised rows are far larger than 200 bytes.
+    const result = capTxnRows(rows, 200);
     expect(result.mode).toBe('aggregated');
     expect(result.rowsTruncated).toBe(true);
     // All five share (day, programId, currency, statusBucket) -> one bucket.

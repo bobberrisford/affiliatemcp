@@ -3,7 +3,7 @@
  *
  * Produces the MCP tool definitions from the adapter registry:
  *   - 7 publisher tools per registered adapter (one per publisher operation).
- *   - 7 meta tools: network discovery/diagnostics, brand resolution, advisory
+ *   - meta tools: network discovery/diagnostics, brand resolution, advisory
  *     client-strategy read/write/list, and the action capability map.
  *
  * Tool descriptions follow PRD §5.5 — three sentences:
@@ -46,6 +46,7 @@ import type { ToolDefinition } from './types.js';
 import { toJsonSchema } from './schema.js';
 import { cacheKey, credentialHashFor, pickTtl, withCache } from '../shared/cache.js';
 import type { DiagnosticResult } from '../shared/diagnostic.js';
+import { BrandDataQuerySchema } from '../brand-data/query.js';
 
 export type { ToolDefinition } from './types.js';
 
@@ -833,6 +834,21 @@ export function generateMetaTools(): ToolDefinition[] {
           strategy,
           actions,
         };
+      },
+    },
+    {
+      name: 'affiliate_query_brand_data',
+      description:
+        'Run a read-only analytical query (filters, group-bys, sums, top-N) over the persisted 30-day brand dataset and return a small, exact result. ' +
+        'Use this to answer questions over a large account\'s full data — commission by programme and month, the pending split by network, top programmes by commission — without pulling every row through a tool result; build a snapshot first with affiliate_build_brand_snapshot, and note aggregate results always group by currency because sums never cross currencies. ' +
+        'Returns grouped metrics (or matching rows with mode "rows") plus the persisted coverage window, an explicit coverageMismatch when the requested range extends beyond it, and an explicit unsupported result when the store fell back to aggregated mode; this is a paid brand-data tool gated by the local entitlement check.',
+      inputSchema: toJsonSchema(BrandDataQuerySchema),
+      annotations: { readOnlyHint: true },
+      handle: async (args) => {
+        const parsed = BrandDataQuerySchema.parse(args ?? {});
+        const { loadRows, loadSnapshot } = await import('../brand-data/store.js');
+        const { evaluateBrandDataQuery } = await import('../brand-data/query.js');
+        return evaluateBrandDataQuery(loadRows(parsed.brand), loadSnapshot(parsed.brand), parsed);
       },
     },
   ];
