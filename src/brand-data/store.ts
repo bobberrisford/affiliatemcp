@@ -100,6 +100,20 @@ export function loadRows(slug: string): unknown[] {
     .map((line) => JSON.parse(line));
 }
 
+/**
+ * Write a CSV export of the persisted rows to
+ * `$CONFIG_DIR/brand-data/<slug>/exports/rows-30d.csv` and return its path and
+ * byte size. The filename is stable and each export overwrites the previous
+ * one atomically, so exports never accumulate unbounded; an operator who wants
+ * to keep a copy moves or renames the file. Mode 0600 like the rest of the
+ * store (decision 2026-07-03: the file stays on the user's machine).
+ */
+export function writeRowsExport(slug: string, csv: string): { path: string; bytes: number } {
+  const file = path.join(resolveBrandDataDir(slug), 'exports', 'rows-30d.csv');
+  writeAtomic(file, csv);
+  return { path: file, bytes: Buffer.byteLength(csv, 'utf8') };
+}
+
 /** Append one headline to `history.jsonl`. Creates the dir/file if needed. */
 export function appendHistory(slug: string, entry: HistoryEntry): void {
   const dir = resolveBrandDataDir(slug);

@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -63,5 +63,64 @@ describe('affiliate_get_brand_rows', () => {
   it('returns an empty set when no snapshot has been built', async () => {
     const result = (await tool().handle({ brand: 'acme' })) as { rowCount: number };
     expect(result.rowCount).toBe(0);
+  });
+
+  it('writes a local CSV export and returns a manifest for format "file"', async () => {
+    saveRows('acme', { mode: 'rows', rowsTruncated: false, rows: [row] });
+    const result = (await tool().handle({ brand: 'acme', format: 'file' })) as {
+      format: string;
+      path: string;
+      bytes: number;
+      rowCount: number;
+      preview: unknown[];
+      csv?: string;
+      rows?: unknown[];
+    };
+    expect(result.format).toBe('file');
+    expect(result.rowCount).toBe(1);
+    expect(result.preview).toHaveLength(1);
+    // The data itself stays out of the tool result.
+    expect(result.csv).toBeUndefined();
+    expect(result.rows).toBeUndefined();
+
+    expect(result.path).toBe(
+      path.join(configDir, 'brand-data', 'acme', 'exports', 'rows-30d.csv'),
+    );
+    const written = readFileSync(result.path, 'utf8');
+    expect(result.bytes).toBe(Buffer.byteLength(written, 'utf8'));
+    expect(written.split('\n')[0]).toContain('txnId');
+    expect(written).toContain('t1');
+  });
+
+  it('exports an empty file with an honest manifest when the store is empty', async () => {
+    const result = (await tool().handle({ brand: 'acme', format: 'file' })) as {
+      format: string;
+      path: string;
+      bytes: number;
+      rowCount: number;
+      preview: unknown[];
+    };
+    expect(result.format).toBe('file');
+    expect(result.rowCount).toBe(0);
+    expect(result.bytes).toBe(0);
+    expect(result.preview).toEqual([]);
+    expect(readFileSync(result.path, 'utf8')).toBe('');
+  });
+
+  it('overwrites the previous export on re-run', async () => {
+    saveRows('acme', { mode: 'rows', rowsTruncated: false, rows: [row] });
+    const first = (await tool().handle({ brand: 'acme', format: 'file' })) as { path: string };
+    saveRows('acme', {
+      mode: 'rows',
+      rowsTruncated: false,
+      rows: [row, { ...row, txnId: 't2' }],
+    });
+    const second = (await tool().handle({ brand: 'acme', format: 'file' })) as {
+      path: string;
+      rowCount: number;
+    };
+    expect(second.path).toBe(first.path);
+    expect(second.rowCount).toBe(2);
+    expect(readFileSync(second.path, 'utf8')).toContain('t2');
   });
 });
