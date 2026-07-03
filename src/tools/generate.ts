@@ -47,6 +47,7 @@ import { toJsonSchema } from './schema.js';
 import { cacheKey, credentialHashFor, pickTtl, withCache } from '../shared/cache.js';
 import type { DiagnosticResult } from '../shared/diagnostic.js';
 import { BrandDataQuerySchema } from '../brand-data/query.js';
+import { supportsOffsetPaging } from './paging-exclusions.js';
 
 export type { ToolDefinition } from './types.js';
 
@@ -411,7 +412,10 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
   const specs = OP_SPECS.filter((s) => isAdvertiser || !s.advertiserOnly);
 
   return specs.map((spec) => {
-    const pageable = LIST_OPS.has(spec.op);
+    // Paging is offered only where an absent upstream `limit` provably pulls
+    // the complete set; elsewhere a paged call would slice within a single
+    // upstream default page and lie (see paging-exclusions.ts).
+    const pageable = LIST_OPS.has(spec.op) && supportsOffsetPaging(adapter.slug, spec.op);
     if (!isAdvertiser) {
       const schema = pageable ? withOffsetArg(spec.schema) : spec.schema;
       return {

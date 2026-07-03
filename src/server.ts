@@ -151,12 +151,19 @@ export async function startServer(): Promise<void> {
       // budget Claude clients accept. Small results stay pretty-printed and
       // byte-identical to the previous behaviour; oversized ones degrade
       // honestly rather than failing opaquely client-side. The request's own
-      // offset (list tools accept one) seeds the envelope's nextOffset.
+      // offset seeds the envelope's nextOffset — but only for tools whose
+      // schema accepts offset; steering a caller into a paging call the
+      // schema would reject is a trap, not a hint.
       const requestOffset =
         typeof (args as Record<string, unknown> | undefined)?.['offset'] === 'number'
           ? ((args as Record<string, unknown>)['offset'] as number)
           : 0;
-      const guarded = guardToolResult(name, result, undefined, requestOffset);
+      const schemaProps = (tool.inputSchema as { properties?: Record<string, unknown> })
+        .properties;
+      const guarded = guardToolResult(name, result, undefined, {
+        baseOffset: requestOffset,
+        offsetSupported: schemaProps?.['offset'] !== undefined,
+      });
       if (guarded.outcome !== 'ok') {
         log.warn({ tool: name, outcome: guarded.outcome }, 'tool result exceeded size budget');
       }

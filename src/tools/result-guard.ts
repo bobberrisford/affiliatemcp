@@ -35,10 +35,11 @@ export interface TruncatedListResult {
   totalCount: number;
   /**
    * Where the next slice starts: the request's own offset (0 when absent)
-   * plus the items returned. List tools accept an `offset` input, so the
-   * caller repeats the call with this value to continue.
+   * plus the items returned. Present only when the tool accepts an `offset`
+   * input; a continuation pointer for a tool that would reject it is a trap,
+   * not a hint.
    */
-  nextOffset: number;
+  nextOffset?: number;
   hint: string;
 }
 
@@ -61,6 +62,9 @@ export interface GuardedResult {
 
 const TRUNCATED_HINT =
   'The full result exceeds the client tool-result size limit. Repeat the call with offset set to nextOffset to continue, or narrow the date window, filters, or limit.';
+
+const TRUNCATED_HINT_NO_OFFSET =
+  'The full result exceeds the client tool-result size limit and this tool does not support offset paging. Narrow the date window or filters, or pass a smaller limit, and repeat the call.';
 
 const TOO_LARGE_HINT =
   'The result exceeds the client tool-result size limit and has no list shape the server can truncate honestly. Narrow the query (date window, filters, limit) and repeat the call.';
@@ -90,15 +94,16 @@ function stringify(value: unknown, pretty: boolean): string {
 function buildTruncatedEnvelope(
   items: unknown[],
   totalCount: number,
-  baseOffset: number,
+  opts: GuardOptions,
 ): TruncatedListResult {
+  const offsetSupported = opts.offsetSupported !== false;
   return {
     items,
     truncated: true,
     returnedCount: items.length,
     totalCount,
-    nextOffset: baseOffset + items.length,
-    hint: TRUNCATED_HINT,
+    ...(offsetSupported ? { nextOffset: (opts.baseOffset ?? 0) + items.length } : {}),
+    hint: offsetSupported ? TRUNCATED_HINT : TRUNCATED_HINT_NO_OFFSET,
   };
 }
 
@@ -110,7 +115,7 @@ function buildTruncatedEnvelope(
 function truncateListToBudget(
   result: unknown[],
   budgetBytes: number,
-  baseOffset: number,
+  opts: GuardOptions,
 ): string | null {
   let low = 1;
   let high = result.length;
@@ -118,7 +123,7 @@ function truncateListToBudget(
   while (low <= high) {
     const mid = Math.floor((low + high) / 2);
     const candidate = stringify(
-      buildTruncatedEnvelope(result.slice(0, mid), result.length, baseOffset),
+      buildTruncatedEnvelope(result.slice(0, mid), result.length, opts),
       false,
     );
     if (utf8Bytes(candidate) <= budgetBytes) {
@@ -131,6 +136,20 @@ function truncateListToBudget(
   return best;
 }
 
+export interface GuardOptions {
+  /**
+   * The request's own `offset` argument, when the tool was called with one,
+   * so the envelope's `nextOffset` continues from the right place.
+   */
+  baseOffset?: number;
+  /**
+   * Whether the tool's input schema accepts `offset`. When false, the
+   * truncated envelope omits `nextOffset` and its hint does not steer the
+   * caller into a paging call the schema would reject. Defaults to true.
+   */
+  offsetSupported?: boolean;
+}
+
 /**
  * Serialise a tool result within the byte budget. Small results are returned
  * pretty-printed and byte-identical to the previous behaviour; everything else
@@ -140,11 +159,7 @@ export function guardToolResult(
   toolName: string,
   result: unknown,
   budgetBytes: number = resultBudgetBytes(),
-  /**
-   * The request's own `offset` argument, when the tool was called with one,
-   * so the envelope's `nextOffset` continues from the right place.
-   */
-  baseOffset = 0,
+  opts: GuardOptions = {},
 ): GuardedResult {
   const pretty = stringify(result, true);
   if (utf8Bytes(pretty) <= Math.min(PRETTY_PRINT_LIMIT_BYTES, budgetBytes)) {
@@ -158,7 +173,7 @@ export function guardToolResult(
   }
 
   if (Array.isArray(result) && result.length > 0) {
-    const truncated = truncateListToBudget(result, budgetBytes, baseOffset);
+    const truncated = truncateListToBudget(result, budgetBytes, opts);
     if (truncated !== null) {
       return { text: truncated, outcome: 'truncated_list' };
     }

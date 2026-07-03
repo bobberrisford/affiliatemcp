@@ -162,4 +162,23 @@ describe('offset paging at the tool layer', () => {
     );
     await expect(summary?.handle({ ...WINDOW, offset: 10 })).rejects.toThrow();
   });
+
+  it('withholds offset from excluded (network, op) pairs and keeps it elsewhere', async () => {
+    const { adapter } = pagingAdapter(makeTxns(5));
+    // Same fake adapter, but wearing an excluded slug: cj's listProgrammes and
+    // listTransactions have confirmed bounded upstream defaults.
+    const cjLike = { ...adapter, slug: 'cj', meta: { ...adapter.meta, slug: 'cj' } };
+    const tools = generateToolsFor(cjLike);
+    const txns = tools.find((t) => t.name === 'affiliate_cj_list_transactions');
+    const clicks = tools.find((t) => t.name === 'affiliate_cj_list_clicks');
+    expect(
+      (txns?.inputSchema as { properties: Record<string, unknown> }).properties['offset'],
+    ).toBeUndefined();
+    // listClicks is not excluded for cj, so paging stays available there.
+    expect(
+      (clicks?.inputSchema as { properties: Record<string, unknown> }).properties['offset'],
+    ).toBeDefined();
+    // A paging attempt on the excluded op fails loudly, never a silent slice.
+    await expect(txns?.handle({ ...WINDOW, offset: 100 })).rejects.toThrow();
+  });
 });

@@ -104,10 +104,29 @@ describe('guardToolResult', () => {
 
   it('continues nextOffset from the request offset', () => {
     const rows = makeRows(50_000, 200);
-    const guarded = guardToolResult('affiliate_awin_list_transactions', rows, undefined, 300);
+    const guarded = guardToolResult('affiliate_awin_list_transactions', rows, undefined, {
+      baseOffset: 300,
+    });
     expect(guarded.outcome).toBe('truncated_list');
     const envelope = JSON.parse(guarded.text) as { returnedCount: number; nextOffset: number };
     expect(envelope.nextOffset).toBe(300 + envelope.returnedCount);
+  });
+
+  it('omits nextOffset and the offset hint for tools that do not accept offset', () => {
+    const rows = makeRows(50_000, 200);
+    const guarded = guardToolResult('affiliate_list_networks', rows, undefined, {
+      offsetSupported: false,
+    });
+    expect(guarded.outcome).toBe('truncated_list');
+    const envelope = JSON.parse(guarded.text) as {
+      nextOffset?: number;
+      hint: string;
+      truncated: boolean;
+    };
+    expect(envelope.truncated).toBe(true);
+    expect(envelope.nextOffset).toBeUndefined();
+    expect(envelope.hint).not.toContain('nextOffset');
+    expect(envelope.hint).toContain('does not support offset paging');
   });
 
   it('returns the largest prefix that fits', () => {
