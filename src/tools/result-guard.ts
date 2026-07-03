@@ -15,9 +15,10 @@
  *      explicit truncated-list envelope with counts; anything else returns a
  *      structured `result_too_large` payload naming the sizes and the remedy.
  *
- * Overflow hints name only remedies that exist today (narrower filters and
- * smaller limits). The `offset` paging and `format: "file"` hints arrive with
- * the PRs that ship those remedies.
+ * The truncated-list hint names the `offset` remedy (list tools accept an
+ * `offset` input) alongside narrower filters and limits. The `format: "file"`
+ * export remains named in the `affiliate_get_brand_rows` tool description
+ * rather than here.
  */
 
 /** Default response budget: headroom under the ~1 MB client limit. */

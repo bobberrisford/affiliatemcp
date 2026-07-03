@@ -424,8 +424,10 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
           // happened to pass through.
           const parsedArgs = schema.parse(args ?? {}) as Record<string, unknown>;
           const paging = splitPagingArgs(parsedArgs);
-          // TTL and cache key use the upstream args, so every page of one
-          // query shares a single cache entry and page two serves from cache.
+          // TTL and cache key use the upstream args, so when the query is
+          // cacheable (cache on, publisher side, closed past window) every
+          // page of one query shares a single cache entry; otherwise each
+          // page is a fresh full pull, internally consistent per page only.
           const ttl = pickTtl(spec.op, paging.upstream, new Date(), false);
           const result =
             ttl <= 0
