@@ -432,7 +432,10 @@ export function evaluateBrandDataQuery(
   const groups = new Map<string, AggregateGroup & Record<QueryMetric, number>>();
   for (const row of matched) {
     const keyEntries = groupKeys.map((k) => [k, dimensionValue(row, k) ?? ''] as const);
-    const mapKey = keyEntries.map(([, v]) => v).join(' ');
+    // JSON-encode the key tuple: free-form values (programme names) can
+    // contain any delimiter, so a plain joined string would let distinct
+    // tuples collide into one group.
+    const mapKey = JSON.stringify(keyEntries.map(([, v]) => v));
     let group = groups.get(mapKey);
     if (!group) {
       group = {
@@ -462,8 +465,8 @@ export function evaluateBrandDataQuery(
     }
     // Deterministic default: the group key, ascending.
     return compareValues(
-      Object.values(a.key).join(' '),
-      Object.values(b.key).join(' '),
+      JSON.stringify(Object.values(a.key)),
+      JSON.stringify(Object.values(b.key)),
     );
   });
 

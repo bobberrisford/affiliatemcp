@@ -172,6 +172,21 @@ describe('evaluateBrandDataQuery — aggregate mode', () => {
     expect(nextPage.groups[0]?.commission).toBe(3);
   });
 
+  it('never collides distinct group keys whose free-form values contain delimiters', () => {
+    const tricky = [
+      makeRow({ programName: 'A', programId: 'B C', commission: 1 }),
+      makeRow({ programName: 'A B', programId: 'C', commission: 2 }),
+    ];
+    const result = evaluateBrandDataQuery(
+      tricky,
+      makeSnapshot(),
+      query({ groupBy: ['programName', 'programId'] }),
+    );
+    if (!('mode' in result) || result.mode !== 'aggregate') throw new Error('expected aggregate');
+    expect(result.groupCount).toBe(2);
+    expect(result.groups.map((g) => g.commission).sort()).toEqual([1, 2]);
+  });
+
   it('returns only the requested metrics', () => {
     const result = evaluateBrandDataQuery(
       rows,
