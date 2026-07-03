@@ -15,7 +15,7 @@ export const TELEMETRY_SCHEMA_VERSION = 1;
 export const TELEMETRY_ENDPOINT =
   process.env['AFFILIATE_MCP_TELEMETRY_ENDPOINT'] ??
   'https://telemetry.agenticaffiliate.ai/v1/ingest';
-export const PACKAGE_VERSION = '0.14.1';
+export const PACKAGE_VERSION = '0.15.0';
 
 export type TelemetrySurface = 'npm' | 'mcpb' | 'desktop-bundle' | 'unknown';
 export type TelemetryOutcome =
