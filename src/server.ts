@@ -26,6 +26,7 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { generateAllTools, type ToolDefinition } from './tools/generate.js';
+import { guardToolResult } from './tools/result-guard.js';
 import { getPrompt, listPrompts } from './prompts/generate.js';
 import { buildEntitlementRequired, GATED_TOOLS, isEntitled } from './brand-data/entitlement.js';
 import { recordActionAudit } from './shared/audit.js';
@@ -145,11 +146,20 @@ export async function startServer(): Promise<void> {
       const result = await tool.handle(args);
       const telemetry = classifyToolForTelemetry(name);
       recordTelemetry(telemetry.network, telemetry.operation, 'success');
+      // Size guard (decision 2026-07-03): keep every response under the byte
+      // budget Claude clients accept. Small results stay pretty-printed and
+      // byte-identical to the previous behaviour; oversized ones degrade
+      // honestly rather than failing opaquely client-side.
+      const guarded = guardToolResult(name, result);
+      if (guarded.outcome !== 'ok') {
+        log.warn({ tool: name, outcome: guarded.outcome }, 'tool result exceeded size budget');
+      }
       return {
+        ...(guarded.outcome === 'result_too_large' ? { isError: true } : {}),
         content: [
           {
             type: 'text' as const,
-            text: JSON.stringify(result, null, 2),
+            text: guarded.text,
           },
         ],
       };
