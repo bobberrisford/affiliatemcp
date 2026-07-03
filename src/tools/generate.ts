@@ -365,7 +365,7 @@ const OP_SPECS: OpSpec[] = [
  * 2026-07-03 §4). Their results are arrays; `getEarningsSummary` and the
  * single-record ops are excluded because there is nothing to slice.
  */
-const LIST_OPS: ReadonlySet<AdapterOperation> = new Set<AdapterOperation>([
+export const LIST_OPS: ReadonlySet<AdapterOperation> = new Set<AdapterOperation>([
   'listProgrammes',
   'listTransactions',
   'listClicks',

@@ -58,6 +58,7 @@ export const PAGING_EXCLUSIONS: ReadonlyMap<string, ReadonlySet<AdapterOperation
     'cj-advertiser',
     ops('listTransactions', 'listMediaPartners', 'getProgrammePerformance'),
   ], // single commissionDetails query capped at maxRows default 1000, no continuation
+  ['partnerize', ops('listProgrammes', 'listTransactions', 'listClicks')], // adapter.ts:117 knownLimitations: cursor-based pagination, "does not yet follow cursor_id"; single call relies on the API's default page size (727-730); found by the #314 independent review
   // Unverified upstream defaults (no paging param sent, upstream documented as
   // paginated, server-side default page size not evidenced in-repo).
   ['skimlinks', ops('listTransactions')],
@@ -65,6 +66,7 @@ export const PAGING_EXCLUSIONS: ReadonlyMap<string, ReadonlySet<AdapterOperation
   ['kwanko', ops('listProgrammes', 'listTransactions')],
   ['indoleads', ops('listProgrammes', 'listTransactions')],
   ['mrge', ops('listProgrammes', 'listTransactions')],
+  ['flexoffers', ops('listTransactions')], // /allsales is page-paginated per adapter.ts:424 with the parameter BLOCKED(verify); no page param is sent
 ]);
 
 /** Whether tool-layer offset paging is honest for this (network, operation). */

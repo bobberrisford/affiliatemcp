@@ -1,15 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { PAGING_EXCLUSIONS, supportsOffsetPaging } from '../../src/tools/paging-exclusions.js';
+import { LIST_OPS } from '../../src/tools/generate.js';
 import { getAdapters } from '../../src/shared/registry.js';
 import '../../src/networks/index.js';
-
-const LIST_OPS = [
-  'listProgrammes',
-  'listTransactions',
-  'listClicks',
-  'listMediaPartners',
-  'getProgrammePerformance',
-];
 
 describe('offset-paging exclusions', () => {
   it('every excluded slug names a registered adapter (no typo can silently no-op)', () => {
@@ -24,7 +17,7 @@ describe('offset-paging exclusions', () => {
   it('every excluded operation is a pageable list op', () => {
     for (const [slug, ops] of PAGING_EXCLUSIONS) {
       for (const op of ops) {
-        expect(LIST_OPS.includes(op), `${slug}: "${op}" is not a pageable list op`).toBe(true);
+        expect(LIST_OPS.has(op), `${slug}: "${op}" is not a pageable list op`).toBe(true);
       }
     }
   });
@@ -50,5 +43,9 @@ describe('offset-paging exclusions', () => {
     expect(supportsOffsetPaging('cj', 'listClicks')).toBe(true); // only audited ops excluded
     expect(supportsOffsetPaging('impact-advertiser', 'getProgrammePerformance')).toBe(false);
     expect(supportsOffsetPaging('skimlinks', 'listTransactions')).toBe(false);
+    // Found by the #314 independent review: the publisher side of the
+    // partnerize family and flexoffers' page-paginated /allsales.
+    expect(supportsOffsetPaging('partnerize', 'listTransactions')).toBe(false);
+    expect(supportsOffsetPaging('flexoffers', 'listTransactions')).toBe(false);
   });
 });
