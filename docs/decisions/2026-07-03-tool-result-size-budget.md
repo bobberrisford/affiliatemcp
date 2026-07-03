@@ -168,11 +168,18 @@ over. A `mode: "rows"` variant returns matching raw rows under the same
   (~50 MB, roughly several hundred thousand rows), keeping the aggregate
   fallback only as the beyond-that backstop. `rowsTruncated` keeps its
   meaning.
-- **Window coverage stays honest.** The store currently holds a rolling
-  30-day window; a query for a range the store does not cover returns an
-  explicit `coverage` mismatch rather than a silently partial answer.
-  Extending the persisted window (for example to year-to-date at row grain) is
-  a pull-cost trade-off listed as an open question, not assumed.
+- **The window stays at a rolling 30 days (maintainer decision, 2026-07-03).**
+  A query for a range the store does not cover returns an explicit `coverage`
+  mismatch rather than a silently partial answer. Extending the persisted
+  window (for example to year-to-date at row grain) is a pull-cost trade-off
+  deferred until usage evidence argues for it, as its own decision.
+- **Entitlement (maintainer decision, 2026-07-03): paid in the desktop app,
+  free in the open source server.** The tool joins `GATED_TOOLS` in
+  `src/brand-data/entitlement.ts`, so it flows through the same single choke
+  point as the other brand-data tools. In the open source distribution the
+  gate is dormant (`isEntitled()` defaults to true), so querying is free
+  there; the desktop distribution's entitlement client is what enforces the
+  paid tier. No new gating mechanism is introduced.
 
 Semantic search over the few genuinely textual fields (programme and partner
 names) is already served by the existing `search` filters; nothing in the
@@ -274,10 +281,12 @@ Dependency graph and lanes:
    `result_too_large`; small results are byte-identical to today.
 3. **PR 3: `affiliate_query_brand_data` plus the bytes-based store cap, lane
    `active-risk`, depends on PR 2.** DSL schema and evaluator in
-   `src/brand-data/`, tool registration, entitlement gate, `capTxnRows` moved
-   to a byte cap, coverage-mismatch result, tests over fixture rows including
-   an over-100k-row synthetic store. Acceptance proof: a grouped query over a
-   store too large to return inline answers correctly and within budget.
+   `src/brand-data/`, tool registration, membership in `GATED_TOOLS` (dormant
+   in the open source server, enforced by the desktop entitlement client),
+   `capTxnRows` moved to a byte cap, coverage-mismatch result, tests over
+   fixture rows including an over-100k-row synthetic store. Acceptance proof:
+   a grouped query over a store too large to return inline answers correctly
+   and within budget.
 4. **PR 4: `offset` paging at the tool layer, lane `queued-risk`, depends on
    PR 2.** Schema additions in `src/tools/generate.ts`, slice-after-cache
    wiring, tests proving page two of an identical query hits the cache.
@@ -311,10 +320,8 @@ Open questions for Rob before PR 2:
 3. Should a future `includeRaw` opt-out for `rawNetworkData` be queued as its
    own decision now, or wait for evidence that the query tool and paging are
    not enough?
-4. Does `affiliate_query_brand_data` sit behind the paid entitlement gate like
-   the other brand-data tools (recommended, since it reads the same paid
-   store), or is querying free with only export and deliverables paid?
-5. Should the persisted row-grain window stay at 30 days, or extend (for
-   example to year-to-date) now that the store cap is bytes-based? Wider
-   windows raise pull time and disk use; recommended: keep 30 days now, revisit
-   with usage evidence.
+
+Resolved by Rob, 2026-07-03: `affiliate_query_brand_data` is paid in the
+desktop app and free in the open source server (implemented as `GATED_TOOLS`
+membership with the gate dormant in open source), and the persisted row-grain
+window stays at a rolling 30 days.
