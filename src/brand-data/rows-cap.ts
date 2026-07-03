@@ -1,16 +1,20 @@
 /**
  * Brand Data Layer — 30-day rows cap with aggregate fallback (brief D3).
  *
- * `rows-30d` powers the pivot and CSV at full grain, but the persisted store
- * has a size ceiling. When the row count exceeds the cap, collapse to
+ * `rows-30d` powers the pivot, CSV, and the query tool at full grain, but the
+ * persisted store has a size ceiling. The cap is measured in serialised JSONL
+ * bytes (what the store actually writes), not row count: a row-count cap
+ * collapsed exactly the large accounts whose row grain the query tool needs
+ * (decision 2026-07-03). When the serialised size exceeds the cap, collapse to
  * per-`(day, programId, currency, statusBucket)` aggregates: the pivot gets
  * coarser but the snapshot survives, and `rowsTruncated` flags it honestly.
  *
- * See `docs/decisions/2026-06-30-brand-data-layer.md`.
+ * See `docs/decisions/2026-06-30-brand-data-layer.md` and
+ * `docs/decisions/2026-07-03-tool-result-size-budget.md`.
  */
 
 import type { BrandTxnRow, StatusBucket } from './model.js';
-import { DEFAULT_BRAND_TIMEZONE, ROWS_CAP } from './model.js';
+import { DEFAULT_BRAND_TIMEZONE, ROWS_BYTES_CAP } from './model.js';
 import { dayInZone } from './windows.js';
 
 /** One collapsed bucket when full rows exceed the cap. */
@@ -58,15 +62,30 @@ export function aggregateTxnRows(
 }
 
 /**
- * Keep full rows when within the cap; otherwise fall back to aggregates and set
- * `rowsTruncated`. The default cap is `ROWS_CAP` (~10k).
+ * The bytes the store's JSONL writer will produce for these rows: one compact
+ * JSON document plus a newline per row. Stops counting once `capBytes` is
+ * exceeded so a very large pull does not serialise every row twice.
+ */
+export function serialisedRowsBytes(rows: BrandTxnRow[], capBytes: number = Infinity): number {
+  let total = 0;
+  for (const row of rows) {
+    total += Buffer.byteLength(JSON.stringify(row), 'utf8') + 1;
+    if (total > capBytes) return total;
+  }
+  return total;
+}
+
+/**
+ * Keep full rows while their serialised JSONL size is within the byte cap;
+ * otherwise fall back to aggregates and set `rowsTruncated`. The default cap
+ * is `ROWS_BYTES_CAP` (~50 MB).
  */
 export function capTxnRows(
   rows: BrandTxnRow[],
-  cap: number = ROWS_CAP,
+  capBytes: number = ROWS_BYTES_CAP,
   timezone: string = DEFAULT_BRAND_TIMEZONE,
 ): RowsCapResult {
-  if (rows.length <= cap) {
+  if (serialisedRowsBytes(rows, capBytes) <= capBytes) {
     return { mode: 'rows', rows, rowsTruncated: false };
   }
   return { mode: 'aggregated', rows: aggregateTxnRows(rows, timezone), rowsTruncated: true };

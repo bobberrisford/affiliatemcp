@@ -189,7 +189,11 @@ describe('buildBrandSnapshot', () => {
 
     const { snapshot, rows } = await buildBrandSnapshot('acme', { asOf: ASOF, networks: ['mock-adv'] });
     expect(snapshot.byNetwork[0]?.state).toBe('ok');
-    expect(rows.rowsTruncated).toBe(true); // >10k → aggregate fallback
+    // Under the byte cap (decision 2026-07-03) 100k compact rows fit within
+    // ~50 MB, so a large account keeps full row grain for the query tool
+    // instead of collapsing at a 10k row count.
+    expect(rows.rowsTruncated).toBe(false);
+    expect(rows.rows).toHaveLength(100_000);
   });
 
   it('defaults to the brand\'s bound networks when none are specified', async () => {

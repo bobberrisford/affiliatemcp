@@ -19,8 +19,14 @@ export const BRAND_DATA_SCHEMA_VERSION = 1 as const;
 /** Default canonical brand timezone; windows are midnight-to-midnight here. */
 export const DEFAULT_BRAND_TIMEZONE = 'Europe/London';
 
-/** Default cap on stored 30-day rows before the aggregate fallback (brief D3). */
-export const ROWS_CAP = 10_000;
+/**
+ * Default cap on the stored 30-day rows file before the aggregate fallback,
+ * measured in serialised JSONL bytes rather than row count (decision
+ * 2026-07-03: a row-count cap destroyed row grain on exactly the large
+ * accounts the query tool exists for). ~50 MB holds several hundred thousand
+ * rows; beyond that the aggregate fallback remains the honest backstop.
+ */
+export const ROWS_BYTES_CAP = 50_000_000;
 
 /**
  * The brief's three-way commission split, as a *presentation projection* of the

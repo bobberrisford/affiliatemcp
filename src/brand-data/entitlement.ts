@@ -40,12 +40,15 @@ export function entitlementState(userId?: string): EntitlementState {
  * The paid brand-data tools gated by the single entitlement check. Kept as one
  * set so a tool author cannot forget to apply the gate and the decision is
  * auditable in one place. `affiliate_build_brand_snapshot` is deliberately NOT
- * here — snapshot viewing is free. The paid tools are the CSV/drill-down export
- * and the AI-action bundle (QBR / weekly report input).
+ * here — snapshot viewing is free. The paid tools are the CSV/drill-down export,
+ * the AI-action bundle (QBR / weekly report input), and the analytical query
+ * tool (decision 2026-07-03: paid in the desktop app, free in the open source
+ * server, where this gate ships dormant).
  */
 export const GATED_TOOLS: ReadonlySet<string> = new Set<string>([
   'affiliate_get_brand_rows',
   'affiliate_get_brand_action_bundle',
+  'affiliate_query_brand_data',
 ]);
 
 /** The structured result returned when a gated tool is called without entitlement. */
