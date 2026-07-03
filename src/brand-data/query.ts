@@ -127,6 +127,10 @@ export type BrandDataQueryResult =
       storeMode: 'rows' | 'aggregated' | 'empty';
       coverage: QueryCoverage | null;
       coverageMismatch?: CoverageMismatch;
+      /**
+       * Matches counted at the store's own grain: transactions on a full-grain
+       * store, collapsed buckets when `storeMode` is `aggregated`.
+       */
       matchedRowCount: number;
       groupCount: number;
       returnedCount: number;
@@ -299,8 +303,11 @@ function detectCoverageMismatch(
   if (!coverage) return undefined;
   const from = filters?.from;
   const to = filters?.to;
-  const before = from !== undefined && from < coverage.from;
-  const after = to !== undefined && to > coverage.to;
+  // Any requested bound outside the persisted window is a mismatch — including
+  // a single bound that puts the whole range beyond it (from after the window
+  // or to before it), where "0 matches" would otherwise read as a real zero.
+  const before = from !== undefined && (from < coverage.from || from > coverage.to);
+  const after = to !== undefined && (to > coverage.to || to < coverage.from);
   if (!before && !after) return undefined;
   return {
     ...(from !== undefined ? { requestedFrom: from } : {}),

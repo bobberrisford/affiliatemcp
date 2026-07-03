@@ -216,6 +216,61 @@ describe('evaluateBrandDataQuery — aggregate mode', () => {
     expect(result.coverageMismatch?.hint).toContain('30-day');
   });
 
+  it('flags a mismatch when a single bound puts the whole range beyond the window', () => {
+    // from after the window: "no transactions since August" must not read as
+    // a real zero when the store simply does not cover August.
+    const afterWindow = evaluateBrandDataQuery(
+      rows,
+      makeSnapshot('2026-06-04', '2026-07-03'),
+      query({ filters: { from: '2026-08-01' } }),
+    );
+    if (!('mode' in afterWindow)) throw new Error('expected aggregate');
+    expect(afterWindow.matchedRowCount).toBe(0);
+    expect(afterWindow.coverageMismatch?.requestedFrom).toBe('2026-08-01');
+
+    // to before the window.
+    const beforeWindow = evaluateBrandDataQuery(
+      rows,
+      makeSnapshot('2026-06-04', '2026-07-03'),
+      query({ filters: { to: '2026-01-31' } }),
+    );
+    if (!('mode' in beforeWindow)) throw new Error('expected aggregate');
+    expect(beforeWindow.matchedRowCount).toBe(0);
+    expect(beforeWindow.coverageMismatch?.requestedTo).toBe('2026-01-31');
+
+    // A range inside the window stays unflagged.
+    const inside = evaluateBrandDataQuery(
+      rows,
+      makeSnapshot('2026-06-04', '2026-07-03'),
+      query({ filters: { from: '2026-06-10', to: '2026-06-20' } }),
+    );
+    if (!('mode' in inside)) throw new Error('expected aggregate');
+    expect(inside.coverageMismatch).toBeUndefined();
+  });
+
+  it('answers a grouped query over a large store exactly and compactly', () => {
+    const big: BrandTxnRow[] = Array.from({ length: 60_000 }, (_, i) =>
+      makeRow({
+        txnId: `big-${i}`,
+        programId: `p${i % 12}`,
+        eventDate: `2026-06-${String((i % 28) + 1).padStart(2, '0')}T10:00:00Z`,
+        commission: 1,
+        saleAmount: 10,
+      }),
+    );
+    const result = evaluateBrandDataQuery(
+      big,
+      makeSnapshot(),
+      query({ groupBy: ['programId'], orderBy: { field: 'commission', direction: 'desc' } }),
+    );
+    if (!('mode' in result) || result.mode !== 'aggregate') throw new Error('expected aggregate');
+    expect(result.matchedRowCount).toBe(60_000);
+    expect(result.groupCount).toBe(12);
+    expect(result.groups.reduce((sum, g) => sum + (g.commission ?? 0), 0)).toBe(60_000);
+    // The answer over 60k rows is a few hundred bytes, not megabytes.
+    expect(JSON.stringify(result).length).toBeLessThan(5_000);
+  });
+
   it('reports an empty store honestly', () => {
     const result = evaluateBrandDataQuery([], null, query({}));
     if (!('mode' in result) || result.mode !== 'aggregate') throw new Error('expected aggregate');
