@@ -60,6 +60,20 @@ If the user asks for "this month vs last month", or hints at "is anything weird?
 
 Be precise. Do not call something an anomaly without quoting the prior and current figures.
 
+## Large accounts
+
+On accounts where a pull runs to tens of thousands of rows, keep every tool
+result within the client's size limit:
+
+- Prefer summaries: `affiliate_<slug>_get_earnings_summary` answers totals
+  and status splits without pulling transaction rows.
+- When raw rows are needed, pull month-sized windows rather than the whole
+  period in one call, and page with `offset` (using `limit` as the page size)
+  when a window is still too big.
+- If a result returns `truncated: true` or `result_too_large`, follow its
+  hint: continue from the given `nextOffset` or narrow the window or filters.
+  Never total a truncated pull as if it were complete.
+
 ## Constraints
 
 - Never invent earnings figures. If the response is missing, say "no data" — don't fill in zeros.

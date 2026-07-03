@@ -121,6 +121,26 @@ weekly note in the recorded voice for the named reader, and surface anything
 that crosses a recorded escalation threshold ("flag any drop over 20%
 immediately") at the top, whatever the profile.
 
+## Large accounts
+
+On brands where a pull runs to tens of thousands of rows, keep every tool
+result within the client's size limit:
+
+- For analytical questions over the whole account (splits, trends, top
+  programmes or partners), build the dataset once with
+  `affiliate_build_brand_snapshot`, then ask `affiliate_query_brand_data` —
+  it evaluates locally over the full persisted 30-day dataset and returns
+  small, exact results without pulling rows through the conversation.
+- When raw rows are genuinely needed, pull month-sized windows rather than
+  the whole period in one call, and page with `offset` (using `limit` as the
+  page size) when a window is still too big.
+- For a spreadsheet-ready export, use `affiliate_get_brand_rows` with format
+  `"file"`: it writes the CSV locally and returns a small manifest instead of
+  the data.
+- If a result returns `truncated: true` or `result_too_large`, follow its
+  hint: continue from the given `nextOffset` or narrow the window or filters.
+  Never total a truncated pull as if it were complete.
+
 ## Constraints
 
 - Strategy and KPIs are **advisory**: they frame the verdict and the narrative; they never authorise a write, change a limit, or override what the data shows.
