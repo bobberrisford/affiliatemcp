@@ -99,8 +99,11 @@ fits, wrapped as
 }
 ```
 
-Both shapes name the tool, the counts, and the remedy. Neither pretends the
-pull succeeded whole. Un-truncated list results keep their current bare-array
+Both shapes name the tool, the counts, and the remedy. A hint names only
+remedies that have actually shipped at that point in the workstream: until the
+`offset` input lands the truncated envelope omits `nextOffset` and points at
+narrower filters instead, and the `format: "file"` hint appears only once that
+format exists. Neither shape pretends the pull succeeded whole. Un-truncated list results keep their current bare-array
 shape byte-for-byte, so existing clients and skills see no change until a
 result actually overflows, which today fails outright anyway.
 
@@ -247,7 +250,7 @@ it.
   informatively or succeed in slices.
 - The `truncated` list envelope and `result_too_large` payload become part of
   the public tool contract and are documented alongside `NetworkErrorEnvelope`.
-- Byte-budget paging is approximate: the guard slices by serialized size, so
+- Byte-budget paging is approximate: the guard slices by serialised size, so
   page sizes vary with row weight. That is acceptable; the contract is "fits",
   not "fixed count".
 - Claude Code's token cap is smaller than the byte budget in the worst case.
@@ -280,7 +283,7 @@ Dependency graph and lanes:
    as a within-budget truncated envelope; a 5 MB non-list result comes back as
    `result_too_large`; small results are byte-identical to today.
 3. **PR 3: `affiliate_query_brand_data` plus the bytes-based store cap, lane
-   `active-risk`, depends on PR 2.** DSL schema and evaluator in
+   `queued-risk` until PR 2 merges, then `active-risk`, depends on PR 2.** DSL schema and evaluator in
    `src/brand-data/`, tool registration, membership in `GATED_TOOLS` (dormant
    in the open source server, enforced by the desktop entitlement client),
    `capTxnRows` moved to a byte cap, coverage-mismatch result, tests over
@@ -307,7 +310,8 @@ having as the raw-row fallback.
 
 Stop conditions: if measurement during PR 2 shows compact serialisation alone
 keeps realistic worst-case accounts (10k-row pulls) under budget, PR 4 may be
-descoped to a follow-up issue rather than built speculatively. If Rob rejects
+descoped to a follow-up issue rather than built speculatively; in that case
+overflow hints never mention `offset`, and PR 6 depends on PR 3 alone. If Rob rejects
 the truncated-list envelope as a contract addition, the guard falls back to
 `result_too_large` only, and the query tool plus paging become the remedies.
 
