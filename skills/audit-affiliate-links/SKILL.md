@@ -67,6 +67,18 @@ When a link is **broken** *and* the network supports link generation, offer to r
 
 Not every network exposes programmatic link generation. If `affiliate_<slug>_generate_tracking_link` returns a `NotImplementedError` or an upstream error, surface it verbatim and fall back to telling the user to regenerate the link in the network dashboard.
 
+## Large accounts
+
+On accounts with very large programme or transaction volumes, keep every tool
+result within the client's size limit:
+
+- Pull in filtered slices (by programme or month-sized window) rather than
+  everything in one call, and page with `offset` (using `limit` as the page
+  size) when a slice is still too big.
+- If a result returns `truncated: true` or `result_too_large`, follow its
+  hint: continue from the given `nextOffset` or narrow the query. Never
+  report an audit as complete over a truncated pull.
+
 ## Constraints
 
 - UK spelling throughout.
