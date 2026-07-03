@@ -359,6 +359,51 @@ const OP_SPECS: OpSpec[] = [
   },
 ];
 
+/**
+ * The operations whose tools accept response paging via `offset` (decision
+ * 2026-07-03 §4). Their results are arrays; `getEarningsSummary` and the
+ * single-record ops are excluded because there is nothing to slice.
+ */
+const LIST_OPS: ReadonlySet<AdapterOperation> = new Set<AdapterOperation>([
+  'listProgrammes',
+  'listTransactions',
+  'listClicks',
+  'listMediaPartners',
+  'getProgrammePerformance',
+]);
+
+/**
+ * Slice a list result for an `offset` request. Paging happens at the tool
+ * layer, after the adapter returns: `offset` is stripped before the adapter
+ * sees the query, and `limit` — normally forwarded upstream — is withheld
+ * from the adapter and applied locally as the page size instead, because an
+ * upstream-capped pull would leave nothing beyond page one to slice.
+ */
+function sliceListResult(result: unknown, offset: number, pageSize: number | undefined): unknown {
+  if (!Array.isArray(result)) return result;
+  return pageSize === undefined ? result.slice(offset) : result.slice(offset, offset + pageSize);
+}
+
+/**
+ * Split canonical args into what the adapter should see and the local paging
+ * instruction. Without `offset` the args pass through untouched, so the
+ * un-paged call path stays byte-identical to before.
+ */
+function splitPagingArgs(parsed: Record<string, unknown>): {
+  upstream: Record<string, unknown>;
+  offset?: number;
+  pageSize?: number;
+} {
+  const { offset, ...rest } = parsed;
+  if (typeof offset !== 'number') return { upstream: rest };
+  const { limit, ...upstream } = rest;
+  return {
+    upstream,
+    offset,
+    ...(typeof limit === 'number' ? { pageSize: limit } : {}),
+  };
+}
+
 export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
   const isAdvertiser = adapter.meta.side === 'advertiser';
   // Publisher adapters never see advertiser-only operations; advertiser
@@ -366,28 +411,41 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
   const specs = OP_SPECS.filter((s) => isAdvertiser || !s.advertiserOnly);
 
   return specs.map((spec) => {
+    const pageable = LIST_OPS.has(spec.op);
     if (!isAdvertiser) {
+      const schema = pageable ? withOffsetArg(spec.schema) : spec.schema;
       return {
         name: toolNameFor(adapter.slug, spec.op),
         description: spec.description(adapter.name),
-        inputSchema: toJsonSchema(spec.schema),
-        handle: (args: unknown) => {
+        inputSchema: toJsonSchema(schema),
+        handle: async (args: unknown) => {
           // Parse once so the cache key uses the canonical args (defaults
           // applied, unknown fields stripped) rather than whatever the caller
           // happened to pass through.
-          const parsedArgs = spec.schema.parse(args ?? {}) as unknown;
-          const ttl = pickTtl(spec.op, parsedArgs, new Date(), false);
-          if (ttl <= 0) {
-            return spec.invoke(adapter, parsedArgs);
-          }
-          const key = cacheKey({
-            network: adapter.slug,
-            operation: spec.op,
-            args: parsedArgs,
-            adapterVersion: adapter.meta.adapterVersion,
-            credentialHash: credentialHashFor(adapter.slug),
-          });
-          return withCache(key, ttl, () => spec.invoke(adapter, parsedArgs));
+          const parsedArgs = schema.parse(args ?? {}) as Record<string, unknown>;
+          const paging = splitPagingArgs(parsedArgs);
+          // TTL and cache key use the upstream args, so when the query is
+          // cacheable (cache on, publisher side, closed past window) every
+          // page of one query shares a single cache entry; otherwise each
+          // page is a fresh full pull, internally consistent per page only.
+          const ttl = pickTtl(spec.op, paging.upstream, new Date(), false);
+          const result =
+            ttl <= 0
+              ? await spec.invoke(adapter, paging.upstream)
+              : await withCache(
+                  cacheKey({
+                    network: adapter.slug,
+                    operation: spec.op,
+                    args: paging.upstream,
+                    adapterVersion: adapter.meta.adapterVersion,
+                    credentialHash: credentialHashFor(adapter.slug),
+                  }),
+                  ttl,
+                  () => spec.invoke(adapter, paging.upstream),
+                );
+          return paging.offset === undefined
+            ? result
+            : sliceListResult(result, paging.offset, paging.pageSize);
         },
       };
     }
@@ -396,7 +454,9 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
     // `networkBrandId` via brands.json before the adapter is called. The
     // resolved ctx is threaded into the adapter invocation so each method
     // knows which brand under the multi-brand credential set to address.
-    const advertiserSchema = withBrandArg(spec.schema);
+    const advertiserSchema = pageable
+      ? withOffsetArg(withBrandArg(spec.schema))
+      : withBrandArg(spec.schema);
     return {
       name: toolNameFor(adapter.slug, spec.op),
       description: spec.description(adapter.name),
@@ -414,20 +474,27 @@ export function generateToolsFor(adapter: NetworkAdapter): ToolDefinition[] {
         const ctx = buildAdapterCallContext(parsed.brand, adapter.slug);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { brand: _brand, ...rest } = parsed;
-        const ttl = pickTtl(spec.op, rest, new Date(), true);
-        if (ttl <= 0) {
-          return spec.invoke(adapter, rest, ctx);
-        }
-        const key = cacheKey({
-          network: adapter.slug,
-          operation: spec.op,
-          // Include the resolved networkBrandId so two brands sharing the
-          // same credential set get separate cache entries.
-          args: { ...rest, __networkBrandId: ctx.networkBrandId },
-          adapterVersion: adapter.meta.adapterVersion,
-          credentialHash: credentialHashFor(adapter.slug),
-        });
-        return withCache(key, ttl, () => spec.invoke(adapter, rest, ctx));
+        const paging = splitPagingArgs(rest);
+        const ttl = pickTtl(spec.op, paging.upstream, new Date(), true);
+        const result =
+          ttl <= 0
+            ? await spec.invoke(adapter, paging.upstream, ctx)
+            : await withCache(
+                cacheKey({
+                  network: adapter.slug,
+                  operation: spec.op,
+                  // Include the resolved networkBrandId so two brands sharing the
+                  // same credential set get separate cache entries.
+                  args: { ...paging.upstream, __networkBrandId: ctx.networkBrandId },
+                  adapterVersion: adapter.meta.adapterVersion,
+                  credentialHash: credentialHashFor(adapter.slug),
+                }),
+                ttl,
+                () => spec.invoke(adapter, paging.upstream, ctx),
+              );
+        return paging.offset === undefined
+          ? result
+          : sliceListResult(result, paging.offset, paging.pageSize);
       },
     };
   });
@@ -439,6 +506,18 @@ function withBrandArg(schema: z.ZodTypeAny): z.ZodTypeAny {
     return schema.extend({ brand: z.string().min(1) });
   }
   return z.object({ brand: z.string().min(1) }).strict();
+}
+
+/**
+ * Attach the optional `offset: number` paging field (decision 2026-07-03 §4).
+ * `offset` slices the result at the tool layer; it is never forwarded to the
+ * adapter.
+ */
+function withOffsetArg(schema: z.ZodTypeAny): z.ZodTypeAny {
+  if (schema instanceof z.ZodObject) {
+    return schema.extend({ offset: z.number().int().nonnegative().optional() });
+  }
+  return z.object({ offset: z.number().int().nonnegative().optional() }).strict();
 }
 
 export function generateMetaTools(): ToolDefinition[] {

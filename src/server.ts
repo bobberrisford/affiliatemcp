@@ -150,8 +150,13 @@ export async function startServer(): Promise<void> {
       // Size guard (decision 2026-07-03): keep every response under the byte
       // budget Claude clients accept. Small results stay pretty-printed and
       // byte-identical to the previous behaviour; oversized ones degrade
-      // honestly rather than failing opaquely client-side.
-      const guarded = guardToolResult(name, result);
+      // honestly rather than failing opaquely client-side. The request's own
+      // offset (list tools accept one) seeds the envelope's nextOffset.
+      const requestOffset =
+        typeof (args as Record<string, unknown> | undefined)?.['offset'] === 'number'
+          ? ((args as Record<string, unknown>)['offset'] as number)
+          : 0;
+      const guarded = guardToolResult(name, result, undefined, requestOffset);
       if (guarded.outcome !== 'ok') {
         log.warn({ tool: name, outcome: guarded.outcome }, 'tool result exceeded size budget');
       }

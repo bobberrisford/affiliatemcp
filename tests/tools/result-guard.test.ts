@@ -85,6 +85,7 @@ describe('guardToolResult', () => {
       truncated: boolean;
       returnedCount: number;
       totalCount: number;
+      nextOffset: number;
       hint: string;
     };
     expect(envelope.truncated).toBe(true);
@@ -95,9 +96,18 @@ describe('guardToolResult', () => {
     // The prefix is the original data, untransformed.
     expect(envelope.items[0]).toEqual(rows[0]);
     expect(envelope.items[envelope.returnedCount - 1]).toEqual(rows[envelope.returnedCount - 1]);
-    expect(envelope.hint).toContain('limit');
-    // Hint phasing (decision record §3): no offset remedy until it ships.
-    expect(guarded.text).not.toContain('nextOffset');
+    // Hint phasing (decision record §3): offset shipped, so the envelope now
+    // carries the continuation point and the hint names it.
+    expect(envelope.nextOffset).toBe(envelope.returnedCount);
+    expect(envelope.hint).toContain('offset');
+  });
+
+  it('continues nextOffset from the request offset', () => {
+    const rows = makeRows(50_000, 200);
+    const guarded = guardToolResult('affiliate_awin_list_transactions', rows, undefined, 300);
+    expect(guarded.outcome).toBe('truncated_list');
+    const envelope = JSON.parse(guarded.text) as { returnedCount: number; nextOffset: number };
+    expect(envelope.nextOffset).toBe(300 + envelope.returnedCount);
   });
 
   it('returns the largest prefix that fits', () => {
@@ -113,6 +123,7 @@ describe('guardToolResult', () => {
       truncated: true,
       returnedCount: envelope.returnedCount + 1,
       totalCount: rows.length,
+      nextOffset: envelope.returnedCount + 1,
       hint: (JSON.parse(guarded.text) as { hint: string }).hint,
     });
     expect(Buffer.byteLength(guarded.text, 'utf8')).toBeLessThanOrEqual(2000);
