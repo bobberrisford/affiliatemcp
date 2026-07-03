@@ -92,7 +92,22 @@ describe('affiliate_get_brand_rows', () => {
     expect(written).toContain('t1');
   });
 
-  it('overwrites the previous export atomically on re-run', async () => {
+  it('exports an empty file with an honest manifest when the store is empty', async () => {
+    const result = (await tool().handle({ brand: 'acme', format: 'file' })) as {
+      format: string;
+      path: string;
+      bytes: number;
+      rowCount: number;
+      preview: unknown[];
+    };
+    expect(result.format).toBe('file');
+    expect(result.rowCount).toBe(0);
+    expect(result.bytes).toBe(0);
+    expect(result.preview).toEqual([]);
+    expect(readFileSync(result.path, 'utf8')).toBe('');
+  });
+
+  it('overwrites the previous export on re-run', async () => {
     saveRows('acme', { mode: 'rows', rowsTruncated: false, rows: [row] });
     const first = (await tool().handle({ brand: 'acme', format: 'file' })) as { path: string };
     saveRows('acme', {
