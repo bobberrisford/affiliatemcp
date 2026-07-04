@@ -12,7 +12,7 @@
  * --- What is implemented vs. stubbed ----------------------------------------
  *
  * Implemented against the documented public endpoints:
- *   - listProgrammes      → GET /v1/programs/
+ *   - listProgrammes      → GET /v1/programs/ (paged to completion; see below)
  *   - getProgramme        → GET /v1/programs/?mid=<id> (filtered, single result)
  *   - listTransactions    → GET /v1/reports/transaction_reports
  *   - getEarningsSummary  → derived from listTransactions (auditable)
@@ -26,6 +26,13 @@
  *
  * Admin scaffolds:
  *   - listPublishers, listPublisherSectors → v0.2 (NotImplementedError).
+ *
+ * Pagination: `/v1/programs/` takes 1-based `page` + `page_size` parameters.
+ * When the caller passes no `limit`, `listProgrammes` pages to completion,
+ * stepping `page` until an empty or short page, capped at MAX_PAGES with a
+ * stderr warning so a truncated pull is never silent. A present `limit` stops
+ * the loop as soon as enough raw rows are fetched (the single request the
+ * pre-pagination adapter sent, for limits within one page).
  *
  * --- Cardinal rules (same as every adapter) ---------------------------------
  *
@@ -114,6 +121,7 @@ const META: NetworkMeta = {
     'Brand-side operations (listPublishers, listPublisherSectors) are scaffolded for v0.2 and throw NotImplementedError.',
     'API access requires Publisher Solutions approval; the adapter cannot be exercised end-to-end without that approval.',
     'Token endpoint URL varies across tenants; the adapter defaults to api.linksynergy.com/token and accepts a RAKUTEN_TOKEN_URL override.',
+    'listProgrammes pagination is 1-based via page + page_size; when no limit is passed it pages to completion (stopping on an empty or short page), capped at MAX_PAGES with a warning rather than a silent truncation.',
   ],
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 12,
@@ -122,6 +130,15 @@ const META: NetworkMeta = {
   side: 'publisher',
   credentialScope: 'single-brand',
 };
+
+/**
+ * Backstop for the pagination loop in `listProgrammes`. 50 pages at the
+ * default `page_size` of 100 is far beyond any realistic publisher's approved
+ * programme list; hitting it logs a warning (stderr) so a truncated pull is
+ * never silent (principle 4.1). Same pattern as the Tolt and Tapfiliate
+ * adapters.
+ */
+const MAX_PAGES = 50;
 
 // ---------------------------------------------------------------------------
 // Resilience profile
@@ -286,6 +303,62 @@ function toNumber(v: number | string | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+/**
+ * Unwrap Rakuten's programme list envelope. Newer tenants return
+ * `{ programs: [...] }`; older ones have been observed returning a bare array.
+ */
+function extractProgrammeList(
+  raw: { programs?: RakutenProgrammeRaw[] } | RakutenProgrammeRaw[],
+): RakutenProgrammeRaw[] {
+  if (Array.isArray(raw)) return raw;
+  return Array.isArray(raw.programs) ? raw.programs : [];
+}
+
+/**
+ * Fetch pages of `/v1/programs/` until the pull is complete.
+ *
+ * Rakuten's programs endpoint takes 1-based `page` + `page_size` parameters.
+ * The response body carries no record counter we can rely on across tenants,
+ * so completion is detected from page shape alone. The loop stops when:
+ *   - the endpoint returns an empty page (nothing more upstream);
+ *   - the caller's `limit` is satisfied by the raw rows fetched so far (the
+ *     backward-compatible short-circuit — a present limit never fetches more
+ *     pages than it needs);
+ *   - the page comes back short (fewer rows than `page_size`);
+ *   - the MAX_PAGES backstop trips — logged so truncation is never silent.
+ */
+async function fetchAllProgrammePages(input: {
+  pageSize: number;
+  limit?: number;
+  status?: string;
+}): Promise<RakutenProgrammeRaw[]> {
+  const out: RakutenProgrammeRaw[] = [];
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const raw = await rakutenRequest<{ programs?: RakutenProgrammeRaw[] } | RakutenProgrammeRaw[]>({
+      operation: 'listProgrammes',
+      path: '/v1/programs/',
+      query: {
+        page,
+        page_size: input.pageSize,
+        ...(input.status ? { status: input.status } : {}),
+      },
+      resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
+    });
+
+    const rows = extractProgrammeList(raw);
+    out.push(...rows);
+
+    if (rows.length === 0) return out;
+    if (typeof input.limit === 'number' && out.length >= input.limit) return out;
+    if (rows.length < input.pageSize) return out;
+  }
+  log.warn(
+    { operation: 'listProgrammes', cap: MAX_PAGES, fetched: out.length },
+    'rakuten pagination hit MAX_PAGES cap; result may be truncated',
+  );
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // Transformers
 // ---------------------------------------------------------------------------
@@ -378,9 +451,12 @@ export class RakutenAdapter implements NetworkAdapter {
   /**
    * List Rakuten programmes the publisher has access to.
    *
-   * Endpoint: `GET /v1/programs/?page_size=...`. We filter by application
-   * status server-side via `status=approved|pending|rejected` where Rakuten
-   * supports it; otherwise we filter client-side after the fetch.
+   * Endpoint: `GET /v1/programs/?page=...&page_size=...`. With no
+   * `query.limit` we page to completion (see `fetchAllProgrammePages`); with a
+   * limit we stop as soon as enough raw rows are fetched. We filter by
+   * application status server-side via `status=approved|pending|rejected`
+   * where Rakuten supports it; otherwise we filter client-side after the
+   * fetch.
    *
    * Why client-side filtering for `search` and `categories`: Rakuten's
    * /programs endpoint doesn't accept a free-text search parameter; category
@@ -393,21 +469,11 @@ export class RakutenAdapter implements NetworkAdapter {
 
     const pageSize = Math.min(query?.limit ?? 100, 200);
 
-    const raw = await rakutenRequest<{ programs?: RakutenProgrammeRaw[] } | RakutenProgrammeRaw[]>({
-      operation: 'listProgrammes',
-      path: '/v1/programs/',
-      query: {
-        page_size: pageSize,
-        ...(rakutenStatus ? { status: rakutenStatus } : {}),
-      },
-      resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
+    const list = await fetchAllProgrammePages({
+      pageSize,
+      ...(typeof query?.limit === 'number' ? { limit: query.limit } : {}),
+      ...(rakutenStatus ? { status: rakutenStatus } : {}),
     });
-
-    const list = Array.isArray(raw)
-      ? raw
-      : Array.isArray((raw as { programs?: RakutenProgrammeRaw[] }).programs)
-        ? (raw as { programs: RakutenProgrammeRaw[] }).programs
-        : [];
 
     let programmes = list.map(toProgramme);
 
@@ -922,7 +988,6 @@ export const _internals = {
   toProgramme,
   formatRakutenDate,
   pickRakutenApplicationStatus,
+  log,
+  MAX_PAGES,
 };
-
-// Silence the unused-import warning for the logger when noUnusedLocals is on.
-void log;

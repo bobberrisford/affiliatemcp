@@ -33,7 +33,6 @@ export const PAGING_EXCLUSIONS: ReadonlyMap<string, ReadonlySet<AdapterOperation
   ReadonlySet<AdapterOperation>
 >([
   // Confirmed bounded defaults (adapter fetches one page, never continues).
-  ['rakuten', ops('listProgrammes')], // page_size default, single request
   ['cake', ops('listProgrammes')], // row_limit default, start_at_row 1, single fetch
   ['everflow', ops('listProgrammes', 'listTransactions')], // page 1 only; /conversions posted with no paging fields
   ['scaleo', ops('listProgrammes')], // perPage default, single page:1
