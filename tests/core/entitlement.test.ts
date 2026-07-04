@@ -13,15 +13,18 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import {
-  ENTITLEMENT_PUBLIC_KEY_SPKI_B64,
   entitlementStatus,
   refreshEntitlement,
   signOutEntitlement,
   verifyEntitlementToken,
 } from '../../src/core/entitlement.js';
 
-// The DEV private key matching the module's embedded DEV public key.
+// A DEV keypair used purely as a TEST FIXTURE (not the shipped production key,
+// whose private half never lives in the repo). Tests sign with the private half
+// and verify against the public half via the public-key seam on
+// entitlementStatus / verifyEntitlementToken.
 const DEV_PRIV_PKCS8_B64 = 'MC4CAQAwBQYDK2VwBCIEIFZT6ODyaYZmnDsjl/m2qO3kAJ+wamVO+9ftpqTvQbXa';
+const DEV_PUB_SPKI_B64 = 'MCowBQYDK2VwAyEAlMzj1LfEHTkHYFzDzKz/MlAFaVsIF5OkvY5WHQqwizc=';
 
 function b64ToBytes(b64: string): Uint8Array {
   const bin = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
@@ -67,9 +70,9 @@ function writeStore(obj: unknown): void {
 }
 
 describe('verifyEntitlementToken', () => {
-  it('verifies a token signed by the matching DEV key against the embedded public key', async () => {
+  it('verifies a token against its matching public key', async () => {
     const token = await signToken(2_000_000_000);
-    const payload = await verifyEntitlementToken(token, ENTITLEMENT_PUBLIC_KEY_SPKI_B64);
+    const payload = await verifyEntitlementToken(token, DEV_PUB_SPKI_B64);
     expect(payload).not.toBeNull();
     expect(payload!.akey).toBe('amcp_acc_test');
   });
@@ -90,7 +93,7 @@ describe('entitlementStatus', () => {
   it('is "active" for a valid, unexpired cached token', async () => {
     const exp = 2_000_000_000;
     writeStore({ accountKey: 'amcp_acc_test', token: await signToken(exp), exp });
-    const status = await entitlementStatus(exp - 100);
+    const status = await entitlementStatus(exp - 100, DEV_PUB_SPKI_B64);
     expect(status.entitled).toBe(true);
     expect(status.state).toBe('active');
   });
@@ -98,7 +101,7 @@ describe('entitlementStatus', () => {
   it('is "expired" once the cached token has lapsed', async () => {
     const exp = 1_000_000_000;
     writeStore({ accountKey: 'amcp_acc_test', token: await signToken(exp), exp });
-    const status = await entitlementStatus(exp + 100);
+    const status = await entitlementStatus(exp + 100, DEV_PUB_SPKI_B64);
     expect(status.entitled).toBe(false);
     expect(status.state).toBe('expired');
   });

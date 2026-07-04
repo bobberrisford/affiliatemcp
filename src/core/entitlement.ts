@@ -30,13 +30,13 @@ const ENTITLEMENT_PRODUCT = 'desktop-premium';
 
 /**
  * Ed25519 PUBLIC key (SPKI DER, base64) that entitlement tokens are verified
- * against. This is a DEV key. Before first public release, regenerate the
- * production keypair (issuer `npm run gen-keypair`), set the PRIVATE half as the
- * issuer secret `LICENCE_SIGNING_KEY`, and swap this constant for the PUBLIC
- * half. Rotating after ship invalidates every issued entitlement.
+ * against. This is the PRODUCTION key; its matching PRIVATE half is the issuer
+ * Worker secret `LICENCE_SIGNING_KEY` and lives only in Cloudflare's secret
+ * store + the maintainer's password manager. Rotating this after ship
+ * invalidates every issued entitlement, so treat it as append-only.
  */
 export const ENTITLEMENT_PUBLIC_KEY_SPKI_B64 =
-  'MCowBQYDK2VwAyEAlMzj1LfEHTkHYFzDzKz/MlAFaVsIF5OkvY5WHQqwizc=';
+  'MCowBQYDK2VwAyEAu7CYwNDWdNPTEJpmhc9VVX61y105B9l1AP3oxF5l4cU=';
 
 /** Default issuer origin; overridable via AFFILIATE_MCP_ISSUER_URL. */
 const DEFAULT_ISSUER_URL = 'https://affiliate-mcp-issuer.robertberrisford.workers.dev';
@@ -166,12 +166,20 @@ export interface EntitlementStatus {
  * `active` when a validly-signed, unexpired token is cached. `expired` when the
  * cached token has lapsed (offline too long, or subscription ended). `inactive`
  * when there is an account key but no usable token.
+ *
+ * `publicKeyB64` defaults to the embedded production key and exists only as a
+ * test seam (so tests can verify against an ephemeral keypair without the prod
+ * private key). Production callers never pass it — the trust anchor is the
+ * hardcoded constant, never anything caller- or env-supplied.
  */
-export async function entitlementStatus(now: number = Math.floor(Date.now() / 1000)): Promise<EntitlementStatus> {
+export async function entitlementStatus(
+  now: number = Math.floor(Date.now() / 1000),
+  publicKeyB64: string = ENTITLEMENT_PUBLIC_KEY_SPKI_B64,
+): Promise<EntitlementStatus> {
   const stored = readStored();
   if (!stored.accountKey) return { entitled: false, state: 'none', hasAccount: false };
   if (!stored.token) return { entitled: false, state: 'inactive', hasAccount: true };
-  const payload = await verifyEntitlementToken(stored.token);
+  const payload = await verifyEntitlementToken(stored.token, publicKeyB64);
   if (!payload) return { entitled: false, state: 'inactive', hasAccount: true };
   if (now < payload.exp) return { entitled: true, state: 'active', exp: payload.exp, hasAccount: true };
   return { entitled: false, state: 'expired', exp: payload.exp, hasAccount: true };
