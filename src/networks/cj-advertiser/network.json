@@ -13,10 +13,10 @@
     "`getProgrammePerformance` is computed client-side from `commissionDetails`. Clicks are NOT available from `commissionDetails` and are reported as 0; document the gap with `// TODO(verify)`.",
     "Status mapping for performance rows is based on CJ `actionStatus`: EXTENDED / LOCKED → pending, CLOSED → approved, CORRECTED / REVERSED → reversed. `CLOSED` semantics `// TODO(verify)`.",
     "All amounts use CJ's USD-normalised fields (`saleAmountUsd`, `commissionAmountUsd`); reports are emitted with `currency: USD`.",
-    "Pagination on `commissionDetails` is capped at ~10,000 rows per page via `maxRows`; wider windows should be split by the caller."
+    "`commissionDetails` is paginated via the `sinceCommissionId` cursor: when no `limit` is supplied the adapter follows `payloadComplete` to completion, capped at MAX_PAGES (10 pages of up to 10,000 rows) with a stderr warning rather than a silent truncation."
   ],
   "claim_status": "experimental",
-  "adapter_version": "0.1.0",
+  "adapter_version": "0.2.0",
   "last_verified": "2026-05-23",
   "supports_brand_ops": true,
   "side": "advertiser",

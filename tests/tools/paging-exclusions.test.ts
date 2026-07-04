@@ -73,4 +73,10 @@ describe('offset-paging exclusions', () => {
     expect(supportsOffsetPaging('partnerize-advertiser', 'listMediaPartners')).toBe(true);
     expect(supportsOffsetPaging('partnerize-advertiser', 'getProgrammePerformance')).toBe(true);
   });
+
+  it('cj-advertiser exclusion is lifted (#316: sinceCommissionId cursor loop to completion)', () => {
+    expect(supportsOffsetPaging('cj-advertiser', 'listTransactions')).toBe(true);
+    expect(supportsOffsetPaging('cj-advertiser', 'listMediaPartners')).toBe(true);
+    expect(supportsOffsetPaging('cj-advertiser', 'getProgrammePerformance')).toBe(true);
+  });
 });

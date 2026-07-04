@@ -47,10 +47,9 @@ export const PAGING_EXCLUSIONS: ReadonlyMap<string, ReadonlySet<AdapterOperation
   // impact-advertiser was removed 2026-07-04 (#316): its four paged ops now
   // paginate to completion on absent `limit` via @nextpageuri/@page with a
   // MAX_PAGES backstop; see src/networks/impact-advertiser/adapter.ts.
-  [
-    'cj-advertiser',
-    ops('listTransactions', 'listMediaPartners', 'getProgrammePerformance'),
-  ], // single commissionDetails query capped at maxRows default 1000, no continuation
+  // cj-advertiser removed 2026-07-04 (#316): the adapter now follows the
+  // commissionDetails `sinceCommissionId` cursor to completion on absent
+  // `limit`, MAX_PAGES-capped with a stderr warning.
   // Unverified upstream defaults (no paging param sent, upstream documented as
   // paginated, server-side default page size not evidenced in-repo).
   ['skimlinks', ops('listTransactions')],
