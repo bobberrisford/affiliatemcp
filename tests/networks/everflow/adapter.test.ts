@@ -364,6 +364,102 @@ describe('Everflow.listProgrammes', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Pagination (issue #316 — full pull on absent limit, MAX_PAGES backstop)
+// ---------------------------------------------------------------------------
+
+describe('Everflow pagination', () => {
+  it('listProgrammes pulls every page when limit is absent', async () => {
+    const spy = mockFetchQueue([
+      fakeResponse(loadFixture('alloffers-page1.json')),
+      fakeResponse(loadFixture('alloffers-page2.json')),
+    ]);
+    const programmes = await everflowAdapter.listProgrammes();
+    expect(programmes.length).toBe(4);
+    expect(spy.mock.calls.length).toBe(2);
+    // The second request asks for page 2 with the standard page size.
+    const secondUrl = String(spy.mock.calls[1]?.[0]);
+    expect(secondUrl).toContain('page=2');
+    expect(secondUrl).toContain(`page_size=${_internals.PAGE_SIZE}`);
+    // Records from both pages survive the pull.
+    expect(programmes.map((p) => p.id)).toEqual(['1001', '1002', '1003', '1004']);
+  });
+
+  it('listTransactions pulls every page when limit is absent', async () => {
+    const spy = mockFetchQueue([
+      fakeResponse(loadFixture('conversions-page1.json')),
+      fakeResponse(loadFixture('conversions-page2.json')),
+    ]);
+    const txns = await everflowAdapter.listTransactions({
+      from: '2026-01-01T00:00:00Z',
+      to: '2026-05-28T00:00:00Z',
+    });
+    expect(txns.length).toBe(3);
+    expect(spy.mock.calls.length).toBe(2);
+    const secondUrl = String(spy.mock.calls[1]?.[0]);
+    expect(secondUrl).toContain('page=2');
+    // The page-2 rejected conversion is present with its reason intact.
+    const reversed = txns.filter((t) => t.status === 'reversed');
+    expect(reversed.length).toBe(1);
+    expect(reversed[0]?.reversalReason).toContain('Duplicate conversion');
+  });
+
+  it('listProgrammes with limit present stops after the first satisfying page', async () => {
+    const spy = mockFetchQueue([fakeResponse(loadFixture('alloffers-page1.json'))]);
+    const programmes = await everflowAdapter.listProgrammes({ limit: 2 });
+    expect(programmes.length).toBe(2);
+    // One call only — page 2 exists (total_count 4) but the limit is satisfied.
+    expect(spy.mock.calls.length).toBe(1);
+    expect(String(spy.mock.calls[0]?.[0])).toContain('page_size=2');
+  });
+
+  it('listTransactions with limit present stops after the first satisfying page', async () => {
+    const spy = mockFetchQueue([fakeResponse(loadFixture('conversions-page1.json'))]);
+    const txns = await everflowAdapter.listTransactions({
+      from: '2026-01-01T00:00:00Z',
+      to: '2026-05-28T00:00:00Z',
+      limit: 2,
+    });
+    expect(txns.length).toBe(2);
+    expect(spy.mock.calls.length).toBe(1);
+    expect(String(spy.mock.calls[0]?.[0])).toContain('page_size=2');
+  });
+
+  it('stops at the MAX_PAGES backstop and logs a warning instead of looping forever', async () => {
+    // A server that always advertises more rows than it has served: every page
+    // is full and total_count never gets any closer.
+    const offers = Array.from({ length: _internals.PAGE_SIZE }, (_, i) => ({
+      network_offer_id: i + 1,
+      name: `Offer ${i + 1}`,
+      offer_status: 'active',
+    }));
+    const pages = Array.from({ length: _internals.MAX_PAGES + 5 }, (_, i) =>
+      fakeResponse({ offers, page: i + 1, page_size: _internals.PAGE_SIZE, total_count: 999999 }),
+    );
+    const spy = mockFetchQueue(pages);
+    const warnSpy = vi.spyOn(_internals.log, 'warn').mockImplementation(() => undefined);
+
+    const programmes = await everflowAdapter.listProgrammes();
+
+    expect(spy.mock.calls.length).toBe(_internals.MAX_PAGES);
+    expect(programmes.length).toBe(_internals.MAX_PAGES * _internals.PAGE_SIZE);
+    expect(warnSpy).toHaveBeenCalled();
+  });
+
+  it('fetchAllPages stops on a short page when total_count is absent', async () => {
+    const fetchPage = vi.fn(async (page: number) => ({ items: page === 1 ? [1, 2] : [3] }));
+    const out = await _internals.fetchAllPages({
+      operation: 'test',
+      pageSize: 2,
+      fetchPage,
+      extract: (envelope) => envelope.items,
+      totalCount: () => undefined,
+    });
+    expect(out).toEqual([1, 2, 3]);
+    expect(fetchPage).toHaveBeenCalledTimes(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // getProgramme
 // ---------------------------------------------------------------------------
 
