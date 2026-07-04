@@ -1,0 +1,28 @@
+{
+  "clicks": {
+    "click": [
+      {
+        "click_id": "click_pg1_001",
+        "cookie_id": "cookie_pg1_aaa",
+        "campaign_id": "10l176",
+        "publisher_id": "1007802",
+        "set_time": "2026-04-05T10:00:00Z",
+        "last_used": "2026-04-05T10:00:00Z",
+        "referer": "https://www.myblog-example.com/acme-review",
+        "publisher_name": "Test Publisher",
+        "status": "active"
+      },
+      {
+        "click_id": "click_pg1_002",
+        "cookie_id": "cookie_pg1_bbb",
+        "campaign_id": "10l177",
+        "publisher_id": "1007802",
+        "set_time": "2026-04-05T12:15:00Z",
+        "last_used": "2026-04-05T12:15:00Z",
+        "referer": "https://www.myblog-example.com/gadget-roundup",
+        "publisher_name": "Test Publisher",
+        "status": "active"
+      }
+    ]
+  }
+}

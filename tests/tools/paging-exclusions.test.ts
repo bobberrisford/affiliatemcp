@@ -48,10 +48,13 @@ describe('offset-paging exclusions', () => {
     expect(supportsOffsetPaging('impact-advertiser', 'listTransactions')).toBe(true);
     expect(supportsOffsetPaging('impact-advertiser', 'listMediaPartners')).toBe(true);
     expect(supportsOffsetPaging('skimlinks', 'listTransactions')).toBe(false);
-    // Found by the #314 independent review: the publisher side of the
-    // partnerize family and flexoffers' page-paginated /allsales.
-    expect(supportsOffsetPaging('partnerize', 'listTransactions')).toBe(false);
+    // Found by the #314 independent review: flexoffers' page-paginated /allsales.
     expect(supportsOffsetPaging('flexoffers', 'listTransactions')).toBe(false);
+    // Exclusion lifted (#316): the publisher-side partnerize adapter now
+    // follows cursor_id continuation to completion on absent limit.
+    expect(supportsOffsetPaging('partnerize', 'listTransactions')).toBe(true);
+    expect(supportsOffsetPaging('partnerize', 'listProgrammes')).toBe(true);
+    expect(supportsOffsetPaging('partnerize', 'listClicks')).toBe(true);
   });
 
   it('lifted exclusions paginate to completion and accept offset again (#316)', () => {

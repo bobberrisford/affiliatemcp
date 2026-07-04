@@ -1,0 +1,25 @@
+{
+  "conversions": {
+    "conversion": [
+      {
+        "conversion_id": "conv_pg2_001",
+        "campaign_id": "10l176",
+        "publisher_id": "1007802",
+        "conversion_date": "2026-02-03",
+        "conversion_date_time": "2026-02-03T15:20:00Z",
+        "click_date": "2026-02-03",
+        "click_date_time": "2026-02-03T15:00:00Z",
+        "currency": "GBP",
+        "conversion_reference": "ORDER-PG2-001",
+        "campaign_title": "Acme Online Shop",
+        "publisher_name": "Test Publisher",
+        "conversion_status": "approved",
+        "value": "150.00",
+        "commission": "15.00",
+        "publisher_commission": "13.50",
+        "camref": "1101l3ofu",
+        "country": "GB"
+      }
+    ]
+  }
+}
