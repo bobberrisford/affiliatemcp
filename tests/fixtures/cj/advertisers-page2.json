@@ -1,0 +1,26 @@
+{
+  "data": {
+    "advertisers": {
+      "totalCount": 5,
+      "resultList": [
+        {
+          "advertiserId": "6060",
+          "advertiserName": "Lagoon Coffee Roasters",
+          "status": "joined",
+          "relationshipStatus": "joined",
+          "primaryCategory": { "name": "Food & Drink" },
+          "currency": "USD",
+          "programUrl": "https://www.lagoon-coffee.example.com"
+        },
+        {
+          "advertiserId": "5050",
+          "advertiserName": "Harbour Cycles",
+          "status": "joined",
+          "relationshipStatus": "joined",
+          "primaryCategory": { "name": "Sport" },
+          "currency": "USD"
+        }
+      ]
+    }
+  }
+}

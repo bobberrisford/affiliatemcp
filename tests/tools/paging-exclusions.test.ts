@@ -39,13 +39,21 @@ describe('offset-paging exclusions', () => {
   });
 
   it('audited bounded-default pairs are excluded', () => {
-    expect(supportsOffsetPaging('cj', 'listTransactions')).toBe(false);
-    expect(supportsOffsetPaging('cj', 'listClicks')).toBe(true); // only audited ops excluded
+    expect(supportsOffsetPaging('everflow', 'listTransactions')).toBe(false);
+    expect(supportsOffsetPaging('everflow', 'listClicks')).toBe(true); // only audited ops excluded
     expect(supportsOffsetPaging('impact-advertiser', 'getProgrammePerformance')).toBe(false);
     expect(supportsOffsetPaging('skimlinks', 'listTransactions')).toBe(false);
     // Found by the #314 independent review: the publisher side of the
     // partnerize family and flexoffers' page-paginated /allsales.
     expect(supportsOffsetPaging('partnerize', 'listTransactions')).toBe(false);
     expect(supportsOffsetPaging('flexoffers', 'listTransactions')).toBe(false);
+  });
+
+  it('lifted exclusions paginate to completion and accept offset again (#316)', () => {
+    // cj now follows page/totalCount (advertisers) and sinceCommissionId/
+    // payloadComplete (publisherCommissions) to completion; see
+    // tests/networks/cj/pagination.test.ts for the adapter-level proof.
+    expect(supportsOffsetPaging('cj', 'listProgrammes')).toBe(true);
+    expect(supportsOffsetPaging('cj', 'listTransactions')).toBe(true);
   });
 });

@@ -8,7 +8,8 @@
   "setup_requires_approval": false,
   "known_limitations": [
     "Click-level data is not exposed via CJ's modern GraphQL surface; listClicks throws NotImplementedError unless the legacy REST report endpoint is reachable for the account.",
-    "Brand-side operations (listPublishers, listPublisherSectors) are scaffolded for v0.2."
+    "Brand-side operations (listPublishers, listPublisherSectors) are scaffolded for v0.2.",
+    "listProgrammes and listTransactions paginate to completion when no limit is given (page/totalCount on the advertiser-lookup query, sinceCommissionId/payloadComplete on publisherCommissions), capped at 50 pages with a logged warning rather than a silent truncation."
   ],
   "claim_status": "partial",
   "adapter_version": "0.1.0",

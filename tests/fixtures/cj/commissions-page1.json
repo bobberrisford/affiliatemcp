@@ -1,0 +1,60 @@
+{
+  "data": {
+    "publisherCommissions": {
+      "count": 3,
+      "payloadComplete": false,
+      "records": [
+        {
+          "commissionId": "C-2001",
+          "actionId": "A-2001",
+          "advertiserId": "7777",
+          "advertiserName": "Atolls Bookshop",
+          "saleAmountUsd": "40.00",
+          "saleAmountPubCurrency": "40.00",
+          "pubCommissionAmountUsd": "3.20",
+          "pubCommissionAmountPubCurrency": "3.20",
+          "currency": "USD",
+          "pubCurrency": "USD",
+          "actionStatus": "LOCKED",
+          "eventDate": "2026-01-10T10:00:00Z",
+          "postingDate": "2026-01-10T10:30:00Z",
+          "lockingDate": "2026-01-25T00:00:00Z",
+          "paidToPublisher": false
+        },
+        {
+          "commissionId": "C-2002",
+          "actionId": "A-2002",
+          "advertiserId": "7777",
+          "advertiserName": "Atolls Bookshop",
+          "saleAmountUsd": "25.00",
+          "saleAmountPubCurrency": "25.00",
+          "pubCommissionAmountUsd": "2.00",
+          "pubCommissionAmountPubCurrency": "2.00",
+          "currency": "USD",
+          "pubCurrency": "USD",
+          "actionStatus": "NEW",
+          "eventDate": "2026-02-01T09:00:00Z",
+          "postingDate": "2026-02-01T09:15:00Z",
+          "paidToPublisher": false
+        },
+        {
+          "commissionId": "C-2003",
+          "actionId": "A-2003",
+          "advertiserId": "8888",
+          "advertiserName": "Reef Outfitters",
+          "saleAmountUsd": "60.00",
+          "saleAmountPubCurrency": "60.00",
+          "pubCommissionAmountUsd": "4.80",
+          "pubCommissionAmountPubCurrency": "4.80",
+          "currency": "USD",
+          "pubCurrency": "USD",
+          "actionStatus": "LOCKED",
+          "eventDate": "2026-02-14T12:00:00Z",
+          "postingDate": "2026-02-14T12:30:00Z",
+          "lockingDate": "2026-03-01T00:00:00Z",
+          "paidToPublisher": false
+        }
+      ]
+    }
+  }
+}

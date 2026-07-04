@@ -53,6 +53,16 @@
  *   5. DERIVED COMPANY ID. CJ requires the publisher's `companyId` on most
  *      queries. `verifyAuth` derives it from `{ me { companyId } }` and the
  *      wizard persists it under `CJ_COMPANY_ID`. See `auth.ts`.
+ *
+ *   6. PAGINATION TO COMPLETION. When the caller passes no `limit`,
+ *      `listProgrammes` and `listTransactions` paginate to completion rather
+ *      than returning a single upstream page. The advertiser-lookup query
+ *      pages with `page` + `recordsPerPage` and stops on `totalCount`; the
+ *      commissions query follows the `sinceCommissionId` cursor while
+ *      `payloadComplete` is false. Both loops are capped at `MAX_PAGES` with
+ *      a stderr warning so truncation is never silent (principle 4.1). When
+ *      `limit` IS present, the loop stops as soon as enough raw records have
+ *      been fetched — same single-page behaviour as before for small limits.
  */
 
 import {
@@ -116,6 +126,7 @@ const META: NetworkMeta = {
   knownLimitations: [
     'Click-level data is not exposed via CJ\'s modern GraphQL surface; listClicks throws NotImplementedError unless the legacy REST report endpoint is reachable for the account.',
     'Brand-side operations (listPublishers, listPublisherSectors) are scaffolded for v0.2.',
+    'listProgrammes and listTransactions paginate to completion when no limit is given (page/totalCount on the advertiser-lookup query, sinceCommissionId/payloadComplete on publisherCommissions), capped at 50 pages with a logged warning rather than a silent truncation.',
   ],
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 8,
@@ -155,6 +166,27 @@ const RESILIENCE: ResilienceConfigMap = {
   // for clarity in case a future version uses a dedicated aggregation query.
   getEarningsSummary: TRANSACTIONS_RESILIENCE,
 };
+
+/**
+ * Pagination backstop (same pattern as the Tolt adapter): a full pull loops
+ * until the upstream says there is nothing more, but never past MAX_PAGES.
+ * Hitting the cap logs a stderr warning so a truncated result is never
+ * silent (principle 4.1).
+ */
+const MAX_PAGES = 50;
+
+/**
+ * recordsPerPage for the advertiser-lookup query on a full pull. The previous
+ * single-page implementation already clamped caller limits at 500, so 500 is
+ * the largest page size this adapter has ever sent.
+ */
+const PROGRAMMES_PAGE_SIZE = 500;
+
+/**
+ * maxRows per publisherCommissions page. CJ documents ~10,000 as the per-call
+ * ceiling (see src/networks/cj-advertiser/queries.ts for the sibling surface).
+ */
+const TRANSACTIONS_MAX_ROWS = 10_000;
 
 // ---------------------------------------------------------------------------
 // CJ response shapes (deliberately minimal; mirror Awin's defensive style)
@@ -433,20 +465,12 @@ export class CjAdapter implements NetworkAdapter {
    * Asking "what merchants do I work with?" is the typical user question;
    * the full CJ catalogue is enormous and would time out without filtering.
    *
-   * GraphQL query shape (illustrative — CJ's schema names occasionally drift;
-   * the transformer tolerates either `advertisers(...) { ... }` or a wrapper):
-   *
-   *   query Advertisers($companyId: ID!, $records: Int!, $relationship: String) {
-   *     advertisers(
-   *       companyId: $companyId, recordsPerPage: $records,
-   *       advertiserStatus: $relationship
-   *     ) {
-   *       resultList {
-   *         advertiserId advertiserName status primaryCategory { name }
-   *         programUrl performanceIncentives
-   *       }
-   *     }
-   *   }
+   * PAGINATION. The advertisers query is page-numbered (`page` +
+   * `recordsPerPage`) and reports `totalCount`. `fetchAdvertiserPages`
+   * loops to completion when no `limit` is given, capped at MAX_PAGES with
+   * a stderr warning. With a `limit`, the loop stops as soon as enough raw
+   * records are in hand (one page for limits within a page size — the same
+   * request the previous single-page implementation sent).
    *
    * Why we filter `search`/`categories`/`status` client-side rather than
    * passing them all to CJ: CJ's GraphQL schema supports advertiserName /
@@ -460,47 +484,13 @@ export class CjAdapter implements NetworkAdapter {
 
     const statusFilter = toStatusList(query?.status);
     const relationship = pickCjRelationship(statusFilter);
-    const limit = Math.max(1, Math.min(query?.limit ?? 100, 500));
 
-    const data = await cjGraphQL<{
-      advertisers?: { resultList?: CjAdvertiserRaw[] } | CjAdvertiserRaw[];
-    }>({
-      operation: 'listProgrammes',
-      endpoint: CJ_GRAPHQL_ADS,
-      query: `
-        query Advertisers($companyId: ID!, $records: Int!, $relationship: String) {
-          advertisers(
-            companyId: $companyId
-            recordsPerPage: $records
-            advertiserStatus: $relationship
-          ) {
-            resultList {
-              advertiserId
-              advertiserName
-              status
-              relationshipStatus
-              primaryCategory { name }
-              currency
-              programUrl
-              performanceIncentives
-            }
-          }
-        }
-      `,
-      variables: { companyId, records: limit, relationship },
+    const list = await this.fetchAdvertiserPages({
+      companyId,
       token,
-      resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
+      relationship,
+      limit: query?.limit,
     });
-
-    // CJ wraps results in `advertisers.resultList` on the modern schema; some
-    // tenants flatten to a top-level array. Accept either.
-    const advertisersField = data?.advertisers;
-    let list: CjAdvertiserRaw[] = [];
-    if (Array.isArray(advertisersField)) {
-      list = advertisersField;
-    } else if (advertisersField && Array.isArray(advertisersField.resultList)) {
-      list = advertisersField.resultList;
-    }
 
     let programmes = list.map(toProgramme);
 
@@ -523,6 +513,94 @@ export class CjAdapter implements NetworkAdapter {
     }
 
     return programmes;
+  }
+
+  /**
+   * Fetch advertiser pages from the ads-lookup endpoint until complete.
+   *
+   * Stop conditions, in order:
+   *   - a flattened top-level array (some tenants): no paging metadata is
+   *     available, so the single response is all we can honestly return;
+   *   - an empty page: nothing more to fetch;
+   *   - `limit` satisfied: enough raw records for the caller's slice;
+   *   - `totalCount` reached: the upstream said we have everything;
+   *   - no `totalCount` and a short page: the classic "last page" signal;
+   *   - MAX_PAGES: backstop, logged as a warning so truncation is loud.
+   */
+  private async fetchAdvertiserPages(args: {
+    companyId: string;
+    token: string;
+    relationship: string;
+    limit?: number;
+  }): Promise<CjAdvertiserRaw[]> {
+    const pageSize = Math.max(1, Math.min(args.limit ?? PROGRAMMES_PAGE_SIZE, PROGRAMMES_PAGE_SIZE));
+    const list: CjAdvertiserRaw[] = [];
+
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const data = await cjGraphQL<{
+        advertisers?: { totalCount?: number; resultList?: CjAdvertiserRaw[] } | CjAdvertiserRaw[];
+      }>({
+        operation: 'listProgrammes',
+        endpoint: CJ_GRAPHQL_ADS,
+        query: `
+          query Advertisers($companyId: ID!, $records: Int!, $relationship: String, $page: Int) {
+            advertisers(
+              companyId: $companyId
+              recordsPerPage: $records
+              advertiserStatus: $relationship
+              page: $page
+            ) {
+              totalCount
+              resultList {
+                advertiserId
+                advertiserName
+                status
+                relationshipStatus
+                primaryCategory { name }
+                currency
+                programUrl
+                performanceIncentives
+              }
+            }
+          }
+        `,
+        variables: { companyId: args.companyId, records: pageSize, relationship: args.relationship, page },
+        token: args.token,
+        resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
+      });
+
+      // CJ wraps results in `advertisers.resultList` on the modern schema; some
+      // tenants flatten to a top-level array. Accept either.
+      const advertisersField = data?.advertisers;
+      if (Array.isArray(advertisersField)) {
+        list.push(...advertisersField);
+        return list;
+      }
+
+      let batch: CjAdvertiserRaw[] = [];
+      let totalCount: number | undefined;
+      if (advertisersField && Array.isArray(advertisersField.resultList)) {
+        batch = advertisersField.resultList;
+        if (typeof advertisersField.totalCount === 'number') {
+          totalCount = advertisersField.totalCount;
+        }
+      }
+      list.push(...batch);
+
+      if (batch.length === 0) return list;
+      if (args.limit !== undefined && list.length >= args.limit) return list;
+      if (totalCount !== undefined) {
+        if (list.length >= totalCount) return list;
+      } else if (batch.length < pageSize) {
+        return list;
+      }
+    }
+
+    log.warn(
+      { operation: 'listProgrammes', cap: MAX_PAGES, fetched: list.length },
+      'cj pagination hit MAX_PAGES cap; result may be truncated',
+    );
+    return list;
   }
 
   // -------------------------------------------------------------------------
@@ -613,9 +691,12 @@ export class CjAdapter implements NetworkAdapter {
    *
    * CJ's `publisherCommissions` query accepts a date range as ISO strings.
    * Unlike Awin's hard 31-day cap, CJ permits wider windows but the response
-   * is paginated; for v0.1 we request a large page (1000) and let the caller
-   * narrow the date window if the result is truncated. A cursor-driven
-   * pagination layer is documented as future work.
+   * is paginated: each page carries `payloadComplete` and the next page is
+   * requested via the `sinceCommissionId` cursor (the same contract the
+   * cj-advertiser sibling documents for `commissionDetails`).
+   * `fetchCommissionPages` follows that cursor to completion when no `limit`
+   * is given, capped at MAX_PAGES with a stderr warning; with a `limit` it
+   * stops as soon as enough raw records are in hand.
    *
    * --- PRD §15.9: unpaid-age filter ------------------------------------------
    *
@@ -638,65 +719,13 @@ export class CjAdapter implements NetworkAdapter {
       ? new Date(query.from)
       : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const data = await cjGraphQL<{
-      publisherCommissions?: {
-        records?: CjCommissionRaw[];
-        commissions?: CjCommissionRaw[];
-      };
-    }>({
-      operation: 'listTransactions',
-      endpoint: CJ_GRAPHQL_COMMISSIONS,
-      query: `
-        query PublisherCommissions(
-          $companyId: ID!
-          $sincePostingDate: String!
-          $beforePostingDate: String!
-        ) {
-          publisherCommissions(
-            forPublishers: [$companyId]
-            sincePostingDate: $sincePostingDate
-            beforePostingDate: $beforePostingDate
-          ) {
-            records {
-              commissionId
-              actionId
-              advertiserId
-              advertiserName
-              saleAmountUsd
-              saleAmountPubCurrency
-              pubCommissionAmountUsd
-              pubCommissionAmountPubCurrency
-              currency
-              pubCurrency
-              actionStatus
-              commissionStatus
-              eventDate
-              postingDate
-              lockingDate
-              clearedDate
-              isCorrected
-              correctionReason
-              paidToPublisher
-              paymentId
-            }
-          }
-        }
-      `,
-      variables: {
-        companyId,
-        sincePostingDate: from.toISOString(),
-        beforePostingDate: to.toISOString(),
-      },
+    const list = await this.fetchCommissionPages({
+      companyId,
       token,
-      resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
+      sincePostingDate: from.toISOString(),
+      beforePostingDate: to.toISOString(),
+      limit: query?.limit,
     });
-
-    // CJ has used both `records` and (in older schemas) `commissions` as the
-    // field name. Accept either; preserve the raw on `rawNetworkData`.
-    const list: CjCommissionRaw[] =
-      data?.publisherCommissions?.records ??
-      data?.publisherCommissions?.commissions ??
-      [];
 
     let transactions = list.map((r) => toTransaction(r, now));
 
@@ -724,6 +753,126 @@ export class CjAdapter implements NetworkAdapter {
     }
 
     return transactions;
+  }
+
+  /**
+   * Fetch publisherCommissions pages until complete.
+   *
+   * Continuation contract: a page reporting `payloadComplete: false` has more
+   * rows behind it; the next page is requested with `sinceCommissionId` set
+   * to the last record's commissionId. Older tenant schemas omit
+   * `payloadComplete` entirely — there we cannot know whether more rows
+   * exist, so we stop after one page (the pre-pagination behaviour) rather
+   * than guess and double-count.
+   *
+   * Stop conditions, in order:
+   *   - `payloadComplete` is not literally false: complete (or unknowable);
+   *   - an empty page: nothing to anchor a cursor on;
+   *   - `limit` satisfied: enough raw records for the caller's slice;
+   *   - a last record with no usable cursor: stop loudly (warned);
+   *   - MAX_PAGES: backstop, logged as a warning so truncation is loud.
+   */
+  private async fetchCommissionPages(args: {
+    companyId: string;
+    token: string;
+    sincePostingDate: string;
+    beforePostingDate: string;
+    limit?: number;
+  }): Promise<CjCommissionRaw[]> {
+    const out: CjCommissionRaw[] = [];
+    let sinceCommissionId: string | undefined;
+
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const data = await cjGraphQL<{
+        publisherCommissions?: {
+          count?: number;
+          payloadComplete?: boolean;
+          records?: CjCommissionRaw[];
+          commissions?: CjCommissionRaw[];
+        };
+      }>({
+        operation: 'listTransactions',
+        endpoint: CJ_GRAPHQL_COMMISSIONS,
+        query: `
+          query PublisherCommissions(
+            $companyId: ID!
+            $sincePostingDate: String!
+            $beforePostingDate: String!
+            $maxRows: Int
+            $sinceCommissionId: String
+          ) {
+            publisherCommissions(
+              forPublishers: [$companyId]
+              sincePostingDate: $sincePostingDate
+              beforePostingDate: $beforePostingDate
+              maxRows: $maxRows
+              sinceCommissionId: $sinceCommissionId
+            ) {
+              count
+              payloadComplete
+              records {
+                commissionId
+                actionId
+                advertiserId
+                advertiserName
+                saleAmountUsd
+                saleAmountPubCurrency
+                pubCommissionAmountUsd
+                pubCommissionAmountPubCurrency
+                currency
+                pubCurrency
+                actionStatus
+                commissionStatus
+                eventDate
+                postingDate
+                lockingDate
+                clearedDate
+                isCorrected
+                correctionReason
+                paidToPublisher
+                paymentId
+              }
+            }
+          }
+        `,
+        variables: {
+          companyId: args.companyId,
+          sincePostingDate: args.sincePostingDate,
+          beforePostingDate: args.beforePostingDate,
+          maxRows: TRANSACTIONS_MAX_ROWS,
+          sinceCommissionId,
+        },
+        token: args.token,
+        resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
+      });
+
+      // CJ has used both `records` and (in older schemas) `commissions` as the
+      // field name. Accept either; preserve the raw on `rawNetworkData`.
+      const pageData = data?.publisherCommissions;
+      const batch: CjCommissionRaw[] = pageData?.records ?? pageData?.commissions ?? [];
+      out.push(...batch);
+
+      if (pageData?.payloadComplete !== false) return out;
+      if (batch.length === 0) return out;
+      if (args.limit !== undefined && out.length >= args.limit) return out;
+
+      const last = batch[batch.length - 1];
+      const cursor = last?.commissionId ?? last?.actionId;
+      if (cursor === undefined || cursor === '') {
+        log.warn(
+          { operation: 'listTransactions', fetched: out.length },
+          'cj payloadComplete is false but the last record carries no commissionId cursor; stopping with a possibly truncated result',
+        );
+        return out;
+      }
+      sinceCommissionId = String(cursor);
+    }
+
+    log.warn(
+      { operation: 'listTransactions', cap: MAX_PAGES, fetched: out.length },
+      'cj pagination hit MAX_PAGES cap; result may be truncated',
+    );
+    return out;
   }
 
   // -------------------------------------------------------------------------
@@ -1070,7 +1219,9 @@ function pickCjRelationship(statuses?: ProgrammeStatus[]): string {
 }
 
 // Internal test helpers — exported under `_` so they don't appear in the
-// public adapter surface.
+// public adapter surface. `log` and `MAX_PAGES` are exposed so pagination
+// tests can assert the cap warning without capturing fd 2 (pino writes to
+// stderr directly, bypassing process.stderr.write).
 export const _internals = {
   mapTransactionStatus,
   mapProgrammeStatus,
@@ -1078,10 +1229,10 @@ export const _internals = {
   toTransaction,
   toProgramme,
   pickCjRelationship,
+  log,
+  MAX_PAGES,
 };
 
-// Silence the unused-import lint for the logger when noUnusedLocals is on.
-void log;
 // Touch CJ_REST_LINK_BUILDER so the import is observed in `generateTrackingLink`'s
 // rawNetworkData (the URL is constructed there). This is a no-op at runtime.
 void CJ_REST_LINK_BUILDER;
