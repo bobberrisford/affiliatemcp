@@ -30,6 +30,12 @@
  *   getProgrammePerformance→ GET /v3/brand/analytics/metrics + campaign filter
  *   listTransactions       → GET /v3/brand/campaigns/{id}/conversions
  *
+ * Pagination: the list operations above page through the upstream `limit` +
+ * `offset` pagination (Apiary standard-pagination) to completion when the
+ * caller supplies no `limit`, capped at MAX_PAGES with a logged warning so a
+ * truncated pull is never silent. A caller-supplied `limit` stops the loop as
+ * soon as enough rows have been collected. See `fetchOffsetPages`.
+ *
  * Operations NOT in scope at v0.1 (throw NotImplementedError):
  *   getProgramme        — use listBrands/listProgrammes and filter client-side
  *   getEarningsSummary  — use getProgrammePerformance for the rollup
@@ -57,6 +63,7 @@ import { createLogger } from '../../shared/logging.js';
 import {
   NotImplementedError,
   type AdapterCallContext,
+  type AdapterOperation,
   type Click,
   type ClickQuery,
   type CredentialValidationResult,
@@ -100,6 +107,7 @@ const META: NetworkMeta = {
     'getEarningsSummary is not implemented at v0.1; use getProgrammePerformance for the per-publisher rollup.',
     'generateTrackingLink is a publisher-side operation and is not applicable to the advertiser adapter.',
     'Conversion (transaction) reporting scope is per-campaign and requires a campaign_id context from AdapterCallContext.',
+    'listProgrammes, listTransactions, listMediaPartners and getProgrammePerformance page through the upstream limit+offset pagination to completion when no limit is supplied, capped at 50 pages of 100 rows with a logged warning rather than a silent truncation.',
   ],
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 5,
@@ -123,6 +131,15 @@ const RESILIENCE: ResilienceConfigMap = {
     retries: 3,
   },
 };
+
+/** Rows requested per page; matches the previous single-request default `limit`. */
+const PAGE_SIZE = 100;
+/**
+ * Backstop on the offset-pagination loop so a misbehaving upstream (an offset
+ * the server ignores, or a total that never reconciles) cannot loop forever.
+ * Hitting the cap logs a warning so the truncation is never silent.
+ */
+const MAX_PAGES = 50;
 
 // ---------------------------------------------------------------------------
 // Helpers — ctx requirement, raw shapes, status mapping
@@ -622,6 +639,36 @@ function toStatusList<T>(v?: T | T[]): T[] | undefined {
   return Array.isArray(v) ? v : [v];
 }
 
+/**
+ * Read the reported total row count from a Partnerize list envelope.
+ *
+ * Standard Partnerize pagination reports `limit`, `offset` and a per-page
+ * `count`; the overall total surfaces in the hypermedia block as
+ * `total_item_count`. Source: Partnerize Apiary introduction/standard-pagination
+ * (see docs/findings/partnerize-advertiser.md). A top-level `total` is also
+ * read defensively — the existing conversions fixture shape uses it.
+ *
+ * Returns undefined when no total is reported; the pagination loop then falls
+ * back to the short-page stop rule.
+ * BLOCKED(verify): exact placement of the total field on each v3 brand
+ * endpoint requires a live Brand account.
+ */
+function readReportedTotal(env: unknown): number | undefined {
+  if (env === null || typeof env !== 'object' || Array.isArray(env)) return undefined;
+  const e = env as {
+    total?: string | number;
+    hypermedia?: {
+      total_item_count?: string | number;
+      pagination?: { total_item_count?: string | number };
+    };
+  };
+  const candidate =
+    e.hypermedia?.pagination?.total_item_count ?? e.hypermedia?.total_item_count ?? e.total;
+  if (candidate === undefined || candidate === null) return undefined;
+  const n = Number(candidate);
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
+}
+
 // ---------------------------------------------------------------------------
 // The adapter
 // ---------------------------------------------------------------------------
@@ -631,6 +678,60 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
   readonly name = NAME;
   readonly meta = META;
   readonly resilienceConfig = RESILIENCE;
+
+  // -------------------------------------------------------------------------
+  // Internal: page through an offset-paginated Partnerize list endpoint.
+  // -------------------------------------------------------------------------
+
+  /**
+   * Fetch pages of an offset-paginated Partnerize list endpoint.
+   *
+   * Standard Partnerize pagination is `limit` + `offset` (Apiary
+   * standard-pagination; see docs/findings/partnerize-advertiser.md). Each call
+   * requests PAGE_SIZE rows. The loop continues while the reported
+   * `total_item_count` (or top-level `total`) says more rows remain — the
+   * server may clamp `limit` below what we asked for — or, when no total is
+   * reported, while full pages keep coming back. It is capped at MAX_PAGES with
+   * a logged warning so a truncated pull is never silent (principle 4.1).
+   *
+   * When `target` is set (the caller passed `query.limit`), the loop stops as
+   * soon as `target` rows have been collected. This mirrors the previous
+   * single-request behaviour without ever pulling fewer rows than before.
+   */
+  private async fetchOffsetPages<TEnvelope, TRaw>(
+    operation: AdapterOperation,
+    path: string,
+    baseQuery: Record<string, string | number | undefined>,
+    extract: (env: TEnvelope | TRaw[]) => TRaw[],
+    target?: number,
+  ): Promise<TRaw[]> {
+    const resilience = RESILIENCE[operation] ?? RESILIENCE.default;
+    const out: TRaw[] = [];
+    let offset = 0;
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const envelope = await partnerizeAdvRequest<TEnvelope | TRaw[]>({
+        operation,
+        path,
+        query: { ...baseQuery, limit: PAGE_SIZE, offset },
+        resilience,
+      });
+      const batch = extract(envelope);
+      out.push(...batch);
+      if (batch.length === 0) return out;
+      // Caller's limit satisfied — stop early (backward-compatible behaviour).
+      if (typeof target === 'number' && out.length >= target) return out;
+      const total = readReportedTotal(envelope);
+      if (typeof total === 'number' && out.length >= total) return out;
+      // No total reported: a short page means the upstream is exhausted.
+      if (total === undefined && batch.length < PAGE_SIZE) return out;
+      offset += batch.length;
+    }
+    log.warn(
+      { operation, cap: MAX_PAGES, pageSize: PAGE_SIZE, fetched: out.length },
+      'partnerize-advertiser pagination hit MAX_PAGES cap; result may be truncated',
+    );
+    return out;
+  }
 
   // -------------------------------------------------------------------------
   // listBrands — multi-brand discovery hook.
@@ -693,23 +794,18 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
    * (the call lists ALL campaigns for the credential set). A ctx is accepted for
    * interface compatibility but is not used.
    *
-   * Pagination: uses `limit` and `offset`. Source: Partnerize Apiary
-   * introduction/standard-pagination. The `limit` parameter is passed; `offset`
-   * support is left for a future paginating implementation.
+   * Pagination: pages through `limit` + `offset` via `fetchOffsetPages`. With
+   * no `query.limit` the pull runs to completion (MAX_PAGES backstop); with a
+   * `query.limit` the loop stops once enough campaigns have been collected.
    */
   async listProgrammes(
     query?: ProgrammeQuery,
     _ctx?: AdapterCallContext,
   ): Promise<Programme[]> {
-    const envelope = await partnerizeAdvRequest<
-      PartnerizeAdvCampaignsEnvelope | PartnerizeAdvCampaignRaw[]
-    >({
-      operation: 'listProgrammes',
-      path: '/v3/brand/campaigns',
-      query: { limit: query?.limit ?? 100 },
-      resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
-    });
-    const list = extractCampaigns(envelope);
+    const list = await this.fetchOffsetPages<
+      PartnerizeAdvCampaignsEnvelope,
+      PartnerizeAdvCampaignRaw
+    >('listProgrammes', '/v3/brand/campaigns', {}, extractCampaigns, query?.limit);
     let programmes = list.map(toProgramme);
     if (query?.search) {
       const needle = query.search.toLowerCase();
@@ -733,6 +829,10 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
    * PerformanceHorizonGroup/apidocs src/aggregated_reporting.apib and
    * src/export_reporting.apib (both use `start_date`/`end_date` in ISO 8601).
    *
+   * Pagination: pages through `limit` + `offset` via `fetchOffsetPages`. With
+   * no `query.limit` the pull runs to completion (MAX_PAGES backstop); with a
+   * `query.limit` the loop stops once enough conversions have been collected.
+   *
    * BLOCKED(verify): the v3 brand conversions endpoint-specific parameter names
    * and any status-filter parameter require a live Brand account.
    */
@@ -743,22 +843,21 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
     const c = requireCtx('listTransactions', ctx);
     const now = new Date();
 
-    const envelope = await partnerizeAdvRequest<
-      PartnerizeAdvConversionsEnvelope | PartnerizeAdvConversionRaw[]
-    >({
-      operation: 'listTransactions',
-      path: `/v3/brand/campaigns/${encodeURIComponent(c.networkBrandId)}/conversions`,
-      query: {
+    const list = await this.fetchOffsetPages<
+      PartnerizeAdvConversionsEnvelope,
+      PartnerizeAdvConversionRaw
+    >(
+      'listTransactions',
+      `/v3/brand/campaigns/${encodeURIComponent(c.networkBrandId)}/conversions`,
+      {
         // start_date / end_date confirmed as standard parameter names.
         // Source: PerformanceHorizonGroup/apidocs aggregated_reporting.apib.
         start_date: query?.from,
         end_date: query?.to,
-        limit: query?.limit ?? 100,
       },
-      resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
-    });
-
-    const list = extractConversions(envelope);
+      extractConversions,
+      query?.limit,
+    );
     let txns = list.map((r) => toTransaction(r, now));
 
     if (query?.programmeId) {
@@ -799,6 +898,10 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
    * forms are plausible; the plural form is used here to match v3 URL conventions
    * (`/campaigns`, `/conversions` are also plural).
    * BLOCKED(verify): `/publishers` vs `/publisher` requires a live Brand account.
+   *
+   * Pagination: pages through `limit` + `offset` via `fetchOffsetPages`. With
+   * no `query.limit` the pull runs to completion (MAX_PAGES backstop); with a
+   * `query.limit` the loop stops once enough publishers have been collected.
    */
   async listMediaPartners(
     query?: MediaPartnerQuery,
@@ -806,16 +909,16 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
   ): Promise<MediaPartner[]> {
     const c = requireCtx('listMediaPartners', ctx);
 
-    const envelope = await partnerizeAdvRequest<
-      PartnerizeAdvPublishersEnvelope | PartnerizeAdvPublisherRaw[]
-    >({
-      operation: 'listMediaPartners',
-      path: `/v3/brand/campaigns/${encodeURIComponent(c.networkBrandId)}/publishers`,
-      query: { limit: query?.limit ?? 100 },
-      resilience: RESILIENCE.listMediaPartners ?? RESILIENCE.default,
-    });
-
-    const list = extractPublishers(envelope);
+    const list = await this.fetchOffsetPages<
+      PartnerizeAdvPublishersEnvelope,
+      PartnerizeAdvPublisherRaw
+    >(
+      'listMediaPartners',
+      `/v3/brand/campaigns/${encodeURIComponent(c.networkBrandId)}/publishers`,
+      {},
+      extractPublishers,
+      query?.limit,
+    );
     let partners = list.map(toMediaPartner);
 
     if (query?.search) {
@@ -851,6 +954,10 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
    * Response envelope: the v3 brand analytics endpoint returns results under a
    * `data` key. Source: dltHub Partnerize context page (data_selector="data").
    *
+   * Pagination: pages through `limit` + `offset` via `fetchOffsetPages`. With
+   * no `query.limit` the pull runs to completion (MAX_PAGES backstop); with a
+   * `query.limit` the loop stops once enough rows have been collected.
+   *
    * BLOCKED(verify): the exact parameter names specific to the v3
    * /analytics/metrics endpoint and the date grouping field name in the
    * response require a live Brand account.
@@ -861,24 +968,23 @@ export class PartnerizeAdvertiserAdapter implements NetworkAdapter {
   ): Promise<ProgrammePerformanceRow[]> {
     const c = requireCtx('getProgrammePerformance', ctx);
 
-    const envelope = await partnerizeAdvRequest<
-      PartnerizeAdvMetricsEnvelope | PartnerizeAdvMetricRowRaw[]
-    >({
-      operation: 'getProgrammePerformance',
-      path: '/v3/brand/analytics/metrics',
-      query: {
+    const rows = await this.fetchOffsetPages<
+      PartnerizeAdvMetricsEnvelope,
+      PartnerizeAdvMetricRowRaw
+    >(
+      'getProgrammePerformance',
+      '/v3/brand/analytics/metrics',
+      {
         // campaign_id / publisher_id confirmed from granular_reporting.apib.
         // start_date / end_date confirmed from aggregated_reporting.apib.
         campaign_id: query?.programmeId ?? c.networkBrandId,
         publisher_id: query?.publisherId,
         start_date: query?.from,
         end_date: query?.to,
-        limit: query?.limit ?? 1000,
       },
-      resilience: RESILIENCE.getProgrammePerformance ?? RESILIENCE.default,
-    });
-
-    const rows = extractMetricRows(envelope);
+      extractMetricRows,
+      query?.limit,
+    );
     let mapped = rows.map(toPerformanceRow);
     if (typeof query?.limit === 'number') mapped = mapped.slice(0, query.limit);
     return mapped;
@@ -1016,6 +1122,9 @@ registerAdapter(partnerizeAdvertiserAdapter);
 // ---------------------------------------------------------------------------
 
 export const _internals = {
+  // Module logger, exposed so tests can spy on the MAX_PAGES cap warning.
+  log,
+  readReportedTotal,
   toProgramme,
   toTransaction,
   toMediaPartner,
@@ -1032,6 +1141,3 @@ export const _internals = {
   extractConversions,
   extractMetricRows,
 };
-
-// Silence unused-import lint when noUnusedLocals is on.
-void log;

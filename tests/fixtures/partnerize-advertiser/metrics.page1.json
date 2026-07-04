@@ -1,0 +1,32 @@
+{
+  "data": [
+    {
+      "date": "2026-06-01",
+      "publisher_id": "PUB-301",
+      "publisher_name": "SavvySaver Blog",
+      "clicks": 410,
+      "conversions": 6,
+      "sale_amount": "540.00",
+      "commission": "54.00",
+      "currency": "GBP",
+      "status": "approved"
+    },
+    {
+      "date": "2026-06-01",
+      "publisher_id": "PUB-302",
+      "publisher_name": "VoucherVault",
+      "clicks": 190,
+      "conversions": 2,
+      "sale_amount": "150.00",
+      "commission": "15.00",
+      "currency": "GBP",
+      "status": "pending"
+    }
+  ],
+  "hypermedia": {
+    "pagination": {
+      "total_item_count": 3,
+      "total_page_count": 2
+    }
+  }
+}

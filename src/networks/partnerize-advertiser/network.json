@@ -12,7 +12,8 @@
     "getProgramme is not implemented at v0.1; use listProgrammes (listBrands) and filter client-side.",
     "getEarningsSummary is not implemented at v0.1; use getProgrammePerformance for the per-publisher rollup.",
     "generateTrackingLink is a publisher-side operation and is not applicable to the advertiser adapter.",
-    "Conversion (transaction) reporting scope is per-campaign and requires a campaign_id context from AdapterCallContext."
+    "Conversion (transaction) reporting scope is per-campaign and requires a campaign_id context from AdapterCallContext.",
+    "listProgrammes, listTransactions, listMediaPartners and getProgrammePerformance page through the upstream limit+offset pagination to completion when no limit is supplied, capped at 50 pages of 100 rows with a logged warning rather than a silent truncation."
   ],
   "claim_status": "experimental",
   "adapter_version": "0.1.0",

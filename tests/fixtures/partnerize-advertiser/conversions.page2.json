@@ -1,0 +1,35 @@
+{
+  "conversions": [
+    {
+      "conversion_id": "CONV-6003",
+      "publisher_id": "PUB-301",
+      "campaign_id": "CAM-2001",
+      "campaign_name": "Northern Outfitters",
+      "status": "pending",
+      "sale_amount": "112.00",
+      "commission": "11.20",
+      "currency": "GBP",
+      "click_time": "2026-06-03T08:15:00Z",
+      "conversion_time": "2026-06-03T08:20:00Z",
+      "approved_at": null,
+      "paid_at": null,
+      "rejection_reason": null
+    },
+    {
+      "conversion_id": "CONV-6004",
+      "publisher_id": "PUB-303",
+      "campaign_id": "CAM-2001",
+      "campaign_name": "Northern Outfitters",
+      "status": "rejected",
+      "sale_amount": "27.00",
+      "commission": "2.70",
+      "currency": "GBP",
+      "click_time": "2026-06-03T16:40:00Z",
+      "conversion_time": "2026-06-03T16:45:00Z",
+      "approved_at": null,
+      "paid_at": null,
+      "rejection_reason": "Order cancelled before dispatch"
+    }
+  ],
+  "total": 4
+}

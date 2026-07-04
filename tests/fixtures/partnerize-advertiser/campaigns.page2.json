@@ -1,0 +1,30 @@
+{
+  "campaigns": [
+    {
+      "campaign_id": "CAM-2004",
+      "campaign_name": "Willow & Sage Beauty",
+      "status": "active",
+      "currency": "GBP",
+      "campaign_reference": "willow-sage-beauty",
+      "advertiser_url": "https://willowsage.example.com"
+    },
+    {
+      "campaign_id": "CAM-2005",
+      "campaign_name": "Coastal Breaks",
+      "status": "pending",
+      "currency": "GBP",
+      "campaign_reference": "coastal-breaks",
+      "advertiser_url": "https://coastalbreaks.example.com"
+    }
+  ],
+  "count": 2,
+  "limit": 3,
+  "offset": 3,
+  "execution_time": "0.037",
+  "hypermedia": {
+    "pagination": {
+      "total_item_count": 5,
+      "total_page_count": 2
+    }
+  }
+}

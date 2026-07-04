@@ -49,10 +49,6 @@ export const PAGING_EXCLUSIONS: ReadonlyMap<string, ReadonlySet<AdapterOperation
   // paginate to completion on absent `limit` via @nextpageuri/@page with a
   // MAX_PAGES backstop; see src/networks/impact-advertiser/adapter.ts.
   [
-    'partnerize-advertiser',
-    ops('listProgrammes', 'listTransactions', 'listMediaPartners', 'getProgrammePerformance'),
-  ], // limit default, single request; upstream offset pagination exists but is unused
-  [
     'cj-advertiser',
     ops('listTransactions', 'listMediaPartners', 'getProgrammePerformance'),
   ], // single commissionDetails query capped at maxRows default 1000, no continuation

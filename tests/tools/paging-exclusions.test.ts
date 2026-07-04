@@ -64,4 +64,13 @@ describe('offset-paging exclusions', () => {
     expect(supportsOffsetPaging('cj', 'listProgrammes')).toBe(true);
     expect(supportsOffsetPaging('cj', 'listTransactions')).toBe(true);
   });
+
+  it('lifted exclusions support offset paging again', () => {
+    // partnerize-advertiser now pages limit+offset to completion on absent
+    // `limit` (issue #316); its exclusion was removed with that fix.
+    expect(supportsOffsetPaging('partnerize-advertiser', 'listProgrammes')).toBe(true);
+    expect(supportsOffsetPaging('partnerize-advertiser', 'listTransactions')).toBe(true);
+    expect(supportsOffsetPaging('partnerize-advertiser', 'listMediaPartners')).toBe(true);
+    expect(supportsOffsetPaging('partnerize-advertiser', 'getProgrammePerformance')).toBe(true);
+  });
 });
