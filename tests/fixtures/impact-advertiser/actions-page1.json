@@ -1,0 +1,29 @@
+{
+  "Actions": [
+    {
+      "Id": "ACT-10",
+      "CampaignId": "CAM-9001",
+      "CampaignName": "Acme Spring Sale",
+      "State": "APPROVED",
+      "EventDate": "2026-04-10T10:00:00Z",
+      "IntendedAmount": "80.00",
+      "Payout": "8.00",
+      "Currency": "USD",
+      "MediaPartnerId": "MP-1",
+      "MediaPartnerName": "BestDeals.com"
+    },
+    {
+      "Id": "ACT-11",
+      "CampaignId": "CAM-9001",
+      "CampaignName": "Acme Spring Sale",
+      "State": "PENDING",
+      "EventDate": "2026-04-11T10:00:00Z",
+      "IntendedAmount": "45.00",
+      "Payout": "4.50",
+      "Currency": "USD",
+      "MediaPartnerId": "MP-2"
+    }
+  ],
+  "@page": "1",
+  "@numpages": "2"
+}

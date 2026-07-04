@@ -1,0 +1,12 @@
+{
+  "MediaPartners": [
+    {
+      "Id": "MP-3",
+      "Name": "Cashback Corner",
+      "AccountStatus": "Active"
+    }
+  ],
+  "@page": "2",
+  "@numpages": "2",
+  "@nextpageuri": ""
+}
