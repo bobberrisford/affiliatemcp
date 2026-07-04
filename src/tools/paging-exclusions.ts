@@ -33,7 +33,6 @@ export const PAGING_EXCLUSIONS: ReadonlyMap<string, ReadonlySet<AdapterOperation
   ReadonlySet<AdapterOperation>
 >([
   // Confirmed bounded defaults (adapter fetches one page, never continues).
-  ['affise', ops('listProgrammes', 'listTransactions')], // adapter.ts: perPage/limit defaults, single page:1; multi-page deferred to v0.2
   ['rakuten', ops('listProgrammes')], // page_size default, single request
   ['cake', ops('listProgrammes')], // row_limit default, start_at_row 1, single fetch
   ['everflow', ops('listProgrammes', 'listTransactions')], // page 1 only; /conversions posted with no paging fields

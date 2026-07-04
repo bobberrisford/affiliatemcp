@@ -1,0 +1,19 @@
+{
+  "status": 1,
+  "offers": [
+    {
+      "id": "59359e1d7e28feb7568b4003",
+      "offer_id": 1003,
+      "title": "Atolls Travel",
+      "status": "stopped",
+      "currency": "GBP",
+      "url": "https://api-yournetwork.affise.com/click?pid=42&offer_id=1003",
+      "preview_url": "https://www.atolls-travel.example.com",
+      "is_connected": false,
+      "required_approval": false,
+      "categories": ["Travel"],
+      "payments": []
+    }
+  ],
+  "pagination": { "page": 2, "per_page": 2, "total_count": 3 }
+}

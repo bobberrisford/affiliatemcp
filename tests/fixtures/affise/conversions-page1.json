@@ -1,0 +1,54 @@
+{
+  "status": 1,
+  "conversions": [
+    {
+      "id": "59359e1d7e28feb7568b456a",
+      "action_id": "order-aaaa-0001",
+      "status": "confirmed",
+      "currency": "GBP",
+      "payouts": 6.5,
+      "revenue": 9.0,
+      "sum": 65.0,
+      "goal": null,
+      "offer_id": 1001,
+      "offer": { "id": 1001, "title": "Atolls Bookshop" },
+      "created_at": "2026-01-15 10:00:00",
+      "updated_at": "2026-01-20 09:00:00",
+      "click_time": "2026-01-15 09:30:00",
+      "comment": null
+    },
+    {
+      "id": "59359e1d7e28feb7568b456b",
+      "action_id": "order-bbbb-0002",
+      "status": "pending",
+      "currency": "GBP",
+      "payouts": 6.5,
+      "revenue": 9.0,
+      "sum": 65.0,
+      "goal": null,
+      "offer_id": 1001,
+      "offer": { "id": 1001, "title": "Atolls Bookshop" },
+      "created_at": "2026-04-20 14:00:00",
+      "updated_at": "2026-04-20 14:00:00",
+      "click_time": "2026-04-20 13:30:00",
+      "comment": null
+    },
+    {
+      "id": "59359e1d7e28feb7568b456c",
+      "action_id": "order-cccc-0003",
+      "status": "declined",
+      "currency": "GBP",
+      "payouts": 0.0,
+      "revenue": 0.0,
+      "sum": 0.0,
+      "goal": null,
+      "offer_id": 1002,
+      "offer": { "id": 1002, "title": "Atolls Gadgets" },
+      "created_at": "2026-04-22 11:00:00",
+      "updated_at": "2026-04-25 11:00:00",
+      "click_time": "2026-04-22 10:30:00",
+      "comment": "Duplicate conversion — already recorded for this order"
+    }
+  ],
+  "pagination": { "page": 1, "per_page": 3, "total_count": 5 }
+}
