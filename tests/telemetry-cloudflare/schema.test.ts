@@ -16,6 +16,27 @@ describe('Cloudflare telemetry payload schema', () => {
     expect(validPayload(valid)).toBe(true);
   });
 
+  it('accepts schema v2 fine-grained outcomes and keeps each version to its own vocabulary', () => {
+    const v2Outcomes = [
+      'not_implemented',
+      'timeout',
+      'circuit_open',
+      'network_unavailable',
+      'upstream_4xx',
+      'upstream_5xx',
+      'internal_error',
+    ];
+    for (const outcome of v2Outcomes) {
+      const counts = [{ ...valid.counts[0], outcome }];
+      expect(validPayload({ ...valid, schema_version: 2, counts })).toBe(true);
+      // A v1 client never emits these; a payload claiming v1 with them is invalid.
+      expect(validPayload({ ...valid, counts })).toBe(false);
+    }
+    // Legacy v1 outcomes remain valid under both versions.
+    expect(validPayload({ ...valid, schema_version: 2 })).toBe(true);
+    expect(validPayload({ ...valid, schema_version: 3 })).toBe(false);
+  });
+
   it('rejects unknown fields and sensitive-looking free text', () => {
     expect(validPayload({ ...valid, prompt: 'show my earnings' })).toBe(false);
     expect(

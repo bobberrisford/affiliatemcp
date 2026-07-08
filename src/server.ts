@@ -36,7 +36,7 @@ import {
   flushTelemetry,
   PACKAGE_VERSION,
   recordTelemetry,
-  telemetryOutcomeFromErrorType,
+  telemetryOutcomeFromEnvelope,
 } from './shared/telemetry.js';
 import { runStartupUpdateCheck } from './shared/update-check.js';
 
@@ -178,6 +178,11 @@ export async function startServer(): Promise<void> {
       };
     } catch (err) {
       const telemetry = classifyToolForTelemetry(name);
+      // A structured throw is an adapter speaking the envelope contract; a raw
+      // throw is a bug in this codebase and is counted as internal_error even
+      // though the coerced envelope below may guess a friendlier type for the
+      // user-facing response.
+      const structured = err instanceof NetworkError || isErrorEnvelope(err);
       const envelope =
         err instanceof NetworkError
           ? err.envelope
@@ -188,7 +193,7 @@ export async function startServer(): Promise<void> {
       recordTelemetry(
         telemetry.network,
         telemetry.operation,
-        telemetryOutcomeFromErrorType(envelope.type),
+        telemetryOutcomeFromEnvelope(envelope, structured),
       );
       return {
         isError: true,
