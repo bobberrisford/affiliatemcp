@@ -1,0 +1,20 @@
+{
+  "data": [
+    {
+      "id": "CAMP-1001",
+      "name": "Acme Widgets FR",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://acme-widgets.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2101",
+      "name": "Example Campaign 101",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-101.example",
+      "api_enabled": true
+    }
+  ]
+}

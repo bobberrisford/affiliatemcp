@@ -106,4 +106,10 @@ describe('offset-paging exclusions', () => {
     // accesstrade listProgrammes now paginates to completion on absent limit.
     expect(supportsOffsetPaging('accesstrade', 'listProgrammes')).toBe(true);
   });
+
+  it('lifted exclusions are pageable again (#316)', () => {
+    // kwanko-advertiser listProgrammes now pages /advertiser/campaigns to
+    // completion on absent limit, so tool-layer offset paging is honest.
+    expect(supportsOffsetPaging('kwanko-advertiser', 'listProgrammes')).toBe(true);
+  });
 });

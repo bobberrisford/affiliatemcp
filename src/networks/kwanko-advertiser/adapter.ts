@@ -25,6 +25,7 @@
  *            "conversions" + "statistics").
  *
  *   GET /advertiser/campaigns     list the advertiser's campaigns (programmes)
+ *       ?page={n}&per_page={size}  (1-based page loop until a short page)
  *   GET /advertiser/conversions   conversions (leads / sales / downloads)
  *       ?debut=YYYY-MM-DD&fin=YYYY-MM-DD&camp={campaignId}
  *   GET /advertiser/statistics    aggregated stats by campaign, website
@@ -44,7 +45,9 @@
  *   listBrands             → /advertiser/campaigns (one brand per campaign the
  *                            token addresses)
  *   verifyAuth             → reuses the auth.ts statistics probe
- *   listProgrammes         → /advertiser/campaigns (brand-scoped to ctx campaign)
+ *   listProgrammes         → /advertiser/campaigns (brand-scoped to ctx campaign;
+ *                            pages to completion on absent limit, capped at
+ *                            MAX_PAGES with a logged warning)
  *   listTransactions       → /advertiser/conversions (brand-scoped)
  *   getProgrammePerformance→ /advertiser/statistics grouped by website (publisher)
  *   getProgramme / getEarningsSummary / listClicks / generateTrackingLink
@@ -113,6 +116,7 @@ const META: NetworkMeta = {
     'Exact endpoint paths, query-parameter names, and JSON field names are taken from public summaries of the Kwanko advertiser API (https://developers.kwanko.com/ and https://helpdesk-advertiser.kwanko.com/); the developer reference is not machine-readable, so field mapping is defensive and must be confirmed against a live response.',
     'getProgrammePerformance is built from the advertiser statistics endpoint grouped by website (publisher); the grouping parameter name is BLOCKED(verify) until confirmed against a live response.',
     'listBrands enumerates the advertiser campaigns the token addresses; there is no documented account-enumeration endpoint, so each addressable campaign is returned as a brand.',
+    'listProgrammes pages /advertiser/campaigns (1-based page + per_page) until a short page and is capped at MAX_PAGES with a logged warning rather than a silent truncation; the paging parameter names are BLOCKED(verify) against a live response.',
     'generateTrackingLink, getProgramme, getEarningsSummary, and listClicks are publisher-side or unsupported on the advertiser surface and throw NotImplementedError.',
   ],
   supportsBrandOps: true,
@@ -139,6 +143,15 @@ const RESILIENCE: ResilienceConfigMap = {
   listTransactions: HEAVY_RESILIENCE,
   getProgrammePerformance: HEAVY_RESILIENCE,
 };
+
+/**
+ * Campaign page size and the pagination backstop for listProgrammes. The page
+ * loop stops on the first short page; MAX_PAGES is a backstop logged so a
+ * truncated pull is never silent (principle 4.1). Same pattern as the Tolt and
+ * Tapfiliate adapters.
+ */
+const PAGE_SIZE = 100;
+const MAX_PAGES = 50;
 
 // ---------------------------------------------------------------------------
 // Helpers — ctx
@@ -502,22 +515,47 @@ export class KwankoAdvertiserAdapter implements NetworkAdapter {
    * the result is correct regardless of whether the live API supports a
    * server-side single-campaign filter.
    *
-   * BLOCKED(verify): collection key + filter parameter names taken from public
-   * summaries.
+   * Pagination: pages /advertiser/campaigns with a 1-based `page` and
+   * `per_page` = PAGE_SIZE until the first short page. On absent `query.limit`
+   * the pull runs to completion, capped at MAX_PAGES with a logged warning so
+   * a truncated result is never silent. With an explicit limit the loop stops
+   * once at least that many raw campaigns are in hand (never fewer than the
+   * pre-pagination single request returned).
+   *
+   * BLOCKED(verify): collection key + filter/paging parameter names taken from
+   * public summaries.
    */
   async listProgrammes(query?: ProgrammeQuery, ctx?: AdapterCallContext): Promise<Programme[]> {
     const c = requireCtx('listProgrammes', ctx);
     const token = requireToken('listProgrammes');
 
-    const response = await kwankoAdvRequest<KwankoAdvCampaignsResponse>({
-      operation: 'listProgrammes',
-      path: '/advertiser/campaigns',
-      token,
-      query: { camp: c.networkBrandId, per_page: query?.limit ?? 1000 },
-      resilience: RESILIENCE.default,
-    });
+    const raw: KwankoAdvCampaignRaw[] = [];
+    let page = 1;
+    for (;;) {
+      const response = await kwankoAdvRequest<KwankoAdvCampaignsResponse>({
+        operation: 'listProgrammes',
+        path: '/advertiser/campaigns',
+        token,
+        query: { camp: c.networkBrandId, page, per_page: PAGE_SIZE },
+        resilience: RESILIENCE.default,
+      });
+      const batch = pickCampaignArray(response);
+      raw.push(...batch);
+      // A short (or empty) page means the upstream list is exhausted.
+      if (batch.length < PAGE_SIZE) break;
+      // Backward-compatible early stop: an explicit limit is satisfied once
+      // at least that many raw campaigns are collected.
+      if (typeof query?.limit === 'number' && raw.length >= query.limit) break;
+      if (page >= MAX_PAGES) {
+        log.warn(
+          { operation: 'listProgrammes', cap: MAX_PAGES, fetched: raw.length },
+          'kwanko-advertiser pagination hit MAX_PAGES cap; result may be truncated',
+        );
+        break;
+      }
+      page += 1;
+    }
 
-    const raw = pickCampaignArray(response);
     let programmes = raw.map(toProgramme);
 
     // Scope to the resolved campaign id — the brand context IS the campaign.
@@ -814,6 +852,11 @@ void log;
 // ---------------------------------------------------------------------------
 
 export const _internals = {
+  // Pagination knobs + logger, exported so tests can build exact-size pages
+  // and assert the MAX_PAGES warning without a real network.
+  PAGE_SIZE,
+  MAX_PAGES,
+  log,
   mapTransactionStatus,
   mapProgrammeStatus,
   mapPerformanceStatus,

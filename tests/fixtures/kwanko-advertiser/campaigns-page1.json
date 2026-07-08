@@ -1,0 +1,804 @@
+{
+  "data": [
+    {
+      "id": "CAMP-2001",
+      "name": "Example Campaign 001",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://example-campaign-001.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2002",
+      "name": "Example Campaign 002",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-002.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2003",
+      "name": "Example Campaign 003",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-003.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2004",
+      "name": "Example Campaign 004",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-004.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2005",
+      "name": "Example Campaign 005",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-005.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2006",
+      "name": "Example Campaign 006",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-006.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2007",
+      "name": "Example Campaign 007",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-007.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2008",
+      "name": "Example Campaign 008",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://example-campaign-008.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2009",
+      "name": "Example Campaign 009",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-009.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2010",
+      "name": "Example Campaign 010",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-010.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2011",
+      "name": "Example Campaign 011",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-011.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2012",
+      "name": "Example Campaign 012",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-012.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2013",
+      "name": "Example Campaign 013",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-013.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2014",
+      "name": "Example Campaign 014",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-014.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2015",
+      "name": "Example Campaign 015",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://example-campaign-015.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2016",
+      "name": "Example Campaign 016",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-016.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2017",
+      "name": "Example Campaign 017",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-017.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2018",
+      "name": "Example Campaign 018",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-018.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2019",
+      "name": "Example Campaign 019",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-019.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2020",
+      "name": "Example Campaign 020",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-020.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2021",
+      "name": "Example Campaign 021",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-021.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2022",
+      "name": "Example Campaign 022",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://example-campaign-022.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2023",
+      "name": "Example Campaign 023",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-023.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2024",
+      "name": "Example Campaign 024",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-024.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2025",
+      "name": "Example Campaign 025",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-025.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2026",
+      "name": "Example Campaign 026",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-026.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2027",
+      "name": "Example Campaign 027",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-027.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2028",
+      "name": "Example Campaign 028",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-028.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2029",
+      "name": "Example Campaign 029",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://example-campaign-029.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2030",
+      "name": "Example Campaign 030",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-030.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2031",
+      "name": "Example Campaign 031",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-031.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2032",
+      "name": "Example Campaign 032",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-032.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2033",
+      "name": "Example Campaign 033",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-033.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2034",
+      "name": "Example Campaign 034",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-034.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2035",
+      "name": "Example Campaign 035",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-035.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2036",
+      "name": "Example Campaign 036",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://example-campaign-036.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2037",
+      "name": "Example Campaign 037",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-037.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2038",
+      "name": "Example Campaign 038",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-038.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2039",
+      "name": "Example Campaign 039",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-039.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2040",
+      "name": "Example Campaign 040",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-040.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2041",
+      "name": "Example Campaign 041",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-041.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2042",
+      "name": "Example Campaign 042",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-042.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2043",
+      "name": "Example Campaign 043",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://example-campaign-043.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2044",
+      "name": "Example Campaign 044",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-044.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2045",
+      "name": "Example Campaign 045",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-045.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2046",
+      "name": "Example Campaign 046",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-046.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2047",
+      "name": "Example Campaign 047",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-047.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2048",
+      "name": "Example Campaign 048",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-048.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2049",
+      "name": "Example Campaign 049",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-049.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2050",
+      "name": "Example Campaign 050",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://example-campaign-050.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2051",
+      "name": "Example Campaign 051",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-051.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2052",
+      "name": "Example Campaign 052",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-052.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2053",
+      "name": "Example Campaign 053",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-053.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2054",
+      "name": "Example Campaign 054",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-054.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2055",
+      "name": "Example Campaign 055",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-055.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2056",
+      "name": "Example Campaign 056",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-056.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2057",
+      "name": "Example Campaign 057",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://example-campaign-057.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2058",
+      "name": "Example Campaign 058",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-058.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2059",
+      "name": "Example Campaign 059",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-059.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2060",
+      "name": "Example Campaign 060",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-060.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2061",
+      "name": "Example Campaign 061",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-061.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2062",
+      "name": "Example Campaign 062",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-062.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2063",
+      "name": "Example Campaign 063",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-063.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2064",
+      "name": "Example Campaign 064",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://example-campaign-064.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2065",
+      "name": "Example Campaign 065",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-065.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2066",
+      "name": "Example Campaign 066",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-066.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2067",
+      "name": "Example Campaign 067",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-067.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2068",
+      "name": "Example Campaign 068",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-068.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2069",
+      "name": "Example Campaign 069",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-069.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2070",
+      "name": "Example Campaign 070",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-070.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2071",
+      "name": "Example Campaign 071",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://example-campaign-071.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2072",
+      "name": "Example Campaign 072",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-072.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2073",
+      "name": "Example Campaign 073",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-073.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2074",
+      "name": "Example Campaign 074",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-074.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2075",
+      "name": "Example Campaign 075",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-075.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2076",
+      "name": "Example Campaign 076",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-076.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2077",
+      "name": "Example Campaign 077",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-077.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2078",
+      "name": "Example Campaign 078",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://example-campaign-078.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2079",
+      "name": "Example Campaign 079",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-079.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2080",
+      "name": "Example Campaign 080",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-080.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2081",
+      "name": "Example Campaign 081",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-081.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2082",
+      "name": "Example Campaign 082",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-082.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2083",
+      "name": "Example Campaign 083",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-083.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2084",
+      "name": "Example Campaign 084",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-084.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2085",
+      "name": "Example Campaign 085",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://example-campaign-085.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2086",
+      "name": "Example Campaign 086",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-086.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2087",
+      "name": "Example Campaign 087",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-087.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2088",
+      "name": "Example Campaign 088",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-088.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2089",
+      "name": "Example Campaign 089",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-089.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2090",
+      "name": "Example Campaign 090",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-090.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2091",
+      "name": "Example Campaign 091",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-091.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2092",
+      "name": "Example Campaign 092",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://example-campaign-092.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2093",
+      "name": "Example Campaign 093",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-093.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2094",
+      "name": "Example Campaign 094",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-094.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2095",
+      "name": "Example Campaign 095",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-095.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2096",
+      "name": "Example Campaign 096",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-096.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2097",
+      "name": "Example Campaign 097",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-097.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2098",
+      "name": "Example Campaign 098",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-098.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2099",
+      "name": "Example Campaign 099",
+      "status": "paused",
+      "currency": "eur",
+      "url": "https://example-campaign-099.example",
+      "api_enabled": true
+    },
+    {
+      "id": "CAMP-2100",
+      "name": "Example Campaign 100",
+      "status": "active",
+      "currency": "eur",
+      "url": "https://example-campaign-100.example",
+      "api_enabled": true
+    }
+  ]
+}
