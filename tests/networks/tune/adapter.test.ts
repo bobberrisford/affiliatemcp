@@ -24,9 +24,15 @@ import { NetworkError } from '../../../src/shared/errors.js';
 import { NotImplementedError } from '../../../src/shared/types.js';
 
 const FIXTURES = path.join(process.cwd(), 'tests', 'networks', 'tune', 'fixtures');
+// Multi-page pagination fixtures live under the shared fixtures root.
+const PAGING_FIXTURES = path.join(process.cwd(), 'tests', 'fixtures', 'tune');
 
 function loadFixture(name: string): unknown {
   return JSON.parse(readFileSync(path.join(FIXTURES, name), 'utf8'));
+}
+
+function loadPagingFixture(name: string): unknown {
+  return JSON.parse(readFileSync(path.join(PAGING_FIXTURES, name), 'utf8'));
 }
 
 function fakeResponse(body: unknown, init: { status?: number; rawBody?: string } = {}): Response {
@@ -256,6 +262,69 @@ describe('TUNE.listProgrammes', () => {
   it('throws a config_error when the NetworkId is missing (§15.4)', async () => {
     delete process.env['TUNE_NETWORK_ID'];
     await expect(tuneAdapter.listProgrammes()).rejects.toBeInstanceOf(NetworkError);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// listProgrammes pagination (pull to completion on absent limit)
+// ---------------------------------------------------------------------------
+
+describe('TUNE.listProgrammes pagination', () => {
+  it('pulls the complete result set across pages via pageCount when no limit is given', async () => {
+    const spy = mockFetchQueue([
+      fakeResponse(loadPagingFixture('offers-page1.json')),
+      fakeResponse(loadPagingFixture('offers-page2.json')),
+    ]);
+    const programmes = await tuneAdapter.listProgrammes();
+    // 3 offers on page 1 + 2 offers on page 2 = the full set of 5.
+    expect(programmes.length).toBe(5);
+    expect(programmes.map((p) => p.id)).toEqual(
+      expect.arrayContaining(['2001', '2002', '2003', '2004', '2005']),
+    );
+    expect(spy.mock.calls.length).toBe(2);
+    const first = String(spy.mock.calls[0]?.[0]);
+    const second = String(spy.mock.calls[1]?.[0]);
+    expect(first).toContain(`limit=${_internals.PAGE_SIZE}`);
+    expect(first).toContain('page=1');
+    expect(second).toContain('page=2');
+  });
+
+  it('stops at the MAX_PAGES backstop and warns rather than truncating silently', async () => {
+    // Every page claims pageCount 9999, so only the cap can stop the loop.
+    const spy = mockFetchQueue(
+      Array.from({ length: _internals.MAX_PAGES }, () =>
+        fakeResponse(loadPagingFixture('offers-page-capped.json')),
+      ),
+    );
+    const warn = vi.spyOn(_internals.log, 'warn').mockImplementation(() => undefined);
+    const programmes = await tuneAdapter.listProgrammes();
+    expect(spy.mock.calls.length).toBe(_internals.MAX_PAGES);
+    expect(programmes.length).toBe(_internals.MAX_PAGES); // 1 offer per capped page
+    expect(warn).toHaveBeenCalledWith(
+      expect.objectContaining({ operation: 'listProgrammes', cap: _internals.MAX_PAGES }),
+      expect.stringContaining('MAX_PAGES'),
+    );
+  });
+
+  it('short-circuits to a single page sized to the caller-supplied limit', async () => {
+    const spy = mockFetchQueue([fakeResponse(loadFixture('offers.json'))]);
+    const programmes = await tuneAdapter.listProgrammes({ limit: 2 });
+    expect(spy.mock.calls.length).toBe(1);
+    const url = String(spy.mock.calls[0]?.[0]);
+    expect(url).toContain('limit=2');
+    expect(url).toContain('page=1');
+    expect(programmes.length).toBe(2);
+  });
+
+  it('stops defensively when a page returns no rows even if pageCount claims more', async () => {
+    const spy = mockFetchQueue([
+      fakeResponse({
+        response: { status: 1, data: { page: 1, pageCount: 5, count: 0, data: {} } },
+      }),
+    ]);
+    const programmes = await tuneAdapter.listProgrammes();
+    expect(spy.mock.calls.length).toBe(1);
+    expect(programmes.length).toBe(0);
   });
 });
 

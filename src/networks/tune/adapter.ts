@@ -32,8 +32,11 @@
  *   Affiliate_Offer::findAll
  *     → offers the affiliate can run (the "programmes"). Response data carries
  *       `page` / `pageCount` / `count` and a `data` map keyed by offer id, each
- *       value `{ Offer: {…} }`. Offer fields used: id, name, status, currency,
- *       default_payout, preview_url, offer_url.
+ *       value `{ Offer: {…} }`. When the caller gives no limit, listProgrammes
+ *       loops `page` up to `pageCount` and pulls the complete set, capped at
+ *       MAX_PAGES with a logged warning so truncation is never silent. Offer
+ *       fields used: id, name, status, currency, default_payout, preview_url,
+ *       offer_url.
  *   Affiliate_Report::getConversions
  *     → conversions for a datetime window. Response data carries the same
  *       pagination keys and a `data` map of rows `{ Stat: {…}, Offer: {…},
@@ -114,6 +117,7 @@ const KNOWN_LIMITATIONS = [
   'The API base URL is per-tenant: TUNE (HasOffers) is a CPA platform engine and each network runs its own instance, so one adapter serves any HasOffers-powered network via its NetworkId (the host is https://{network_id}.api.hasoffers.com); there is no single shared host.',
   'Amounts (Stat.payout) are assumed to be in major currency units (not minor units / cents); confirm against a live account before promoting beyond experimental.',
   'Click-level data is not exposed via the affiliate API; listClicks is not implemented.',
+  'listProgrammes paginates Affiliate_Offer::findAll via page/pageCount: with no limit it pulls every page, capped at MAX_PAGES with a logged warning rather than a silent truncation; a caller-supplied limit fetches a single page of that size.',
 ];
 
 const META: NetworkMeta = {
@@ -158,6 +162,16 @@ const RESILIENCE: ResilienceConfigMap = {
   listTransactions: REPORTING_RESILIENCE,
   getEarningsSummary: REPORTING_RESILIENCE,
 };
+
+/** Rows requested per page when pulling a list to completion. */
+const PAGE_SIZE = 100;
+
+/**
+ * Backstop on the pull-to-completion loop (matches the tolt/tapfiliate
+ * pattern). 50 pages × PAGE_SIZE = 5,000 rows before we stop and warn on
+ * stderr — a truncated pull is never silent (principle 4.1).
+ */
+const MAX_PAGES = 50;
 
 // ---------------------------------------------------------------------------
 // TUNE raw response shapes (deliberately minimal — see Awin adapter for rationale)
@@ -455,26 +469,55 @@ export class TuneAdapter implements NetworkAdapter {
    * List the offers (programmes) available to this affiliate.
    *
    * TUNE call: Affiliate_Offer::findAll
-   *   Returns offers paginated via `page` / `pageCount`. We fetch the first page
-   *   (up to `query.limit` or 100) and apply client-side search/status/limit
-   *   filters for cross-network consistency.
+   *   Returns offers paginated via `page` / `pageCount`. When the caller passes
+   *   `query.limit` we fetch one page sized to that limit (capped at 500),
+   *   preserving the pre-pagination behaviour. When `limit` is absent we pull
+   *   the COMPLETE result set, looping `page` up to the response's `pageCount`
+   *   and stopping at the MAX_PAGES backstop with a stderr warning so a
+   *   truncated pull is never silent (principle 4.1). Search/status/limit
+   *   filters are applied client-side for cross-network consistency.
    */
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
     const { apiKey, baseUrl, networkId } = requireCreds('listProgrammes');
-    const limit = Math.min(query?.limit ?? 100, 500);
 
-    const data = await tuneRequest<TunePagedData<TuneOfferRow>>({
-      operation: 'listProgrammes',
-      target: 'Affiliate_Offer',
-      apiMethod: 'findAll',
-      apiKey,
-      baseUrl,
-      networkId,
-      query: { limit, page: 1 },
-      resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
-    });
+    const fetchPage = (limit: number, page: number): Promise<TunePagedData<TuneOfferRow>> =>
+      tuneRequest<TunePagedData<TuneOfferRow>>({
+        operation: 'listProgrammes',
+        target: 'Affiliate_Offer',
+        apiMethod: 'findAll',
+        apiKey,
+        baseUrl,
+        networkId,
+        query: { limit, page },
+        resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
+      });
 
-    let programmes = dataRows(data)
+    const rows: TuneOfferRow[] = [];
+    if (typeof query?.limit === 'number') {
+      // Bounded pull: one page sized to the caller's limit (pre-pagination behaviour).
+      rows.push(...dataRows(await fetchPage(Math.min(query.limit, 500), 1)));
+    } else {
+      // No limit → pull to completion via page/pageCount, MAX_PAGES backstop.
+      let page = 1;
+      for (;;) {
+        const data = await fetchPage(PAGE_SIZE, page);
+        const batch = dataRows(data);
+        rows.push(...batch);
+        // Stop on the declared last page, or defensively on an empty/undeclared
+        // page so a malformed pageCount can never loop us forever.
+        if (batch.length === 0 || toNumber(data?.pageCount) <= page) break;
+        if (page >= MAX_PAGES) {
+          log.warn(
+            { operation: 'listProgrammes', cap: MAX_PAGES, fetched: rows.length },
+            'tune pagination hit MAX_PAGES cap; result may be truncated',
+          );
+          break;
+        }
+        page += 1;
+      }
+    }
+
+    let programmes = rows
       .map((row) => row.Offer)
       .filter((o): o is TuneOfferRaw => o !== undefined)
       .map(toProgramme);
@@ -952,7 +995,9 @@ export const _internals = {
   chunkDateRange,
   dataRows,
   toNumber,
+  // Pagination knobs + the adapter logger, so tests can prove the MAX_PAGES
+  // backstop stops the loop AND warns (never a silent truncation).
+  PAGE_SIZE,
+  MAX_PAGES,
+  log,
 };
-
-// Silence unused-import lint for the logger.
-void log;

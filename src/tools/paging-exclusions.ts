@@ -33,7 +33,6 @@ export const PAGING_EXCLUSIONS: ReadonlyMap<string, ReadonlySet<AdapterOperation
   ReadonlySet<AdapterOperation>
 >([
   // Confirmed bounded defaults (adapter fetches one page, never continues).
-  ['tune', ops('listProgrammes')], // limit default, page 1, single fetch
   ['accesstrade', ops('listProgrammes')], // limit default, page 1, single fetch
   ['offer18', ops('listProgrammes')], // first page only, by design comment
   ['optimise-media', ops('listProgrammes')], // page 1, default pageSize
