@@ -38,6 +38,12 @@ describe('offset-paging exclusions', () => {
     expect(supportsOffsetPaging('awin', 'listProgrammes')).toBe(true);
   });
 
+  it('lifted exclusions accept offset paging again', () => {
+    // #316: optimise-media listProgrammes now pages /Campaigns to completion
+    // when no limit is given, so tool-layer offset paging is honest there.
+    expect(supportsOffsetPaging('optimise-media', 'listProgrammes')).toBe(true);
+  });
+
   it('audited bounded-default pairs are excluded', () => {
     // impact-advertiser's exclusion was lifted in #316: all four paged ops now
     // paginate to completion on absent `limit`.
