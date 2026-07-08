@@ -1,0 +1,27 @@
+{
+  "data": [
+    {
+      "id": 1004,
+      "name": "Coral Coffee Roasters",
+      "approval_status": "approved",
+      "status": "active",
+      "currency": "GBP",
+      "payout": 3.25,
+      "payout_type": "CPA",
+      "categories": ["Food & Drink"],
+      "preview_url": "https://www.coral-coffee.example.com"
+    },
+    {
+      "id": 1005,
+      "name": "Sandbar Software",
+      "approval_status": "pending",
+      "status": "active",
+      "currency": "USD",
+      "payout": 25,
+      "payout_type": "RevShare",
+      "categories": ["Software"],
+      "preview_url": "https://www.sandbar-software.example.com"
+    }
+  ],
+  "meta": { "total": 5, "page": 2, "perPage": 3 }
+}

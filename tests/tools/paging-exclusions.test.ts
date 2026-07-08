@@ -83,4 +83,10 @@ describe('offset-paging exclusions', () => {
     expect(supportsOffsetPaging('everflow', 'listTransactions')).toBe(true);
     expect(supportsOffsetPaging('everflow', 'listClicks')).toBe(true);
   });
+
+  it('lifted exclusions support offset paging again (issue #316)', () => {
+    // scaleo listProgrammes now paginates to completion; see
+    // tests/networks/scaleo/pagination.test.ts for the behaviour proof.
+    expect(supportsOffsetPaging('scaleo', 'listProgrammes')).toBe(true);
+  });
 });
