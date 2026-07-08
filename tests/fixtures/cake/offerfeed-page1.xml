@@ -1,0 +1,907 @@
+<?xml version="1.0" encoding="utf-8"?>
+<offer_feed_response xmlns="http://cakemarketing.com/api/4/">
+  <success>true</success>
+  <row_count>100</row_count>
+  <offers>
+    <offer>
+      <offer_id>2001</offer_id>
+      <offer_name>Sample Offer 2001</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2002</offer_id>
+      <offer_name>Sample Offer 2002</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2003</offer_id>
+      <offer_name>Sample Offer 2003</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2004</offer_id>
+      <offer_name>Sample Offer 2004</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2005</offer_id>
+      <offer_name>Sample Offer 2005</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2006</offer_id>
+      <offer_name>Sample Offer 2006</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2007</offer_id>
+      <offer_name>Sample Offer 2007</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2008</offer_id>
+      <offer_name>Sample Offer 2008</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2009</offer_id>
+      <offer_name>Sample Offer 2009</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2010</offer_id>
+      <offer_name>Sample Offer 2010</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2011</offer_id>
+      <offer_name>Sample Offer 2011</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2012</offer_id>
+      <offer_name>Sample Offer 2012</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2013</offer_id>
+      <offer_name>Sample Offer 2013</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2014</offer_id>
+      <offer_name>Sample Offer 2014</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2015</offer_id>
+      <offer_name>Sample Offer 2015</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2016</offer_id>
+      <offer_name>Sample Offer 2016</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2017</offer_id>
+      <offer_name>Sample Offer 2017</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2018</offer_id>
+      <offer_name>Sample Offer 2018</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2019</offer_id>
+      <offer_name>Sample Offer 2019</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2020</offer_id>
+      <offer_name>Sample Offer 2020</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2021</offer_id>
+      <offer_name>Sample Offer 2021</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2022</offer_id>
+      <offer_name>Sample Offer 2022</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2023</offer_id>
+      <offer_name>Sample Offer 2023</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2024</offer_id>
+      <offer_name>Sample Offer 2024</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2025</offer_id>
+      <offer_name>Sample Offer 2025</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2026</offer_id>
+      <offer_name>Sample Offer 2026</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2027</offer_id>
+      <offer_name>Sample Offer 2027</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2028</offer_id>
+      <offer_name>Sample Offer 2028</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2029</offer_id>
+      <offer_name>Sample Offer 2029</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2030</offer_id>
+      <offer_name>Sample Offer 2030</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2031</offer_id>
+      <offer_name>Sample Offer 2031</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2032</offer_id>
+      <offer_name>Sample Offer 2032</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2033</offer_id>
+      <offer_name>Sample Offer 2033</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2034</offer_id>
+      <offer_name>Sample Offer 2034</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2035</offer_id>
+      <offer_name>Sample Offer 2035</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2036</offer_id>
+      <offer_name>Sample Offer 2036</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2037</offer_id>
+      <offer_name>Sample Offer 2037</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2038</offer_id>
+      <offer_name>Sample Offer 2038</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2039</offer_id>
+      <offer_name>Sample Offer 2039</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2040</offer_id>
+      <offer_name>Sample Offer 2040</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2041</offer_id>
+      <offer_name>Sample Offer 2041</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2042</offer_id>
+      <offer_name>Sample Offer 2042</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2043</offer_id>
+      <offer_name>Sample Offer 2043</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2044</offer_id>
+      <offer_name>Sample Offer 2044</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2045</offer_id>
+      <offer_name>Sample Offer 2045</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2046</offer_id>
+      <offer_name>Sample Offer 2046</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2047</offer_id>
+      <offer_name>Sample Offer 2047</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2048</offer_id>
+      <offer_name>Sample Offer 2048</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2049</offer_id>
+      <offer_name>Sample Offer 2049</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2050</offer_id>
+      <offer_name>Sample Offer 2050</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2051</offer_id>
+      <offer_name>Sample Offer 2051</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2052</offer_id>
+      <offer_name>Sample Offer 2052</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2053</offer_id>
+      <offer_name>Sample Offer 2053</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2054</offer_id>
+      <offer_name>Sample Offer 2054</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2055</offer_id>
+      <offer_name>Sample Offer 2055</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2056</offer_id>
+      <offer_name>Sample Offer 2056</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2057</offer_id>
+      <offer_name>Sample Offer 2057</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2058</offer_id>
+      <offer_name>Sample Offer 2058</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2059</offer_id>
+      <offer_name>Sample Offer 2059</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2060</offer_id>
+      <offer_name>Sample Offer 2060</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2061</offer_id>
+      <offer_name>Sample Offer 2061</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2062</offer_id>
+      <offer_name>Sample Offer 2062</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2063</offer_id>
+      <offer_name>Sample Offer 2063</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2064</offer_id>
+      <offer_name>Sample Offer 2064</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2065</offer_id>
+      <offer_name>Sample Offer 2065</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2066</offer_id>
+      <offer_name>Sample Offer 2066</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2067</offer_id>
+      <offer_name>Sample Offer 2067</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2068</offer_id>
+      <offer_name>Sample Offer 2068</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2069</offer_id>
+      <offer_name>Sample Offer 2069</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2070</offer_id>
+      <offer_name>Sample Offer 2070</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2071</offer_id>
+      <offer_name>Sample Offer 2071</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2072</offer_id>
+      <offer_name>Sample Offer 2072</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2073</offer_id>
+      <offer_name>Sample Offer 2073</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2074</offer_id>
+      <offer_name>Sample Offer 2074</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2075</offer_id>
+      <offer_name>Sample Offer 2075</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2076</offer_id>
+      <offer_name>Sample Offer 2076</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2077</offer_id>
+      <offer_name>Sample Offer 2077</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2078</offer_id>
+      <offer_name>Sample Offer 2078</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2079</offer_id>
+      <offer_name>Sample Offer 2079</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2080</offer_id>
+      <offer_name>Sample Offer 2080</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2081</offer_id>
+      <offer_name>Sample Offer 2081</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2082</offer_id>
+      <offer_name>Sample Offer 2082</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2083</offer_id>
+      <offer_name>Sample Offer 2083</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2084</offer_id>
+      <offer_name>Sample Offer 2084</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2085</offer_id>
+      <offer_name>Sample Offer 2085</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2086</offer_id>
+      <offer_name>Sample Offer 2086</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2087</offer_id>
+      <offer_name>Sample Offer 2087</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2088</offer_id>
+      <offer_name>Sample Offer 2088</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2089</offer_id>
+      <offer_name>Sample Offer 2089</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2090</offer_id>
+      <offer_name>Sample Offer 2090</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2091</offer_id>
+      <offer_name>Sample Offer 2091</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2092</offer_id>
+      <offer_name>Sample Offer 2092</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2093</offer_id>
+      <offer_name>Sample Offer 2093</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2094</offer_id>
+      <offer_name>Sample Offer 2094</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2095</offer_id>
+      <offer_name>Sample Offer 2095</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2096</offer_id>
+      <offer_name>Sample Offer 2096</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2097</offer_id>
+      <offer_name>Sample Offer 2097</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2098</offer_id>
+      <offer_name>Sample Offer 2098</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2099</offer_id>
+      <offer_name>Sample Offer 2099</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2100</offer_id>
+      <offer_name>Sample Offer 2100</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+  </offers>
+</offer_feed_response>

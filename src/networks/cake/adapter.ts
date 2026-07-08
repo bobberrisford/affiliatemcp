@@ -41,7 +41,9 @@
  *       paid amount, received (revenue), currency, disposition (approval state).
  *
  * Date format: MM/DD/YYYY HH:mm:ss (confirmed via the Conversions docs).
- * Pagination: start_at_row + row_limit on the report endpoints.
+ * Pagination: start_at_row + row_limit. listProgrammes steps start_at_row by
+ * the page size until a short page signals the end of the feed, capped at
+ * MAX_PAGES with a logged warning (never a silent truncation).
  *
  * --- Cardinal rules (see Awin adapter header for full rationale) ------------
  *
@@ -124,6 +126,7 @@ const KNOWN_LIMITATIONS = [
   'Conversion amounts are assumed to be major currency units (e.g. dollars, not cents).',
   'Click-level data is not exposed via the documented CAKE affiliate reporting API; listClicks is unsupported.',
   'Tracking links are assigned server-side per creative; generateTrackingLink is unsupported (no documented deterministic construction).',
+  'listProgrammes paginates the OfferFeed with start_at_row + row_limit until a short page, capped at MAX_PAGES with a logged warning rather than a silent truncation.',
 ];
 
 const META: NetworkMeta = {
@@ -175,6 +178,13 @@ const CONVERSIONS_PATH = '/affiliates/api/5/reports.asmx/Conversions';
 // CAKE conversion reports cap a single call's window; chunk to <=31 days to stay
 // well within typical report limits and keep payloads manageable.
 const CONVERSION_WINDOW_DAYS = 31;
+
+// OfferFeed pagination: rows requested per page when the caller sets no limit,
+// and the page-count backstop. The cap is a safety net against a runaway feed;
+// hitting it logs a warning so a truncated pull is never silent (principle
+// 4.1 — same pattern as the Tolt/Tapfiliate adapters).
+const OFFERFEED_PAGE_SIZE = 100;
+const MAX_PAGES = 50;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -481,22 +491,56 @@ export class CakeAdapter implements NetworkAdapter {
    * CAKE endpoint: GET /affiliates/api/4/offers.asmx/OfferFeed
    * The feed has no server-side free-text search; we apply search / status /
    * category / limit filters client-side for consistency with the other adapters.
-   * Pagination uses start_at_row + row_limit; we fetch the first page.
+   *
+   * Pagination uses start_at_row + row_limit. When the caller sets no `limit`
+   * we step start_at_row by the page size until a short page signals the end
+   * of the feed, capped at MAX_PAGES with a logged warning so a truncated pull
+   * is never silent. When `limit` is set we stop as soon as enough rows have
+   * been fetched, preserving the previous single-fetch behaviour for limits
+   * that fit in one page.
    */
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
     const apiKey = requireApiKey('listProgrammes');
     const affiliateId = requireAffiliateId('listProgrammes');
-    const rowLimit = Math.min(query?.limit ?? 100, 500);
+    // With a caller limit the first page requests exactly the old single-fetch
+    // row_limit (min(limit, 500)); without one, full OFFERFEED_PAGE_SIZE pages.
+    const pageSize =
+      typeof query?.limit === 'number' ? Math.min(query.limit, 500) : OFFERFEED_PAGE_SIZE;
 
-    const root = await cakeRequest({
-      operation: 'listProgrammes',
-      path: OFFERFEED_PATH,
-      apiKey,
-      query: { affiliate_id: affiliateId, start_at_row: 1, row_limit: rowLimit },
-      resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
-    });
+    const offers: CakeOfferRaw[] = [];
+    let capped = true;
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const root = await cakeRequest({
+        operation: 'listProgrammes',
+        path: OFFERFEED_PATH,
+        apiKey,
+        query: {
+          affiliate_id: affiliateId,
+          start_at_row: 1 + page * pageSize,
+          row_limit: pageSize,
+        },
+        resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
+      });
+      const batch = findAll(root, 'offer').map(elementToOffer);
+      offers.push(...batch);
+      // A short page means the feed is exhausted; a satisfied caller limit
+      // means there is nothing left to pull.
+      if (
+        batch.length < pageSize ||
+        (typeof query?.limit === 'number' && offers.length >= query.limit)
+      ) {
+        capped = false;
+        break;
+      }
+    }
+    if (capped) {
+      log.warn(
+        { operation: 'listProgrammes', cap: MAX_PAGES, fetched: offers.length },
+        'cake OfferFeed pagination hit MAX_PAGES cap; result may be truncated',
+      );
+    }
 
-    let programmes = findAll(root, 'offer').map((el) => toProgramme(elementToOffer(el)));
+    let programmes = offers.map(toProgramme);
 
     if (query?.search) {
       const needle = query.search.toLowerCase();
@@ -880,7 +924,9 @@ export const _internals = {
   elementToConversion,
   chunkDateRange,
   formatCakeDate,
+  // Pagination knobs + logger, exposed so tests can assert the MAX_PAGES
+  // backstop and its warning without duplicating the constants.
+  OFFERFEED_PAGE_SIZE,
+  MAX_PAGES,
+  log,
 };
-
-// Silence unused-import lint for the logger.
-void log;
