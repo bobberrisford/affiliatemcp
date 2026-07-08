@@ -51,7 +51,48 @@ import { supportsOffsetPaging } from './paging-exclusions.js';
 
 export type { ToolDefinition } from './types.js';
 
-export type RunDiagnosticMetaResult = DiagnosticResult;
+/**
+ * Server-level update status attached to the diagnostic result. Additive:
+ * the original DiagnosticResult fields are preserved verbatim.
+ */
+export interface ServerUpdateStatus {
+  /** The version of the running server. */
+  current: string;
+  /** Latest published version, when the registry (or its daily cache) answered. */
+  latest?: string;
+  updateAvailable?: boolean;
+  /** Surface-correct way to apply the update. Present only when one is available. */
+  instruction?: string;
+  /** False when the update check is disabled or no latest version is known. */
+  checked: boolean;
+}
+
+export type RunDiagnosticMetaResult = DiagnosticResult & { server: ServerUpdateStatus };
+
+/**
+ * Resolve the server's own update status for the diagnostic. The startup
+ * update notice only reaches stderr, which users of host-managed surfaces
+ * (the Claude Desktop .mcpb, which cannot self-update) never see, so the
+ * diagnostic is the one place an MCP client can answer "is the server itself
+ * up to date?". Uses the non-forced check so registry traffic keeps the
+ * once-per-UTC-day cadence documented in PRIVACY.md; a disabled check or an
+ * unknown latest version degrades to { checked: false }, never an error.
+ */
+async function buildServerUpdateStatus(): Promise<ServerUpdateStatus> {
+  const { checkForUpdate, updateInstructionForSurface } = await import(
+    '../shared/update-check.js'
+  );
+  const { PACKAGE_VERSION } = await import('../shared/telemetry.js');
+  const info = await checkForUpdate();
+  if (!info) return { current: PACKAGE_VERSION, checked: false };
+  return {
+    current: info.current,
+    latest: info.latest,
+    updateAvailable: info.updateAvailable,
+    checked: true,
+    ...(info.updateAvailable ? { instruction: updateInstructionForSurface(info.surface) } : {}),
+  };
+}
 
 export type ListNetworksMetaResult = Array<
   NetworkMeta & {
@@ -530,8 +571,8 @@ export function generateMetaTools(): ToolDefinition[] {
       name: 'affiliate_run_diagnostic',
       description:
         'Run a capabilities diagnostic across one or all registered affiliate networks. ' +
-        'Use this to answer "is everything working?" or to confirm which operations a given network actually supports. ' +
-        'Returns NetworkCapabilities per network; pair with the per-network verify_auth tools when you need to isolate an auth failure.',
+        'Use this to answer "is everything working?", to confirm which operations a given network actually supports, or to check whether the server itself is up to date. ' +
+        'Returns NetworkCapabilities per network plus a `server` block with the installed version, whether a newer release is available, and how to apply it; pair with the per-network verify_auth tools when you need to isolate an auth failure.',
       inputSchema: {
         type: 'object',
         properties: { network: { type: 'string' } },
@@ -543,7 +584,11 @@ export function generateMetaTools(): ToolDefinition[] {
           .strict()
           .parse(args ?? {});
         const { runDiagnostic } = await import('../shared/diagnostic.js');
-        return runDiagnostic(parsed.network);
+        const [diagnostic, server] = await Promise.all([
+          runDiagnostic(parsed.network),
+          buildServerUpdateStatus(),
+        ]);
+        return { ...diagnostic, server };
       },
     },
     {

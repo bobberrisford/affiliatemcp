@@ -6,7 +6,9 @@ import {
   generateAllTools,
   generateMetaTools,
   generateToolsFor,
+  type RunDiagnosticMetaResult,
 } from '../../src/tools/generate.js';
+import { PACKAGE_VERSION } from '../../src/shared/telemetry.js';
 import { _clearRegistry } from '../../src/shared/registry.js';
 import { saveBrands } from '../../src/shared/brands.js';
 import { resolveKpiFile, resolveStrategyFile } from '../../src/shared/client-strategy.js';
@@ -752,6 +754,97 @@ describe('affiliate_run_diagnostic — preserves per-op claimStatus (review feed
     const ops = result.results[0]!.capabilities!.operations;
     expect(ops['getProgrammePerformance']!.claimStatus).toBe('experimental');
     expect(ops['listProgrammes']!.claimStatus).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// affiliate_run_diagnostic reports the server's own update status
+// ---------------------------------------------------------------------------
+
+describe('affiliate_run_diagnostic — server update status', () => {
+  const NEWER = `${Number.parseInt(PACKAGE_VERSION.split('.')[0] ?? '0', 10) + 1}.0.0`;
+  let restoreEnv: Record<string, string | undefined>;
+
+  /** Stub the registry read that checkForUpdate performs via global fetch. */
+  function stubRegistry(version: string): void {
+    vi.stubGlobal(
+      'fetch',
+      (async () =>
+        new Response(JSON.stringify({ version }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })) as unknown as typeof fetch,
+    );
+  }
+
+  function diagnosticTool() {
+    return generateMetaTools().find((t) => t.name === 'affiliate_run_diagnostic')!;
+  }
+
+  beforeEach(() => {
+    restoreEnv = {
+      AFFILIATE_MCP_UPDATE_CHECK: process.env['AFFILIATE_MCP_UPDATE_CHECK'],
+      AFFILIATE_MCP_SURFACE: process.env['AFFILIATE_MCP_SURFACE'],
+    };
+    delete process.env['AFFILIATE_MCP_UPDATE_CHECK'];
+    process.env['AFFILIATE_MCP_SURFACE'] = 'mcpb';
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    for (const [k, v] of Object.entries(restoreEnv)) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+  });
+
+  it('reports checked:false with the running version when the check is disabled', async () => {
+    process.env['AFFILIATE_MCP_UPDATE_CHECK'] = '0';
+    const result = (await diagnosticTool().handle({})) as RunDiagnosticMetaResult;
+
+    expect(result.server).toEqual({ current: PACKAGE_VERSION, checked: false });
+  });
+
+  it('reports a newer release with the surface-correct instruction', async () => {
+    stubRegistry(NEWER);
+    const result = (await diagnosticTool().handle({})) as RunDiagnosticMetaResult;
+
+    expect(result.server.checked).toBe(true);
+    expect(result.server.current).toBe(PACKAGE_VERSION);
+    expect(result.server.latest).toBe(NEWER);
+    expect(result.server.updateAvailable).toBe(true);
+    // Surface is mcpb: the instruction must point at the .mcpb re-install path.
+    expect(result.server.instruction).toContain('.mcpb');
+  });
+
+  it('omits the instruction when already on the latest release', async () => {
+    stubRegistry(PACKAGE_VERSION);
+    const result = (await diagnosticTool().handle({})) as RunDiagnosticMetaResult;
+
+    expect(result.server.checked).toBe(true);
+    expect(result.server.updateAvailable).toBe(false);
+    expect(result.server.instruction).toBeUndefined();
+  });
+
+  it('preserves the original DiagnosticResult fields alongside the server block', async () => {
+    stubRegistry(PACKAGE_VERSION);
+    const a = fakeAdapter('diag-upd', 'Diag Update');
+    (a as { capabilitiesCheck: () => Promise<unknown> }).capabilitiesCheck = async () => ({
+      network: 'diag-upd',
+      generatedAt: new Date().toISOString(),
+      operations: { listProgrammes: { supported: true } },
+      knownLimitations: [],
+    });
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(a);
+
+    const result = (await diagnosticTool().handle({
+      network: 'diag-upd',
+    })) as RunDiagnosticMetaResult;
+
+    expect(typeof result.generatedAt).toBe('string');
+    expect(result.results[0]!.network).toBe('diag-upd');
+    expect(result.server.checked).toBe(true);
   });
 });
 
