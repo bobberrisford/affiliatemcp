@@ -89,4 +89,9 @@ describe('offset-paging exclusions', () => {
     // tests/networks/scaleo/pagination.test.ts for the behaviour proof.
     expect(supportsOffsetPaging('scaleo', 'listProgrammes')).toBe(true);
   });
+
+  it('lifted exclusions support offset paging again (#316)', () => {
+    // accesstrade listProgrammes now paginates to completion on absent limit.
+    expect(supportsOffsetPaging('accesstrade', 'listProgrammes')).toBe(true);
+  });
 });

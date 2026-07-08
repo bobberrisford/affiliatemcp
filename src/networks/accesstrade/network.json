@@ -12,7 +12,8 @@
     "The conversion report is rate-limited to 1 request / 5 minutes and capped at a 7-day window; wider ranges are chunked into 7-day slices automatically.",
     "Click-level data is not exposed via the publisher API; listClicks is unsupported.",
     "Tracking links are produced in the AccessTrade dashboard, not via a documented deterministic scheme; generateTrackingLink is unsupported.",
-    "The API base URL differs by country; non-default countries must set ACCESSTRADE_BASE_URL."
+    "The API base URL differs by country; non-default countries must set ACCESSTRADE_BASE_URL.",
+    "The campaign listing is paginated via the required limit/page parameters; when no limit is requested, listProgrammes pulls every page, capped at MAX_PAGES with a warning rather than a silent truncation."
   ],
   "claim_status": "experimental",
   "adapter_version": "0.1.0",

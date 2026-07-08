@@ -1,0 +1,25 @@
+{
+  "total": 5,
+  "page": 2,
+  "limit": 300,
+  "data": [
+    {
+      "id": "5004",
+      "name": "Mangrove Electronics MY",
+      "url": "https://www.mangrove-electronics.example.com",
+      "affiliationStatus": "affiliated",
+      "defaultRewards": "Flat 2 SGD per order",
+      "categories": ["Electronics"],
+      "currency": "SGD"
+    },
+    {
+      "id": "5005",
+      "name": "Coral Kitchenware ID",
+      "url": "https://www.coral-kitchenware.example.com",
+      "affiliationStatus": "affiliated",
+      "defaultRewards": { "type": "cps", "value": 3 },
+      "categories": ["Home"],
+      "currency": "IDR"
+    }
+  ]
+}
