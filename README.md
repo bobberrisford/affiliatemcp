@@ -111,7 +111,6 @@ configuration is required.
    **"What affiliate networks do you have access to?"**
 
 The extension does not update itself: download the latest `.mcpb` and install it over the top; saved credentials are kept ([full steps for every install path](./docs/updating.md)).
-
 The native extension currently offers secure setup fields for Awin, CJ, Impact,
 and Partnerize. It runs the complete server, so an existing
 `~/.affiliate-mcp/.env` continues to enable every other adapter. A portable
