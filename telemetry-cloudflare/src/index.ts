@@ -173,7 +173,7 @@ async function collectEcosystem(env: Env): Promise<void> {
 }
 
 async function dashboard(env: Env): Promise<Response> {
-  const [ecosystem, usage, active] = await Promise.all([
+  const [ecosystem, usage, issues, totals, active] = await Promise.all([
     env.DB.prepare(
       'SELECT day, metric, dimension, value FROM ecosystem_daily ORDER BY day DESC, metric LIMIT 500',
     ).all(),
@@ -183,12 +183,34 @@ async function dashboard(env: Env): Promise<Response> {
        GROUP BY package_version, surface, network, operation, outcome
        ORDER BY count DESC LIMIT 200`,
     ).all(),
+    // Error rows only, so a busy install's success counts cannot crowd field
+    // breakage out of the top-200 usage window above.
+    env.DB.prepare(
+      `SELECT network, operation, outcome, SUM(count) AS count,
+              MAX(package_version) AS latest_version, MAX(day) AS last_seen
+       FROM usage_daily WHERE day >= date('now', '-30 days') AND outcome != 'success'
+       GROUP BY network, operation, outcome
+       ORDER BY count DESC LIMIT 200`,
+    ).all(),
+    // Full-window sums; the cards previously derived rates from the truncated
+    // top-200 rows, which under-counts on any dataset larger than the window.
+    env.DB.prepare(
+      `SELECT SUM(count) AS calls,
+              SUM(CASE WHEN outcome != 'success' THEN count ELSE 0 END) AS errors
+       FROM usage_daily WHERE day >= date('now', '-30 days')`,
+    ).first(),
     env.DB.prepare(
       `SELECT COUNT(DISTINCT monthly_install_id) AS monthly_active_installs
        FROM install_activity WHERE day >= date('now', '-30 days')`,
     ).first(),
   ]);
-  return json({ ecosystem: ecosystem.results, usage: usage.results, reach: active });
+  return json({
+    ecosystem: ecosystem.results,
+    usage: usage.results,
+    issues: issues.results,
+    totals,
+    reach: active,
+  });
 }
 
 async function fetchJson<T>(url: string, headers?: HeadersInit): Promise<T | undefined> {

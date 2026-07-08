@@ -14,6 +14,30 @@
       </header>
       <section class="cards" id="cards"></section>
       <section>
+        <h2>Issues, last 30 days</h2>
+        <p>
+          Error counts from opted-in installs, grouped by network, operation, and outcome
+          category. Highlighted rows are bug signals: <code>internal_error</code> means the
+          software itself misbehaved, <code>upstream_4xx</code> means a network is rejecting
+          requests (contract drift or a request-building bug). <code>upstream_5xx</code> is the
+          network's servers failing; <code>timeout</code>, <code>circuit_open</code>, and
+          <code>network_unavailable</code> are usually the user's environment.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Network</th>
+              <th>Operation</th>
+              <th>Outcome</th>
+              <th>Count</th>
+              <th>Newest version</th>
+              <th>Last seen</th>
+            </tr>
+          </thead>
+          <tbody id="issues"></tbody>
+        </table>
+      </section>
+      <section>
         <h2>Usage and reliability, last 30 days</h2>
         <table>
           <thead>
