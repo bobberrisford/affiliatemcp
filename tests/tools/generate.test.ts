@@ -805,6 +805,19 @@ describe('affiliate_run_diagnostic — server update status', () => {
     expect(result.server).toEqual({ current: PACKAGE_VERSION, checked: false });
   });
 
+  it('degrades to checked:false when the registry is unreachable and no cache exists', async () => {
+    vi.stubGlobal(
+      'fetch',
+      (async () => {
+        throw new Error('network unreachable');
+      }) as unknown as typeof fetch,
+    );
+    const result = (await diagnosticTool().handle({})) as RunDiagnosticMetaResult;
+
+    expect(result.server).toEqual({ current: PACKAGE_VERSION, checked: false });
+    expect(Array.isArray(result.results)).toBe(true);
+  });
+
   it('reports a newer release with the surface-correct instruction', async () => {
     stubRegistry(NEWER);
     const result = (await diagnosticTool().handle({})) as RunDiagnosticMetaResult;

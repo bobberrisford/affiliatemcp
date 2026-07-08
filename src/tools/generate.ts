@@ -58,7 +58,11 @@ export type { ToolDefinition } from './types.js';
 export interface ServerUpdateStatus {
   /** The version of the running server. */
   current: string;
-  /** Latest published version, when the registry (or its daily cache) answered. */
+  /**
+   * Latest published version, from the registry or its daily cache. The cache
+   * never expires, so on a machine that has been offline this can be stale;
+   * treat "up to date" as "up to date as of the last successful check".
+   */
   latest?: string;
   updateAvailable?: boolean;
   /** Surface-correct way to apply the update. Present only when one is available. */
