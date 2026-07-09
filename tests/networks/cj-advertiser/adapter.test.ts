@@ -233,6 +233,142 @@ describe('CJ advertiser.listTransactions', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Pagination — sinceCommissionId cursor loop (#316)
+// ---------------------------------------------------------------------------
+
+/** A single-row page that always claims more rows remain (payloadComplete false). */
+function cursorPage(i: number): Response {
+  return fakeResponse({
+    data: {
+      commissionDetails: {
+        payloadComplete: false,
+        count: 1,
+        records: [
+          {
+            commissionId: `C-CAP-${i}`,
+            advertiserId: '1234567',
+            advertiserName: 'Acme Brand',
+            publisherId: 'PUB-1',
+            publisherName: 'BestDeals.com',
+            postingDate: '2026-05-01T10:00:00Z',
+            eventDate: '2026-04-28T09:00:00Z',
+            actionStatus: 'LOCKED',
+            actionType: 'advance',
+            saleAmountUsd: '10.00',
+            commissionAmountUsd: '1.00',
+            items: [],
+          },
+        ],
+      },
+    },
+  });
+}
+
+describe('CJ advertiser commissionDetails pagination', () => {
+  it('listTransactions without limit follows the cursor across pages to completion', async () => {
+    const { calls } = mockFetchQueue([
+      fakeResponse(loadFixture('commission-details-page-1.json')),
+      fakeResponse(loadFixture('commission-details-page-2.json')),
+    ]);
+    const r = await cjAdvertiserAdapter.listTransactions(undefined, {
+      networkBrandId: '1234567',
+    });
+    expect(r).toHaveLength(5);
+    expect(r.map((t) => t.id)).toEqual(['C-A-2001', 'C-A-2002', 'C-A-2003', 'C-A-2004', 'C-A-2005']);
+    expect(calls).toHaveLength(2);
+    // Page 1 opens with the full page size and no cursor.
+    const first = calls[0]?.body as { variables: Record<string, unknown> };
+    expect(first.variables['maxRows']).toBe(_internals.PAGE_MAX_ROWS);
+    expect(first.variables['sinceCommissionId']).toBeUndefined();
+    // Page 2 carries the last commissionId of page 1 as the cursor.
+    const second = calls[1]?.body as { variables: Record<string, unknown> };
+    expect(second.variables['sinceCommissionId']).toBe('C-A-2003');
+    expect(second.variables['forAdvertisers']).toEqual(['1234567']);
+  });
+
+  it('listTransactions with a satisfied limit short-circuits after one page', async () => {
+    // payloadComplete is false, but limit=2 is already satisfied — no second call.
+    const { calls } = mockFetchQueue([
+      fakeResponse(loadFixture('commission-details-page-1.json')),
+    ]);
+    const r = await cjAdvertiserAdapter.listTransactions(
+      { limit: 2 },
+      { networkBrandId: '1234567' },
+    );
+    expect(r).toHaveLength(2);
+    expect(calls).toHaveLength(1);
+    // limit is passed upstream as maxRows, same as the pre-pagination behaviour.
+    const body = calls[0]?.body as { variables: Record<string, unknown> };
+    expect(body.variables['maxRows']).toBe(2);
+  });
+
+  it('listTransactions with a limit beyond page one continues until satisfied', async () => {
+    const { calls } = mockFetchQueue([
+      fakeResponse(loadFixture('commission-details-page-1.json')),
+      fakeResponse(loadFixture('commission-details-page-2.json')),
+    ]);
+    const r = await cjAdvertiserAdapter.listTransactions(
+      { limit: 4 },
+      { networkBrandId: '1234567' },
+    );
+    expect(r).toHaveLength(4);
+    expect(calls).toHaveLength(2);
+    // The second page only asks for the remaining rows.
+    const second = calls[1]?.body as { variables: Record<string, unknown> };
+    expect(second.variables['maxRows']).toBe(1);
+    expect(second.variables['sinceCommissionId']).toBe('C-A-2003');
+  });
+
+  it('stops at the MAX_PAGES backstop with a stderr warning, never silently', async () => {
+    const warn = vi.spyOn(_internals.log, 'warn').mockImplementation(() => undefined);
+    const pages = Array.from({ length: _internals.MAX_PAGES }, (_, i) => cursorPage(i));
+    const { calls } = mockFetchQueue(pages);
+    const r = await cjAdvertiserAdapter.listTransactions(undefined, {
+      networkBrandId: '1234567',
+    });
+    expect(calls).toHaveLength(_internals.MAX_PAGES);
+    expect(r).toHaveLength(_internals.MAX_PAGES);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]?.[1])).toContain('MAX_PAGES');
+  });
+
+  it('listMediaPartners aggregates across pages (limit bounds partners, not the pull)', async () => {
+    const { calls } = mockFetchQueue([
+      fakeResponse(loadFixture('commission-details-page-1.json')),
+      fakeResponse(loadFixture('commission-details-page-2.json')),
+    ]);
+    const partners = await cjAdvertiserAdapter.listMediaPartners(
+      { limit: 2 },
+      { networkBrandId: '1234567' },
+    );
+    // Both pages were pulled even though the derived list is limited to 2:
+    // the limit applies to the derived partner list, not the upstream rows.
+    expect(calls).toHaveLength(2);
+    expect(partners).toHaveLength(2);
+    const body = calls[0]?.body as { variables: Record<string, unknown> };
+    expect(body.variables['maxRows']).toBe(_internals.PAGE_MAX_ROWS);
+  });
+
+  it('getProgrammePerformance buckets rows from every page together', async () => {
+    const { calls } = mockFetchQueue([
+      fakeResponse(loadFixture('commission-details-page-1.json')),
+      fakeResponse(loadFixture('commission-details-page-2.json')),
+    ]);
+    const rows = await cjAdvertiserAdapter.getProgrammePerformance(undefined, {
+      networkBrandId: '1234567',
+    });
+    expect(calls).toHaveLength(2);
+    // PUB-2 on 2026-05-02 has one row on each page (CLOSED + CORRECTED):
+    // the bucket must combine them — 85 gross, 8.5 commission, reversed.
+    const pub2 = rows.find((r) => r.publisherId === 'PUB-2' && r.date === '2026-05-02');
+    expect(pub2?.conversions).toBe(2);
+    expect(pub2?.grossSale).toBe(85);
+    expect(pub2?.commission).toBe(8.5);
+    expect(pub2?.status).toBe('reversed');
+  });
+});
+
+// ---------------------------------------------------------------------------
 // listMediaPartners — derived view from commissionDetails aggregation
 // ---------------------------------------------------------------------------
 

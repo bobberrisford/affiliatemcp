@@ -1,0 +1,52 @@
+{
+  "data": {
+    "commissionDetails": {
+      "payloadComplete": false,
+      "count": 3,
+      "records": [
+        {
+          "commissionId": "C-A-2001",
+          "advertiserId": "1234567",
+          "advertiserName": "Acme Brand",
+          "publisherId": "PUB-1",
+          "publisherName": "BestDeals.com",
+          "postingDate": "2026-05-01T10:00:00Z",
+          "eventDate": "2026-04-28T09:00:00Z",
+          "actionStatus": "LOCKED",
+          "actionType": "advance",
+          "saleAmountUsd": "100.00",
+          "commissionAmountUsd": "10.00",
+          "items": []
+        },
+        {
+          "commissionId": "C-A-2002",
+          "advertiserId": "1234567",
+          "advertiserName": "Acme Brand",
+          "publisherId": "PUB-1",
+          "publisherName": "BestDeals.com",
+          "postingDate": "2026-05-01T12:00:00Z",
+          "eventDate": "2026-04-29T09:00:00Z",
+          "actionStatus": "EXTENDED",
+          "actionType": "advance",
+          "saleAmountUsd": "40.00",
+          "commissionAmountUsd": "4.00",
+          "items": []
+        },
+        {
+          "commissionId": "C-A-2003",
+          "advertiserId": "1234567",
+          "advertiserName": "Acme Brand",
+          "publisherId": "PUB-2",
+          "publisherName": "Coupon Cabin",
+          "postingDate": "2026-05-02T08:00:00Z",
+          "eventDate": "2026-04-30T09:00:00Z",
+          "actionStatus": "CLOSED",
+          "actionType": "advance",
+          "saleAmountUsd": "60.00",
+          "commissionAmountUsd": "6.00",
+          "items": []
+        }
+      ]
+    }
+  }
+}

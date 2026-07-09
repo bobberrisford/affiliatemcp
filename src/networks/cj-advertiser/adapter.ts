@@ -30,12 +30,18 @@
  *   listProgrammes         synthetic. CJ has no advertiser-programmes query;
  *                          we return one Programme per CID derived from
  *                          advertiserLookup metadata.
- *   listTransactions       commissionDetails → Transaction[].
+ *   listTransactions       commissionDetails → Transaction[]. Follows the
+ *                          `sinceCommissionId` cursor while CJ reports
+ *                          `payloadComplete: false`, so an absent `limit`
+ *                          pulls the complete window (MAX_PAGES backstop,
+ *                          warned on stderr, never silent).
  *   listMediaPartners      derived from a recent commissionDetails pull —
  *                          aggregate the distinct (publisherId, publisherName)
- *                          tuples. Documented as a derived view.
+ *                          tuples over the complete window (same cursor
+ *                          loop). Documented as a derived view.
  *   getProgrammePerformance computed client-side from commissionDetails:
- *                          group by (publisherId, day), aggregate clicks
+ *                          group by (publisherId, day) over the complete
+ *                          window (same cursor loop), aggregate clicks
  *                          (always 0 — commissionDetails has no click data,
  *                          documented as a gap), conversions, grossSale,
  *                          commission. USD-only currency.
@@ -76,6 +82,7 @@ import {
   type ProgrammePerformanceQuery,
   type ProgrammePerformanceRow,
   type ProgrammeQuery,
+  type ResilienceConfig,
   type ResilienceConfigMap,
   type SetupStep,
   type TrackingLink,
@@ -93,7 +100,7 @@ const META: NetworkMeta = {
   baseUrl: 'https://commissions.api.cj.com',
   authModel: 'bearer',
   docsUrl: 'https://developers.cj.com/',
-  adapterVersion: '0.1.0',
+  adapterVersion: '0.2.0',
   lastVerified: '2026-05-23',
   claimStatus: 'experimental',
   knownLimitations: [
@@ -103,7 +110,7 @@ const META: NetworkMeta = {
     '`getProgrammePerformance` is computed client-side from `commissionDetails`. Clicks are NOT available from `commissionDetails` and are reported as 0 (TODO(verify): legacy REST report endpoints may surface clicks for some accounts).',
     'Status mapping for performance rows uses CJ `actionStatus`: EXTENDED / LOCKED → pending, CLOSED → approved, CORRECTED / REVERSED → reversed. The CLOSED semantics are TODO(verify) against a live tenant.',
     'All amounts use CJ\'s USD-normalised fields (`saleAmountUsd`, `commissionAmountUsd`); rows are emitted with `currency: USD` regardless of the brand\'s settlement currency.',
-    'Pagination on `commissionDetails` is capped at ~10,000 rows per page via `maxRows`; wider windows should be split by the caller and a follow-up PR can add a cursor loop via `sinceCommissionId`.',
+    '`commissionDetails` is paginated via the `sinceCommissionId` cursor: when no `limit` is supplied the adapter follows `payloadComplete` to completion, capped at MAX_PAGES (10 pages of up to 10,000 rows) with a stderr warning rather than a silent truncation.',
   ],
   supportsBrandOps: true,
   setupTimeEstimateMinutes: 8,
@@ -202,6 +209,92 @@ interface CjAdvCommissionDetailsEnvelope {
     count?: number;
     records?: CjAdvCommissionRaw[];
   };
+}
+
+// ---------------------------------------------------------------------------
+// Pagination — sinceCommissionId cursor loop over commissionDetails
+// ---------------------------------------------------------------------------
+
+/** CJ's documented per-page ceiling for `maxRows` on `commissionDetails`. */
+const PAGE_MAX_ROWS = 10_000;
+
+/**
+ * Backstop on the cursor loop: 10 pages of up to 10,000 rows (100,000 rows)
+ * per pull. Hitting the cap logs a stderr warning so a truncated result is
+ * never silent (principle 4.1) — same pattern as the tolt adapter.
+ */
+const MAX_PAGES = 10;
+
+/**
+ * Fetch commissionDetails rows for one CID, following CJ's cursor pagination
+ * to completion.
+ *
+ * CJ's commission-detail GraphQL contract: each page reports
+ * `payloadComplete`. While it is `false`, re-issue the same query (same date
+ * window) with `sinceCommissionId` set to the last record's `commissionId` to
+ * receive the next batch. `maxRows` caps a single page at 10,000.
+ *
+ * When `limit` is present we stop as soon as `limit` rows are collected —
+ * backward-compatible with the pre-pagination behaviour where `limit` passed
+ * straight through as `maxRows` (never fewer rows than before). When `limit`
+ * is absent we pull the complete window, capped at MAX_PAGES with a stderr
+ * warning.
+ */
+async function fetchCommissionRecords(input: {
+  operation: 'listTransactions' | 'listMediaPartners' | 'getProgrammePerformance';
+  cid: string;
+  from: Date;
+  to: Date;
+  token: string;
+  resilience: ResilienceConfig;
+  limit?: number;
+}): Promise<CjAdvCommissionRaw[]> {
+  const target = typeof input.limit === 'number' ? Math.max(1, input.limit) : undefined;
+  const out: CjAdvCommissionRaw[] = [];
+  let sinceCommissionId: string | undefined;
+
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const maxRows =
+      target === undefined ? PAGE_MAX_ROWS : Math.min(target - out.length, PAGE_MAX_ROWS);
+    const variables: Record<string, unknown> = {
+      forAdvertisers: [input.cid],
+      sincePostingDate: input.from.toISOString(),
+      beforePostingDate: input.to.toISOString(),
+      maxRows,
+    };
+    if (sinceCommissionId !== undefined) variables['sinceCommissionId'] = sinceCommissionId;
+
+    const data = await cjAdvGraphQL<CjAdvCommissionDetailsEnvelope>({
+      operation: input.operation,
+      endpoint: CJ_ADVERTISER_GRAPHQL,
+      query: COMMISSION_DETAILS_QUERY,
+      variables,
+      token: input.token,
+      resilience: input.resilience,
+    });
+
+    const envelope = data?.commissionDetails;
+    const batch = envelope?.records ?? [];
+    out.push(...batch);
+
+    if (target !== undefined && out.length >= target) return out.slice(0, target);
+    // `payloadComplete === false` is CJ's explicit "more rows remain" signal.
+    // `true` or absent both mean the window is exhausted — absent is treated
+    // as complete so a schema drift cannot cause an infinite loop.
+    if (envelope?.payloadComplete !== false) return out;
+    // Defensive: an incomplete claim with no rows offers no cursor to advance
+    // from; stop rather than re-issue an identical query forever.
+    if (batch.length === 0) return out;
+    const lastId = batch[batch.length - 1]?.commissionId;
+    if (lastId === undefined || String(lastId) === '') return out;
+    sinceCommissionId = String(lastId);
+  }
+
+  log.warn(
+    { operation: input.operation, cap: MAX_PAGES, fetched: out.length },
+    'cj-advertiser commissionDetails pagination hit MAX_PAGES cap; result may be truncated',
+  );
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -494,23 +587,18 @@ export class CjAdvertiserAdapter implements NetworkAdapter {
       ? new Date(query.from)
       : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const maxRows = Math.max(1, Math.min(query?.limit ?? 1000, 10_000));
-
-    const data = await cjAdvGraphQL<CjAdvCommissionDetailsEnvelope>({
+    // With a `limit`, stop as soon as that many rows are collected (the old
+    // single-page behaviour, never fewer rows). Without one, follow the
+    // cursor to the complete window.
+    const records = await fetchCommissionRecords({
       operation: 'listTransactions',
-      endpoint: CJ_ADVERTISER_GRAPHQL,
-      query: COMMISSION_DETAILS_QUERY,
-      variables: {
-        forAdvertisers: [c.networkBrandId],
-        sincePostingDate: from.toISOString(),
-        beforePostingDate: to.toISOString(),
-        maxRows,
-      },
+      cid: c.networkBrandId,
+      from,
+      to,
       token,
       resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
+      limit: query?.limit,
     });
-
-    const records = data?.commissionDetails?.records ?? [];
     let transactions = records.map((r) => toTransaction(r, now));
 
     const statusFilter = toTransactionStatusList(query?.status);
@@ -555,21 +643,17 @@ export class CjAdvertiserAdapter implements NetworkAdapter {
     const now = new Date();
     const from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const data = await cjAdvGraphQL<CjAdvCommissionDetailsEnvelope>({
+    // The derivation aggregates over the COMPLETE window — `query.limit`
+    // bounds the derived partner list, not the upstream row pull, so no
+    // limit is passed to the cursor loop.
+    const records = await fetchCommissionRecords({
       operation: 'listMediaPartners',
-      endpoint: CJ_ADVERTISER_GRAPHQL,
-      query: COMMISSION_DETAILS_QUERY,
-      variables: {
-        forAdvertisers: [c.networkBrandId],
-        sincePostingDate: from.toISOString(),
-        beforePostingDate: now.toISOString(),
-        maxRows: 10_000,
-      },
+      cid: c.networkBrandId,
+      from,
+      to: now,
       token,
       resilience: RESILIENCE.listMediaPartners ?? RESILIENCE.default,
     });
-
-    const records = data?.commissionDetails?.records ?? [];
     const byPublisher = new Map<string, { name: string; rows: CjAdvCommissionRaw[] }>();
     for (const r of records) {
       const id = String(r.publisherId ?? '');
@@ -622,21 +706,17 @@ export class CjAdvertiserAdapter implements NetworkAdapter {
       ? new Date(query.from)
       : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const data = await cjAdvGraphQL<CjAdvCommissionDetailsEnvelope>({
+    // The aggregation needs the COMPLETE window — `query.limit` bounds the
+    // derived performance rows, not the upstream row pull, so no limit is
+    // passed to the cursor loop.
+    const records = await fetchCommissionRecords({
       operation: 'getProgrammePerformance',
-      endpoint: CJ_ADVERTISER_GRAPHQL,
-      query: COMMISSION_DETAILS_QUERY,
-      variables: {
-        forAdvertisers: [c.networkBrandId],
-        sincePostingDate: from.toISOString(),
-        beforePostingDate: to.toISOString(),
-        maxRows: 10_000,
-      },
+      cid: c.networkBrandId,
+      from,
+      to,
       token,
       resilience: RESILIENCE.getProgrammePerformance ?? RESILIENCE.default,
     });
-
-    const records = data?.commissionDetails?.records ?? [];
 
     // Bucket by (publisherId, day). Day comes from postingDate where present,
     // falling back to eventDate.
@@ -804,9 +884,6 @@ function toMediaPartnerStatusList(
   return Array.isArray(v) ? v : [v];
 }
 
-// Silence unused-import lint when noUnusedLocals is on.
-void log;
-
 export const _internals = {
   mapTransactionStatus,
   mapPerformanceStatus,
@@ -815,4 +892,8 @@ export const _internals = {
   toPerformanceRow,
   parseCjDate,
   computeAgeDays,
+  fetchCommissionRecords,
+  MAX_PAGES,
+  PAGE_MAX_ROWS,
+  log,
 };
