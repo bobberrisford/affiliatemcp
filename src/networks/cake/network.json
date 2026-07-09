@@ -11,7 +11,8 @@
     "The API base is the per-instance CAKE host, supplied via CAKE_BASE_URL — not a fixed value.",
     "Conversion amounts are assumed to be major currency units (e.g. dollars, not cents).",
     "Click-level data is not exposed via the documented CAKE affiliate reporting API; listClicks is unsupported.",
-    "Tracking links are assigned server-side per creative; generateTrackingLink is unsupported (no documented deterministic construction)."
+    "Tracking links are assigned server-side per creative; generateTrackingLink is unsupported (no documented deterministic construction).",
+    "listProgrammes paginates the OfferFeed with start_at_row + row_limit until a short page, capped at MAX_PAGES with a logged warning rather than a silent truncation."
   ],
   "claim_status": "experimental",
   "adapter_version": "0.1.0",

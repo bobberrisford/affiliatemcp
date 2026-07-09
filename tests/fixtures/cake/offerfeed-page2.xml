@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<offer_feed_response xmlns="http://cakemarketing.com/api/4/">
+  <success>true</success>
+  <row_count>3</row_count>
+  <offers>
+    <offer>
+      <offer_id>2101</offer_id>
+      <offer_name>Sample Offer 2101</offer_name>
+      <offer_status>active</offer_status>
+      <payout>$1.00</payout>
+      <price_format>CPA</price_format>
+      <currency>USD</currency>
+      <category>Retail</category>
+    </offer>
+    <offer>
+      <offer_id>2102</offer_id>
+      <offer_name>Sample Offer 2102</offer_name>
+      <offer_status>apply-to-run</offer_status>
+      <payout>$25.00</payout>
+      <price_format>CPL</price_format>
+      <currency>USD</currency>
+      <category>Travel</category>
+    </offer>
+    <offer>
+      <offer_id>2103</offer_id>
+      <offer_name>Sample Offer 2103</offer_name>
+      <offer_status>paused</offer_status>
+      <payout>$0.00</payout>
+      <price_format>RevShare</price_format>
+      <currency>USD</currency>
+      <category>Finance</category>
+    </offer>
+  </offers>
+</offer_feed_response>
