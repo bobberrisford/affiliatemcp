@@ -22,7 +22,10 @@
  *   → { access_token, token_type, expires_in, scope }
  *   Source: https://developers.admitad.com/knowledge-base/article/client-authorization_2
  *
- * Data API (base: https://api.admitad.com), paginate as { results, _meta }:
+ * Data API (base: https://api.admitad.com), paginate as { results, _meta }.
+ * Both listProgrammes (/advcampaigns/) and listTransactions (/statistics/actions/)
+ * page limit/offset to completion when the caller passes no limit, each behind a
+ * MAX_*_PAGES backstop; a caller-supplied limit bounds the pull instead.
  *   GET /me/                                              scope private_data
  *   GET /statistics/actions/?date_start=DD.MM.YYYY&...    scope statistics
  *   GET /statistics/dates/                                scope statistics
@@ -90,13 +93,14 @@ const META: NetworkMeta = {
   baseUrl: 'https://api.admitad.com',
   authModel: 'oauth2',
   docsUrl: 'https://developers.admitad.com/',
-  adapterVersion: '0.1.1',
+  adapterVersion: '0.1.2',
   lastVerified: '2026-06-04',
   claimStatus: 'experimental',
   knownLimitations: [
     'Adapter built from public API documentation; not yet verified against a live account.',
     'listClicks is not exposed for publishers via the public Admitad API; the publisher reports surface only aggregated statistics (statistics/actions, statistics/dates), so the operation throws NotImplementedError.',
     "listProgrammes / getProgramme are mapped from /advcampaigns/ and require the OAuth scope 'advcampaigns'. Admitad's programme connection status is per-website; the adapter reports the campaign-level status it can read and preserves the raw payload in rawNetworkData.",
+    'listProgrammes pages /advcampaigns/ to completion via limit/offset and _meta.count when no limit is passed, capped at 50 pages of 500 with a logged warning so truncation is never silent; a caller-supplied limit stops fetching once it is satisfied.',
     'generateTrackingLink calls the Admitad deeplink generator (GET /deeplink/{website_id}/advcampaign/{campaign_id}/?ulp=...), which requires the OAuth scope deeplink_generator, a connected ad space, and ADMITAD_WEBSITE_ID. A deeplink can only be generated for a campaign your ad space is connected to; otherwise the API returns an error which surfaces verbatim.',
     "Admitad action statuses are normalised: 'pending' -> pending; 'approved' / 'approved_but_stalled' -> approved; 'declined' -> reversed; the separate payment_status flag (1 = paid) maps to paid. Unknown statuses map to 'other' and the raw value is preserved.",
     'Admitad action timestamps omit a timezone marker. The adapter interprets these timestamps as UTC for deterministic output; the upstream reporting timezone has not been verified against a live account.',
@@ -125,10 +129,15 @@ const RESILIENCE: ResilienceConfigMap = {
   getEarningsSummary: TRANSACTIONS_RESILIENCE,
 };
 
-// Admitad's statistics/actions limit caps at 500 per page (default 20).
+// Admitad's limit/offset parameters cap at 500 per page (default 20). The same
+// contract applies to every paginated endpoint this adapter uses
+// (/statistics/actions/ and /advcampaigns/ both return { results, _meta }).
 // Source: https://developers.admitad.com/knowledge-base/article/limit-offset-parameters_3
 const ACTIONS_PAGE_LIMIT = 500;
 const MAX_ACTION_PAGES = 50; // hard ceiling so a pathological account can't loop forever
+// Same backstop for /advcampaigns/: 50 pages of 500 = 25,000 campaigns before
+// the adapter stops and logs a warning, so truncation is never silent.
+const MAX_CAMPAIGN_PAGES = 50;
 
 // ---------------------------------------------------------------------------
 // Admitad raw response shapes
@@ -398,6 +407,13 @@ export class AdmitadAdapter implements NetworkAdapter {
    *   GET /advcampaigns/?limit=N&offset=M   (scope advcampaigns)
    *   Response: { results: [...], _meta: { count, limit, offset } }
    *
+   * Pagination: Admitad uses limit/offset (max limit 500) with _meta.count as
+   * the total. When the caller passes no `limit` we page through to completion
+   * (same loop as `listTransactions`), capped at MAX_CAMPAIGN_PAGES with a
+   * logged warning so a truncated pull is never silent. When the caller does
+   * pass a `limit` we stop fetching as soon as it is satisfied — normally one
+   * request of min(limit, 500).
+   *
    * Filtering by status / search is applied client-side after normalisation,
    * because Admitad's campaign filter parameters do not map cleanly onto our
    * canonical ProgrammeStatus.
@@ -405,20 +421,39 @@ export class AdmitadAdapter implements NetworkAdapter {
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
     const token = await getAccessToken();
 
-    const params: Record<string, string | number | undefined> = {
-      limit: typeof query?.limit === 'number' ? Math.min(query.limit, ACTIONS_PAGE_LIMIT) : ACTIONS_PAGE_LIMIT,
-      offset: 0,
-    };
+    const requested = typeof query?.limit === 'number' ? query.limit : undefined;
+    const pageLimit =
+      requested === undefined ? ACTIONS_PAGE_LIMIT : Math.min(requested, ACTIONS_PAGE_LIMIT);
 
-    const response = await admitadRequest<AdmitadCampaignsResponse>({
-      operation: 'listProgrammes',
-      path: '/advcampaigns/',
-      token,
-      query: params,
-      resilience: RESILIENCE.default,
-    });
+    // Page through /advcampaigns/. Admitad returns _meta.count = total rows.
+    const rawCampaigns: AdmitadCampaignRaw[] = [];
+    let offset = 0;
+    let page = 0;
+    for (; page < MAX_CAMPAIGN_PAGES; page += 1) {
+      const response = await admitadRequest<AdmitadCampaignsResponse>({
+        operation: 'listProgrammes',
+        path: '/advcampaigns/',
+        token,
+        query: { limit: pageLimit, offset },
+        resilience: RESILIENCE.default,
+      });
 
-    const rawCampaigns: AdmitadCampaignRaw[] = Array.isArray(response.results) ? response.results : [];
+      const pageResults = Array.isArray(response.results) ? response.results : [];
+      rawCampaigns.push(...pageResults);
+
+      const total = response._meta?.count;
+      offset += pageLimit;
+      if (requested !== undefined && rawCampaigns.length >= requested) break;
+      if (pageResults.length === 0) break;
+      if (typeof total === 'number' && offset >= total) break;
+    }
+    if (page >= MAX_CAMPAIGN_PAGES) {
+      log.warn(
+        { operation: 'listProgrammes', cap: MAX_CAMPAIGN_PAGES, fetched: rawCampaigns.length },
+        'admitad listProgrammes hit the MAX_CAMPAIGN_PAGES cap; result may be truncated',
+      );
+    }
+
     let programmes = rawCampaigns.map(toProgramme);
 
     const statusFilter = toProgrammeStatusList(query?.status);
@@ -913,6 +948,11 @@ export const _internals = {
   toProgramme,
   toAmount,
   isPaid,
+  // Pagination knobs + the adapter logger, exported so the pagination tests can
+  // build full synthetic pages and assert the MAX_CAMPAIGN_PAGES cap warning.
+  ACTIONS_PAGE_LIMIT,
+  MAX_CAMPAIGN_PAGES,
+  log,
 };
 
 // Silence unused-import lint warning when noUnusedLocals is on.

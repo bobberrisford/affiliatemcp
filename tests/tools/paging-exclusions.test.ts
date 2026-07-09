@@ -42,6 +42,9 @@ describe('offset-paging exclusions', () => {
     // #316: optimise-media listProgrammes now pages /Campaigns to completion
     // when no limit is given, so tool-layer offset paging is honest there.
     expect(supportsOffsetPaging('optimise-media', 'listProgrammes')).toBe(true);
+    // #316: admitad listProgrammes pages /advcampaigns/ via limit/offset and
+    // _meta.count when no limit is passed, so tool-layer paging is honest.
+    expect(supportsOffsetPaging('admitad', 'listProgrammes')).toBe(true);
   });
 
   it('audited bounded-default pairs are excluded', () => {
