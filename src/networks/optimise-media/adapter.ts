@@ -10,7 +10,10 @@
  *
  *   GET  /Campaigns
  *     → list of campaigns, filterable by status to those where the publisher
- *       has a relationship. These are our "programmes".
+ *       has a relationship. These are our "programmes". The endpoint is
+ *       page-paginated (page / pageSize); when the caller sets no `limit` the
+ *       adapter follows `page` to completion, capped at MAX_PAGES with a
+ *       logged warning so a truncated pull is never silent.
  *   GET  /Conversions
  *     → detailed list of conversions for the publisher. `ConversionType` can
  *       return conversions with basket items or those related to a payment;
@@ -104,6 +107,7 @@ const META: NetworkMeta = {
     'Click-level data is not exposed via the OMG Network API; listClicks is unsupported.',
     'Tracking-link construction is not documented for the OMG Network API; generateTrackingLink is unsupported.',
     'Product feeds are documented for the network but are not modelled by this adapter.',
+    'listProgrammes pages /Campaigns to completion when no limit is given, capped at MAX_PAGES (50 pages of 100) with a logged warning rather than a silent truncation.',
   ],
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 10,
@@ -132,6 +136,22 @@ const RESILIENCE: ResilienceConfigMap = {
   listTransactions: CONVERSIONS_RESILIENCE,
   getEarningsSummary: CONVERSIONS_RESILIENCE,
 };
+
+// ---------------------------------------------------------------------------
+// Pagination
+// ---------------------------------------------------------------------------
+
+/** Page size requested from the page-paginated /Campaigns endpoint. */
+const CAMPAIGNS_PAGE_SIZE = 100;
+
+/**
+ * Backstop for the /Campaigns page loop. When the caller sets no `limit` the
+ * adapter pulls every page; MAX_PAGES bounds a runaway loop (e.g. a server
+ * that keeps advertising more rows than it serves) and the cap is logged so a
+ * truncated pull is never silent (principle 4.1). Mirrors the tolt /
+ * tapfiliate MAX_PAGES pattern.
+ */
+const MAX_PAGES = 50;
 
 // ---------------------------------------------------------------------------
 // OMG Network API response shapes (deliberately minimal, read defensively)
@@ -218,6 +238,10 @@ interface OptimiseCampaignsEnvelope {
   data?: OptimiseCampaignRaw[];
   items?: OptimiseCampaignRaw[];
   results?: OptimiseCampaignRaw[];
+  totalCount?: number;
+  total?: number;
+  page?: number;
+  pageSize?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -373,28 +397,25 @@ export class OptimiseMediaAdapter implements NetworkAdapter {
   /**
    * List campaigns (programmes) the publisher has a relationship with.
    *
-   * The Campaigns endpoint filters by relationship status server-side; we pass
-   * the requested status through where it maps cleanly and additionally apply
+   * The Campaigns endpoint is page-paginated (page / pageSize). When the
+   * caller sets no `limit` we follow `page` to completion so the caller sees
+   * the complete result set; when a `limit` is set the loop stops as soon as
+   * enough raw rows have been gathered. The loop is capped at MAX_PAGES with
+   * a logged warning so a truncated pull is never silent (principle 4.1).
+   *
+   * The endpoint filters by relationship status server-side; we pass the
+   * requested status through where it maps cleanly and additionally apply
    * client-side filters for search / categories / limit so the contract holds
    * regardless of what the server supports.
    */
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
     const apiKey = requireApiKey('listProgrammes');
     const statusFilter = toStatusList(query?.status);
+    const limit = typeof query?.limit === 'number' && query.limit > 0 ? query.limit : undefined;
 
-    const raw = await optimiseMediaRequest<OptimiseCampaignsEnvelope | OptimiseCampaignRaw[]>({
-      operation: 'listProgrammes',
-      path: '/Campaigns',
-      apiKey,
-      query: {
-        status: pickCampaignStatus(statusFilter),
-        page: 1,
-        pageSize: query?.limit && query.limit > 0 ? query.limit : 100,
-      },
-      resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
-    });
+    const raw = await fetchAllCampaignPages(apiKey, pickCampaignStatus(statusFilter), limit);
 
-    let programmes = normaliseCampaigns(raw).map(toProgramme);
+    let programmes = raw.map(toProgramme);
 
     if (query?.search) {
       const needle = query.search.toLowerCase();
@@ -769,6 +790,51 @@ function normaliseCampaigns(
   return response.data ?? response.items ?? response.results ?? [];
 }
 
+/**
+ * Fetch /Campaigns pages until the result set is complete, or `limit` raw
+ * rows have been gathered when the caller set one. Completion is detected
+ * from the envelope's totalCount / total when present; otherwise a page
+ * shorter than the requested pageSize ends the loop (that also covers the
+ * bare-array response shape, which carries no envelope). The loop is capped
+ * at MAX_PAGES with a logged warning so a truncated pull is never silent
+ * (principle 4.1).
+ */
+async function fetchAllCampaignPages(
+  apiKey: string,
+  status: string | undefined,
+  limit?: number,
+): Promise<OptimiseCampaignRaw[]> {
+  const out: OptimiseCampaignRaw[] = [];
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const response = await optimiseMediaRequest<OptimiseCampaignsEnvelope | OptimiseCampaignRaw[]>({
+      operation: 'listProgrammes',
+      path: '/Campaigns',
+      apiKey,
+      query: { status, page, pageSize: CAMPAIGNS_PAGE_SIZE },
+      resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
+    });
+    const batch = normaliseCampaigns(response);
+    out.push(...batch);
+
+    // An empty page means there is nothing further to pull, whatever the
+    // envelope claims.
+    if (batch.length === 0) return out;
+    // The caller's limit is satisfied: stop early (backward-compatible with
+    // the previous single-request behaviour, never pulling less than before).
+    if (limit !== undefined && out.length >= limit) return out;
+    const totalCount = Array.isArray(response) ? undefined : response.totalCount ?? response.total;
+    // The envelope says we have everything.
+    if (typeof totalCount === 'number' && out.length >= totalCount) return out;
+    // No total to trust: a short page is the last page.
+    if (typeof totalCount !== 'number' && batch.length < CAMPAIGNS_PAGE_SIZE) return out;
+  }
+  log.warn(
+    { operation: 'listProgrammes', cap: MAX_PAGES, fetched: out.length },
+    'optimise-media pagination hit MAX_PAGES cap; result may be truncated',
+  );
+  return out;
+}
+
 function normaliseConversions(
   response: OptimiseConversionsEnvelope | OptimiseConversionRaw[],
 ): OptimiseConversionRaw[] {
@@ -839,7 +905,8 @@ function formatOptimiseDate(d: Date): string {
 }
 
 // Internal test helpers — exported under `_internals` so they don't appear in
-// the public adapter surface.
+// the public adapter surface. `log` is exposed so tests can observe the
+// MAX_PAGES truncation warning without touching stderr.
 export const _internals = {
   mapTransactionStatus,
   mapProgrammeStatus,
@@ -849,7 +916,5 @@ export const _internals = {
   chunkDateRange,
   formatOptimiseDate,
   pickCampaignStatus,
+  log,
 };
-
-// Silence the unused-import lint for the logger when noUnusedLocals is on.
-void log;
