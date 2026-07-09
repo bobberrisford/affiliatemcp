@@ -33,7 +33,9 @@ export const PAGING_EXCLUSIONS: ReadonlyMap<string, ReadonlySet<AdapterOperation
   ReadonlySet<AdapterOperation>
 >([
   // Confirmed bounded defaults (adapter fetches one page, never continues).
-  ['kwanko-advertiser', ops('listProgrammes')], // per_page default, single request
+  // kwanko-advertiser removed 2026-07-09 (#316): listProgrammes now pages the
+  // campaigns endpoint to completion on absent `limit`, MAX_PAGES-capped with
+  // a stderr warning; see src/networks/kwanko-advertiser/adapter.ts.
   // impact-advertiser was removed 2026-07-04 (#316): its four paged ops now
   // paginate to completion on absent `limit` via @nextpageuri/@page with a
   // MAX_PAGES backstop; see src/networks/impact-advertiser/adapter.ts.

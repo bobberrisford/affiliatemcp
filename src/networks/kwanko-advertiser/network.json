@@ -12,6 +12,7 @@
     "Exact endpoint paths, query-parameter names, and JSON field names are taken from public summaries of the Kwanko advertiser API (https://developers.kwanko.com/ and https://helpdesk-advertiser.kwanko.com/); the developer reference is not machine-readable (403 to automated fetch), so field mapping is defensive and must be confirmed against a live response.",
     "getProgrammePerformance is built from the advertiser statistics endpoint grouped by website (publisher); the grouping parameter name is taken from public summaries and is BLOCKED(verify) until confirmed against a live response.",
     "listBrands enumerates the advertiser campaigns the token addresses; the Kwanko advertiser API has no documented account-enumeration endpoint, so each addressable campaign is returned as a brand. BLOCKED(verify) against a live account.",
+    "listProgrammes pages /advertiser/campaigns (1-based page + per_page) until a short page and is capped at MAX_PAGES with a logged warning rather than a silent truncation; the paging parameter names are BLOCKED(verify) against a live response.",
     "generateTrackingLink, getProgramme, getEarningsSummary, and listClicks are not implemented: these are publisher-side or unsupported on the advertiser surface and throw NotImplementedError rather than returning fabricated data.",
     "The API token is self-issued in the Kwanko platform (Features and API); it may optionally be IP-restricted in platform settings, which can cause auth failures from a different host."
   ],
