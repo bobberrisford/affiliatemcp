@@ -36,6 +36,13 @@
  *       `action_id`, `status` (string), `currency`, `payouts`/`sum`/`revenue`,
  *       and string timestamps `created_at` / `click_time`.
  *
+ * Pagination: both list endpoints take 1-based `page` + `limit` parameters and
+ * report progress via `pagination.total_count`. When the caller passes no
+ * `limit`, `listProgrammes` and `listTransactions` page to completion (stopping
+ * on the counter, or on an empty/short page when no counter is present), capped
+ * at MAX_PAGES with a stderr warning so a truncated pull is never silent. A
+ * present `limit` stops the loop as soon as enough raw rows are fetched.
+ *
  * Amount unit: the affiliate-facing amount is `payouts` (the sum paid to the
  * affiliate). Affise documents amounts as decimal currency values (major units),
  * NOT minor units / cents — see the `commission` mapping and the known-limitation
@@ -70,6 +77,8 @@
  *   - Amounts assumed to be in major currency units (not cents).
  *   - No raw click-level affiliate endpoint is exposed; listClicks is
  *     NotImplemented.
+ *   - Pagination loops are capped at MAX_PAGES with a stderr warning rather
+ *     than a silent truncation.
  */
 
 import { affiseRequest, resolveBaseUrl } from './client.js';
@@ -114,6 +123,7 @@ const KNOWN_LIMITATIONS = [
   'The API base URL is per-tenant: each network runs its own Affise instance, so the base is the network\'s tracking domain supplied via AFFISE_BASE_URL — there is no single shared host.',
   'Amounts are assumed to be in major currency units (not minor units / cents); confirm against a live account before promoting beyond experimental.',
   'No raw click-level affiliate endpoint is exposed by the partner API; listClicks is not implemented.',
+  'Pagination is 1-based via page + limit with a pagination.total_count counter; when no limit is passed, listProgrammes and listTransactions page to completion, capped at MAX_PAGES with a warning rather than a silent truncation.',
 ];
 
 const META: NetworkMeta = {
@@ -137,6 +147,14 @@ const META: NetworkMeta = {
   side: 'publisher',
   credentialScope: 'single-brand',
 };
+
+/**
+ * Backstop for the pagination loops in `listProgrammes` / `listTransactions`.
+ * 50 pages at the default page sizes is far beyond any realistic partner
+ * account; hitting it logs a warning (stderr) so a truncated pull is never
+ * silent (principle 4.1). Same pattern as the Tolt and Tapfiliate adapters.
+ */
+const MAX_PAGES = 50;
 
 // ---------------------------------------------------------------------------
 // Resilience profiles
@@ -348,6 +366,59 @@ function formatAffiseDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+/**
+ * Fetch pages of an Affise list endpoint until the pull is complete.
+ *
+ * Affise paginates via 1-based `page` + `limit` parameters and reports overall
+ * progress through `pagination.total_count` on the envelope. The loop stops
+ * when:
+ *   - the endpoint returns an empty page (nothing more upstream);
+ *   - the caller's `limit` is satisfied by the raw rows fetched so far (the
+ *     backward-compatible short-circuit — a present limit never fetches more
+ *     pages than it needs);
+ *   - the counter says everything has been fetched (rows >= total_count);
+ *   - no counter is present and the page came back short (defensive fallback
+ *     for tenants that omit the pagination object);
+ *   - the MAX_PAGES backstop trips — logged so truncation is never silent.
+ */
+async function fetchAllPages<TEnvelope extends { pagination?: AffisePagination }, TRow>(input: {
+  operation: string;
+  path: string;
+  apiKey: string;
+  baseUrl: string;
+  query?: Record<string, string | number | Array<string | number> | undefined>;
+  perPage: number;
+  limit?: number;
+  rows: (envelope: TEnvelope) => TRow[] | undefined;
+  resilience: ResilienceConfig;
+}): Promise<TRow[]> {
+  const out: TRow[] = [];
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const envelope = await affiseRequest<TEnvelope>({
+      operation: input.operation,
+      path: input.path,
+      apiKey: input.apiKey,
+      baseUrl: input.baseUrl,
+      query: { ...input.query, page, limit: input.perPage },
+      resilience: input.resilience,
+    });
+
+    const rows = input.rows(envelope) ?? [];
+    out.push(...rows);
+
+    if (rows.length === 0) return out;
+    if (typeof input.limit === 'number' && out.length >= input.limit) return out;
+    const totalCount = envelope.pagination?.total_count;
+    if (typeof totalCount === 'number' && out.length >= totalCount) return out;
+    if (typeof totalCount !== 'number' && rows.length < input.perPage) return out;
+  }
+  log.warn(
+    { operation: input.operation, cap: MAX_PAGES, fetched: out.length },
+    'affise pagination hit MAX_PAGES cap; result may be truncated',
+  );
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // Transformers
 // ---------------------------------------------------------------------------
@@ -435,24 +506,28 @@ export class AffiseAdapter implements NetworkAdapter {
    * List the offers (programmes) this partner is connected to.
    *
    * Affise endpoint: GET /3.0/partner/offers
-   *   Returns partner offers paginated via a `pagination` object. We fetch the
-   *   first page (up to `query.limit` or 100) and apply client-side
-   *   search/status/category/limit filters for cross-network consistency.
+   *   Returns partner offers paginated via a `pagination` object. With no
+   *   `query.limit` we page to completion (see `fetchAllPages`); with a limit
+   *   we stop as soon as enough raw offers are fetched. Client-side
+   *   search/status/category/limit filters then apply for cross-network
+   *   consistency.
    */
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
     const { apiKey, baseUrl } = requireCreds('listProgrammes');
     const perPage = Math.min(query?.limit ?? 100, 500);
 
-    const envelope = await affiseRequest<AffiseOffersEnvelope>({
+    const offers = await fetchAllPages<AffiseOffersEnvelope, AffiseOfferRaw>({
       operation: 'listProgrammes',
       path: '/3.0/partner/offers',
       apiKey,
       baseUrl,
-      query: { page: 1, limit: perPage },
+      perPage,
+      limit: query?.limit,
+      rows: (envelope) => envelope.offers,
       resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
     });
 
-    let programmes = (envelope.offers ?? []).map(toProgramme);
+    let programmes = offers.map(toProgramme);
 
     if (query?.search) {
       const needle = query.search.toLowerCase();
@@ -547,9 +622,9 @@ export class AffiseAdapter implements NetworkAdapter {
    * Affise endpoint: GET /3.0/stats/conversions
    *   Params: date_from, date_to (YYYY-MM-DD), page, limit, status[], offer[].
    *
-   * Date window default: last 30 days. Affise paginates conversions; we fetch
-   * the first page (up to `limit` or 500). Wider, multi-page pulls are a v0.2
-   * concern once the per-page cap is confirmed against a live account.
+   * Date window default: last 30 days. Affise paginates conversions; with no
+   * `query.limit` we page to completion (see `fetchAllPages`), and with a
+   * limit we stop as soon as enough raw conversions are fetched.
    */
   async listTransactions(query?: TransactionQuery): Promise<Transaction[]> {
     const { apiKey, baseUrl } = requireCreds('listTransactions');
@@ -563,24 +638,25 @@ export class AffiseAdapter implements NetworkAdapter {
     const reqQuery: Record<string, string | number | Array<string | number> | undefined> = {
       date_from: formatAffiseDate(from),
       date_to: formatAffiseDate(to),
-      page: 1,
-      limit: Math.min(query?.limit ?? 500, 1000),
     };
 
     if (query?.programmeId) {
       reqQuery['offer'] = [Number(query.programmeId)];
     }
 
-    const envelope = await affiseRequest<AffiseConversionsEnvelope>({
+    const conversions = await fetchAllPages<AffiseConversionsEnvelope, AffiseConversionRaw>({
       operation: 'listTransactions',
       path: '/3.0/stats/conversions',
       apiKey,
       baseUrl,
       query: reqQuery,
+      perPage: Math.min(query?.limit ?? 500, 1000),
+      limit: query?.limit,
+      rows: (envelope) => envelope.conversions,
       resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
     });
 
-    let transactions = (envelope.conversions ?? []).map((r) => toTransaction(r, now));
+    let transactions = conversions.map((r) => toTransaction(r, now));
 
     // Status filter (client-side) so the canonical status semantics apply
     // uniformly across networks.
@@ -926,7 +1002,6 @@ export const _internals = {
   toProgramme,
   toTransaction,
   formatAffiseDate,
+  log,
+  MAX_PAGES,
 };
-
-// Silence unused-import lint for the logger.
-void log;
