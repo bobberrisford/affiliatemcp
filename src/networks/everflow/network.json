@@ -10,7 +10,8 @@
   "known_limitations": [
     "Adapter built from public API documentation; not yet verified against a live account.",
     "Affiliate API keys must be created by a network admin, not self-service by the affiliate.",
-    "Click stream endpoint caps at 14 days per call; wider windows are chunked automatically."
+    "Click stream endpoint caps at 14 days per call; wider windows are chunked automatically.",
+    "listProgrammes and listTransactions paginate to completion when no limit is set, capped at MAX_PAGES (50 pages of 500) with a logged warning rather than a silent truncation."
   ],
   "claim_status": "experimental",
   "adapter_version": "0.1.0",

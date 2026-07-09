@@ -39,8 +39,6 @@ describe('offset-paging exclusions', () => {
   });
 
   it('audited bounded-default pairs are excluded', () => {
-    expect(supportsOffsetPaging('everflow', 'listTransactions')).toBe(false);
-    expect(supportsOffsetPaging('everflow', 'listClicks')).toBe(true); // only audited ops excluded
     // impact-advertiser's exclusion was lifted in #316: all four paged ops now
     // paginate to completion on absent `limit`.
     expect(supportsOffsetPaging('impact-advertiser', 'getProgrammePerformance')).toBe(true);
@@ -78,5 +76,11 @@ describe('offset-paging exclusions', () => {
     expect(supportsOffsetPaging('cj-advertiser', 'listTransactions')).toBe(true);
     expect(supportsOffsetPaging('cj-advertiser', 'listMediaPartners')).toBe(true);
     expect(supportsOffsetPaging('cj-advertiser', 'getProgrammePerformance')).toBe(true);
+  });
+
+  it('everflow exclusion is lifted (#316: paginates to completion on absent limit)', () => {
+    expect(supportsOffsetPaging('everflow', 'listProgrammes')).toBe(true);
+    expect(supportsOffsetPaging('everflow', 'listTransactions')).toBe(true);
+    expect(supportsOffsetPaging('everflow', 'listClicks')).toBe(true);
   });
 });

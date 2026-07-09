@@ -42,6 +42,16 @@
  *   - The click stream endpoint caps at 14 days per call; we chunk automatically.
  *   - Adapter built from public API documentation; not yet verified against
  *     a live account.
+ *
+ * --- Pagination ---------------------------------------------------------------
+ *
+ * Everflow paginates with 1-based `page` / `page_size` query parameters and
+ * reports `total_count` in the response envelope
+ * (developers.everflow.io/docs/user-guide/paging/, confirmed 2026-05-28).
+ * `listProgrammes` and `listTransactions` paginate to completion when the
+ * caller passes no `limit`, capped at MAX_PAGES with a logged warning so a
+ * truncated pull is never silent. When `limit` is present the loop stops as
+ * soon as the limit is satisfied.
  */
 
 import { everflowRequest } from './client.js';
@@ -96,6 +106,7 @@ const META: NetworkMeta = {
     'Adapter built from public API documentation; not yet verified against a live account.',
     'Affiliate API keys must be created by a network admin, not self-service by the affiliate.',
     'Click stream endpoint caps at 14 days per call; wider windows are chunked automatically.',
+    'listProgrammes and listTransactions paginate to completion when no limit is set, capped at MAX_PAGES (50 pages of 500) with a logged warning rather than a silent truncation.',
   ],
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 10,
@@ -126,6 +137,68 @@ const RESILIENCE: ResilienceConfigMap = {
   listTransactions: REPORTING_RESILIENCE,
   getEarningsSummary: REPORTING_RESILIENCE,
 };
+
+// ---------------------------------------------------------------------------
+// Pagination
+// ---------------------------------------------------------------------------
+
+/**
+ * Page size for paginated pulls. Everflow paginates with 1-based `page` /
+ * `page_size` query parameters (developers.everflow.io/docs/user-guide/paging/,
+ * confirmed 2026-05-28). Listing endpoints accept page_size up to 2000 and the
+ * raw conversions report caps at 10,000 rows per response; 500 stays well
+ * within both while keeping individual response bodies manageable.
+ */
+const PAGE_SIZE = 500;
+
+/**
+ * Backstop for the pagination loop — mirrors the tolt/tapfiliate pattern.
+ * 50 pages of PAGE_SIZE 500 = 25,000 records. Hitting the cap logs a warning
+ * so a truncated pull is never silent (principle 4.1).
+ */
+const MAX_PAGES = 50;
+
+/**
+ * Fetch every page of a page/page_size Everflow list resource.
+ *
+ * The loop stops when:
+ *   - `target` (the caller's `limit`) is satisfied — the backward-compatible
+ *     short-circuit; we never fetch fewer raw records than the limit asks for;
+ *   - the accumulated records reach the envelope's `total_count`;
+ *   - a page comes back empty, or short of `pageSize` when `total_count` is
+ *     absent (defensive — the envelope should always carry it);
+ *   - the MAX_PAGES backstop is hit, in which case a warning is logged so the
+ *     truncation is never silent (principle 4.1).
+ */
+async function fetchAllPages<TEnvelope, TRecord>(input: {
+  operation: string;
+  pageSize: number;
+  fetchPage: (page: number) => Promise<TEnvelope>;
+  extract: (envelope: TEnvelope) => TRecord[] | undefined;
+  totalCount: (envelope: TEnvelope) => number | undefined;
+  /** The caller's `limit` — stop as soon as this many raw records are in. */
+  target?: number;
+}): Promise<TRecord[]> {
+  const out: TRecord[] = [];
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const envelope = await input.fetchPage(page);
+    const batch = input.extract(envelope) ?? [];
+    out.push(...batch);
+
+    if (typeof input.target === 'number' && out.length >= input.target) return out;
+
+    const total = input.totalCount(envelope);
+    const complete =
+      batch.length === 0 ||
+      (typeof total === 'number' ? out.length >= total : batch.length < input.pageSize);
+    if (complete) return out;
+  }
+  log.warn(
+    { operation: input.operation, cap: MAX_PAGES, fetched: out.length },
+    'everflow pagination hit MAX_PAGES cap; result may be truncated',
+  );
+  return out;
+}
 
 // ---------------------------------------------------------------------------
 // Everflow raw response shapes (deliberately minimal — see Awin adapter for rationale)
@@ -498,29 +571,39 @@ export class EverflowAdapter implements NetworkAdapter {
    * Everflow endpoint: GET /v1/affiliates/alloffers
    *   Returns all visible offers (public + approval-required) paginated.
    *
-   * We fetch the first page (up to `query.limit` or 100 by default) and apply
-   * client-side search/status/category filters. The alloffers endpoint does not
-   * expose a server-side free-text search filter; status filtering is possible
-   * via the query.filters body but client-side is used for consistency.
-   *
-   * Pagination: Everflow uses page / page_size integer pagination.
+   * Pagination: Everflow uses 1-based page / page_size integer pagination.
+   * When `query.limit` is absent we paginate to completion (MAX_PAGES backstop
+   * with a logged warning); when present we stop as soon as the limit is
+   * satisfied. Client-side search/status/category filters are applied after
+   * the pull — the alloffers endpoint does not expose a server-side free-text
+   * search filter; status filtering is possible via the query.filters body but
+   * client-side is used for consistency.
    */
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
     const apiKey = requireApiKey('listProgrammes');
-    // Everflow supports page_size up to 2000 for listing endpoints; cap at 500 to
-    // stay well within limits and keep responses manageable. Confirmed max of 2000
-    // via developers.everflow.io/docs/user-guide/paging/ (2026-05-28).
-    const pageSize = Math.min(query?.limit ?? 100, 500);
+    // Everflow supports page_size up to 2000 for listing endpoints; PAGE_SIZE
+    // (500) stays well within limits and keeps responses manageable. Confirmed
+    // max of 2000 via developers.everflow.io/docs/user-guide/paging/ (2026-05-28).
+    const pageSize =
+      typeof query?.limit === 'number' ? Math.min(query.limit, PAGE_SIZE) : PAGE_SIZE;
 
-    const envelope = await everflowRequest<EverflowOffersEnvelope>({
+    const rawOffers = await fetchAllPages<EverflowOffersEnvelope, EverflowOfferRaw>({
       operation: 'listProgrammes',
-      path: '/v1/affiliates/alloffers',
-      apiKey,
-      query: { page: 1, page_size: pageSize },
-      resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
+      pageSize,
+      fetchPage: (page) =>
+        everflowRequest<EverflowOffersEnvelope>({
+          operation: 'listProgrammes',
+          path: '/v1/affiliates/alloffers',
+          apiKey,
+          query: { page, page_size: pageSize },
+          resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
+        }),
+      extract: (envelope) => envelope.offers,
+      totalCount: (envelope) => envelope.total_count,
+      target: query?.limit,
     });
 
-    let programmes = (envelope.offers ?? []).map(toProgramme);
+    let programmes = rawOffers.map(toProgramme);
 
     // Client-side filters.
     if (query?.search) {
@@ -608,8 +691,13 @@ export class EverflowAdapter implements NetworkAdapter {
    *
    * Date window default: last 30 days. Everflow does not document a per-call cap
    * on the conversion window (unlike the 14-day cap on the clicks stream).
-   * Results are capped at 10,000 rows server-side; incomplete_results is set to
-   * true if the limit is reached (confirmed: developers.everflow.io/docs/user-guide/paging/).
+   *
+   * Pagination: even on POST reporting endpoints, paging travels as 1-based
+   * page / page_size query-string parameters (confirmed:
+   * developers.everflow.io/docs/user-guide/paging/). Each response is capped
+   * at 10,000 rows server-side. When `query.limit` is absent we paginate to
+   * completion (MAX_PAGES backstop with a logged warning); when present we
+   * stop as soon as the limit is satisfied.
    */
   async listTransactions(query?: TransactionQuery): Promise<Transaction[]> {
     const apiKey = requireApiKey('listTransactions');
@@ -642,16 +730,28 @@ export class EverflowAdapter implements NetworkAdapter {
       };
     }
 
-    const envelope = await everflowRequest<EverflowConversionsEnvelope>({
+    const pageSize =
+      typeof query?.limit === 'number' ? Math.min(query.limit, PAGE_SIZE) : PAGE_SIZE;
+
+    const rawConversions = await fetchAllPages<EverflowConversionsEnvelope, EverflowConversionRaw>({
       operation: 'listTransactions',
-      path: '/v1/affiliates/reporting/conversions',
-      apiKey,
-      method: 'POST',
-      body,
-      resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
+      pageSize,
+      fetchPage: (page) =>
+        everflowRequest<EverflowConversionsEnvelope>({
+          operation: 'listTransactions',
+          path: '/v1/affiliates/reporting/conversions',
+          apiKey,
+          method: 'POST',
+          body,
+          query: { page, page_size: pageSize },
+          resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
+        }),
+      extract: (envelope) => envelope.conversions,
+      totalCount: (envelope) => envelope.total_count,
+      target: query?.limit,
     });
 
-    let transactions = (envelope.conversions ?? []).map((r) => toTransaction(r, now));
+    let transactions = rawConversions.map((r) => toTransaction(r, now));
 
     // Status filter (client-side). Everflow's conversion reporting does support a
     // server-side status filter via query.filters resource_type: "status", but
@@ -1075,7 +1175,9 @@ export const _internals = {
   toClick,
   chunkDateRange,
   formatEverflowDate,
+  fetchAllPages,
+  MAX_PAGES,
+  PAGE_SIZE,
+  // Exposed so pagination tests can assert the MAX_PAGES warning is emitted.
+  log,
 };
-
-// Silence unused-import lint for the logger.
-void log;
