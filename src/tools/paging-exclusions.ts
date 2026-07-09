@@ -33,7 +33,6 @@ export const PAGING_EXCLUSIONS: ReadonlyMap<string, ReadonlySet<AdapterOperation
   ReadonlySet<AdapterOperation>
 >([
   // Confirmed bounded defaults (adapter fetches one page, never continues).
-  ['accesstrade', ops('listProgrammes')], // limit default, page 1, single fetch
   ['offer18', ops('listProgrammes')], // first page only, by design comment
   ['optimise-media', ops('listProgrammes')], // page 1, default pageSize
   ['admitad', ops('listProgrammes')], // offset:0 fixed against an offset-paginated endpoint

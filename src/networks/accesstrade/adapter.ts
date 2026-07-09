@@ -57,6 +57,9 @@
  *   - Tracking links are produced in the dashboard, not via a documented
  *     deterministic scheme; generateTrackingLink is unsupported.
  *   - The base URL differs by country; non-default countries set ACCESSTRADE_BASE_URL.
+ *   - The campaign listing is paginated via the required limit/page parameters.
+ *     When the caller passes no limit, listProgrammes pulls every page, capped
+ *     at MAX_PAGES with a warning rather than a silent truncation.
  */
 
 import { accessTradeRequest } from './client.js';
@@ -114,6 +117,7 @@ const META: NetworkMeta = {
     'Click-level data is not exposed via the publisher API; listClicks is unsupported.',
     'Tracking links are produced in the AccessTrade dashboard, not via a documented deterministic scheme; generateTrackingLink is unsupported.',
     'The API base URL differs by country; non-default countries must set ACCESSTRADE_BASE_URL.',
+    'The campaign listing is paginated via the required limit/page parameters; when no limit is requested, listProgrammes pulls every page, capped at MAX_PAGES with a warning rather than a silent truncation.',
   ],
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 10,
@@ -147,6 +151,19 @@ const RESILIENCE: ResilienceConfigMap = {
 
 // AccessTrade caps the conversion report at a 7-day window per call.
 const CONVERSION_WINDOW_DAYS = 7;
+
+// Largest page size this adapter requests from the campaign listing per call
+// (the endpoint's `limit` parameter is required; 300 matches the ceiling the
+// adapter has always applied to caller-supplied limits).
+const CAMPAIGN_PAGE_SIZE = 300;
+
+/**
+ * Backstop for the campaign pagination loop, mirroring the Tolt/Tapfiliate
+ * pattern: when the caller passes no limit we pull to completion, but never
+ * loop unboundedly against a misbehaving `total`. Hitting the cap logs a
+ * warning (stderr) so a truncated pull is never silent (principle 4.1).
+ */
+const MAX_PAGES = 50;
 
 // ---------------------------------------------------------------------------
 // AccessTrade raw response shapes (deliberately minimal — see Awin for rationale)
@@ -466,6 +483,14 @@ export class AccesstradeAdapter implements NetworkAdapter {
    *   requested status (default: affiliated). Query: keyword, categories,
    *   limit (required), page (required).
    *
+   * Pagination: the endpoint is page-based (1-based `page`, required `limit`,
+   * `total` on the envelope). When the caller passes no limit we loop pages
+   * until the envelope's `total` is reached (falling back to a short/empty
+   * page when `total` is absent), capped at MAX_PAGES with a logged warning so
+   * a truncated pull is never silent. When the caller passes a limit we stop
+   * as soon as enough rows have been collected, so limited calls keep the
+   * previous single-request behaviour.
+   *
    * We pass `keyword`/`categories` to the API where the caller supplied them,
    * then apply client-side filters for the canonical `status`/`categories`
    * sets so behaviour matches the other adapters regardless of which segment
@@ -477,25 +502,51 @@ export class AccesstradeAdapter implements NetworkAdapter {
 
     const statusFilter = toStatusList(query?.status);
     const segment = pickCampaignSegment(statusFilter);
-    const limit = Math.min(query?.limit ?? 100, 300);
+    const pageLimit = Math.min(query?.limit ?? CAMPAIGN_PAGE_SIZE, CAMPAIGN_PAGE_SIZE);
 
-    const envelope = await accessTradeRequest<AccessTradeCampaignsEnvelope>({
-      operation: 'listProgrammes',
-      path: `/v1/publishers/me/sites/${encodeURIComponent(siteId)}/campaigns/${segment}`,
-      accessKey,
-      query: {
-        limit,
-        page: 1,
-        keyword: query?.search,
-        categories:
-          query?.categories && query.categories.length > 0
-            ? query.categories.join(',')
-            : undefined,
-      },
-      resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
-    });
+    const rows: AccessTradeCampaignRaw[] = [];
+    let truncated = true;
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const envelope = await accessTradeRequest<AccessTradeCampaignsEnvelope>({
+        operation: 'listProgrammes',
+        path: `/v1/publishers/me/sites/${encodeURIComponent(siteId)}/campaigns/${segment}`,
+        accessKey,
+        query: {
+          limit: pageLimit,
+          page,
+          keyword: query?.search,
+          categories:
+            query?.categories && query.categories.length > 0
+              ? query.categories.join(',')
+              : undefined,
+        },
+        resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
+      });
 
-    const rows = envelope.data ?? envelope.campaigns ?? [];
+      const pageRows = envelope.data ?? envelope.campaigns ?? [];
+      rows.push(...pageRows);
+
+      // A caller-supplied limit short-circuits the loop once satisfied; the
+      // envelope's `total` (when present) is the authoritative end-of-results
+      // signal; without it a short or empty page means the last page.
+      const limitSatisfied = typeof query?.limit === 'number' && rows.length >= query.limit;
+      const totalReached = typeof envelope.total === 'number' && rows.length >= envelope.total;
+      const lastPage =
+        pageRows.length === 0 ||
+        (typeof envelope.total !== 'number' && pageRows.length < pageLimit);
+      if (limitSatisfied || totalReached || lastPage) {
+        truncated = false;
+        break;
+      }
+    }
+
+    if (truncated) {
+      log.warn(
+        { operation: 'listProgrammes', cap: MAX_PAGES, fetched: rows.length },
+        'accesstrade pagination hit MAX_PAGES cap; result may be truncated',
+      );
+    }
+
     let programmes = rows.map(toProgramme);
 
     // Client-side filters (defensive — the segment already narrows relationship).
@@ -895,7 +946,7 @@ export const _internals = {
   chunkDateRange,
   formatReportDate,
   pickCampaignSegment,
+  // Exposed so pagination tests can assert the MAX_PAGES backstop warning.
+  log,
+  MAX_PAGES,
 };
-
-// Silence unused-import lint for the logger.
-void log;
