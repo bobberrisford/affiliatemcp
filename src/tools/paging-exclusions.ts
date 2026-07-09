@@ -35,7 +35,6 @@ export const PAGING_EXCLUSIONS: ReadonlyMap<string, ReadonlySet<AdapterOperation
   // Confirmed bounded defaults (adapter fetches one page, never continues).
   ['affise', ops('listProgrammes', 'listTransactions')], // adapter.ts: perPage/limit defaults, single page:1; multi-page deferred to v0.2
   ['rakuten', ops('listProgrammes')], // page_size default, single request
-  ['cj', ops('listProgrammes', 'listTransactions')], // one GraphQL page; cursor pagination is documented future work
   ['cake', ops('listProgrammes')], // row_limit default, start_at_row 1, single fetch
   ['everflow', ops('listProgrammes', 'listTransactions')], // page 1 only; /conversions posted with no paging fields
   ['scaleo', ops('listProgrammes')], // perPage default, single page:1

@@ -165,16 +165,21 @@ describe('offset paging at the tool layer', () => {
 
   it('withholds offset from excluded (network, op) pairs and keeps it elsewhere', async () => {
     const { adapter } = pagingAdapter(makeTxns(5));
-    // Same fake adapter, but wearing an excluded slug: cj's listProgrammes and
-    // listTransactions have confirmed bounded upstream defaults.
-    const cjLike = { ...adapter, slug: 'cj', meta: { ...adapter.meta, slug: 'cj' } };
-    const tools = generateToolsFor(cjLike);
-    const txns = tools.find((t) => t.name === 'affiliate_cj_list_transactions');
-    const clicks = tools.find((t) => t.name === 'affiliate_cj_list_clicks');
+    // Same fake adapter, but wearing an excluded slug: everflow's
+    // listProgrammes and listTransactions have confirmed bounded upstream
+    // defaults (page 1 only; /conversions posted with no paging fields).
+    const everflowLike = {
+      ...adapter,
+      slug: 'everflow',
+      meta: { ...adapter.meta, slug: 'everflow' },
+    };
+    const tools = generateToolsFor(everflowLike);
+    const txns = tools.find((t) => t.name === 'affiliate_everflow_list_transactions');
+    const clicks = tools.find((t) => t.name === 'affiliate_everflow_list_clicks');
     expect(
       (txns?.inputSchema as { properties: Record<string, unknown> }).properties['offset'],
     ).toBeUndefined();
-    // listClicks is not excluded for cj, so paging stays available there.
+    // listClicks is not excluded for everflow, so paging stays available there.
     expect(
       (clicks?.inputSchema as { properties: Record<string, unknown> }).properties['offset'],
     ).toBeDefined();
