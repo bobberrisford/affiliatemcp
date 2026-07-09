@@ -14,7 +14,7 @@
     "Adapter built from public API documentation; not yet verified against a live account.",
     "listClicks is experimental: the publisher click endpoint is documented but response field names are unconfirmed; may require adjustment after live testing.",
     "generateTrackingLink requires the caller to supply the camref (campaign reference) for the target campaign, not the raw campaign_id. Camrefs can be found at the campaign tracking details endpoint.",
-    "Pagination is cursor-based; this adapter fetches one page at a time via the start/end date window and does not yet follow cursor_id for result sets exceeding the default page size."
+    "Reporting pagination is cursor-based: wide pulls follow the cursor_id response header to completion, and the campaign list pages via limit/offset. Both are capped at MAX_PAGES with a logged warning rather than a silent truncation."
   ],
   "claim_status": "experimental",
   "adapter_version": "0.1.0",

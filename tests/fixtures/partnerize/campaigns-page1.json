@@ -1,0 +1,1306 @@
+{
+  "campaigns": {
+    "campaign": [
+      {
+        "campaign_id": "10lp001",
+        "campaign_title": "Example Merchant 001",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-001-example.com",
+        "camref": "1101lpg001"
+      },
+      {
+        "campaign_id": "10lp002",
+        "campaign_title": "Example Merchant 002",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-002-example.com",
+        "camref": "1101lpg002"
+      },
+      {
+        "campaign_id": "10lp003",
+        "campaign_title": "Example Merchant 003",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-003-example.com",
+        "camref": "1101lpg003"
+      },
+      {
+        "campaign_id": "10lp004",
+        "campaign_title": "Example Merchant 004",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-004-example.com",
+        "camref": "1101lpg004"
+      },
+      {
+        "campaign_id": "10lp005",
+        "campaign_title": "Example Merchant 005",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-005-example.com",
+        "camref": "1101lpg005"
+      },
+      {
+        "campaign_id": "10lp006",
+        "campaign_title": "Example Merchant 006",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-006-example.com",
+        "camref": "1101lpg006"
+      },
+      {
+        "campaign_id": "10lp007",
+        "campaign_title": "Example Merchant 007",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-007-example.com",
+        "camref": "1101lpg007"
+      },
+      {
+        "campaign_id": "10lp008",
+        "campaign_title": "Example Merchant 008",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-008-example.com",
+        "camref": "1101lpg008"
+      },
+      {
+        "campaign_id": "10lp009",
+        "campaign_title": "Example Merchant 009",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-009-example.com",
+        "camref": "1101lpg009"
+      },
+      {
+        "campaign_id": "10lp010",
+        "campaign_title": "Example Merchant 010",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-010-example.com",
+        "camref": "1101lpg010"
+      },
+      {
+        "campaign_id": "10lp011",
+        "campaign_title": "Example Merchant 011",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-011-example.com",
+        "camref": "1101lpg011"
+      },
+      {
+        "campaign_id": "10lp012",
+        "campaign_title": "Example Merchant 012",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-012-example.com",
+        "camref": "1101lpg012"
+      },
+      {
+        "campaign_id": "10lp013",
+        "campaign_title": "Example Merchant 013",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-013-example.com",
+        "camref": "1101lpg013"
+      },
+      {
+        "campaign_id": "10lp014",
+        "campaign_title": "Example Merchant 014",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-014-example.com",
+        "camref": "1101lpg014"
+      },
+      {
+        "campaign_id": "10lp015",
+        "campaign_title": "Example Merchant 015",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-015-example.com",
+        "camref": "1101lpg015"
+      },
+      {
+        "campaign_id": "10lp016",
+        "campaign_title": "Example Merchant 016",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-016-example.com",
+        "camref": "1101lpg016"
+      },
+      {
+        "campaign_id": "10lp017",
+        "campaign_title": "Example Merchant 017",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-017-example.com",
+        "camref": "1101lpg017"
+      },
+      {
+        "campaign_id": "10lp018",
+        "campaign_title": "Example Merchant 018",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-018-example.com",
+        "camref": "1101lpg018"
+      },
+      {
+        "campaign_id": "10lp019",
+        "campaign_title": "Example Merchant 019",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-019-example.com",
+        "camref": "1101lpg019"
+      },
+      {
+        "campaign_id": "10lp020",
+        "campaign_title": "Example Merchant 020",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-020-example.com",
+        "camref": "1101lpg020"
+      },
+      {
+        "campaign_id": "10lp021",
+        "campaign_title": "Example Merchant 021",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-021-example.com",
+        "camref": "1101lpg021"
+      },
+      {
+        "campaign_id": "10lp022",
+        "campaign_title": "Example Merchant 022",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-022-example.com",
+        "camref": "1101lpg022"
+      },
+      {
+        "campaign_id": "10lp023",
+        "campaign_title": "Example Merchant 023",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-023-example.com",
+        "camref": "1101lpg023"
+      },
+      {
+        "campaign_id": "10lp024",
+        "campaign_title": "Example Merchant 024",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-024-example.com",
+        "camref": "1101lpg024"
+      },
+      {
+        "campaign_id": "10lp025",
+        "campaign_title": "Example Merchant 025",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-025-example.com",
+        "camref": "1101lpg025"
+      },
+      {
+        "campaign_id": "10lp026",
+        "campaign_title": "Example Merchant 026",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-026-example.com",
+        "camref": "1101lpg026"
+      },
+      {
+        "campaign_id": "10lp027",
+        "campaign_title": "Example Merchant 027",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-027-example.com",
+        "camref": "1101lpg027"
+      },
+      {
+        "campaign_id": "10lp028",
+        "campaign_title": "Example Merchant 028",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-028-example.com",
+        "camref": "1101lpg028"
+      },
+      {
+        "campaign_id": "10lp029",
+        "campaign_title": "Example Merchant 029",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-029-example.com",
+        "camref": "1101lpg029"
+      },
+      {
+        "campaign_id": "10lp030",
+        "campaign_title": "Example Merchant 030",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-030-example.com",
+        "camref": "1101lpg030"
+      },
+      {
+        "campaign_id": "10lp031",
+        "campaign_title": "Example Merchant 031",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-031-example.com",
+        "camref": "1101lpg031"
+      },
+      {
+        "campaign_id": "10lp032",
+        "campaign_title": "Example Merchant 032",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-032-example.com",
+        "camref": "1101lpg032"
+      },
+      {
+        "campaign_id": "10lp033",
+        "campaign_title": "Example Merchant 033",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-033-example.com",
+        "camref": "1101lpg033"
+      },
+      {
+        "campaign_id": "10lp034",
+        "campaign_title": "Example Merchant 034",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-034-example.com",
+        "camref": "1101lpg034"
+      },
+      {
+        "campaign_id": "10lp035",
+        "campaign_title": "Example Merchant 035",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-035-example.com",
+        "camref": "1101lpg035"
+      },
+      {
+        "campaign_id": "10lp036",
+        "campaign_title": "Example Merchant 036",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-036-example.com",
+        "camref": "1101lpg036"
+      },
+      {
+        "campaign_id": "10lp037",
+        "campaign_title": "Example Merchant 037",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-037-example.com",
+        "camref": "1101lpg037"
+      },
+      {
+        "campaign_id": "10lp038",
+        "campaign_title": "Example Merchant 038",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-038-example.com",
+        "camref": "1101lpg038"
+      },
+      {
+        "campaign_id": "10lp039",
+        "campaign_title": "Example Merchant 039",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-039-example.com",
+        "camref": "1101lpg039"
+      },
+      {
+        "campaign_id": "10lp040",
+        "campaign_title": "Example Merchant 040",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-040-example.com",
+        "camref": "1101lpg040"
+      },
+      {
+        "campaign_id": "10lp041",
+        "campaign_title": "Example Merchant 041",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-041-example.com",
+        "camref": "1101lpg041"
+      },
+      {
+        "campaign_id": "10lp042",
+        "campaign_title": "Example Merchant 042",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-042-example.com",
+        "camref": "1101lpg042"
+      },
+      {
+        "campaign_id": "10lp043",
+        "campaign_title": "Example Merchant 043",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-043-example.com",
+        "camref": "1101lpg043"
+      },
+      {
+        "campaign_id": "10lp044",
+        "campaign_title": "Example Merchant 044",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-044-example.com",
+        "camref": "1101lpg044"
+      },
+      {
+        "campaign_id": "10lp045",
+        "campaign_title": "Example Merchant 045",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-045-example.com",
+        "camref": "1101lpg045"
+      },
+      {
+        "campaign_id": "10lp046",
+        "campaign_title": "Example Merchant 046",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-046-example.com",
+        "camref": "1101lpg046"
+      },
+      {
+        "campaign_id": "10lp047",
+        "campaign_title": "Example Merchant 047",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-047-example.com",
+        "camref": "1101lpg047"
+      },
+      {
+        "campaign_id": "10lp048",
+        "campaign_title": "Example Merchant 048",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-048-example.com",
+        "camref": "1101lpg048"
+      },
+      {
+        "campaign_id": "10lp049",
+        "campaign_title": "Example Merchant 049",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-049-example.com",
+        "camref": "1101lpg049"
+      },
+      {
+        "campaign_id": "10lp050",
+        "campaign_title": "Example Merchant 050",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-050-example.com",
+        "camref": "1101lpg050"
+      },
+      {
+        "campaign_id": "10lp051",
+        "campaign_title": "Example Merchant 051",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-051-example.com",
+        "camref": "1101lpg051"
+      },
+      {
+        "campaign_id": "10lp052",
+        "campaign_title": "Example Merchant 052",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-052-example.com",
+        "camref": "1101lpg052"
+      },
+      {
+        "campaign_id": "10lp053",
+        "campaign_title": "Example Merchant 053",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-053-example.com",
+        "camref": "1101lpg053"
+      },
+      {
+        "campaign_id": "10lp054",
+        "campaign_title": "Example Merchant 054",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-054-example.com",
+        "camref": "1101lpg054"
+      },
+      {
+        "campaign_id": "10lp055",
+        "campaign_title": "Example Merchant 055",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-055-example.com",
+        "camref": "1101lpg055"
+      },
+      {
+        "campaign_id": "10lp056",
+        "campaign_title": "Example Merchant 056",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-056-example.com",
+        "camref": "1101lpg056"
+      },
+      {
+        "campaign_id": "10lp057",
+        "campaign_title": "Example Merchant 057",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-057-example.com",
+        "camref": "1101lpg057"
+      },
+      {
+        "campaign_id": "10lp058",
+        "campaign_title": "Example Merchant 058",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-058-example.com",
+        "camref": "1101lpg058"
+      },
+      {
+        "campaign_id": "10lp059",
+        "campaign_title": "Example Merchant 059",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-059-example.com",
+        "camref": "1101lpg059"
+      },
+      {
+        "campaign_id": "10lp060",
+        "campaign_title": "Example Merchant 060",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-060-example.com",
+        "camref": "1101lpg060"
+      },
+      {
+        "campaign_id": "10lp061",
+        "campaign_title": "Example Merchant 061",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-061-example.com",
+        "camref": "1101lpg061"
+      },
+      {
+        "campaign_id": "10lp062",
+        "campaign_title": "Example Merchant 062",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-062-example.com",
+        "camref": "1101lpg062"
+      },
+      {
+        "campaign_id": "10lp063",
+        "campaign_title": "Example Merchant 063",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-063-example.com",
+        "camref": "1101lpg063"
+      },
+      {
+        "campaign_id": "10lp064",
+        "campaign_title": "Example Merchant 064",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-064-example.com",
+        "camref": "1101lpg064"
+      },
+      {
+        "campaign_id": "10lp065",
+        "campaign_title": "Example Merchant 065",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-065-example.com",
+        "camref": "1101lpg065"
+      },
+      {
+        "campaign_id": "10lp066",
+        "campaign_title": "Example Merchant 066",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-066-example.com",
+        "camref": "1101lpg066"
+      },
+      {
+        "campaign_id": "10lp067",
+        "campaign_title": "Example Merchant 067",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-067-example.com",
+        "camref": "1101lpg067"
+      },
+      {
+        "campaign_id": "10lp068",
+        "campaign_title": "Example Merchant 068",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-068-example.com",
+        "camref": "1101lpg068"
+      },
+      {
+        "campaign_id": "10lp069",
+        "campaign_title": "Example Merchant 069",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-069-example.com",
+        "camref": "1101lpg069"
+      },
+      {
+        "campaign_id": "10lp070",
+        "campaign_title": "Example Merchant 070",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-070-example.com",
+        "camref": "1101lpg070"
+      },
+      {
+        "campaign_id": "10lp071",
+        "campaign_title": "Example Merchant 071",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-071-example.com",
+        "camref": "1101lpg071"
+      },
+      {
+        "campaign_id": "10lp072",
+        "campaign_title": "Example Merchant 072",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-072-example.com",
+        "camref": "1101lpg072"
+      },
+      {
+        "campaign_id": "10lp073",
+        "campaign_title": "Example Merchant 073",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-073-example.com",
+        "camref": "1101lpg073"
+      },
+      {
+        "campaign_id": "10lp074",
+        "campaign_title": "Example Merchant 074",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-074-example.com",
+        "camref": "1101lpg074"
+      },
+      {
+        "campaign_id": "10lp075",
+        "campaign_title": "Example Merchant 075",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-075-example.com",
+        "camref": "1101lpg075"
+      },
+      {
+        "campaign_id": "10lp076",
+        "campaign_title": "Example Merchant 076",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-076-example.com",
+        "camref": "1101lpg076"
+      },
+      {
+        "campaign_id": "10lp077",
+        "campaign_title": "Example Merchant 077",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-077-example.com",
+        "camref": "1101lpg077"
+      },
+      {
+        "campaign_id": "10lp078",
+        "campaign_title": "Example Merchant 078",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-078-example.com",
+        "camref": "1101lpg078"
+      },
+      {
+        "campaign_id": "10lp079",
+        "campaign_title": "Example Merchant 079",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-079-example.com",
+        "camref": "1101lpg079"
+      },
+      {
+        "campaign_id": "10lp080",
+        "campaign_title": "Example Merchant 080",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-080-example.com",
+        "camref": "1101lpg080"
+      },
+      {
+        "campaign_id": "10lp081",
+        "campaign_title": "Example Merchant 081",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-081-example.com",
+        "camref": "1101lpg081"
+      },
+      {
+        "campaign_id": "10lp082",
+        "campaign_title": "Example Merchant 082",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-082-example.com",
+        "camref": "1101lpg082"
+      },
+      {
+        "campaign_id": "10lp083",
+        "campaign_title": "Example Merchant 083",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-083-example.com",
+        "camref": "1101lpg083"
+      },
+      {
+        "campaign_id": "10lp084",
+        "campaign_title": "Example Merchant 084",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-084-example.com",
+        "camref": "1101lpg084"
+      },
+      {
+        "campaign_id": "10lp085",
+        "campaign_title": "Example Merchant 085",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-085-example.com",
+        "camref": "1101lpg085"
+      },
+      {
+        "campaign_id": "10lp086",
+        "campaign_title": "Example Merchant 086",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-086-example.com",
+        "camref": "1101lpg086"
+      },
+      {
+        "campaign_id": "10lp087",
+        "campaign_title": "Example Merchant 087",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-087-example.com",
+        "camref": "1101lpg087"
+      },
+      {
+        "campaign_id": "10lp088",
+        "campaign_title": "Example Merchant 088",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-088-example.com",
+        "camref": "1101lpg088"
+      },
+      {
+        "campaign_id": "10lp089",
+        "campaign_title": "Example Merchant 089",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-089-example.com",
+        "camref": "1101lpg089"
+      },
+      {
+        "campaign_id": "10lp090",
+        "campaign_title": "Example Merchant 090",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-090-example.com",
+        "camref": "1101lpg090"
+      },
+      {
+        "campaign_id": "10lp091",
+        "campaign_title": "Example Merchant 091",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-091-example.com",
+        "camref": "1101lpg091"
+      },
+      {
+        "campaign_id": "10lp092",
+        "campaign_title": "Example Merchant 092",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-092-example.com",
+        "camref": "1101lpg092"
+      },
+      {
+        "campaign_id": "10lp093",
+        "campaign_title": "Example Merchant 093",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-093-example.com",
+        "camref": "1101lpg093"
+      },
+      {
+        "campaign_id": "10lp094",
+        "campaign_title": "Example Merchant 094",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-094-example.com",
+        "camref": "1101lpg094"
+      },
+      {
+        "campaign_id": "10lp095",
+        "campaign_title": "Example Merchant 095",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-095-example.com",
+        "camref": "1101lpg095"
+      },
+      {
+        "campaign_id": "10lp096",
+        "campaign_title": "Example Merchant 096",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-096-example.com",
+        "camref": "1101lpg096"
+      },
+      {
+        "campaign_id": "10lp097",
+        "campaign_title": "Example Merchant 097",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-097-example.com",
+        "camref": "1101lpg097"
+      },
+      {
+        "campaign_id": "10lp098",
+        "campaign_title": "Example Merchant 098",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-098-example.com",
+        "camref": "1101lpg098"
+      },
+      {
+        "campaign_id": "10lp099",
+        "campaign_title": "Example Merchant 099",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-099-example.com",
+        "camref": "1101lpg099"
+      },
+      {
+        "campaign_id": "10lp100",
+        "campaign_title": "Example Merchant 100",
+        "approval_state": "approved",
+        "currency": "GBP",
+        "default_commission": {
+          "type": "percentage",
+          "value": "5.0",
+          "value_type": "percentage"
+        },
+        "url": "https://www.merchant-100-example.com",
+        "camref": "1101lpg100"
+      }
+    ]
+  }
+}

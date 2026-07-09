@@ -26,11 +26,17 @@
  *
  *   GET  /reporting/report_publisher/publisher/{publisher_id}/conversion
  *     ?start_date=ISO &end_date=ISO &date_type=standard &timezone=UTC
- *     → conversions with pagination.
+ *     → conversions; cursor-paginated via the `cursor_id` RESPONSE HEADER,
+ *       echoed back as a `cursor_id` query parameter for the next page.
  *
  *   GET  /reporting/report_publisher/publisher/{publisher_id}/click
  *     ?start_date=ISO &end_date=ISO
- *     → click records.
+ *     → click records; same `cursor_id` header continuation.
+ *
+ *   Pagination: the reporting endpoints above follow `cursor_id` continuation
+ *   to completion; the campaign list uses standard `limit`/`offset` pages.
+ *   Both are capped at MAX_PAGES with a logged warning so a truncated pull is
+ *   never silent (principle 4.1).
  *
  *   GET  /user/publisher
  *     → list of publisher accounts; used by verifyAuth to derive PARTNERIZE_PUBLISHER_ID.
@@ -60,7 +66,7 @@
  *   6. UK English in every user-visible string. "Programme" not "program".
  */
 
-import { partnerizeRequest } from './client.js';
+import { partnerizeRequest, partnerizeRequestWithCursor } from './client.js';
 import { verifyAuth as authVerify, validateCredential as authValidate } from './auth.js';
 import { setupSteps } from './setup.js';
 import { requireCredential } from '../../shared/config.js';
@@ -97,6 +103,22 @@ const log = createLogger('partnerize.adapter');
 const SLUG = 'partnerize';
 const NAME = 'Partnerize';
 
+/**
+ * Pagination backstop. Wide pulls loop page by page (cursor continuation on
+ * the reporting endpoints, limit/offset on the campaign list) until the
+ * upstream signals completion; MAX_PAGES caps a misbehaving upstream (for
+ * example, a cursor that never terminates) and the cap is logged so a
+ * truncated pull is never silent (principle 4.1).
+ */
+const MAX_PAGES = 50;
+
+/**
+ * Page size for the limit/offset-paginated campaign list. 100 matches the
+ * page size the partnerize-advertiser adapter uses against the same standard
+ * pagination scheme (Apiary standard-pagination).
+ */
+const PROGRAMME_PAGE_SIZE = 100;
+
 const META: NetworkMeta = {
   slug: SLUG,
   name: NAME,
@@ -113,7 +135,7 @@ const META: NetworkMeta = {
     'Adapter built from public API documentation; not yet verified against a live account.',
     'listClicks is experimental: the publisher click endpoint is documented but response field names are unconfirmed; may require adjustment after live testing.',
     'generateTrackingLink requires the caller to supply the camref (campaign reference) for the target campaign, not the raw campaign_id. Camrefs can be found at the campaign tracking details endpoint.',
-    'Pagination is cursor-based; this adapter fetches one page at a time via the start/end date window and does not yet follow cursor_id for result sets exceeding the default page size.',
+    'Reporting pagination is cursor-based: wide pulls follow the cursor_id response header to completion, and the campaign list pages via limit/offset. Both are capped at MAX_PAGES with a logged warning rather than a silent truncation.',
   ],
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 10,
@@ -568,6 +590,99 @@ export class PartnerizeAdapter implements NetworkAdapter {
   readonly resilienceConfig = RESILIENCE;
 
   // -------------------------------------------------------------------------
+  // Pagination helpers
+  // -------------------------------------------------------------------------
+
+  /**
+   * Fetch every page of a cursor-paginated Partnerize reporting resource.
+   *
+   * Partnerize's granular reporting endpoints return the next-page cursor as a
+   * `cursor_id` RESPONSE HEADER (granular_reporting.apib); the adapter echoes
+   * it back as a `cursor_id` query parameter until no header is returned. The
+   * loop is capped at MAX_PAGES, logged so a truncated pull is never silent.
+   *
+   * `target` short-circuits the pull when the caller passed a `limit`: once at
+   * least `target` raw rows are collected there is no reason to keep paging.
+   * The first page is always fetched, so a limited call never pulls less than
+   * the pre-pagination adapter did.
+   */
+  private async fetchCursorPages<TResponse, TRow>(input: {
+    operation: string;
+    path: string;
+    params: Record<string, string | number | undefined>;
+    extract: (response: TResponse) => TRow[];
+    applicationKey: string;
+    userApiKey: string;
+    resilience: ResilienceConfig;
+    target?: number;
+  }): Promise<TRow[]> {
+    const out: TRow[] = [];
+    let cursorId: string | undefined;
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const { body, cursorId: nextCursorId } = await partnerizeRequestWithCursor<TResponse>({
+        operation: input.operation,
+        path: input.path,
+        applicationKey: input.applicationKey,
+        userApiKey: input.userApiKey,
+        query: cursorId === undefined ? input.params : { ...input.params, cursor_id: cursorId },
+        resilience: input.resilience,
+      });
+      const batch = input.extract(body);
+      out.push(...batch);
+      // No cursor header, or an empty page → the result set is complete.
+      if (!nextCursorId || batch.length === 0) return out;
+      // Caller's limit satisfied → stop early (tool layer slices locally).
+      if (typeof input.target === 'number' && out.length >= input.target) return out;
+      cursorId = nextCursorId;
+    }
+    log.warn(
+      { operation: input.operation, cap: MAX_PAGES, fetched: out.length },
+      'partnerize pagination hit MAX_PAGES cap; result may be truncated',
+    );
+    return out;
+  }
+
+  /**
+   * Fetch every page of the limit/offset-paginated campaign list.
+   *
+   * Standard Partnerize endpoints paginate with `limit` + `offset` (Apiary
+   * standard-pagination; the same scheme the partnerize-advertiser adapter
+   * uses). The list carries no total count we can rely on, so we loop until a
+   * short (< PROGRAMME_PAGE_SIZE) page, capped at MAX_PAGES with a logged
+   * warning. `target` short-circuits once a caller-supplied `limit` is
+   * satisfied; the first page is always fetched.
+   */
+  private async fetchAllCampaigns(input: {
+    operation: string;
+    path: string;
+    applicationKey: string;
+    userApiKey: string;
+    resilience: ResilienceConfig;
+    target?: number;
+  }): Promise<PartnerizeCampaignRaw[]> {
+    const out: PartnerizeCampaignRaw[] = [];
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const response = await partnerizeRequest<PartnerizeCampaignListResponse>({
+        operation: input.operation,
+        path: input.path,
+        applicationKey: input.applicationKey,
+        userApiKey: input.userApiKey,
+        query: { limit: PROGRAMME_PAGE_SIZE, offset: page * PROGRAMME_PAGE_SIZE },
+        resilience: input.resilience,
+      });
+      const batch = extractCampaigns(response);
+      out.push(...batch);
+      if (batch.length < PROGRAMME_PAGE_SIZE) return out;
+      if (typeof input.target === 'number' && out.length >= input.target) return out;
+    }
+    log.warn(
+      { operation: input.operation, cap: MAX_PAGES, fetched: out.length },
+      'partnerize pagination hit MAX_PAGES cap; result may be truncated',
+    );
+    return out;
+  }
+
+  // -------------------------------------------------------------------------
   // listProgrammes
   // -------------------------------------------------------------------------
 
@@ -591,6 +706,11 @@ export class PartnerizeAdapter implements NetworkAdapter {
    * caller requests `{ status: ['joined', 'pending'] }` we make two calls and
    * merge. This is consistent with how Awin handles multiple relationships.
    *
+   * Pagination: standard limit/offset pages per status segment, pulled to
+   * completion via `fetchAllCampaigns` (MAX_PAGES backstop). When the caller
+   * passes a `limit` the pull for each status stops once that many raw rows
+   * are collected; client-side filters and the final slice run afterwards.
+   *
    * Path and status segments confirmed from publisher_campaign.apib blueprint:
    * status path values are "a" (approved), "p" (pending), "r" (rejected).
    * Exact response body field names (approval_state vs campaign_status) remain
@@ -609,14 +729,15 @@ export class PartnerizeAdapter implements NetworkAdapter {
     const allRaw: PartnerizeCampaignRaw[] = [];
 
     for (const pStatus of partnerizeStatuses) {
-      const response = await partnerizeRequest<PartnerizeCampaignListResponse>({
+      const batch = await this.fetchAllCampaigns({
         operation: 'listProgrammes',
         path: `/user/publisher/${encodeURIComponent(publisherId)}/campaign/${pStatus}`,
         applicationKey,
         userApiKey,
         resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
+        target: typeof query?.limit === 'number' ? query.limit : undefined,
       });
-      allRaw.push(...extractCampaigns(response));
+      allRaw.push(...batch);
     }
 
     let programmes = allRaw.map((r) => {
@@ -725,10 +846,12 @@ export class PartnerizeAdapter implements NetworkAdapter {
    *     &timezone=UTC
    *     &campaign_id=...  (optional server-side filter)
    *
-   * Date windowing: Partnerize paginates results by default (cursor-based).
-   * This adapter fetches all results within the date window in a single call,
-   * relying on the API's default pagination size. Full cursor-following is a
-   * known limitation documented in META.knownLimitations.
+   * Pagination: Partnerize paginates results by default (cursor-based); the
+   * next-page cursor arrives as a `cursor_id` RESPONSE HEADER and is echoed
+   * back as a `cursor_id` query parameter. `fetchCursorPages` follows the
+   * cursor to completion (MAX_PAGES backstop, logged on cap) so an unlimited
+   * call returns the complete date window. When the caller passes a `limit`
+   * the pull stops once that many raw conversions are collected.
    *
    * Default window: last 30 days (matching Awin's default).
    *
@@ -767,16 +890,19 @@ export class PartnerizeAdapter implements NetworkAdapter {
       params['campaign_id'] = query.programmeId;
     }
 
-    const response = await partnerizeRequest<PartnerizeConversionListResponse>({
+    const rawConversions = await this.fetchCursorPages<
+      PartnerizeConversionListResponse,
+      PartnerizeConversionRaw
+    >({
       operation: 'listTransactions',
       path: `/reporting/report_publisher/publisher/${encodeURIComponent(publisherId)}/conversion`,
+      params,
+      extract: extractConversions,
       applicationKey,
       userApiKey,
-      query: params,
       resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
+      target: typeof query?.limit === 'number' ? query.limit : undefined,
     });
-
-    const rawConversions = extractConversions(response);
     let transactions = rawConversions.map((r) => toTransaction(r, now));
 
     // Status filter.
@@ -908,6 +1034,11 @@ export class PartnerizeAdapter implements NetworkAdapter {
    *
    * CONFIRMED ABSENT: no destination_url or landing_url in the click export schema.
    *
+   * Pagination: same `cursor_id` header continuation as listTransactions,
+   * followed to completion via `fetchCursorPages` (MAX_PAGES backstop, logged
+   * on cap). When the caller passes a `limit` it is also forwarded upstream,
+   * and the pull stops once that many raw clicks are collected.
+   *
    * Note in known_limitations: listClicks is experimental because JSON field names
    * from the granular reporting endpoint may differ from the CSV export schema.
    * Blocked: requires live credentials to confirm JSON vs CSV field parity.
@@ -936,18 +1067,25 @@ export class PartnerizeAdapter implements NetworkAdapter {
       params['limit'] = query.limit;
     }
 
-    const response = await partnerizeRequest<PartnerizeClickListResponse>({
+    const rawClicks = await this.fetchCursorPages<PartnerizeClickListResponse, PartnerizeClickRaw>({
       operation: 'listClicks',
       path: `/reporting/report_publisher/publisher/${encodeURIComponent(publisherId)}/click`,
+      params,
+      extract: extractClicks,
       applicationKey,
       userApiKey,
-      query: params,
       resilience: RESILIENCE.listClicks ?? RESILIENCE.default,
+      target: typeof query?.limit === 'number' ? query.limit : undefined,
     });
 
-    const rawClicks = extractClicks(response);
+    let clicks = rawClicks;
+    if (typeof query?.limit === 'number') {
+      // Defensive local slice: `limit` is forwarded upstream, but if the
+      // upstream ignores it the cursor pull may collect more than requested.
+      clicks = clicks.slice(0, query.limit);
+    }
 
-    return rawClicks.map((r): Click => ({
+    return clicks.map((r): Click => ({
       id: String(r.click_id ?? r.cookie_id ?? ''),
       network: SLUG,
       programmeId: r.campaign_id ? String(r.campaign_id) : undefined,
@@ -1233,7 +1371,9 @@ export const _internals = {
   pickPartnerizeStatuses,
   extractCampaigns,
   extractConversions,
+  // Exposed so pagination tests can assert the MAX_PAGES cap warning is
+  // actually emitted (a truncated pull must never be silent).
+  log,
+  MAX_PAGES,
+  PROGRAMME_PAGE_SIZE,
 };
-
-// Silence the unused-import lint for the logger when noUnusedLocals is on.
-void log;
