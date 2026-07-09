@@ -3,6 +3,11 @@ name: Publish
 on:
   push:
     branches: [main]
+  # Manual re-run path: the publish job is idempotent (it skips when the
+  # version is already on npm), so a maintainer can safely re-trigger a
+  # publish that was cancelled or lost to a runner outage without needing
+  # a new push to main.
+  workflow_dispatch:
 
 permissions:
   contents: write # create the GitHub release + tag
