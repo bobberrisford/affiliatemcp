@@ -1,0 +1,23 @@
+{
+  "publishers": [
+    {
+      "publisher_id": "PUB-301",
+      "publisher_name": "SavvySaver Blog",
+      "status": "active"
+    },
+    {
+      "publisher_id": "PUB-302",
+      "publisher_name": "VoucherVault",
+      "status": "active"
+    }
+  ],
+  "count": 2,
+  "limit": 2,
+  "offset": 0,
+  "hypermedia": {
+    "pagination": {
+      "total_item_count": 3,
+      "total_page_count": 2
+    }
+  }
+}

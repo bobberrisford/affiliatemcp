@@ -1,0 +1,18 @@
+{
+  "publishers": [
+    {
+      "publisher_id": "PUB-303",
+      "publisher_name": "TopTenReviews UK",
+      "status": "pending"
+    }
+  ],
+  "count": 1,
+  "limit": 2,
+  "offset": 2,
+  "hypermedia": {
+    "pagination": {
+      "total_item_count": 3,
+      "total_page_count": 2
+    }
+  }
+}

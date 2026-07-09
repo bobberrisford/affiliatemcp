@@ -1,0 +1,38 @@
+{
+  "campaigns": [
+    {
+      "campaign_id": "CAM-2001",
+      "campaign_name": "Northern Outfitters",
+      "status": "active",
+      "currency": "GBP",
+      "campaign_reference": "northern-outfitters",
+      "advertiser_url": "https://northern.example.com"
+    },
+    {
+      "campaign_id": "CAM-2002",
+      "campaign_name": "Harbour Homeware",
+      "status": "active",
+      "currency": "GBP",
+      "campaign_reference": "harbour-homeware",
+      "advertiser_url": "https://harbour.example.com"
+    },
+    {
+      "campaign_id": "CAM-2003",
+      "campaign_name": "Peak Cycles",
+      "status": "paused",
+      "currency": "EUR",
+      "campaign_reference": "peak-cycles",
+      "advertiser_url": "https://peakcycles.example.com"
+    }
+  ],
+  "count": 3,
+  "limit": 3,
+  "offset": 0,
+  "execution_time": "0.041",
+  "hypermedia": {
+    "pagination": {
+      "total_item_count": 5,
+      "total_page_count": 2
+    }
+  }
+}
