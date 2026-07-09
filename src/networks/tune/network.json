@@ -10,7 +10,8 @@
     "Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).",
     "The API base URL is per-tenant: TUNE (HasOffers) is a CPA platform engine and each network runs its own instance, so one adapter serves any HasOffers-powered network via its NetworkId (the host is https://{network_id}.api.hasoffers.com); there is no single shared host.",
     "Amounts (Stat.payout) are assumed to be in major currency units (not minor units / cents); confirm against a live account before promoting beyond experimental.",
-    "Click-level data is not exposed via the affiliate API; listClicks is not implemented."
+    "Click-level data is not exposed via the affiliate API; listClicks is not implemented.",
+    "listProgrammes paginates Affiliate_Offer::findAll via page/pageCount: with no limit it pulls every page, capped at MAX_PAGES with a logged warning rather than a silent truncation; a caller-supplied limit fetches a single page of that size."
   ],
   "claim_status": "experimental",
   "adapter_version": "0.1.0",

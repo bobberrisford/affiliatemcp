@@ -1,0 +1,41 @@
+{
+  "request": { "Target": "Affiliate_Offer", "Method": "findAll", "Version": "3", "Format": "json" },
+  "response": {
+    "status": 1,
+    "httpStatus": 200,
+    "errorMessage": null,
+    "errors": [],
+    "data": {
+      "page": 2,
+      "current": 2,
+      "count": 5,
+      "pageCount": 2,
+      "data": {
+        "2004": {
+          "Offer": {
+            "id": "2004",
+            "name": "Atolls Kitchen",
+            "status": "active",
+            "approval_status": "approved",
+            "currency": "GBP",
+            "default_payout": "3.25",
+            "payout_type": "cpa_flat",
+            "preview_url": "https://www.atolls-kitchen.example.com"
+          }
+        },
+        "2005": {
+          "Offer": {
+            "id": "2005",
+            "name": "Atolls Garden",
+            "status": "paused",
+            "approval_status": "approved",
+            "currency": "GBP",
+            "default_payout": "5",
+            "payout_type": "cpa_percentage",
+            "preview_url": "https://www.atolls-garden.example.com"
+          }
+        }
+      }
+    }
+  }
+}
