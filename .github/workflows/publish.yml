@@ -19,7 +19,9 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
       # OIDC trusted publishing requires npm >= 11.5.1; Node 20 ships npm 10.x.
-      - run: npm install -g npm@latest
+      # Pinned to major 11: npm 12 requires Node >= 22, so `npm@latest` broke
+      # every publish run on this Node 20 workflow when npm 12 shipped.
+      - run: npm install -g npm@11
       - run: npm ci
       - name: Decide whether this version needs publishing
         id: check
