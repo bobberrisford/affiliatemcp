@@ -30,6 +30,13 @@
  *   listContracts          → GET /Advertisers/{BrandSID}/Campaigns/{CampaignId}/Contracts
  *   getContract            → GET /Advertisers/{BrandSID}/Campaigns/{CampaignId}/Contracts/{ContractId}
  *
+ * Pagination: listProgrammes, listTransactions, listMediaPartners, and
+ * getProgrammePerformance paginate to completion when `query.limit` is absent,
+ * honouring Impact's dual `@nextpageuri` / `@page`+`@numpages` signals (same
+ * concession as the publisher adapter). A `MAX_PAGES` backstop stops runaway
+ * loops and logs a stderr warning so truncation is never silent. When `limit`
+ * IS present, the loop stops as soon as enough raw rows are collected.
+ *
  * Contract operations are READ-ONLY here. The write surface (proposeContract,
  * applyContract, removeContract) lands in follow-up PRs behind a consent gate;
  * see docs/decisions/2026-06-12-impact-contracts-actions.md. The exact contract
@@ -61,6 +68,7 @@ import {
   NotImplementedError,
   type ActionDescriptor,
   type AdapterCallContext,
+  type AnyOperation,
   type Click,
   type ClickQuery,
   type CredentialValidationResult,
@@ -77,6 +85,7 @@ import {
   type ProgrammePerformanceRow,
   type ProgrammeQuery,
   type ProgrammeStatus,
+  type ResilienceConfig,
   type ResilienceConfigMap,
   type SetupStep,
   type TrackingLink,
@@ -94,13 +103,14 @@ const META: NetworkMeta = {
   baseUrl: 'https://api.impact.com',
   authModel: 'basic',
   docsUrl: 'https://integrations.impact.com/impact-brand/',
-  adapterVersion: '0.1.0',
+  adapterVersion: '0.1.1',
   lastVerified: '2026-05-23',
   claimStatus: 'experimental',
   knownLimitations: [
     'Read-only at v0.1. The HTTP client refuses non-GET methods.',
     'Two credential tiers auto-detected at runtime: agency-passthrough and brand-direct.',
     'getProgrammePerformance uses Impact pre-built `adv_performance_by_media` report; sync vs async behaviour `// TODO(verify)` until a live agency tenant is available.',
+    'listProgrammes, listTransactions, listMediaPartners, and getProgrammePerformance paginate to completion on absent `limit` via `@nextpageuri` / `@page`, capped at MAX_PAGES with a stderr warning rather than a silent truncation.',
     'listContracts/getContract read the brand-partner payment-term relationship; endpoint paths under `/Campaigns/{id}/Contracts` carry `// TODO(verify)` until confirmed against a live agency tenant. proposeContract builds a reviewable change plan from those reads (advisement only, no network write); the contract write surface (apply/remove) is not enabled here.',
   ],
   supportsBrandOps: true,
@@ -121,6 +131,17 @@ const RESILIENCE: ResilienceConfigMap = {
     retries: 4,
   },
 };
+
+/**
+ * Default upstream page size when the caller supplies no `limit`, and the
+ * hard backstop on how many pages one operation may pull. The cap exists so a
+ * tenant returning a self-referential `@nextpageuri` (observed historically on
+ * the publisher surface) cannot loop indefinitely; hitting it logs a stderr
+ * warning so a truncated pull is never silent (principle 4.1). Same pattern as
+ * the tolt adapter's MAX_PAGES.
+ */
+const PAGE_SIZE = 100;
+const MAX_PAGES = 50;
 
 // ---------------------------------------------------------------------------
 // Helpers — ctx, status mapping, raw shapes
@@ -168,6 +189,17 @@ function requireProgrammeId(operation: string, programmeId?: string): string {
     );
   }
   return programmeId;
+}
+
+/**
+ * Impact's dual pagination signals on the brand-side list envelopes. Some
+ * tenants return `@nextpageuri`, others `@page`/`@numpages`; both are honoured
+ * (same concession as the publisher adapter's IMPACT-WORKAROUND).
+ */
+interface ImpactAdvPagedEnvelope {
+  '@page'?: string | number;
+  '@nextpageuri'?: string;
+  '@numpages'?: string | number;
 }
 
 interface ImpactAdvAdvertiserRaw {
@@ -233,7 +265,7 @@ interface ImpactAdvReportRow {
   State?: string;
 }
 
-interface ImpactAdvReportEnvelope {
+interface ImpactAdvReportEnvelope extends ImpactAdvPagedEnvelope {
   Records?: ImpactAdvReportRow[];
   Rows?: ImpactAdvReportRow[];
   Data?: ImpactAdvReportRow[];
@@ -676,19 +708,18 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
 
   async listProgrammes(query?: ProgrammeQuery, ctx?: AdapterCallContext): Promise<Programme[]> {
     const c = requireCtx('listProgrammes', ctx);
-    const envelope = await impactAdvRequest<
-      | { Campaigns?: ImpactAdvCampaignRaw[] }
-      | ImpactAdvCampaignRaw[]
-    >({
+    const list = await collectAdvPages<ImpactAdvCampaignRaw>({
       operation: 'listProgrammes',
       brandPath: '/Campaigns',
       networkBrandId: c.networkBrandId,
-      query: { PageSize: query?.limit ?? 100 },
+      pageSize: query?.limit ?? PAGE_SIZE,
+      target: query?.limit,
+      extract: (envelope) =>
+        Array.isArray(envelope)
+          ? (envelope as ImpactAdvCampaignRaw[])
+          : ((envelope as { Campaigns?: ImpactAdvCampaignRaw[] })?.Campaigns ?? []),
       resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
     });
-    const list: ImpactAdvCampaignRaw[] = Array.isArray(envelope)
-      ? envelope
-      : envelope?.Campaigns ?? [];
     let programmes = list.map(toProgramme);
     if (query?.search) {
       const needle = query.search.toLowerCase();
@@ -716,24 +747,23 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
         ? canonicalToImpactState(statusFilter[0])
         : undefined;
 
-    const envelope = await impactAdvRequest<
-      | { Actions?: ImpactAdvActionRaw[] }
-      | ImpactAdvActionRaw[]
-    >({
+    const list = await collectAdvPages<ImpactAdvActionRaw>({
       operation: 'listTransactions',
       brandPath: '/Actions',
       networkBrandId: c.networkBrandId,
-      query: {
+      baseQuery: {
         ActionDateStart: query?.from,
         ActionDateEnd: query?.to,
         State: stateParam,
-        PageSize: query?.limit ?? 100,
       },
+      pageSize: query?.limit ?? PAGE_SIZE,
+      target: query?.limit,
+      extract: (envelope) =>
+        Array.isArray(envelope)
+          ? (envelope as ImpactAdvActionRaw[])
+          : ((envelope as { Actions?: ImpactAdvActionRaw[] })?.Actions ?? []),
       resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
     });
-    const list: ImpactAdvActionRaw[] = Array.isArray(envelope)
-      ? envelope
-      : envelope?.Actions ?? [];
     let txns = list.map((r) => toTransaction(r));
     if (query?.programmeId) txns = txns.filter((t) => t.programmeId === query.programmeId);
     if (statusFilter && statusFilter.length > 0) {
@@ -753,19 +783,18 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
     ctx?: AdapterCallContext,
   ): Promise<MediaPartner[]> {
     const c = requireCtx('listMediaPartners', ctx);
-    const envelope = await impactAdvRequest<
-      | { MediaPartners?: ImpactAdvMediaPartnerRaw[] }
-      | ImpactAdvMediaPartnerRaw[]
-    >({
+    const list = await collectAdvPages<ImpactAdvMediaPartnerRaw>({
       operation: 'listMediaPartners',
       brandPath: '/MediaPartners',
       networkBrandId: c.networkBrandId,
-      query: { PageSize: query?.limit ?? 100 },
+      pageSize: query?.limit ?? PAGE_SIZE,
+      target: query?.limit,
+      extract: (envelope) =>
+        Array.isArray(envelope)
+          ? (envelope as ImpactAdvMediaPartnerRaw[])
+          : ((envelope as { MediaPartners?: ImpactAdvMediaPartnerRaw[] })?.MediaPartners ?? []),
       resilience: RESILIENCE.listMediaPartners ?? RESILIENCE.default,
     });
-    const list: ImpactAdvMediaPartnerRaw[] = Array.isArray(envelope)
-      ? envelope
-      : envelope?.MediaPartners ?? [];
     let partners = list.map(toMediaPartner);
     if (query?.search) {
       const needle = query.search.toLowerCase();
@@ -793,67 +822,117 @@ export class ImpactAdvertiserAdapter implements NetworkAdapter {
    * both shapes: if the first response carries rows we use them; otherwise we
    * follow `ResultUri` with up to 60s of polling and a per-request retry.
    * Verify exact endpoint name + ResultUri shape against a live tenant.
+   *
+   * Pagination: once a rows-bearing envelope arrives (sync or polled), the
+   * continuation follows `@nextpageuri` / `@page` like the other list ops,
+   * pulling to completion on absent `limit` and stopping early once `limit`
+   * raw rows are collected, capped at MAX_PAGES with a stderr warning.
    */
   async getProgrammePerformance(
     query?: ProgrammePerformanceQuery,
     ctx?: AdapterCallContext,
   ): Promise<ProgrammePerformanceRow[]> {
     const c = requireCtx('getProgrammePerformance', ctx);
-
-    const q: Record<string, string | number | undefined> = {
+    const resilience = RESILIENCE.getProgrammePerformance ?? RESILIENCE.default;
+    const pageSize = query?.limit ?? 1000;
+    const reportPath = '/Reports/adv_performance_by_media';
+    const baseQuery: Record<string, string | number | undefined> = {
       START_DATE: query?.from,
       END_DATE: query?.to,
       MEDIA_PARTNER_ID: query?.publisherId,
       CAMPAIGN_ID: query?.programmeId,
-      PageSize: query?.limit ?? 1000,
     };
 
     const first = await impactAdvRequest<ImpactAdvReportEnvelope | ImpactAdvReportRow[]>({
       operation: 'getProgrammePerformance',
-      brandPath: '/Reports/adv_performance_by_media',
+      brandPath: reportPath,
       networkBrandId: c.networkBrandId,
-      query: q,
-      resilience: RESILIENCE.getProgrammePerformance ?? RESILIENCE.default,
+      query: { ...baseQuery, Page: 1, PageSize: pageSize },
+      resilience,
     });
 
-    // Sync shape: rows came back inline.
-    const inlineRows = extractRows(first);
-    if (inlineRows.length > 0 || !isAsync(first)) {
-      let rows = inlineRows.map(toPerformanceRow);
-      if (typeof query?.limit === 'number') rows = rows.slice(0, query.limit);
-      return rows;
-    }
+    let envelope: ImpactAdvReportEnvelope | ImpactAdvReportRow[] = first;
+    // The `@page` fallback re-requests basePath: the sync path re-sends the
+    // report parameters; the polled path re-requests the ResultUri bare.
+    let basePath = reportPath;
+    let baseQ: Record<string, string | number | undefined> | undefined = baseQuery;
 
-    // Async shape: poll the ResultUri. We bound polling at 60s; each iteration
-    // sleeps 2s. TODO(verify): exact path of ResultUri vs the brand prefix.
-    const resultUri = (first as ImpactAdvReportEnvelope).ResultUri ?? '';
-    if (!resultUri) return [];
-    const startedAt = Date.now();
-    const timeoutMs = 60_000;
-    while (Date.now() - startedAt < timeoutMs) {
-      await sleep(2_000);
-      const poll = await impactAdvRequest<ImpactAdvReportEnvelope | ImpactAdvReportRow[]>({
-        operation: 'getProgrammePerformance',
-        brandPath: resultUri.startsWith('/') ? resultUri : `/${resultUri}`,
-        networkBrandId: c.networkBrandId,
-        resilience: RESILIENCE.getProgrammePerformance ?? RESILIENCE.default,
-      });
-      const rows = extractRows(poll);
-      if (rows.length > 0 || !isAsync(poll)) {
-        let mapped = rows.map(toPerformanceRow);
-        if (typeof query?.limit === 'number') mapped = mapped.slice(0, query.limit);
-        return mapped;
+    if (extractRows(first).length === 0 && isAsync(first)) {
+      // Async shape: poll the ResultUri. We bound polling at 60s; each
+      // iteration sleeps 2s. TODO(verify): exact path of ResultUri vs the
+      // brand prefix.
+      const resultUri = (first as ImpactAdvReportEnvelope).ResultUri ?? '';
+      if (!resultUri) return [];
+      const pollPath = resultUri.startsWith('/') ? resultUri : `/${resultUri}`;
+      const startedAt = Date.now();
+      const timeoutMs = 60_000;
+      let resolved = false;
+      while (Date.now() - startedAt < timeoutMs) {
+        await sleep(2_000);
+        const poll = await impactAdvRequest<ImpactAdvReportEnvelope | ImpactAdvReportRow[]>({
+          operation: 'getProgrammePerformance',
+          brandPath: pollPath,
+          networkBrandId: c.networkBrandId,
+          resilience,
+        });
+        if (extractRows(poll).length > 0 || !isAsync(poll)) {
+          envelope = poll;
+          basePath = pollPath;
+          baseQ = undefined;
+          resolved = true;
+          break;
+        }
+      }
+      if (!resolved) {
+        throw new NetworkError(
+          buildErrorEnvelope({
+            type: 'timeout',
+            network: SLUG,
+            operation: 'getProgrammePerformance',
+            message: `Impact report poll exceeded ${timeoutMs}ms.`,
+            hint: 'Narrow the date window or try again — Impact reports run async on large windows.',
+          }),
+        );
       }
     }
-    throw new NetworkError(
-      buildErrorEnvelope({
-        type: 'timeout',
-        network: SLUG,
+
+    // Collect page 1, then follow the continuation signals to completion (or
+    // to `limit`, or to the MAX_PAGES backstop).
+    const collected: ImpactAdvReportRow[] = [...extractRows(envelope)];
+    let pages = 1;
+    let next = nextAdvPageState(envelope, basePath, c.networkBrandId);
+    while (
+      next.nextPath &&
+      collected.length > 0 &&
+      (query?.limit === undefined || collected.length < query.limit)
+    ) {
+      if (pages >= MAX_PAGES) {
+        log.warn(
+          { operation: 'getProgrammePerformance', cap: MAX_PAGES, fetched: collected.length },
+          'impact-advertiser pagination hit MAX_PAGES cap; result may be truncated',
+        );
+        break;
+      }
+      pages += 1;
+      const env = await impactAdvRequest<ImpactAdvReportEnvelope | ImpactAdvReportRow[]>({
         operation: 'getProgrammePerformance',
-        message: `Impact report poll exceeded ${timeoutMs}ms.`,
-        hint: 'Narrow the date window or try again — Impact reports run async on large windows.',
-      }),
-    );
+        brandPath: next.nextPath,
+        networkBrandId: c.networkBrandId,
+        query:
+          next.pageParam !== undefined
+            ? { ...baseQ, Page: next.pageParam, PageSize: pageSize }
+            : undefined,
+        resilience,
+      });
+      const rows = extractRows(env);
+      if (rows.length === 0) break;
+      collected.push(...rows);
+      next = nextAdvPageState(env, basePath, c.networkBrandId);
+    }
+
+    let mapped = collected.map(toPerformanceRow);
+    if (typeof query?.limit === 'number') mapped = mapped.slice(0, query.limit);
+    return mapped;
   }
 
   // -------------------------------------------------------------------------
@@ -1129,6 +1208,114 @@ function isAsync(env: ImpactAdvReportEnvelope | ImpactAdvReportRow[]): boolean {
   return s === 'queued' || s === 'running' || s === 'pending';
 }
 
+/**
+ * IMPACT-WORKAROUND: `@nextpageuri` on the brand surface comes back as a
+ * fully-qualified path INCLUDING the tier prefix (`/Advertisers/{BrandSID}` or
+ * `/Agencies/{AgencySID}/Advertisers/{BrandSID}`) that `impactAdvRequest` will
+ * prepend on its own. Strip everything up to and including the brand segment
+ * so we don't double it up — the same concession as the publisher adapter's
+ * `stripMediapartnersPrefix`.
+ */
+function stripAdvertiserPrefix(uri: string, networkBrandId: string): string {
+  let path = uri;
+  try {
+    const parsed = new URL(uri);
+    path = parsed.pathname + parsed.search;
+  } catch {
+    // Already a relative path — use it as-is.
+  }
+  for (const id of [networkBrandId, encodeURIComponent(networkBrandId)]) {
+    const marker = `/Advertisers/${id}`;
+    const idx = path.indexOf(marker);
+    if (idx >= 0) {
+      const rest = path.slice(idx + marker.length);
+      return rest.startsWith('/') ? rest : `/${rest}`;
+    }
+  }
+  return path.startsWith('/') ? path : `/${path}`;
+}
+
+/**
+ * Work out where the next page lives, honouring both of Impact's pagination
+ * signals. `@nextpageuri` wins when present (it already carries the query
+ * string); otherwise `@page`/`@numpages` drive an incremented `Page` param
+ * against `basePath`. Returns `{}` when the envelope signals no further page.
+ */
+function nextAdvPageState(
+  envelope: unknown,
+  basePath: string,
+  networkBrandId: string,
+): { nextPath?: string; pageParam?: number } {
+  const env =
+    envelope === null || typeof envelope !== 'object' || Array.isArray(envelope)
+      ? undefined
+      : (envelope as ImpactAdvPagedEnvelope);
+  const nextUri = env?.['@nextpageuri'];
+  if (typeof nextUri === 'string' && nextUri.trim() !== '') {
+    return { nextPath: stripAdvertiserPrefix(nextUri, networkBrandId) };
+  }
+  if (env?.['@page'] !== undefined && env['@numpages'] !== undefined) {
+    const current = Number(env['@page']);
+    const total = Number(env['@numpages']);
+    if (Number.isFinite(current) && Number.isFinite(total) && current < total) {
+      return { nextPath: basePath, pageParam: current + 1 };
+    }
+  }
+  return {};
+}
+
+/**
+ * Fetch every page of a brand-relative Impact list endpoint. When `target` is
+ * present (the caller supplied `limit`) the loop stops as soon as enough raw
+ * rows are collected; when absent it pulls to completion. `MAX_PAGES` is the
+ * backstop against runaway continuation — hitting it logs a stderr warning so
+ * a truncated pull is never silent (principle 4.1).
+ */
+async function collectAdvPages<TRaw>(input: {
+  operation: AnyOperation;
+  brandPath: string;
+  networkBrandId: string;
+  baseQuery?: Record<string, string | number | undefined>;
+  pageSize: number;
+  extract: (envelope: unknown) => TRaw[];
+  resilience: ResilienceConfig;
+  /** Stop early once this many raw rows are collected (query.limit present). */
+  target?: number;
+}): Promise<TRaw[]> {
+  const collected: TRaw[] = [];
+  let nextPath: string | undefined = input.brandPath;
+  let pageParam: number | undefined = 1;
+  let pages = 0;
+  while (nextPath) {
+    if (pages >= MAX_PAGES) {
+      log.warn(
+        { operation: input.operation, cap: MAX_PAGES, fetched: collected.length },
+        'impact-advertiser pagination hit MAX_PAGES cap; result may be truncated',
+      );
+      break;
+    }
+    pages += 1;
+    const envelope: unknown = await impactAdvRequest<unknown>({
+      operation: input.operation,
+      brandPath: nextPath,
+      networkBrandId: input.networkBrandId,
+      query:
+        pageParam !== undefined
+          ? { ...input.baseQuery, Page: pageParam, PageSize: input.pageSize }
+          : undefined,
+      resilience: input.resilience,
+    });
+    const list = input.extract(envelope);
+    if (list.length === 0) break;
+    collected.push(...list);
+    if (input.target !== undefined && collected.length >= input.target) break;
+    const next = nextAdvPageState(envelope, input.brandPath, input.networkBrandId);
+    nextPath = next.nextPath;
+    pageParam = next.pageParam;
+  }
+  return collected;
+}
+
 function toTransactionStatusList(
   v?: TransactionStatus | TransactionStatus[],
 ): TransactionStatus[] | undefined {
@@ -1331,9 +1518,6 @@ function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-// Silence unused-import lint when noUnusedLocals is on.
-void log;
-
 export const _internals = {
   toProgramme,
   toTransaction,
@@ -1350,6 +1534,12 @@ export const _internals = {
   computeAgeDays,
   extractRows,
   isAsync,
+  stripAdvertiserPrefix,
+  nextAdvPageState,
+  MAX_PAGES,
+  PAGE_SIZE,
+  // The module logger, exposed so tests can observe the MAX_PAGES warning.
+  log,
   canonicalToImpactState,
   projectContractAfter,
   buildContractWarnings,

@@ -1,0 +1,13 @@
+{
+  "Campaigns": [
+    {
+      "CampaignId": "CAM-9003",
+      "CampaignName": "Acme Winter Clearance",
+      "CampaignStatus": "Active",
+      "CampaignCurrency": "USD"
+    }
+  ],
+  "@page": "2",
+  "@numpages": "2",
+  "@nextpageuri": ""
+}

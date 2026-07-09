@@ -1,0 +1,20 @@
+{
+  "Campaigns": [
+    {
+      "CampaignId": "CAM-9001",
+      "CampaignName": "Acme Spring Sale",
+      "CampaignStatus": "Active",
+      "CampaignCurrency": "USD",
+      "CampaignUrl": "https://acme.example.com"
+    },
+    {
+      "CampaignId": "CAM-9002",
+      "CampaignName": "Acme Loyalty Programme",
+      "CampaignStatus": "Paused",
+      "CampaignCurrency": "USD"
+    }
+  ],
+  "@page": "1",
+  "@numpages": "2",
+  "@nextpageuri": "/Advertisers/BRAND-42/Campaigns?Page=2&PageSize=100"
+}

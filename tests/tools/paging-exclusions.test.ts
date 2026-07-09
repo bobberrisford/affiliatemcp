@@ -41,7 +41,12 @@ describe('offset-paging exclusions', () => {
   it('audited bounded-default pairs are excluded', () => {
     expect(supportsOffsetPaging('everflow', 'listTransactions')).toBe(false);
     expect(supportsOffsetPaging('everflow', 'listClicks')).toBe(true); // only audited ops excluded
-    expect(supportsOffsetPaging('impact-advertiser', 'getProgrammePerformance')).toBe(false);
+    // impact-advertiser's exclusion was lifted in #316: all four paged ops now
+    // paginate to completion on absent `limit`.
+    expect(supportsOffsetPaging('impact-advertiser', 'getProgrammePerformance')).toBe(true);
+    expect(supportsOffsetPaging('impact-advertiser', 'listProgrammes')).toBe(true);
+    expect(supportsOffsetPaging('impact-advertiser', 'listTransactions')).toBe(true);
+    expect(supportsOffsetPaging('impact-advertiser', 'listMediaPartners')).toBe(true);
     expect(supportsOffsetPaging('skimlinks', 'listTransactions')).toBe(false);
     // Found by the #314 independent review: the publisher side of the
     // partnerize family and flexoffers' page-paginated /allsales.

@@ -45,10 +45,9 @@ export const PAGING_EXCLUSIONS: ReadonlyMap<string, ReadonlySet<AdapterOperation
   ['admitad', ops('listProgrammes')], // offset:0 fixed against an offset-paginated endpoint
   ['travelpayouts', ops('listProgrammes')], // programmes synthesised from a single 300-row actions page
   ['kwanko-advertiser', ops('listProgrammes')], // per_page default, single request
-  [
-    'impact-advertiser',
-    ops('listProgrammes', 'listTransactions', 'listMediaPartners', 'getProgrammePerformance'),
-  ], // PageSize default, single request, no Page/nextPath loop on any paged op
+  // impact-advertiser was removed 2026-07-04 (#316): its four paged ops now
+  // paginate to completion on absent `limit` via @nextpageuri/@page with a
+  // MAX_PAGES backstop; see src/networks/impact-advertiser/adapter.ts.
   [
     'partnerize-advertiser',
     ops('listProgrammes', 'listTransactions', 'listMediaPartners', 'getProgrammePerformance'),

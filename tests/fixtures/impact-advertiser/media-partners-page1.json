@@ -1,0 +1,17 @@
+{
+  "MediaPartners": [
+    {
+      "Id": "MP-1",
+      "Name": "BestDeals.com",
+      "AccountStatus": "Active"
+    },
+    {
+      "Id": "MP-2",
+      "Name": "Coupon Cabin",
+      "AccountStatus": "Active"
+    }
+  ],
+  "@page": "1",
+  "@numpages": "2",
+  "@nextpageuri": "https://api.impact.com/Agencies/IRA-AGENCY-1/Advertisers/BRAND-42/MediaPartners?Page=2&PageSize=100"
+}
