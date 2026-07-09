@@ -1,0 +1,30 @@
+{
+  "status": 200,
+  "page": 2,
+  "results": 2,
+  "total": 5,
+  "data": [
+    {
+      "offerid": 2004,
+      "name": "Atolls Kitchen",
+      "status": "active",
+      "category": "Kitchen",
+      "currency": "GBP",
+      "price": 3.25,
+      "model": "CPA",
+      "preview_url": "https://www.atolls-kitchen.example.com/",
+      "authorized": 1
+    },
+    {
+      "offerid": 2005,
+      "name": "Atolls Garden",
+      "status": "paused",
+      "category": "Garden",
+      "currency": "GBP",
+      "price": 5.0,
+      "model": "CPS",
+      "preview_url": "https://www.atolls-garden.example.com/",
+      "authorized": 0
+    }
+  ]
+}

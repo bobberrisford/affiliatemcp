@@ -26,7 +26,9 @@
  *   GET  {base}/api/af/offers
  *     ?key=..&aid=..&mid=.. [&offer_id=..&page=..&category=..&model=..&country=..
  *      &offer_status=1&authorized=1]
- *     → list of offers (programmes) visible to this affiliate.
+ *     → list of offers (programmes) visible to this affiliate. Paginated via
+ *       the 1-based `page` parameter; with no caller limit, listProgrammes
+ *       loops pages to completion (capped at MAX_PAGES with a logged warning).
  *   GET  {base}/api/af/offers?...&offer_id={id}
  *     → single offer (filter the list by offer_id).
  *   GET  {base}/api/af/report
@@ -67,6 +69,10 @@
  *   - Tracking links are not deterministically constructible from the affiliate
  *     API (the per-affiliate click domain is not returned); generateTrackingLink
  *     is unsupported.
+ *   - listProgrammes paginates /api/af/offers via `page`: with no limit it
+ *     pulls every page (stopping on the reported total, a short or empty page,
+ *     or a repeated page), capped at MAX_PAGES with a logged warning rather
+ *     than a silent truncation. A caller-supplied limit fetches a single page.
  */
 
 import { offer18Request, requireBaseUrl } from './client.js';
@@ -124,6 +130,7 @@ const META: NetworkMeta = {
     'Amount unit assumed to be major currency units (e.g. 5.00 = five units of the reported currency); not confirmed against a live tenant.',
     'Click-level data is not exposed as a distinct affiliate endpoint; listClicks is unsupported.',
     'Tracking links are not deterministically constructible from the affiliate API; generateTrackingLink is unsupported.',
+    'listProgrammes paginates /api/af/offers via the page parameter: with no limit it pulls every page (stopping on the reported total, a short or empty page, or a repeated page), capped at MAX_PAGES with a logged warning rather than a silent truncation; a caller-supplied limit fetches a single page as before.',
   ],
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 10,
@@ -152,6 +159,14 @@ const RESILIENCE: ResilienceConfigMap = {
   listTransactions: REPORTING_RESILIENCE,
   getEarningsSummary: REPORTING_RESILIENCE,
 };
+
+/**
+ * Backstop on the pull-to-completion offers loop (matches the tolt/tapfiliate
+ * pattern). The Offer18 docs do not state a server-side page size for
+ * /api/af/offers, so the cap bounds the number of requests, and hitting it
+ * logs a stderr warning — a truncated pull is never silent (principle 4.1).
+ */
+const MAX_PAGES = 50;
 
 // ---------------------------------------------------------------------------
 // Offer18 raw response shapes (deliberately minimal — see Awin for rationale)
@@ -433,24 +448,72 @@ export class Offer18Adapter implements NetworkAdapter {
    *
    * Endpoint: GET /api/af/offers?key=..&aid=..&mid=..[&page=..&offer_status=1]
    *
-   * We fetch the first page and apply client-side search/status/category/limit
-   * filters for consistency with the other adapters. Offer18's `offer_status=1`
-   * filters to active offers server-side; we leave filtering client-side so the
-   * canonical ProgrammeStatus mapping is the single source of truth.
+   * When the caller passes `query.limit` we fetch a single page (the
+   * pre-pagination behaviour) and slice client-side. When `limit` is absent we
+   * pull the COMPLETE result set, looping the 1-based `page` parameter until
+   * the reported `total` is reached, a short or empty page arrives, or a
+   * tenant ignores `page` and repeats the same rows — capped at the MAX_PAGES
+   * backstop with a stderr warning so a truncated pull is never silent
+   * (principle 4.1). The docs do not state a server-side page size, so the
+   * first page's row count is used as the inferred page size.
+   *
+   * Search/status/category/limit filters are applied client-side for
+   * consistency with the other adapters. Offer18's `offer_status=1` filters to
+   * active offers server-side; we leave filtering client-side so the canonical
+   * ProgrammeStatus mapping is the single source of truth.
    */
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
     const baseUrl = requireBaseUrl('listProgrammes');
     const auth = requireAuthParams('listProgrammes');
 
-    const env = await offer18Request<Offer18OffersEnvelope | Offer18OfferRaw[]>({
-      operation: 'listProgrammes',
-      baseUrl,
-      path: '/api/af/offers',
-      query: { key: auth.key, aid: auth.aid, mid: auth.mid, page: 1 },
-      resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
-    });
+    const fetchPage = (page: number): Promise<Offer18OffersEnvelope | Offer18OfferRaw[]> =>
+      offer18Request<Offer18OffersEnvelope | Offer18OfferRaw[]>({
+        operation: 'listProgrammes',
+        baseUrl,
+        path: '/api/af/offers',
+        query: { key: auth.key, aid: auth.aid, mid: auth.mid, page },
+        resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
+      });
 
-    let programmes = extractOffers(env).map(toProgramme);
+    const rows: Offer18OfferRaw[] = [];
+    if (typeof query?.limit === 'number') {
+      // Bounded pull: one page, the pre-pagination behaviour. The limit is
+      // applied client-side below, so we never return less than before.
+      rows.push(...extractOffers(await fetchPage(1)));
+    } else {
+      // No limit → pull to completion via `page`, MAX_PAGES backstop.
+      let firstPageSize: number | undefined;
+      let prevFirstId: string | undefined;
+      let page = 1;
+      for (;;) {
+        const env = await fetchPage(page);
+        const batch = extractOffers(env);
+        const firstId = batch.length > 0 ? String(batch[0]?.offerid ?? '') : undefined;
+        // Repeat-page defence: a tenant that ignores `page` returns the same
+        // rows again; discard the duplicate batch and stop rather than
+        // accumulating wrong-but-plausible duplicates.
+        if (page > 1 && firstId !== undefined && firstId === prevFirstId) break;
+        rows.push(...batch);
+        if (batch.length === 0) break;
+        firstPageSize ??= batch.length;
+        // Stop once the envelope's declared total is satisfied, or on a short
+        // page (fewer rows than the inferred page size = last page).
+        const total = Array.isArray(env) ? 0 : toNumber(env.total);
+        if (total > 0 && rows.length >= total) break;
+        if (batch.length < firstPageSize) break;
+        if (page >= MAX_PAGES) {
+          log.warn(
+            { operation: 'listProgrammes', cap: MAX_PAGES, fetched: rows.length },
+            'offer18 pagination hit MAX_PAGES cap; result may be truncated',
+          );
+          break;
+        }
+        prevFirstId = firstId;
+        page += 1;
+      }
+    }
+
+    let programmes = rows.map(toProgramme);
 
     if (query?.search) {
       const needle = query.search.toLowerCase();
@@ -881,7 +944,8 @@ export const _internals = {
   formatOffer18Date,
   extractOffers,
   extractReportRows,
+  // Pagination knobs + the adapter logger, so tests can prove the MAX_PAGES
+  // backstop stops the loop AND warns (never a silent truncation).
+  MAX_PAGES,
+  log,
 };
-
-// Silence unused-import lint for the logger.
-void log;
