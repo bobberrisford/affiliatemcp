@@ -28,12 +28,14 @@
  *   Sales / transaction reporting:
  *     GET /allsales?reportType=details&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
  *         [&status=pending|approved|canceled|bonus|non-commissionable]
- *         [&page=N]
+ *         &page=N&pageSize=M
  *     Source: https://www.flexoffers.com/new-features/sales-api-and-transaction-reporting-updates/
  *             https://www.flexoffers.com/new-features/api-endpoints-update/
- *     BLOCKED(verify): the exact pagination parameter (page vs pageSize) and the
- *     response envelope key are not fully documented publicly; the transformer
- *     reads the rows defensively from several candidate shapes.
+ *     Pagination confirmed by the #316 investigation: a 1-based `page` plus
+ *     `pageSize`; the adapter always sends both explicitly and never relies on
+ *     the unconfirmed server default page size. The response envelope key is
+ *     still not fully documented publicly; the transformer reads the rows
+ *     defensively from several candidate shapes.
  *
  *   Payments: GET /payments/summary , GET /payments/details?paymentId=N
  *     Source: https://www.flexoffers.com/new-features/performance-report-enhancement-and-payments-api/

@@ -63,8 +63,10 @@ describe('offset-paging exclusions', () => {
     expect(supportsOffsetPaging('skimlinks', 'listTransactions')).toBe(true);
     // mrge remains excluded (unverified upstream default page size).
     expect(supportsOffsetPaging('mrge', 'listTransactions')).toBe(false);
-    // Found by the #314 independent review: flexoffers' page-paginated /allsales.
-    expect(supportsOffsetPaging('flexoffers', 'listTransactions')).toBe(false);
+    // flexoffers' page-paginated /allsales (found by the #314 independent
+    // review) now pages to completion on absent limit via explicit page +
+    // pageSize (#316), so its exclusion is lifted.
+    expect(supportsOffsetPaging('flexoffers', 'listTransactions')).toBe(true);
     // Exclusion lifted (#316): the publisher-side partnerize adapter now
     // follows cursor_id continuation to completion on absent limit.
     expect(supportsOffsetPaging('partnerize', 'listTransactions')).toBe(true);
