@@ -55,7 +55,10 @@ export const PAGING_EXCLUSIONS: ReadonlyMap<string, ReadonlySet<AdapterOperation
   ['kwanko', ops('listProgrammes', 'listTransactions')],
   ['indoleads', ops('listProgrammes', 'listTransactions')],
   ['mrge', ops('listProgrammes', 'listTransactions')],
-  ['flexoffers', ops('listTransactions')], // /allsales is page-paginated per adapter.ts:424 with the parameter BLOCKED(verify); no page param is sent
+  // flexoffers removed 2026-07-10 (#316): listTransactions now pages /allsales
+  // with an explicit 1-based page + pageSize=500 to completion on absent
+  // `limit`, MAX_PAGES-capped with a stderr warning; see
+  // src/networks/flexoffers/adapter.ts.
 ]);
 
 /** Whether tool-layer offset paging is honest for this (network, operation). */

@@ -11,7 +11,8 @@
     "listProgrammes / getProgramme are not implemented: the publisher-side advertiser/programme listing endpoint shape is not documented well enough publicly to map joined-programme status reliably; both operations throw NotImplementedError until verified against a live account.",
     "listClicks is not exposed as a click-level endpoint via the public FlexOffers Web Service API (only aggregated click counts appear in sales reports); the operation throws NotImplementedError.",
     "generateTrackingLink builds a FlexLinks redirect URL (track.flexlinkspro.com) deterministically from FLEXOFFERS_ACCOUNT_ID and the advertiser id passed as programmeId; the exact redirect parameter names are taken from public link examples and require live verification.",
-    "The API key header name (apiKey) and the /allsales pagination parameter are taken from public integration write-ups, not a confirmed live response.",
+    "The API key header name (apiKey) is taken from public integration write-ups, not a confirmed live response.",
+    "When no limit is passed, listTransactions pages /allsales to completion via an explicit 1-based page and pageSize=500 (parameters confirmed by the #316 investigation), stopping on the first short page and capped at MAX_PAGES with a logged warning rather than a silent truncation.",
     "Per-row currency is read from each sales row; FlexOffers is a US aggregator and most rows clear in USD, but the adapter never hardcodes currency."
   ],
   "claim_status": "experimental",
