@@ -1,6 +1,6 @@
 {
   "name": "affiliate-networks-mcp",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "description": "Chat with your affiliate-network data in Claude through a local MCP server. 80+ publisher and advertiser-side adapters across the US, EU, Nordics, APAC and LatAm, most experimental.",
   "author": {
     "name": "Robert Berrisford",
