@@ -57,7 +57,12 @@ describe('offset-paging exclusions', () => {
     expect(supportsOffsetPaging('impact-advertiser', 'listProgrammes')).toBe(true);
     expect(supportsOffsetPaging('impact-advertiser', 'listTransactions')).toBe(true);
     expect(supportsOffsetPaging('impact-advertiser', 'listMediaPartners')).toBe(true);
-    expect(supportsOffsetPaging('skimlinks', 'listTransactions')).toBe(false);
+    // skimlinks' exclusion was lifted in #316: listTransactions now pages the
+    // commissions endpoint with limit=600/offset to completion on absent limit;
+    // see tests/networks/skimlinks/pagination.test.ts for the behaviour proof.
+    expect(supportsOffsetPaging('skimlinks', 'listTransactions')).toBe(true);
+    // mrge remains excluded (unverified upstream default page size).
+    expect(supportsOffsetPaging('mrge', 'listTransactions')).toBe(false);
     // Found by the #314 independent review: flexoffers' page-paginated /allsales.
     expect(supportsOffsetPaging('flexoffers', 'listTransactions')).toBe(false);
     // Exclusion lifted (#316): the publisher-side partnerize adapter now

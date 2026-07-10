@@ -25,7 +25,9 @@
  *     ?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
  *     [&status=pending|approved|declined|paid]
  *     [&merchant_id=N]
- *     [&limit=N&page=N]
+ *     &limit=N&offset=N   (limit maximum is 600; always sent explicitly —
+ *                          pagination to completion on absent query.limit,
+ *                          MAX_PAGES-capped with a logged warning)
  *   Response: { count, commissions: [{ commissionId, amount, currency, status,
  *                 merchantId, merchantName, url, customId, clickTime,
  *                 transactionDate, approvedDate, paidDate, ... }] }
@@ -113,6 +115,7 @@ const META: NetworkMeta = {
     'generateTrackingLink requires both SKIMLINKS_PUBLISHER_ID and SKIMLINKS_DOMAIN_ID; the Domain ID is the number after the X in your Site ID (find it in Hub → Settings → Sites). The id parameter format is {publisherId}X{domainId}.',
     'OAuth2 access tokens have a limited lifetime (typically 1 hour); the adapter caches the token in memory and re-fetches on expiry.',
     'Maximum date window per commissions API call is not publicly documented; a live account test is required to confirm no server-side cap exists.',
+    'listTransactions pages the commissions endpoint with an explicit limit=600 (the documented maximum) and offset; on absent query.limit the pull runs to completion against the response count total, capped at MAX_PAGES with a logged warning rather than a silent truncation.',
   ],
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 10,
@@ -136,6 +139,26 @@ const RESILIENCE: ResilienceConfigMap = {
   listTransactions: TRANSACTIONS_RESILIENCE,
   getEarningsSummary: TRANSACTIONS_RESILIENCE,
 };
+
+// ---------------------------------------------------------------------------
+// Pagination
+// ---------------------------------------------------------------------------
+
+/**
+ * Requested page size for the commissions endpoint. 600 is the documented
+ * maximum for the `limit` parameter; we always send it explicitly rather than
+ * relying on the (smaller) server default, so each pull needs as few round
+ * trips as possible.
+ */
+const PAGE_SIZE = 600;
+
+/**
+ * Backstop for the pagination loop in `listTransactions`. At PAGE_SIZE = 600
+ * this allows 30,000 commissions per window before the loop stops and logs a
+ * warning — a truncated pull is never silent (principle 4.1). Callers with
+ * larger windows should narrow the date range.
+ */
+const MAX_PAGES = 50;
 
 // ---------------------------------------------------------------------------
 // Skimlinks raw response shapes
@@ -368,14 +391,23 @@ export class SkimlinksAdapter implements NetworkAdapter {
    *     ?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD
    *     [&status=pending|approved|declined|paid]
    *     [&merchant_id={merchantId}]
-   *     [&limit=N&page=N]
+   *     &limit=600&offset=N
    *
    * The API does not publicly document a maximum window per call (unlike Awin's
    * 31-day cap). No cap was found in any accessible documentation. We default to
    * 30 days when no window is specified. BLOCKED(verify): confirm exact max window
-   * with a live account — requires credentials to test. Pagination is page-based
-   * (confirmed from API docs snippets: response includes pagination.total,
-   * pagination.from, pagination.itemCount fields; query params are limit and page).
+   * with a live account — requires credentials to test.
+   *
+   * --- Pagination --------------------------------------------------------------
+   *
+   * Confirmed parameters: `limit` (maximum 600) and `offset`, with the response
+   * `count` field carrying the window total. The `limit` is always sent
+   * explicitly — never the server default. On absent `query.limit` the loop
+   * pulls to completion: it continues while fetched < `count` (falling back to
+   * short-page detection when `count` is absent), capped at MAX_PAGES with a
+   * logged stderr warning so a truncated result is never silent. An explicit
+   * `query.limit` short-circuits once at least that many raw commissions are in
+   * hand — never pulling less than the pre-pagination single request did.
    *
    * --- PRD §15.9: unpaid-age filter ------------------------------------------
    *
@@ -397,9 +429,9 @@ export class SkimlinksAdapter implements NetworkAdapter {
       ? new Date(query.from)
       : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    // No documented maximum window found in public API docs; passes full window in
-    // a single call. A live account test is required to confirm no server-side cap.
-    // Pagination params are limit/page (page-based, not cursor-based).
+    // No documented maximum window found in public API docs; passes the full
+    // window and paginates within it via limit/offset. A live account test is
+    // required to confirm no server-side window cap.
     const params: Record<string, string | number | undefined> = {
       date_from: from.toISOString().slice(0, 10),
       date_to: to.toISOString().slice(0, 10),
@@ -417,17 +449,42 @@ export class SkimlinksAdapter implements NetworkAdapter {
       params['merchant_id'] = query.programmeId;
     }
 
-    const response = await skimlinksRequest<SkimlinksCommissionsResponse>({
-      operation: 'listTransactions',
-      path: `/publishers/${publisherId}/commissions`,
-      token,
-      query: params,
-      resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
-    });
+    const rawCommissions: SkimlinksCommissionRaw[] = [];
+    let offset = 0;
+    let pages = 0;
+    for (;;) {
+      const response = await skimlinksRequest<SkimlinksCommissionsResponse>({
+        operation: 'listTransactions',
+        path: `/publishers/${publisherId}/commissions`,
+        token,
+        query: { ...params, limit: PAGE_SIZE, offset },
+        resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
+      });
+      pages += 1;
 
-    const rawCommissions: SkimlinksCommissionRaw[] = Array.isArray(response.commissions)
-      ? response.commissions
-      : [];
+      const batch = Array.isArray(response.commissions) ? response.commissions : [];
+      rawCommissions.push(...batch);
+
+      // An empty page means the window is exhausted regardless of `count`.
+      if (batch.length === 0) break;
+      // Backward-compatible short-circuit: an explicit limit is satisfied once
+      // at least that many raw commissions are in hand — never fewer than the
+      // pre-pagination single request returned.
+      if (typeof query?.limit === 'number' && rawCommissions.length >= query.limit) break;
+      // `count` is the window total; stop once everything has been fetched.
+      const total = response.count;
+      if (typeof total === 'number' && rawCommissions.length >= total) break;
+      // Defensive fallback when `count` is absent: a short page ends the pull.
+      if (typeof total !== 'number' && batch.length < PAGE_SIZE) break;
+      if (pages >= MAX_PAGES) {
+        log.warn(
+          { operation: 'listTransactions', cap: MAX_PAGES, fetched: rawCommissions.length },
+          'skimlinks pagination hit MAX_PAGES cap; result may be truncated',
+        );
+        break;
+      }
+      offset += batch.length;
+    }
 
     let transactions = rawCommissions.map((r) => toTransaction(r, now));
 
@@ -828,7 +885,7 @@ export const _internals = {
   toTransaction,
   mapCanonicalToSkimlinksStatus,
   toAmount,
+  PAGE_SIZE,
+  MAX_PAGES,
+  log,
 };
-
-// Silence unused-import lint warning when noUnusedLocals is on.
-void log;

@@ -165,23 +165,23 @@ describe('offset paging at the tool layer', () => {
 
   it('withholds offset from excluded (network, op) pairs and keeps it elsewhere', async () => {
     const { adapter } = pagingAdapter(makeTxns(5));
-    // Same fake adapter, but wearing an excluded slug: skimlinks'
-    // listTransactions has an unverified upstream default page size (no
-    // paging parameter sent against a documented-paginated endpoint).
-    // everflow was the previous example here; its exclusion was lifted when
-    // the adapter began paginating to completion on absent limit (#316).
-    const skimlinksLike = {
+    // Same fake adapter, but wearing an excluded slug: mrge's listTransactions
+    // has an unverified upstream default page size (no paging parameter sent
+    // against a documented-paginated endpoint). everflow and then skimlinks
+    // were the previous examples here; each exclusion was lifted when its
+    // adapter began paginating to completion on absent limit (#316).
+    const mrgeLike = {
       ...adapter,
-      slug: 'skimlinks',
-      meta: { ...adapter.meta, slug: 'skimlinks' },
+      slug: 'mrge',
+      meta: { ...adapter.meta, slug: 'mrge' },
     };
-    const tools = generateToolsFor(skimlinksLike);
-    const txns = tools.find((t) => t.name === 'affiliate_skimlinks_list_transactions');
-    const clicks = tools.find((t) => t.name === 'affiliate_skimlinks_list_clicks');
+    const tools = generateToolsFor(mrgeLike);
+    const txns = tools.find((t) => t.name === 'affiliate_mrge_list_transactions');
+    const clicks = tools.find((t) => t.name === 'affiliate_mrge_list_clicks');
     expect(
       (txns?.inputSchema as { properties: Record<string, unknown> }).properties['offset'],
     ).toBeUndefined();
-    // listClicks is not excluded for skimlinks, so paging stays available there.
+    // listClicks is not excluded for mrge, so paging stays available there.
     expect(
       (clicks?.inputSchema as { properties: Record<string, unknown> }).properties['offset'],
     ).toBeDefined();
