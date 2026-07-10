@@ -12,6 +12,7 @@
     "listProgrammes / getProgramme are not supported: ValueCommerce exposes no self-serve affiliate programme/merchant directory through the public report API; both throw NotImplementedError.",
     "listClicks is not exposed via the public affiliate Order Report API; the operation throws NotImplementedError.",
     "generateTrackingLink is not supported: ValueCommerce deeplinks (MyLink) are produced in the console and are not derivable from the report API credentials; the operation throws NotImplementedError.",
+    "listTransactions pages the order report via limit/offset (limit=1000, the documented cap) to completion when no limit is passed, capped at 50 pages with a logged stderr warning so truncation is never silent. The API exposes no confirmed total-count field, so a page shorter than the requested page size terminates the loop; a caller-supplied limit stops fetching once satisfied.",
     "Access tokens are valid for 30 minutes; the adapter caches the token in memory and re-fetches on expiry.",
     "The report API ships v1/v2/v3 endpoints; the adapter targets v2 and requires live verification of the preferred version."
   ],

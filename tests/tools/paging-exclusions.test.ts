@@ -117,4 +117,10 @@ describe('offset-paging exclusions', () => {
     // completion on absent limit, so tool-layer offset paging is honest.
     expect(supportsOffsetPaging('kwanko-advertiser', 'listProgrammes')).toBe(true);
   });
+
+  it('value-commerce exclusion is lifted (#316: limit/offset loop to completion)', () => {
+    // listTransactions now sends limit=1000/offset and pages until a short
+    // page (no total-count field), so tool-layer offset paging is honest.
+    expect(supportsOffsetPaging('value-commerce', 'listTransactions')).toBe(true);
+  });
 });

@@ -48,7 +48,10 @@ export const PAGING_EXCLUSIONS: ReadonlyMap<string, ReadonlySet<AdapterOperation
   // commissions endpoint with an explicit limit=600 (the documented maximum)
   // and offset to completion on absent `limit`, MAX_PAGES-capped with a
   // stderr warning; see src/networks/skimlinks/adapter.ts.
-  ['value-commerce', ops('listTransactions')],
+  // value-commerce removed 2026-07-10 (#316): listTransactions now pages the
+  // order report via limit=1000/offset to completion on absent `limit`,
+  // MAX_PAGES-capped with a stderr warning; a short page terminates the loop
+  // (no total-count field). See src/networks/value-commerce/adapter.ts.
   ['kwanko', ops('listProgrammes', 'listTransactions')],
   ['indoleads', ops('listProgrammes', 'listTransactions')],
   ['mrge', ops('listProgrammes', 'listTransactions')],
