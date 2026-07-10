@@ -44,7 +44,10 @@ export const PAGING_EXCLUSIONS: ReadonlyMap<string, ReadonlySet<AdapterOperation
   // `limit`, MAX_PAGES-capped with a stderr warning.
   // Unverified upstream defaults (no paging param sent, upstream documented as
   // paginated, server-side default page size not evidenced in-repo).
-  ['skimlinks', ops('listTransactions')],
+  // skimlinks removed 2026-07-10 (#316): listTransactions now pages the
+  // commissions endpoint with an explicit limit=600 (the documented maximum)
+  // and offset to completion on absent `limit`, MAX_PAGES-capped with a
+  // stderr warning; see src/networks/skimlinks/adapter.ts.
   ['value-commerce', ops('listTransactions')],
   ['kwanko', ops('listProgrammes', 'listTransactions')],
   ['indoleads', ops('listProgrammes', 'listTransactions')],
