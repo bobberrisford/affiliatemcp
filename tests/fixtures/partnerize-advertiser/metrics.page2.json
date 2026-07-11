@@ -1,0 +1,21 @@
+{
+  "data": [
+    {
+      "date": "2026-06-02",
+      "publisher_id": "PUB-301",
+      "publisher_name": "SavvySaver Blog",
+      "clicks": 275,
+      "conversions": 3,
+      "sale_amount": "260.00",
+      "commission": "26.00",
+      "currency": "GBP",
+      "status": "pending"
+    }
+  ],
+  "hypermedia": {
+    "pagination": {
+      "total_item_count": 3,
+      "total_page_count": 2
+    }
+  }
+}

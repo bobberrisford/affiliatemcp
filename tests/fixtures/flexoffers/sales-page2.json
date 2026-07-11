@@ -1,0 +1,8 @@
+{
+  "totalCount": 503,
+  "sales": [
+    {"saleId":"FO-P2-0001","advertiserId":"5001","advertiserName":"Example Outdoors Inc","status":"pending","saleAmount":"20.00","commission":"1.00","currency":"USD","clickDate":"2026-01-01T09:00:00Z","saleDate":"2026-01-01T09:30:00Z"},
+    {"saleId":"FO-P2-0002","advertiserId":"5002","advertiserName":"Test Gadgets LLC","status":"approved","saleAmount":"21.00","commission":"1.50","currency":"USD","clickDate":"2026-02-02T09:00:00Z","saleDate":"2026-02-02T09:30:00Z","postedDate":"2026-02-02T12:00:00Z"},
+    {"saleId":"FO-P2-0003","advertiserId":"5001","advertiserName":"Example Outdoors Inc","status":"paid","saleAmount":"22.00","commission":"2.00","currency":"USD","clickDate":"2026-03-03T09:00:00Z","saleDate":"2026-03-03T09:30:00Z","postedDate":"2026-03-03T12:00:00Z","paidDate":"2026-06-01T00:00:00Z"}
+  ]
+}

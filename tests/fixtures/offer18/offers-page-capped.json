@@ -1,0 +1,19 @@
+{
+  "status": 200,
+  "page": 1,
+  "results": 1,
+  "total": 999999,
+  "data": [
+    {
+      "offerid": 9001,
+      "name": "Atolls Endless Offers",
+      "status": "active",
+      "category": "Ecommerce",
+      "currency": "GBP",
+      "price": 2.0,
+      "model": "CPA",
+      "preview_url": "https://www.atolls-endless.example.com/",
+      "authorized": 1
+    }
+  ]
+}

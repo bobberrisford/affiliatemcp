@@ -1,0 +1,47 @@
+{
+  "conversions": [
+    {
+      "conversion_id": "aabbccdd11223344aabbccdd11223344",
+      "transaction_id": "txn_001_click_aaaa",
+      "offer": {
+        "network_offer_id": 1001,
+        "name": "Atolls Bookshop"
+      },
+      "status": "approved",
+      "payout": 5.00,
+      "revenue": 8.00,
+      "sale_amount": 40.00,
+      "currency_id": "USD",
+      "conversion_unix_timestamp": 1768471200,
+      "click_unix_timestamp": 1768383000,
+      "payout_type": "cpa",
+      "source_id": "blog_post_1",
+      "sub1": "campaign_a",
+      "error_code": 0,
+      "error_message": null
+    },
+    {
+      "conversion_id": "bbccddee22334455bbccddee22334455",
+      "transaction_id": "txn_002_click_bbbb",
+      "offer": {
+        "network_offer_id": 1001,
+        "name": "Atolls Bookshop"
+      },
+      "status": "pending",
+      "payout": 5.00,
+      "revenue": 8.00,
+      "sale_amount": 35.00,
+      "currency_id": "USD",
+      "conversion_unix_timestamp": 1776693600,
+      "click_unix_timestamp": 1776603600,
+      "payout_type": "cpa",
+      "source_id": "blog_post_2",
+      "sub1": "campaign_b",
+      "error_code": 0,
+      "error_message": null
+    }
+  ],
+  "page": 1,
+  "page_size": 2,
+  "total_count": 3
+}

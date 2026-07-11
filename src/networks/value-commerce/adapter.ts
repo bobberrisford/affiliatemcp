@@ -30,6 +30,10 @@
  *   criteria: a = processed/approval date, c = click date, o = order date.
  *   approval_status: p = pending (保留), a = approved (承認),
  *                    c = rejected (拒否), i = invoiced/billed (請求済み).
+ *   Pagination: limit (1-1000) + offset. There is no confirmed total-count
+ *   field, so the adapter always sends limit=1000 (the documented cap) and
+ *   steps offset by 1000 until a page returns fewer rows than requested (a
+ *   short page terminates the pull); see listTransactions.
  *   Source: https://pub-docs.valuecommerce.ne.jp/docs/as-78-order-report-api/
  *
  * --- What this adapter does NOT implement -------------------------------------
@@ -123,6 +127,7 @@ const META: NetworkMeta = {
     'listProgrammes / getProgramme are not supported: ValueCommerce exposes no self-serve affiliate programme/merchant directory through the public report API; both throw NotImplementedError.',
     'listClicks is not exposed via the public affiliate Order Report API; the operation throws NotImplementedError.',
     'generateTrackingLink is not supported: ValueCommerce deeplinks (MyLink) are produced in the console and are not derivable from the report API credentials; the operation throws NotImplementedError.',
+    'listTransactions pages the order report via limit/offset (limit=1000, the documented cap) to completion when no limit is passed, capped at 50 pages with a logged stderr warning so truncation is never silent. The API exposes no confirmed total-count field, so a page shorter than the requested page size terminates the loop; a caller-supplied limit stops fetching once satisfied.',
     'Access tokens are valid for 30 minutes; the adapter caches the token in memory and re-fetches on expiry.',
     'The report API ships v1/v2/v3 endpoints; the adapter targets v2. BLOCKED(verify): confirm the preferred version against a live account.',
   ],
@@ -151,6 +156,15 @@ const RESILIENCE: ResilienceConfigMap = {
 
 // ValueCommerce's report API caps `limit` at 1000 per call.
 const MAX_LIMIT = 1000;
+
+/**
+ * Backstop for the listTransactions pagination loop. 50 pages of 1000 rows
+ * (50,000 conversions in one window) is far beyond any realistic affiliate
+ * report; hitting it logs a warning (stderr) so a truncated pull is never
+ * silent (principle 4.1). Same pattern as the Admitad and Travelpayouts
+ * adapters.
+ */
+const MAX_PAGES = 50;
 
 // ---------------------------------------------------------------------------
 // Raw transaction shape
@@ -436,12 +450,20 @@ export class ValueCommerceAdapter implements NetworkAdapter {
    * Endpoint:
    *   GET /report/v2/affiliate/transaction/
    *     ?from_date=YYYY-MM-DD&to_date=YYYY-MM-DD&criteria=o
-   *     [&approval_status=p|a|c|i] [&limit=N (<=1000)]
+   *     [&approval_status=p|a|c|i] &limit=N (<=1000) &offset=N
    *
    * We query by order date (`criteria=o`) and default to a 30-day window when the
-   * caller does not specify one. `limit` is capped at the documented 1000. The
-   * response is XML; the client parses it and we read transaction fields
-   * defensively (element names BLOCKED(verify)).
+   * caller does not specify one. The response is XML; the client parses it and we
+   * read transaction fields defensively (element names BLOCKED(verify)).
+   *
+   * Pagination: the report API pages with `limit`/`offset` (limit capped at the
+   * documented 1000). When the caller passes no `limit`, we send limit=1000 and
+   * step `offset` by 1000 until a page returns fewer rows than requested — the
+   * API exposes no confirmed total-count field, so the short page is the
+   * termination signal — capped at MAX_PAGES with a logged stderr warning so a
+   * truncated pull is never silent. A caller-supplied `limit` stops fetching as
+   * soon as enough raw rows are pulled (normally one request of
+   * min(limit, 1000), the same single request the pre-pagination adapter sent).
    *
    * PRD §15.9 (unpaid-age): `minAgeDays`/`maxAgeDays` filter on computed `ageDays`.
    * PRD §15.10 (reversed visibility): rejected conversions normalise to 'reversed'.
@@ -455,34 +477,53 @@ export class ValueCommerceAdapter implements NetworkAdapter {
       ? new Date(query.from)
       : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const params: Record<string, string | number | undefined> = {
+    const baseParams: Record<string, string | number | undefined> = {
       from_date: from.toISOString().slice(0, 10),
       to_date: to.toISOString().slice(0, 10),
       // criteria=o → filter the window by order date (the conversion date).
       criteria: 'o',
     };
 
-    if (typeof query?.limit === 'number') {
-      params['limit'] = Math.min(query.limit, MAX_LIMIT);
-    }
-
     // Server-side approval_status filter when a single canonical status is asked
     // for; multi-status requests are filtered client-side after normalisation.
     const statusFilter = toTransactionStatusList(query?.status);
     const singleUpstream = mapCanonicalToApprovalStatus(statusFilter);
     if (singleUpstream) {
-      params['approval_status'] = singleUpstream;
+      baseParams['approval_status'] = singleUpstream;
     }
 
-    const { tree } = await valueCommerceRequest({
-      operation: 'listTransactions',
-      path: VALUE_COMMERCE_TRANSACTION_PATH,
-      token,
-      query: params,
-      resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
-    });
+    const requested = typeof query?.limit === 'number' ? query.limit : undefined;
+    const pageLimit = requested === undefined ? MAX_LIMIT : Math.min(requested, MAX_LIMIT);
 
-    const rawNodes = extractTransactionNodes(tree);
+    // Page limit/offset to completion. There is no confirmed total-count field
+    // in the order-report response, so a page shorter than the requested page
+    // size is the termination rule; MAX_PAGES is the backstop.
+    const rawNodes: ValueCommerceTransactionRaw[] = [];
+    let offset = 0;
+    let page = 0;
+    for (; page < MAX_PAGES; page += 1) {
+      const { tree } = await valueCommerceRequest({
+        operation: 'listTransactions',
+        path: VALUE_COMMERCE_TRANSACTION_PATH,
+        token,
+        query: { ...baseParams, limit: pageLimit, offset },
+        resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
+      });
+
+      const pageNodes = extractTransactionNodes(tree);
+      rawNodes.push(...pageNodes);
+      offset += pageLimit;
+
+      if (requested !== undefined && rawNodes.length >= requested) break;
+      if (pageNodes.length < pageLimit) break;
+    }
+    if (page >= MAX_PAGES) {
+      log.warn(
+        { operation: 'listTransactions', cap: MAX_PAGES, fetched: rawNodes.length },
+        'value-commerce listTransactions hit the MAX_PAGES cap; result may be truncated',
+      );
+    }
+
     let transactions = rawNodes.map((r) => toTransaction(r, now));
 
     // Optional client-side programme filter (the report API scopes by account,
@@ -724,7 +765,7 @@ export const _internals = {
   extractTransactionNodes,
   toAmount,
   pick,
+  log,
+  MAX_PAGES,
+  MAX_LIMIT,
 };
-
-// Silence unused-import lint warning when noUnusedLocals is on.
-void log;

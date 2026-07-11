@@ -38,7 +38,10 @@
  * partner has earned against, via `available_campaigns` (and the distinct
  * `campaign_id` values) on the actions response. We therefore SYNTHESISE
  * programmes from those campaign ids: each becomes a `Programme` with status
- * `joined` (the partner is already transacting against it). We cannot
+ * `joined` (the partner is already transacting against it). When no `limit` is
+ * given, the synthesis pages through the offset-paginated actions endpoint to
+ * completion (capped at `MAX_PAGES` with a logged warning), so a campaign that
+ * only appears deep in the actions history is not missed. We cannot
  * determine commission rates or "available but not joined" programmes from
  * this surface, so those fields are left undefined and the operation carries a
  * per-op `claimStatus: 'experimental'`. The mapping is documented in
@@ -100,10 +103,19 @@ const DEFAULT_CURRENCY = 'USD';
 /** Travelpayouts caps `get_user_actions_affecting_balance` at 300 rows per page. */
 const ACTIONS_PAGE_LIMIT = 300;
 
+/**
+ * Backstop for the offset-pagination loop: a misbehaving upstream that always
+ * returns a full page must not spin forever. 100 pages * 300 rows = 30k
+ * bookings is plenty; hitting the cap logs a warning so a truncated pull is
+ * never silent (principle 4.1).
+ */
+const MAX_PAGES = 100;
+
 const KNOWN_LIMITATIONS = [
   'Experimental: implemented from public documentation and not yet validated against a live Travelpayouts account.',
   'Amounts (price, profit) are assumed to be whole units of the selected currency, matching the balance response (e.g. "1794.34"); not minor units.',
   'Programmes are synthesised from the connected travel brands (campaign ids) that appear in the balance-actions response; Travelpayouts exposes no publisher programme-catalogue endpoint, so commission rates and not-yet-joined programmes are unavailable.',
+  'Pagination is offset-based (max 300 rows per page); when no limit is given, listProgrammes and listTransactions page to completion, capped at MAX_PAGES with a warning rather than a silent truncation.',
   'Click-level data is not exposed per booking; the statistics API reports only aggregated click/redirect counts, so listClicks is unsupported.',
   'Tracking links are created in the dashboard with a partner marker; Travelpayouts publishes no deterministic deep-link URL formula, so generateTrackingLink is unsupported.',
 ];
@@ -328,23 +340,44 @@ export class TravelpayoutsAdapter implements NetworkAdapter {
   // -------------------------------------------------------------------------
 
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
-    const response = await this.fetchActionsPage({ limit: ACTIONS_PAGE_LIMIT, offset: 0 });
-
-    let programmes = synthesiseProgrammes(response);
-
     // Synthesised programmes are always `joined`. Apply the client-side filters
     // the contract supports; a status filter that excludes 'joined' yields none.
-    if (query?.search) {
-      const needle = query.search.toLowerCase();
-      programmes = programmes.filter((p) => p.name.toLowerCase().includes(needle));
-    }
     const statusFilter = toStatusList(query?.status);
-    if (statusFilter && statusFilter.length > 0) {
-      const set = new Set(statusFilter);
-      programmes = programmes.filter((p) => set.has(p.status));
-    }
-    if (typeof query?.limit === 'number') {
-      programmes = programmes.slice(0, query.limit);
+    const applyFilters = (input: Programme[]): Programme[] => {
+      let programmes = input;
+      if (query?.search) {
+        const needle = query.search.toLowerCase();
+        programmes = programmes.filter((p) => p.name.toLowerCase().includes(needle));
+      }
+      if (statusFilter && statusFilter.length > 0) {
+        const set = new Set(statusFilter);
+        programmes = programmes.filter((p) => set.has(p.status));
+      }
+      return programmes;
+    };
+
+    // No `limit`: page the actions endpoint to completion so campaigns that
+    // only appear deep in the history are synthesised too. With a `limit`,
+    // stop as soon as enough filtered programmes have been seen — the first
+    // page is always pulled, so this never returns less than the previous
+    // single-page behaviour.
+    const limit = typeof query?.limit === 'number' ? query.limit : undefined;
+    const pull = await this.fetchActionsToCompletion(
+      'listProgrammes',
+      {},
+      limit === undefined
+        ? undefined
+        : (acc) =>
+            applyFilters(
+              synthesiseProgrammes({ actions: acc.actions, available_campaigns: acc.campaigns }),
+            ).length >= limit,
+    );
+
+    let programmes = applyFilters(
+      synthesiseProgrammes({ actions: pull.actions, available_campaigns: pull.campaigns }),
+    );
+    if (limit !== undefined) {
+      programmes = programmes.slice(0, limit);
     }
     return programmes;
   }
@@ -398,9 +431,10 @@ export class TravelpayoutsAdapter implements NetworkAdapter {
    *
    * Travelpayouts paginates with `offset`/`limit` (max 300 per page) rather
    * than a date-window cap, so we page through `offset` until a short page is
-   * returned — the analogue of Awin's date chunking. `from`/`until` filter on
-   * the booking `created_at` date (YYYY-MM-DD). `currency` selects the unit;
-   * we default to USD and surface it on every row.
+   * returned — the analogue of Awin's date chunking — capped at `MAX_PAGES`
+   * with a logged warning. `from`/`until` filter on the booking `created_at`
+   * date (YYYY-MM-DD). `currency` selects the unit; we default to USD and
+   * surface it on every row.
    */
   async listTransactions(query?: TransactionQuery): Promise<Transaction[]> {
     const now = new Date();
@@ -414,29 +448,16 @@ export class TravelpayoutsAdapter implements NetworkAdapter {
     const soleStatus = statusFilter && statusFilter.length === 1 ? statusFilter[0] : undefined;
     const serverState = soleStatus ? canonicalToActionState(soleStatus) : undefined;
 
-    const rows: TravelpayoutsActionRaw[] = [];
-    let currency = DEFAULT_CURRENCY;
-    let offset = 0;
-    // Bound the loop: a misbehaving upstream that always returns a full page
-    // must not spin forever. 100 pages * 300 rows = 30k bookings is plenty.
-    for (let page = 0; page < 100; page += 1) {
-      const response = await this.fetchActionsPage({
-        limit: ACTIONS_PAGE_LIMIT,
-        offset,
-        from,
-        until,
-        campaign_id: query?.programmeId,
-        action_state: serverState,
-        currency: DEFAULT_CURRENCY.toLowerCase(),
-      });
-      if (typeof response.currency === 'string' && response.currency.length > 0) {
-        currency = response.currency.toUpperCase();
-      }
-      const actions = Array.isArray(response.actions) ? response.actions : [];
-      rows.push(...actions);
-      if (actions.length < ACTIONS_PAGE_LIMIT) break;
-      offset += ACTIONS_PAGE_LIMIT;
-    }
+    // No early stop on `limit` here: the age/status filters below run
+    // client-side, so a partial pull could under-return. `limit` stays a
+    // final slice, as in the Awin reference.
+    const { actions: rows, currency } = await this.fetchActionsToCompletion('listTransactions', {
+      from,
+      until,
+      campaign_id: query?.programmeId,
+      action_state: serverState,
+      currency: DEFAULT_CURRENCY.toLowerCase(),
+    });
 
     let transactions = rows.map((r) => toTransaction(r, currency, now));
 
@@ -646,6 +667,63 @@ export class TravelpayoutsAdapter implements NetworkAdapter {
   }
 
   // -------------------------------------------------------------------------
+  // Internal: page the actions endpoint to completion
+  // -------------------------------------------------------------------------
+
+  /**
+   * Fetch pages of the actions endpoint until a short page is returned,
+   * accumulating action rows and the `available_campaigns` seen on every page.
+   * An optional `isSatisfied` callback lets a caller with an explicit `limit`
+   * stop early once the accumulated pull already answers the query; the first
+   * page is always fetched. Capped at `MAX_PAGES` — the cap is a backstop
+   * logged so a truncated pull is never silent (principle 4.1).
+   */
+  private async fetchActionsToCompletion(
+    operation: string,
+    params: {
+      from?: string;
+      until?: string;
+      campaign_id?: string;
+      action_state?: string;
+      currency?: string;
+    },
+    isSatisfied?: (accumulated: {
+      actions: TravelpayoutsActionRaw[];
+      campaigns: TravelpayoutsCampaignRaw[];
+    }) => boolean,
+  ): Promise<{
+    actions: TravelpayoutsActionRaw[];
+    campaigns: TravelpayoutsCampaignRaw[];
+    currency: string;
+  }> {
+    const actions: TravelpayoutsActionRaw[] = [];
+    const campaigns: TravelpayoutsCampaignRaw[] = [];
+    let currency = DEFAULT_CURRENCY;
+    let offset = 0;
+    for (let page = 0; page < MAX_PAGES; page += 1) {
+      const response = await this.fetchActionsPage({
+        limit: ACTIONS_PAGE_LIMIT,
+        offset,
+        ...params,
+      });
+      if (typeof response.currency === 'string' && response.currency.length > 0) {
+        currency = response.currency.toUpperCase();
+      }
+      campaigns.push(...(response.available_campaigns ?? []));
+      const pageActions = Array.isArray(response.actions) ? response.actions : [];
+      actions.push(...pageActions);
+      if (pageActions.length < ACTIONS_PAGE_LIMIT) return { actions, campaigns, currency };
+      if (isSatisfied?.({ actions, campaigns })) return { actions, campaigns, currency };
+      offset += ACTIONS_PAGE_LIMIT;
+    }
+    log.warn(
+      { operation, cap: MAX_PAGES, fetched: actions.length },
+      'travelpayouts pagination hit MAX_PAGES cap; result may be truncated',
+    );
+    return { actions, campaigns, currency };
+  }
+
+  // -------------------------------------------------------------------------
   // Internal: one page of the actions endpoint
   // -------------------------------------------------------------------------
 
@@ -728,7 +806,7 @@ export const _internals = {
   synthesiseProgrammes,
   canonicalToActionState,
   toDateOnly,
+  log,
+  ACTIONS_PAGE_LIMIT,
+  MAX_PAGES,
 };
-
-// Silence the unused-import lint for the logger when noUnusedLocals is on.
-void log;

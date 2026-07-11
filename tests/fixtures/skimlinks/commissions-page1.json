@@ -1,0 +1,37 @@
+{
+  "count": 4,
+  "commissions": [
+    {
+      "commissionId": "20001",
+      "amount": 4.25,
+      "currency": "GBP",
+      "status": "pending",
+      "merchantId": "3001",
+      "merchantName": "Sample Homeware Ltd",
+      "url": "https://www.samplehomeware.test/product/11",
+      "customId": null,
+      "clickTime": "2026-04-02T09:00:00Z",
+      "transactionDate": "2026-04-02T09:20:00Z",
+      "approvedDate": null,
+      "paidDate": null,
+      "orderValue": 42.50,
+      "declineReason": null
+    },
+    {
+      "commissionId": "20002",
+      "amount": 9.10,
+      "currency": "GBP",
+      "status": "approved",
+      "merchantId": "3001",
+      "merchantName": "Sample Homeware Ltd",
+      "url": "https://www.samplehomeware.test/product/12",
+      "customId": "sub456",
+      "clickTime": "2026-04-03T11:30:00Z",
+      "transactionDate": "2026-04-03T11:45:00Z",
+      "approvedDate": "2026-04-08T10:00:00Z",
+      "paidDate": null,
+      "orderValue": 91.00,
+      "declineReason": null
+    }
+  ]
+}

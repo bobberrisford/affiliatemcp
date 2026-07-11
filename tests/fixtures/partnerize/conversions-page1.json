@@ -1,0 +1,44 @@
+{
+  "conversions": {
+    "conversion": [
+      {
+        "conversion_id": "conv_pg1_001",
+        "campaign_id": "10l176",
+        "publisher_id": "1007802",
+        "conversion_date": "2026-02-01",
+        "conversion_date_time": "2026-02-01T09:00:00Z",
+        "click_date": "2026-02-01",
+        "click_date_time": "2026-02-01T08:45:00Z",
+        "currency": "GBP",
+        "conversion_reference": "ORDER-PG1-001",
+        "campaign_title": "Acme Online Shop",
+        "publisher_name": "Test Publisher",
+        "conversion_status": "approved",
+        "value": "60.00",
+        "commission": "6.00",
+        "publisher_commission": "5.40",
+        "camref": "1101l3ofu",
+        "country": "GB"
+      },
+      {
+        "conversion_id": "conv_pg1_002",
+        "campaign_id": "10l177",
+        "publisher_id": "1007802",
+        "conversion_date": "2026-02-02",
+        "conversion_date_time": "2026-02-02T11:30:00Z",
+        "click_date": "2026-02-02",
+        "click_date_time": "2026-02-02T11:00:00Z",
+        "currency": "EUR",
+        "conversion_reference": "ORDER-PG1-002",
+        "campaign_title": "Beta Gadgets Ltd",
+        "publisher_name": "Test Publisher",
+        "conversion_status": "pending",
+        "value": "42.50",
+        "commission": "3.00",
+        "publisher_commission": "3.00",
+        "camref": "1101l4abc",
+        "country": "DE"
+      }
+    ]
+  }
+}

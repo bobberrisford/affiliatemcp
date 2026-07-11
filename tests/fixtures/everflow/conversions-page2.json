@@ -1,0 +1,27 @@
+{
+  "conversions": [
+    {
+      "conversion_id": "ccddeeff33445566ccddeeff33445566",
+      "transaction_id": "txn_003_click_cccc",
+      "offer": {
+        "network_offer_id": 1002,
+        "name": "Coral Coast Travel"
+      },
+      "status": "rejected",
+      "payout": 0.00,
+      "revenue": 0.00,
+      "sale_amount": 0.00,
+      "currency_id": "USD",
+      "conversion_unix_timestamp": 1773129600,
+      "click_unix_timestamp": 1773039600,
+      "payout_type": "cpa",
+      "source_id": "email_1",
+      "sub1": null,
+      "error_code": 42,
+      "error_message": "Duplicate conversion — transaction already recorded for this order"
+    }
+  ],
+  "page": 2,
+  "page_size": 2,
+  "total_count": 3
+}

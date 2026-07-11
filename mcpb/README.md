@@ -22,6 +22,15 @@ npx affiliate-networks-mcp setup
 The standalone Electron/DMG setup app is a fixes-only compatibility fallback,
 not another primary onboarding track.
 
+## Updating
+
+The extension does not update itself. To update, download the latest
+`affiliate-networks-mcp-<version>.mcpb` from the
+[GitHub releases page](https://github.com/bobberrisford/affiliatemcp/releases/latest)
+and install it over the top via **Settings → Extensions → Advanced settings →
+Install Extension…**. Claude Desktop treats it as the same extension, so your
+saved credentials and settings are kept.
+
 Credentials and affiliate API calls remain on your machine. See the project
 [privacy policy](https://github.com/bobberrisford/affiliatemcp/blob/main/PRIVACY.md)
 for details. Anonymous usage telemetry is optional and off by default in the

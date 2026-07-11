@@ -1,0 +1,29 @@
+{
+  "results": [
+    {
+      "id": 3501,
+      "name": "Sample Travel Deals",
+      "status": "active",
+      "connection_status": "active",
+      "currency": "EUR",
+      "site_url": "https://www.sampletravel.test",
+      "max_payment": "3.00%",
+      "categories": [{ "name": "Travel" }]
+    },
+    {
+      "id": 3502,
+      "name": "Demo Home & Garden",
+      "status": "active",
+      "connection_status": "not_connected",
+      "currency": "EUR",
+      "site_url": "https://www.demohomegarden.test",
+      "max_payment": "6.25%",
+      "categories": [{ "name": "Home & Garden" }]
+    }
+  ],
+  "_meta": {
+    "count": 502,
+    "limit": 500,
+    "offset": 500
+  }
+}

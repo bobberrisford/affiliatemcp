@@ -1,0 +1,37 @@
+{
+  "count": 4,
+  "commissions": [
+    {
+      "commissionId": "20003",
+      "amount": 2.80,
+      "currency": "GBP",
+      "status": "declined",
+      "merchantId": "3002",
+      "merchantName": "Demo Outdoors Co",
+      "url": "https://www.demooutdoors.test/item/21",
+      "customId": null,
+      "clickTime": "2026-04-05T14:00:00Z",
+      "transactionDate": "2026-04-05T14:10:00Z",
+      "approvedDate": "2026-04-10T09:00:00Z",
+      "paidDate": null,
+      "orderValue": 28.00,
+      "declineReason": "Order cancelled before dispatch"
+    },
+    {
+      "commissionId": "20004",
+      "amount": 6.40,
+      "currency": "GBP",
+      "status": "paid",
+      "merchantId": "3002",
+      "merchantName": "Demo Outdoors Co",
+      "url": "https://www.demooutdoors.test/item/22",
+      "customId": null,
+      "clickTime": "2026-03-20T08:00:00Z",
+      "transactionDate": "2026-03-20T08:30:00Z",
+      "approvedDate": "2026-03-25T10:00:00Z",
+      "paidDate": "2026-04-30T00:00:00Z",
+      "orderValue": 64.00,
+      "declineReason": null
+    }
+  ]
+}

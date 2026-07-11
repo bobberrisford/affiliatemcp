@@ -10,7 +10,8 @@
     "Adapter implemented from public API docs; not yet validated against a live account (claim_status: experimental).",
     "The API base URL is per-tenant: each network runs its own Affise instance, so the base is the network's tracking domain supplied via AFFISE_BASE_URL — there is no single shared host. The base_url above is a representative placeholder only.",
     "Amounts are assumed to be in major currency units (not minor units / cents); confirm against a live account before promoting beyond experimental.",
-    "No raw click-level affiliate endpoint is exposed by the partner API; listClicks is not implemented."
+    "No raw click-level affiliate endpoint is exposed by the partner API; listClicks is not implemented.",
+    "Pagination is 1-based via page + limit with a pagination.total_count counter; when no limit is passed, listProgrammes and listTransactions page to completion, capped at MAX_PAGES with a warning rather than a silent truncation."
   ],
   "claim_status": "experimental",
   "adapter_version": "0.1.0",

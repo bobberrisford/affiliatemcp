@@ -1,0 +1,3018 @@
+{
+  "actions": [
+    {
+      "action_id": 5000,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "100.00",
+      "profit": "5.00",
+      "description": "Aviasales sample booking 1",
+      "booked_at": "2026-01-01T10:00:00Z",
+      "updated_at": "2026-02-01T10:00:00Z"
+    },
+    {
+      "action_id": 5001,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "107.00",
+      "profit": "5.35",
+      "description": "Hotellook sample booking 2",
+      "booked_at": "2026-01-02T10:00:00Z",
+      "updated_at": "2026-02-02T10:00:00Z"
+    },
+    {
+      "action_id": 5002,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "114.00",
+      "profit": "5.70",
+      "description": "Aviasales sample booking 3",
+      "booked_at": "2026-01-03T10:00:00Z",
+      "updated_at": "2026-02-03T10:00:00Z"
+    },
+    {
+      "action_id": 5003,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "121.00",
+      "profit": "6.05",
+      "description": "Hotellook sample booking 4",
+      "booked_at": "2026-01-04T10:00:00Z",
+      "updated_at": "2026-02-04T10:00:00Z"
+    },
+    {
+      "action_id": 5004,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "128.00",
+      "profit": "6.40",
+      "description": "Aviasales sample booking 5",
+      "booked_at": "2026-01-05T10:00:00Z",
+      "updated_at": "2026-02-05T10:00:00Z"
+    },
+    {
+      "action_id": 5005,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "135.00",
+      "profit": "6.75",
+      "description": "Hotellook sample booking 6",
+      "booked_at": "2026-01-06T10:00:00Z",
+      "updated_at": "2026-02-06T10:00:00Z"
+    },
+    {
+      "action_id": 5006,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "142.00",
+      "profit": "7.10",
+      "description": "Aviasales sample booking 7",
+      "booked_at": "2026-01-07T10:00:00Z",
+      "updated_at": "2026-02-07T10:00:00Z"
+    },
+    {
+      "action_id": 5007,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "149.00",
+      "profit": "7.45",
+      "description": "Hotellook sample booking 8",
+      "booked_at": "2026-01-08T10:00:00Z",
+      "updated_at": "2026-02-08T10:00:00Z"
+    },
+    {
+      "action_id": 5008,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "156.00",
+      "profit": "7.80",
+      "description": "Aviasales sample booking 9",
+      "booked_at": "2026-01-09T10:00:00Z",
+      "updated_at": "2026-02-09T10:00:00Z"
+    },
+    {
+      "action_id": 5009,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "163.00",
+      "profit": "8.15",
+      "description": "Hotellook sample booking 10",
+      "booked_at": "2026-01-10T10:00:00Z",
+      "updated_at": "2026-02-10T10:00:00Z"
+    },
+    {
+      "action_id": 5010,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "170.00",
+      "profit": "8.50",
+      "description": "Aviasales sample booking 11",
+      "booked_at": "2026-01-11T10:00:00Z",
+      "updated_at": "2026-02-11T10:00:00Z"
+    },
+    {
+      "action_id": 5011,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "177.00",
+      "profit": "8.85",
+      "description": "Hotellook sample booking 12",
+      "booked_at": "2026-01-12T10:00:00Z",
+      "updated_at": "2026-02-12T10:00:00Z"
+    },
+    {
+      "action_id": 5012,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "184.00",
+      "profit": "9.20",
+      "description": "Aviasales sample booking 13",
+      "booked_at": "2026-01-13T10:00:00Z",
+      "updated_at": "2026-02-13T10:00:00Z"
+    },
+    {
+      "action_id": 5013,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "191.00",
+      "profit": "9.55",
+      "description": "Hotellook sample booking 14",
+      "booked_at": "2026-01-14T10:00:00Z",
+      "updated_at": "2026-02-14T10:00:00Z"
+    },
+    {
+      "action_id": 5014,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "198.00",
+      "profit": "9.90",
+      "description": "Aviasales sample booking 15",
+      "booked_at": "2026-01-15T10:00:00Z",
+      "updated_at": "2026-02-15T10:00:00Z"
+    },
+    {
+      "action_id": 5015,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "205.00",
+      "profit": "10.25",
+      "description": "Hotellook sample booking 16",
+      "booked_at": "2026-01-16T10:00:00Z",
+      "updated_at": "2026-02-16T10:00:00Z"
+    },
+    {
+      "action_id": 5016,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "212.00",
+      "profit": "10.60",
+      "description": "Aviasales sample booking 17",
+      "booked_at": "2026-01-17T10:00:00Z",
+      "updated_at": "2026-02-17T10:00:00Z"
+    },
+    {
+      "action_id": 5017,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "219.00",
+      "profit": "10.95",
+      "description": "Hotellook sample booking 18",
+      "booked_at": "2026-01-18T10:00:00Z",
+      "updated_at": "2026-02-18T10:00:00Z"
+    },
+    {
+      "action_id": 5018,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "226.00",
+      "profit": "11.30",
+      "description": "Aviasales sample booking 19",
+      "booked_at": "2026-01-19T10:00:00Z",
+      "updated_at": "2026-02-19T10:00:00Z"
+    },
+    {
+      "action_id": 5019,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "233.00",
+      "profit": "11.65",
+      "description": "Hotellook sample booking 20",
+      "booked_at": "2026-01-20T10:00:00Z",
+      "updated_at": "2026-02-20T10:00:00Z"
+    },
+    {
+      "action_id": 5020,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "240.00",
+      "profit": "12.00",
+      "description": "Aviasales sample booking 21",
+      "booked_at": "2026-01-21T10:00:00Z",
+      "updated_at": "2026-02-21T10:00:00Z"
+    },
+    {
+      "action_id": 5021,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "247.00",
+      "profit": "12.35",
+      "description": "Hotellook sample booking 22",
+      "booked_at": "2026-01-22T10:00:00Z",
+      "updated_at": "2026-02-22T10:00:00Z"
+    },
+    {
+      "action_id": 5022,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "254.00",
+      "profit": "12.70",
+      "description": "Aviasales sample booking 23",
+      "booked_at": "2026-01-23T10:00:00Z",
+      "updated_at": "2026-02-23T10:00:00Z"
+    },
+    {
+      "action_id": 5023,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "261.00",
+      "profit": "13.05",
+      "description": "Hotellook sample booking 24",
+      "booked_at": "2026-01-24T10:00:00Z",
+      "updated_at": "2026-02-24T10:00:00Z"
+    },
+    {
+      "action_id": 5024,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "268.00",
+      "profit": "13.40",
+      "description": "Aviasales sample booking 25",
+      "booked_at": "2026-01-25T10:00:00Z",
+      "updated_at": "2026-02-25T10:00:00Z"
+    },
+    {
+      "action_id": 5025,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "275.00",
+      "profit": "13.75",
+      "description": "Hotellook sample booking 26",
+      "booked_at": "2026-01-26T10:00:00Z",
+      "updated_at": "2026-02-26T10:00:00Z"
+    },
+    {
+      "action_id": 5026,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "282.00",
+      "profit": "14.10",
+      "description": "Aviasales sample booking 27",
+      "booked_at": "2026-01-27T10:00:00Z",
+      "updated_at": "2026-02-27T10:00:00Z"
+    },
+    {
+      "action_id": 5027,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "289.00",
+      "profit": "14.45",
+      "description": "Hotellook sample booking 28",
+      "booked_at": "2026-01-01T10:00:00Z",
+      "updated_at": "2026-02-01T10:00:00Z"
+    },
+    {
+      "action_id": 5028,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "296.00",
+      "profit": "14.80",
+      "description": "Aviasales sample booking 29",
+      "booked_at": "2026-01-02T10:00:00Z",
+      "updated_at": "2026-02-02T10:00:00Z"
+    },
+    {
+      "action_id": 5029,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "303.00",
+      "profit": "15.15",
+      "description": "Hotellook sample booking 30",
+      "booked_at": "2026-01-03T10:00:00Z",
+      "updated_at": "2026-02-03T10:00:00Z"
+    },
+    {
+      "action_id": 5030,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "310.00",
+      "profit": "15.50",
+      "description": "Aviasales sample booking 31",
+      "booked_at": "2026-01-04T10:00:00Z",
+      "updated_at": "2026-02-04T10:00:00Z"
+    },
+    {
+      "action_id": 5031,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "317.00",
+      "profit": "15.85",
+      "description": "Hotellook sample booking 32",
+      "booked_at": "2026-01-05T10:00:00Z",
+      "updated_at": "2026-02-05T10:00:00Z"
+    },
+    {
+      "action_id": 5032,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "324.00",
+      "profit": "16.20",
+      "description": "Aviasales sample booking 33",
+      "booked_at": "2026-01-06T10:00:00Z",
+      "updated_at": "2026-02-06T10:00:00Z"
+    },
+    {
+      "action_id": 5033,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "331.00",
+      "profit": "16.55",
+      "description": "Hotellook sample booking 34",
+      "booked_at": "2026-01-07T10:00:00Z",
+      "updated_at": "2026-02-07T10:00:00Z"
+    },
+    {
+      "action_id": 5034,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "338.00",
+      "profit": "16.90",
+      "description": "Aviasales sample booking 35",
+      "booked_at": "2026-01-08T10:00:00Z",
+      "updated_at": "2026-02-08T10:00:00Z"
+    },
+    {
+      "action_id": 5035,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "345.00",
+      "profit": "17.25",
+      "description": "Hotellook sample booking 36",
+      "booked_at": "2026-01-09T10:00:00Z",
+      "updated_at": "2026-02-09T10:00:00Z"
+    },
+    {
+      "action_id": 5036,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "352.00",
+      "profit": "17.60",
+      "description": "Aviasales sample booking 37",
+      "booked_at": "2026-01-10T10:00:00Z",
+      "updated_at": "2026-02-10T10:00:00Z"
+    },
+    {
+      "action_id": 5037,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "359.00",
+      "profit": "17.95",
+      "description": "Hotellook sample booking 38",
+      "booked_at": "2026-01-11T10:00:00Z",
+      "updated_at": "2026-02-11T10:00:00Z"
+    },
+    {
+      "action_id": 5038,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "366.00",
+      "profit": "18.30",
+      "description": "Aviasales sample booking 39",
+      "booked_at": "2026-01-12T10:00:00Z",
+      "updated_at": "2026-02-12T10:00:00Z"
+    },
+    {
+      "action_id": 5039,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "373.00",
+      "profit": "18.65",
+      "description": "Hotellook sample booking 40",
+      "booked_at": "2026-01-13T10:00:00Z",
+      "updated_at": "2026-02-13T10:00:00Z"
+    },
+    {
+      "action_id": 5040,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "380.00",
+      "profit": "19.00",
+      "description": "Aviasales sample booking 41",
+      "booked_at": "2026-01-14T10:00:00Z",
+      "updated_at": "2026-02-14T10:00:00Z"
+    },
+    {
+      "action_id": 5041,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "387.00",
+      "profit": "19.35",
+      "description": "Hotellook sample booking 42",
+      "booked_at": "2026-01-15T10:00:00Z",
+      "updated_at": "2026-02-15T10:00:00Z"
+    },
+    {
+      "action_id": 5042,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "394.00",
+      "profit": "19.70",
+      "description": "Aviasales sample booking 43",
+      "booked_at": "2026-01-16T10:00:00Z",
+      "updated_at": "2026-02-16T10:00:00Z"
+    },
+    {
+      "action_id": 5043,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "401.00",
+      "profit": "20.05",
+      "description": "Hotellook sample booking 44",
+      "booked_at": "2026-01-17T10:00:00Z",
+      "updated_at": "2026-02-17T10:00:00Z"
+    },
+    {
+      "action_id": 5044,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "408.00",
+      "profit": "20.40",
+      "description": "Aviasales sample booking 45",
+      "booked_at": "2026-01-18T10:00:00Z",
+      "updated_at": "2026-02-18T10:00:00Z"
+    },
+    {
+      "action_id": 5045,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "415.00",
+      "profit": "20.75",
+      "description": "Hotellook sample booking 46",
+      "booked_at": "2026-01-19T10:00:00Z",
+      "updated_at": "2026-02-19T10:00:00Z"
+    },
+    {
+      "action_id": 5046,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "422.00",
+      "profit": "21.10",
+      "description": "Aviasales sample booking 47",
+      "booked_at": "2026-01-20T10:00:00Z",
+      "updated_at": "2026-02-20T10:00:00Z"
+    },
+    {
+      "action_id": 5047,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "429.00",
+      "profit": "21.45",
+      "description": "Hotellook sample booking 48",
+      "booked_at": "2026-01-21T10:00:00Z",
+      "updated_at": "2026-02-21T10:00:00Z"
+    },
+    {
+      "action_id": 5048,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "436.00",
+      "profit": "21.80",
+      "description": "Aviasales sample booking 49",
+      "booked_at": "2026-01-22T10:00:00Z",
+      "updated_at": "2026-02-22T10:00:00Z"
+    },
+    {
+      "action_id": 5049,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "443.00",
+      "profit": "22.15",
+      "description": "Hotellook sample booking 50",
+      "booked_at": "2026-01-23T10:00:00Z",
+      "updated_at": "2026-02-23T10:00:00Z"
+    },
+    {
+      "action_id": 5050,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "100.00",
+      "profit": "5.00",
+      "description": "Aviasales sample booking 51",
+      "booked_at": "2026-01-24T10:00:00Z",
+      "updated_at": "2026-02-24T10:00:00Z"
+    },
+    {
+      "action_id": 5051,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "107.00",
+      "profit": "5.35",
+      "description": "Hotellook sample booking 52",
+      "booked_at": "2026-01-25T10:00:00Z",
+      "updated_at": "2026-02-25T10:00:00Z"
+    },
+    {
+      "action_id": 5052,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "114.00",
+      "profit": "5.70",
+      "description": "Aviasales sample booking 53",
+      "booked_at": "2026-01-26T10:00:00Z",
+      "updated_at": "2026-02-26T10:00:00Z"
+    },
+    {
+      "action_id": 5053,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "121.00",
+      "profit": "6.05",
+      "description": "Hotellook sample booking 54",
+      "booked_at": "2026-01-27T10:00:00Z",
+      "updated_at": "2026-02-27T10:00:00Z"
+    },
+    {
+      "action_id": 5054,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "128.00",
+      "profit": "6.40",
+      "description": "Aviasales sample booking 55",
+      "booked_at": "2026-01-01T10:00:00Z",
+      "updated_at": "2026-02-01T10:00:00Z"
+    },
+    {
+      "action_id": 5055,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "135.00",
+      "profit": "6.75",
+      "description": "Hotellook sample booking 56",
+      "booked_at": "2026-01-02T10:00:00Z",
+      "updated_at": "2026-02-02T10:00:00Z"
+    },
+    {
+      "action_id": 5056,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "142.00",
+      "profit": "7.10",
+      "description": "Aviasales sample booking 57",
+      "booked_at": "2026-01-03T10:00:00Z",
+      "updated_at": "2026-02-03T10:00:00Z"
+    },
+    {
+      "action_id": 5057,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "149.00",
+      "profit": "7.45",
+      "description": "Hotellook sample booking 58",
+      "booked_at": "2026-01-04T10:00:00Z",
+      "updated_at": "2026-02-04T10:00:00Z"
+    },
+    {
+      "action_id": 5058,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "156.00",
+      "profit": "7.80",
+      "description": "Aviasales sample booking 59",
+      "booked_at": "2026-01-05T10:00:00Z",
+      "updated_at": "2026-02-05T10:00:00Z"
+    },
+    {
+      "action_id": 5059,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "163.00",
+      "profit": "8.15",
+      "description": "Hotellook sample booking 60",
+      "booked_at": "2026-01-06T10:00:00Z",
+      "updated_at": "2026-02-06T10:00:00Z"
+    },
+    {
+      "action_id": 5060,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "170.00",
+      "profit": "8.50",
+      "description": "Aviasales sample booking 61",
+      "booked_at": "2026-01-07T10:00:00Z",
+      "updated_at": "2026-02-07T10:00:00Z"
+    },
+    {
+      "action_id": 5061,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "177.00",
+      "profit": "8.85",
+      "description": "Hotellook sample booking 62",
+      "booked_at": "2026-01-08T10:00:00Z",
+      "updated_at": "2026-02-08T10:00:00Z"
+    },
+    {
+      "action_id": 5062,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "184.00",
+      "profit": "9.20",
+      "description": "Aviasales sample booking 63",
+      "booked_at": "2026-01-09T10:00:00Z",
+      "updated_at": "2026-02-09T10:00:00Z"
+    },
+    {
+      "action_id": 5063,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "191.00",
+      "profit": "9.55",
+      "description": "Hotellook sample booking 64",
+      "booked_at": "2026-01-10T10:00:00Z",
+      "updated_at": "2026-02-10T10:00:00Z"
+    },
+    {
+      "action_id": 5064,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "198.00",
+      "profit": "9.90",
+      "description": "Aviasales sample booking 65",
+      "booked_at": "2026-01-11T10:00:00Z",
+      "updated_at": "2026-02-11T10:00:00Z"
+    },
+    {
+      "action_id": 5065,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "205.00",
+      "profit": "10.25",
+      "description": "Hotellook sample booking 66",
+      "booked_at": "2026-01-12T10:00:00Z",
+      "updated_at": "2026-02-12T10:00:00Z"
+    },
+    {
+      "action_id": 5066,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "212.00",
+      "profit": "10.60",
+      "description": "Aviasales sample booking 67",
+      "booked_at": "2026-01-13T10:00:00Z",
+      "updated_at": "2026-02-13T10:00:00Z"
+    },
+    {
+      "action_id": 5067,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "219.00",
+      "profit": "10.95",
+      "description": "Hotellook sample booking 68",
+      "booked_at": "2026-01-14T10:00:00Z",
+      "updated_at": "2026-02-14T10:00:00Z"
+    },
+    {
+      "action_id": 5068,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "226.00",
+      "profit": "11.30",
+      "description": "Aviasales sample booking 69",
+      "booked_at": "2026-01-15T10:00:00Z",
+      "updated_at": "2026-02-15T10:00:00Z"
+    },
+    {
+      "action_id": 5069,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "233.00",
+      "profit": "11.65",
+      "description": "Hotellook sample booking 70",
+      "booked_at": "2026-01-16T10:00:00Z",
+      "updated_at": "2026-02-16T10:00:00Z"
+    },
+    {
+      "action_id": 5070,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "240.00",
+      "profit": "12.00",
+      "description": "Aviasales sample booking 71",
+      "booked_at": "2026-01-17T10:00:00Z",
+      "updated_at": "2026-02-17T10:00:00Z"
+    },
+    {
+      "action_id": 5071,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "247.00",
+      "profit": "12.35",
+      "description": "Hotellook sample booking 72",
+      "booked_at": "2026-01-18T10:00:00Z",
+      "updated_at": "2026-02-18T10:00:00Z"
+    },
+    {
+      "action_id": 5072,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "254.00",
+      "profit": "12.70",
+      "description": "Aviasales sample booking 73",
+      "booked_at": "2026-01-19T10:00:00Z",
+      "updated_at": "2026-02-19T10:00:00Z"
+    },
+    {
+      "action_id": 5073,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "261.00",
+      "profit": "13.05",
+      "description": "Hotellook sample booking 74",
+      "booked_at": "2026-01-20T10:00:00Z",
+      "updated_at": "2026-02-20T10:00:00Z"
+    },
+    {
+      "action_id": 5074,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "268.00",
+      "profit": "13.40",
+      "description": "Aviasales sample booking 75",
+      "booked_at": "2026-01-21T10:00:00Z",
+      "updated_at": "2026-02-21T10:00:00Z"
+    },
+    {
+      "action_id": 5075,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "275.00",
+      "profit": "13.75",
+      "description": "Hotellook sample booking 76",
+      "booked_at": "2026-01-22T10:00:00Z",
+      "updated_at": "2026-02-22T10:00:00Z"
+    },
+    {
+      "action_id": 5076,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "282.00",
+      "profit": "14.10",
+      "description": "Aviasales sample booking 77",
+      "booked_at": "2026-01-23T10:00:00Z",
+      "updated_at": "2026-02-23T10:00:00Z"
+    },
+    {
+      "action_id": 5077,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "289.00",
+      "profit": "14.45",
+      "description": "Hotellook sample booking 78",
+      "booked_at": "2026-01-24T10:00:00Z",
+      "updated_at": "2026-02-24T10:00:00Z"
+    },
+    {
+      "action_id": 5078,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "296.00",
+      "profit": "14.80",
+      "description": "Aviasales sample booking 79",
+      "booked_at": "2026-01-25T10:00:00Z",
+      "updated_at": "2026-02-25T10:00:00Z"
+    },
+    {
+      "action_id": 5079,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "303.00",
+      "profit": "15.15",
+      "description": "Hotellook sample booking 80",
+      "booked_at": "2026-01-26T10:00:00Z",
+      "updated_at": "2026-02-26T10:00:00Z"
+    },
+    {
+      "action_id": 5080,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "310.00",
+      "profit": "15.50",
+      "description": "Aviasales sample booking 81",
+      "booked_at": "2026-01-27T10:00:00Z",
+      "updated_at": "2026-02-27T10:00:00Z"
+    },
+    {
+      "action_id": 5081,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "317.00",
+      "profit": "15.85",
+      "description": "Hotellook sample booking 82",
+      "booked_at": "2026-01-01T10:00:00Z",
+      "updated_at": "2026-02-01T10:00:00Z"
+    },
+    {
+      "action_id": 5082,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "324.00",
+      "profit": "16.20",
+      "description": "Aviasales sample booking 83",
+      "booked_at": "2026-01-02T10:00:00Z",
+      "updated_at": "2026-02-02T10:00:00Z"
+    },
+    {
+      "action_id": 5083,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "331.00",
+      "profit": "16.55",
+      "description": "Hotellook sample booking 84",
+      "booked_at": "2026-01-03T10:00:00Z",
+      "updated_at": "2026-02-03T10:00:00Z"
+    },
+    {
+      "action_id": 5084,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "338.00",
+      "profit": "16.90",
+      "description": "Aviasales sample booking 85",
+      "booked_at": "2026-01-04T10:00:00Z",
+      "updated_at": "2026-02-04T10:00:00Z"
+    },
+    {
+      "action_id": 5085,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "345.00",
+      "profit": "17.25",
+      "description": "Hotellook sample booking 86",
+      "booked_at": "2026-01-05T10:00:00Z",
+      "updated_at": "2026-02-05T10:00:00Z"
+    },
+    {
+      "action_id": 5086,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "352.00",
+      "profit": "17.60",
+      "description": "Aviasales sample booking 87",
+      "booked_at": "2026-01-06T10:00:00Z",
+      "updated_at": "2026-02-06T10:00:00Z"
+    },
+    {
+      "action_id": 5087,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "359.00",
+      "profit": "17.95",
+      "description": "Hotellook sample booking 88",
+      "booked_at": "2026-01-07T10:00:00Z",
+      "updated_at": "2026-02-07T10:00:00Z"
+    },
+    {
+      "action_id": 5088,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "366.00",
+      "profit": "18.30",
+      "description": "Aviasales sample booking 89",
+      "booked_at": "2026-01-08T10:00:00Z",
+      "updated_at": "2026-02-08T10:00:00Z"
+    },
+    {
+      "action_id": 5089,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "373.00",
+      "profit": "18.65",
+      "description": "Hotellook sample booking 90",
+      "booked_at": "2026-01-09T10:00:00Z",
+      "updated_at": "2026-02-09T10:00:00Z"
+    },
+    {
+      "action_id": 5090,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "380.00",
+      "profit": "19.00",
+      "description": "Aviasales sample booking 91",
+      "booked_at": "2026-01-10T10:00:00Z",
+      "updated_at": "2026-02-10T10:00:00Z"
+    },
+    {
+      "action_id": 5091,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "387.00",
+      "profit": "19.35",
+      "description": "Hotellook sample booking 92",
+      "booked_at": "2026-01-11T10:00:00Z",
+      "updated_at": "2026-02-11T10:00:00Z"
+    },
+    {
+      "action_id": 5092,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "394.00",
+      "profit": "19.70",
+      "description": "Aviasales sample booking 93",
+      "booked_at": "2026-01-12T10:00:00Z",
+      "updated_at": "2026-02-12T10:00:00Z"
+    },
+    {
+      "action_id": 5093,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "401.00",
+      "profit": "20.05",
+      "description": "Hotellook sample booking 94",
+      "booked_at": "2026-01-13T10:00:00Z",
+      "updated_at": "2026-02-13T10:00:00Z"
+    },
+    {
+      "action_id": 5094,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "408.00",
+      "profit": "20.40",
+      "description": "Aviasales sample booking 95",
+      "booked_at": "2026-01-14T10:00:00Z",
+      "updated_at": "2026-02-14T10:00:00Z"
+    },
+    {
+      "action_id": 5095,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "415.00",
+      "profit": "20.75",
+      "description": "Hotellook sample booking 96",
+      "booked_at": "2026-01-15T10:00:00Z",
+      "updated_at": "2026-02-15T10:00:00Z"
+    },
+    {
+      "action_id": 5096,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "422.00",
+      "profit": "21.10",
+      "description": "Aviasales sample booking 97",
+      "booked_at": "2026-01-16T10:00:00Z",
+      "updated_at": "2026-02-16T10:00:00Z"
+    },
+    {
+      "action_id": 5097,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "429.00",
+      "profit": "21.45",
+      "description": "Hotellook sample booking 98",
+      "booked_at": "2026-01-17T10:00:00Z",
+      "updated_at": "2026-02-17T10:00:00Z"
+    },
+    {
+      "action_id": 5098,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "436.00",
+      "profit": "21.80",
+      "description": "Aviasales sample booking 99",
+      "booked_at": "2026-01-18T10:00:00Z",
+      "updated_at": "2026-02-18T10:00:00Z"
+    },
+    {
+      "action_id": 5099,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "443.00",
+      "profit": "22.15",
+      "description": "Hotellook sample booking 100",
+      "booked_at": "2026-01-19T10:00:00Z",
+      "updated_at": "2026-02-19T10:00:00Z"
+    },
+    {
+      "action_id": 5100,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "100.00",
+      "profit": "5.00",
+      "description": "Aviasales sample booking 101",
+      "booked_at": "2026-01-20T10:00:00Z",
+      "updated_at": "2026-02-20T10:00:00Z"
+    },
+    {
+      "action_id": 5101,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "107.00",
+      "profit": "5.35",
+      "description": "Hotellook sample booking 102",
+      "booked_at": "2026-01-21T10:00:00Z",
+      "updated_at": "2026-02-21T10:00:00Z"
+    },
+    {
+      "action_id": 5102,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "114.00",
+      "profit": "5.70",
+      "description": "Aviasales sample booking 103",
+      "booked_at": "2026-01-22T10:00:00Z",
+      "updated_at": "2026-02-22T10:00:00Z"
+    },
+    {
+      "action_id": 5103,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "121.00",
+      "profit": "6.05",
+      "description": "Hotellook sample booking 104",
+      "booked_at": "2026-01-23T10:00:00Z",
+      "updated_at": "2026-02-23T10:00:00Z"
+    },
+    {
+      "action_id": 5104,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "128.00",
+      "profit": "6.40",
+      "description": "Aviasales sample booking 105",
+      "booked_at": "2026-01-24T10:00:00Z",
+      "updated_at": "2026-02-24T10:00:00Z"
+    },
+    {
+      "action_id": 5105,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "135.00",
+      "profit": "6.75",
+      "description": "Hotellook sample booking 106",
+      "booked_at": "2026-01-25T10:00:00Z",
+      "updated_at": "2026-02-25T10:00:00Z"
+    },
+    {
+      "action_id": 5106,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "142.00",
+      "profit": "7.10",
+      "description": "Aviasales sample booking 107",
+      "booked_at": "2026-01-26T10:00:00Z",
+      "updated_at": "2026-02-26T10:00:00Z"
+    },
+    {
+      "action_id": 5107,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "149.00",
+      "profit": "7.45",
+      "description": "Hotellook sample booking 108",
+      "booked_at": "2026-01-27T10:00:00Z",
+      "updated_at": "2026-02-27T10:00:00Z"
+    },
+    {
+      "action_id": 5108,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "156.00",
+      "profit": "7.80",
+      "description": "Aviasales sample booking 109",
+      "booked_at": "2026-01-01T10:00:00Z",
+      "updated_at": "2026-02-01T10:00:00Z"
+    },
+    {
+      "action_id": 5109,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "163.00",
+      "profit": "8.15",
+      "description": "Hotellook sample booking 110",
+      "booked_at": "2026-01-02T10:00:00Z",
+      "updated_at": "2026-02-02T10:00:00Z"
+    },
+    {
+      "action_id": 5110,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "170.00",
+      "profit": "8.50",
+      "description": "Aviasales sample booking 111",
+      "booked_at": "2026-01-03T10:00:00Z",
+      "updated_at": "2026-02-03T10:00:00Z"
+    },
+    {
+      "action_id": 5111,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "177.00",
+      "profit": "8.85",
+      "description": "Hotellook sample booking 112",
+      "booked_at": "2026-01-04T10:00:00Z",
+      "updated_at": "2026-02-04T10:00:00Z"
+    },
+    {
+      "action_id": 5112,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "184.00",
+      "profit": "9.20",
+      "description": "Aviasales sample booking 113",
+      "booked_at": "2026-01-05T10:00:00Z",
+      "updated_at": "2026-02-05T10:00:00Z"
+    },
+    {
+      "action_id": 5113,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "191.00",
+      "profit": "9.55",
+      "description": "Hotellook sample booking 114",
+      "booked_at": "2026-01-06T10:00:00Z",
+      "updated_at": "2026-02-06T10:00:00Z"
+    },
+    {
+      "action_id": 5114,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "198.00",
+      "profit": "9.90",
+      "description": "Aviasales sample booking 115",
+      "booked_at": "2026-01-07T10:00:00Z",
+      "updated_at": "2026-02-07T10:00:00Z"
+    },
+    {
+      "action_id": 5115,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "205.00",
+      "profit": "10.25",
+      "description": "Hotellook sample booking 116",
+      "booked_at": "2026-01-08T10:00:00Z",
+      "updated_at": "2026-02-08T10:00:00Z"
+    },
+    {
+      "action_id": 5116,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "212.00",
+      "profit": "10.60",
+      "description": "Aviasales sample booking 117",
+      "booked_at": "2026-01-09T10:00:00Z",
+      "updated_at": "2026-02-09T10:00:00Z"
+    },
+    {
+      "action_id": 5117,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "219.00",
+      "profit": "10.95",
+      "description": "Hotellook sample booking 118",
+      "booked_at": "2026-01-10T10:00:00Z",
+      "updated_at": "2026-02-10T10:00:00Z"
+    },
+    {
+      "action_id": 5118,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "226.00",
+      "profit": "11.30",
+      "description": "Aviasales sample booking 119",
+      "booked_at": "2026-01-11T10:00:00Z",
+      "updated_at": "2026-02-11T10:00:00Z"
+    },
+    {
+      "action_id": 5119,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "233.00",
+      "profit": "11.65",
+      "description": "Hotellook sample booking 120",
+      "booked_at": "2026-01-12T10:00:00Z",
+      "updated_at": "2026-02-12T10:00:00Z"
+    },
+    {
+      "action_id": 5120,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "240.00",
+      "profit": "12.00",
+      "description": "Aviasales sample booking 121",
+      "booked_at": "2026-01-13T10:00:00Z",
+      "updated_at": "2026-02-13T10:00:00Z"
+    },
+    {
+      "action_id": 5121,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "247.00",
+      "profit": "12.35",
+      "description": "Hotellook sample booking 122",
+      "booked_at": "2026-01-14T10:00:00Z",
+      "updated_at": "2026-02-14T10:00:00Z"
+    },
+    {
+      "action_id": 5122,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "254.00",
+      "profit": "12.70",
+      "description": "Aviasales sample booking 123",
+      "booked_at": "2026-01-15T10:00:00Z",
+      "updated_at": "2026-02-15T10:00:00Z"
+    },
+    {
+      "action_id": 5123,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "261.00",
+      "profit": "13.05",
+      "description": "Hotellook sample booking 124",
+      "booked_at": "2026-01-16T10:00:00Z",
+      "updated_at": "2026-02-16T10:00:00Z"
+    },
+    {
+      "action_id": 5124,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "268.00",
+      "profit": "13.40",
+      "description": "Aviasales sample booking 125",
+      "booked_at": "2026-01-17T10:00:00Z",
+      "updated_at": "2026-02-17T10:00:00Z"
+    },
+    {
+      "action_id": 5125,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "275.00",
+      "profit": "13.75",
+      "description": "Hotellook sample booking 126",
+      "booked_at": "2026-01-18T10:00:00Z",
+      "updated_at": "2026-02-18T10:00:00Z"
+    },
+    {
+      "action_id": 5126,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "282.00",
+      "profit": "14.10",
+      "description": "Aviasales sample booking 127",
+      "booked_at": "2026-01-19T10:00:00Z",
+      "updated_at": "2026-02-19T10:00:00Z"
+    },
+    {
+      "action_id": 5127,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "289.00",
+      "profit": "14.45",
+      "description": "Hotellook sample booking 128",
+      "booked_at": "2026-01-20T10:00:00Z",
+      "updated_at": "2026-02-20T10:00:00Z"
+    },
+    {
+      "action_id": 5128,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "296.00",
+      "profit": "14.80",
+      "description": "Aviasales sample booking 129",
+      "booked_at": "2026-01-21T10:00:00Z",
+      "updated_at": "2026-02-21T10:00:00Z"
+    },
+    {
+      "action_id": 5129,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "303.00",
+      "profit": "15.15",
+      "description": "Hotellook sample booking 130",
+      "booked_at": "2026-01-22T10:00:00Z",
+      "updated_at": "2026-02-22T10:00:00Z"
+    },
+    {
+      "action_id": 5130,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "310.00",
+      "profit": "15.50",
+      "description": "Aviasales sample booking 131",
+      "booked_at": "2026-01-23T10:00:00Z",
+      "updated_at": "2026-02-23T10:00:00Z"
+    },
+    {
+      "action_id": 5131,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "317.00",
+      "profit": "15.85",
+      "description": "Hotellook sample booking 132",
+      "booked_at": "2026-01-24T10:00:00Z",
+      "updated_at": "2026-02-24T10:00:00Z"
+    },
+    {
+      "action_id": 5132,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "324.00",
+      "profit": "16.20",
+      "description": "Aviasales sample booking 133",
+      "booked_at": "2026-01-25T10:00:00Z",
+      "updated_at": "2026-02-25T10:00:00Z"
+    },
+    {
+      "action_id": 5133,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "331.00",
+      "profit": "16.55",
+      "description": "Hotellook sample booking 134",
+      "booked_at": "2026-01-26T10:00:00Z",
+      "updated_at": "2026-02-26T10:00:00Z"
+    },
+    {
+      "action_id": 5134,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "338.00",
+      "profit": "16.90",
+      "description": "Aviasales sample booking 135",
+      "booked_at": "2026-01-27T10:00:00Z",
+      "updated_at": "2026-02-27T10:00:00Z"
+    },
+    {
+      "action_id": 5135,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "345.00",
+      "profit": "17.25",
+      "description": "Hotellook sample booking 136",
+      "booked_at": "2026-01-01T10:00:00Z",
+      "updated_at": "2026-02-01T10:00:00Z"
+    },
+    {
+      "action_id": 5136,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "352.00",
+      "profit": "17.60",
+      "description": "Aviasales sample booking 137",
+      "booked_at": "2026-01-02T10:00:00Z",
+      "updated_at": "2026-02-02T10:00:00Z"
+    },
+    {
+      "action_id": 5137,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "359.00",
+      "profit": "17.95",
+      "description": "Hotellook sample booking 138",
+      "booked_at": "2026-01-03T10:00:00Z",
+      "updated_at": "2026-02-03T10:00:00Z"
+    },
+    {
+      "action_id": 5138,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "366.00",
+      "profit": "18.30",
+      "description": "Aviasales sample booking 139",
+      "booked_at": "2026-01-04T10:00:00Z",
+      "updated_at": "2026-02-04T10:00:00Z"
+    },
+    {
+      "action_id": 5139,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "373.00",
+      "profit": "18.65",
+      "description": "Hotellook sample booking 140",
+      "booked_at": "2026-01-05T10:00:00Z",
+      "updated_at": "2026-02-05T10:00:00Z"
+    },
+    {
+      "action_id": 5140,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "380.00",
+      "profit": "19.00",
+      "description": "Aviasales sample booking 141",
+      "booked_at": "2026-01-06T10:00:00Z",
+      "updated_at": "2026-02-06T10:00:00Z"
+    },
+    {
+      "action_id": 5141,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "387.00",
+      "profit": "19.35",
+      "description": "Hotellook sample booking 142",
+      "booked_at": "2026-01-07T10:00:00Z",
+      "updated_at": "2026-02-07T10:00:00Z"
+    },
+    {
+      "action_id": 5142,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "394.00",
+      "profit": "19.70",
+      "description": "Aviasales sample booking 143",
+      "booked_at": "2026-01-08T10:00:00Z",
+      "updated_at": "2026-02-08T10:00:00Z"
+    },
+    {
+      "action_id": 5143,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "401.00",
+      "profit": "20.05",
+      "description": "Hotellook sample booking 144",
+      "booked_at": "2026-01-09T10:00:00Z",
+      "updated_at": "2026-02-09T10:00:00Z"
+    },
+    {
+      "action_id": 5144,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "408.00",
+      "profit": "20.40",
+      "description": "Aviasales sample booking 145",
+      "booked_at": "2026-01-10T10:00:00Z",
+      "updated_at": "2026-02-10T10:00:00Z"
+    },
+    {
+      "action_id": 5145,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "415.00",
+      "profit": "20.75",
+      "description": "Hotellook sample booking 146",
+      "booked_at": "2026-01-11T10:00:00Z",
+      "updated_at": "2026-02-11T10:00:00Z"
+    },
+    {
+      "action_id": 5146,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "422.00",
+      "profit": "21.10",
+      "description": "Aviasales sample booking 147",
+      "booked_at": "2026-01-12T10:00:00Z",
+      "updated_at": "2026-02-12T10:00:00Z"
+    },
+    {
+      "action_id": 5147,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "429.00",
+      "profit": "21.45",
+      "description": "Hotellook sample booking 148",
+      "booked_at": "2026-01-13T10:00:00Z",
+      "updated_at": "2026-02-13T10:00:00Z"
+    },
+    {
+      "action_id": 5148,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "436.00",
+      "profit": "21.80",
+      "description": "Aviasales sample booking 149",
+      "booked_at": "2026-01-14T10:00:00Z",
+      "updated_at": "2026-02-14T10:00:00Z"
+    },
+    {
+      "action_id": 5149,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "443.00",
+      "profit": "22.15",
+      "description": "Hotellook sample booking 150",
+      "booked_at": "2026-01-15T10:00:00Z",
+      "updated_at": "2026-02-15T10:00:00Z"
+    },
+    {
+      "action_id": 5150,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "100.00",
+      "profit": "5.00",
+      "description": "Aviasales sample booking 151",
+      "booked_at": "2026-01-16T10:00:00Z",
+      "updated_at": "2026-02-16T10:00:00Z"
+    },
+    {
+      "action_id": 5151,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "107.00",
+      "profit": "5.35",
+      "description": "Hotellook sample booking 152",
+      "booked_at": "2026-01-17T10:00:00Z",
+      "updated_at": "2026-02-17T10:00:00Z"
+    },
+    {
+      "action_id": 5152,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "114.00",
+      "profit": "5.70",
+      "description": "Aviasales sample booking 153",
+      "booked_at": "2026-01-18T10:00:00Z",
+      "updated_at": "2026-02-18T10:00:00Z"
+    },
+    {
+      "action_id": 5153,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "121.00",
+      "profit": "6.05",
+      "description": "Hotellook sample booking 154",
+      "booked_at": "2026-01-19T10:00:00Z",
+      "updated_at": "2026-02-19T10:00:00Z"
+    },
+    {
+      "action_id": 5154,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "128.00",
+      "profit": "6.40",
+      "description": "Aviasales sample booking 155",
+      "booked_at": "2026-01-20T10:00:00Z",
+      "updated_at": "2026-02-20T10:00:00Z"
+    },
+    {
+      "action_id": 5155,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "135.00",
+      "profit": "6.75",
+      "description": "Hotellook sample booking 156",
+      "booked_at": "2026-01-21T10:00:00Z",
+      "updated_at": "2026-02-21T10:00:00Z"
+    },
+    {
+      "action_id": 5156,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "142.00",
+      "profit": "7.10",
+      "description": "Aviasales sample booking 157",
+      "booked_at": "2026-01-22T10:00:00Z",
+      "updated_at": "2026-02-22T10:00:00Z"
+    },
+    {
+      "action_id": 5157,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "149.00",
+      "profit": "7.45",
+      "description": "Hotellook sample booking 158",
+      "booked_at": "2026-01-23T10:00:00Z",
+      "updated_at": "2026-02-23T10:00:00Z"
+    },
+    {
+      "action_id": 5158,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "156.00",
+      "profit": "7.80",
+      "description": "Aviasales sample booking 159",
+      "booked_at": "2026-01-24T10:00:00Z",
+      "updated_at": "2026-02-24T10:00:00Z"
+    },
+    {
+      "action_id": 5159,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "163.00",
+      "profit": "8.15",
+      "description": "Hotellook sample booking 160",
+      "booked_at": "2026-01-25T10:00:00Z",
+      "updated_at": "2026-02-25T10:00:00Z"
+    },
+    {
+      "action_id": 5160,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "170.00",
+      "profit": "8.50",
+      "description": "Aviasales sample booking 161",
+      "booked_at": "2026-01-26T10:00:00Z",
+      "updated_at": "2026-02-26T10:00:00Z"
+    },
+    {
+      "action_id": 5161,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "177.00",
+      "profit": "8.85",
+      "description": "Hotellook sample booking 162",
+      "booked_at": "2026-01-27T10:00:00Z",
+      "updated_at": "2026-02-27T10:00:00Z"
+    },
+    {
+      "action_id": 5162,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "184.00",
+      "profit": "9.20",
+      "description": "Aviasales sample booking 163",
+      "booked_at": "2026-01-01T10:00:00Z",
+      "updated_at": "2026-02-01T10:00:00Z"
+    },
+    {
+      "action_id": 5163,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "191.00",
+      "profit": "9.55",
+      "description": "Hotellook sample booking 164",
+      "booked_at": "2026-01-02T10:00:00Z",
+      "updated_at": "2026-02-02T10:00:00Z"
+    },
+    {
+      "action_id": 5164,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "198.00",
+      "profit": "9.90",
+      "description": "Aviasales sample booking 165",
+      "booked_at": "2026-01-03T10:00:00Z",
+      "updated_at": "2026-02-03T10:00:00Z"
+    },
+    {
+      "action_id": 5165,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "205.00",
+      "profit": "10.25",
+      "description": "Hotellook sample booking 166",
+      "booked_at": "2026-01-04T10:00:00Z",
+      "updated_at": "2026-02-04T10:00:00Z"
+    },
+    {
+      "action_id": 5166,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "212.00",
+      "profit": "10.60",
+      "description": "Aviasales sample booking 167",
+      "booked_at": "2026-01-05T10:00:00Z",
+      "updated_at": "2026-02-05T10:00:00Z"
+    },
+    {
+      "action_id": 5167,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "219.00",
+      "profit": "10.95",
+      "description": "Hotellook sample booking 168",
+      "booked_at": "2026-01-06T10:00:00Z",
+      "updated_at": "2026-02-06T10:00:00Z"
+    },
+    {
+      "action_id": 5168,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "226.00",
+      "profit": "11.30",
+      "description": "Aviasales sample booking 169",
+      "booked_at": "2026-01-07T10:00:00Z",
+      "updated_at": "2026-02-07T10:00:00Z"
+    },
+    {
+      "action_id": 5169,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "233.00",
+      "profit": "11.65",
+      "description": "Hotellook sample booking 170",
+      "booked_at": "2026-01-08T10:00:00Z",
+      "updated_at": "2026-02-08T10:00:00Z"
+    },
+    {
+      "action_id": 5170,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "240.00",
+      "profit": "12.00",
+      "description": "Aviasales sample booking 171",
+      "booked_at": "2026-01-09T10:00:00Z",
+      "updated_at": "2026-02-09T10:00:00Z"
+    },
+    {
+      "action_id": 5171,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "247.00",
+      "profit": "12.35",
+      "description": "Hotellook sample booking 172",
+      "booked_at": "2026-01-10T10:00:00Z",
+      "updated_at": "2026-02-10T10:00:00Z"
+    },
+    {
+      "action_id": 5172,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "254.00",
+      "profit": "12.70",
+      "description": "Aviasales sample booking 173",
+      "booked_at": "2026-01-11T10:00:00Z",
+      "updated_at": "2026-02-11T10:00:00Z"
+    },
+    {
+      "action_id": 5173,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "261.00",
+      "profit": "13.05",
+      "description": "Hotellook sample booking 174",
+      "booked_at": "2026-01-12T10:00:00Z",
+      "updated_at": "2026-02-12T10:00:00Z"
+    },
+    {
+      "action_id": 5174,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "268.00",
+      "profit": "13.40",
+      "description": "Aviasales sample booking 175",
+      "booked_at": "2026-01-13T10:00:00Z",
+      "updated_at": "2026-02-13T10:00:00Z"
+    },
+    {
+      "action_id": 5175,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "275.00",
+      "profit": "13.75",
+      "description": "Hotellook sample booking 176",
+      "booked_at": "2026-01-14T10:00:00Z",
+      "updated_at": "2026-02-14T10:00:00Z"
+    },
+    {
+      "action_id": 5176,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "282.00",
+      "profit": "14.10",
+      "description": "Aviasales sample booking 177",
+      "booked_at": "2026-01-15T10:00:00Z",
+      "updated_at": "2026-02-15T10:00:00Z"
+    },
+    {
+      "action_id": 5177,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "289.00",
+      "profit": "14.45",
+      "description": "Hotellook sample booking 178",
+      "booked_at": "2026-01-16T10:00:00Z",
+      "updated_at": "2026-02-16T10:00:00Z"
+    },
+    {
+      "action_id": 5178,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "296.00",
+      "profit": "14.80",
+      "description": "Aviasales sample booking 179",
+      "booked_at": "2026-01-17T10:00:00Z",
+      "updated_at": "2026-02-17T10:00:00Z"
+    },
+    {
+      "action_id": 5179,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "303.00",
+      "profit": "15.15",
+      "description": "Hotellook sample booking 180",
+      "booked_at": "2026-01-18T10:00:00Z",
+      "updated_at": "2026-02-18T10:00:00Z"
+    },
+    {
+      "action_id": 5180,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "310.00",
+      "profit": "15.50",
+      "description": "Aviasales sample booking 181",
+      "booked_at": "2026-01-19T10:00:00Z",
+      "updated_at": "2026-02-19T10:00:00Z"
+    },
+    {
+      "action_id": 5181,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "317.00",
+      "profit": "15.85",
+      "description": "Hotellook sample booking 182",
+      "booked_at": "2026-01-20T10:00:00Z",
+      "updated_at": "2026-02-20T10:00:00Z"
+    },
+    {
+      "action_id": 5182,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "324.00",
+      "profit": "16.20",
+      "description": "Aviasales sample booking 183",
+      "booked_at": "2026-01-21T10:00:00Z",
+      "updated_at": "2026-02-21T10:00:00Z"
+    },
+    {
+      "action_id": 5183,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "331.00",
+      "profit": "16.55",
+      "description": "Hotellook sample booking 184",
+      "booked_at": "2026-01-22T10:00:00Z",
+      "updated_at": "2026-02-22T10:00:00Z"
+    },
+    {
+      "action_id": 5184,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "338.00",
+      "profit": "16.90",
+      "description": "Aviasales sample booking 185",
+      "booked_at": "2026-01-23T10:00:00Z",
+      "updated_at": "2026-02-23T10:00:00Z"
+    },
+    {
+      "action_id": 5185,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "345.00",
+      "profit": "17.25",
+      "description": "Hotellook sample booking 186",
+      "booked_at": "2026-01-24T10:00:00Z",
+      "updated_at": "2026-02-24T10:00:00Z"
+    },
+    {
+      "action_id": 5186,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "352.00",
+      "profit": "17.60",
+      "description": "Aviasales sample booking 187",
+      "booked_at": "2026-01-25T10:00:00Z",
+      "updated_at": "2026-02-25T10:00:00Z"
+    },
+    {
+      "action_id": 5187,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "359.00",
+      "profit": "17.95",
+      "description": "Hotellook sample booking 188",
+      "booked_at": "2026-01-26T10:00:00Z",
+      "updated_at": "2026-02-26T10:00:00Z"
+    },
+    {
+      "action_id": 5188,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "366.00",
+      "profit": "18.30",
+      "description": "Aviasales sample booking 189",
+      "booked_at": "2026-01-27T10:00:00Z",
+      "updated_at": "2026-02-27T10:00:00Z"
+    },
+    {
+      "action_id": 5189,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "373.00",
+      "profit": "18.65",
+      "description": "Hotellook sample booking 190",
+      "booked_at": "2026-01-01T10:00:00Z",
+      "updated_at": "2026-02-01T10:00:00Z"
+    },
+    {
+      "action_id": 5190,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "380.00",
+      "profit": "19.00",
+      "description": "Aviasales sample booking 191",
+      "booked_at": "2026-01-02T10:00:00Z",
+      "updated_at": "2026-02-02T10:00:00Z"
+    },
+    {
+      "action_id": 5191,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "387.00",
+      "profit": "19.35",
+      "description": "Hotellook sample booking 192",
+      "booked_at": "2026-01-03T10:00:00Z",
+      "updated_at": "2026-02-03T10:00:00Z"
+    },
+    {
+      "action_id": 5192,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "394.00",
+      "profit": "19.70",
+      "description": "Aviasales sample booking 193",
+      "booked_at": "2026-01-04T10:00:00Z",
+      "updated_at": "2026-02-04T10:00:00Z"
+    },
+    {
+      "action_id": 5193,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "401.00",
+      "profit": "20.05",
+      "description": "Hotellook sample booking 194",
+      "booked_at": "2026-01-05T10:00:00Z",
+      "updated_at": "2026-02-05T10:00:00Z"
+    },
+    {
+      "action_id": 5194,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "408.00",
+      "profit": "20.40",
+      "description": "Aviasales sample booking 195",
+      "booked_at": "2026-01-06T10:00:00Z",
+      "updated_at": "2026-02-06T10:00:00Z"
+    },
+    {
+      "action_id": 5195,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "415.00",
+      "profit": "20.75",
+      "description": "Hotellook sample booking 196",
+      "booked_at": "2026-01-07T10:00:00Z",
+      "updated_at": "2026-02-07T10:00:00Z"
+    },
+    {
+      "action_id": 5196,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "422.00",
+      "profit": "21.10",
+      "description": "Aviasales sample booking 197",
+      "booked_at": "2026-01-08T10:00:00Z",
+      "updated_at": "2026-02-08T10:00:00Z"
+    },
+    {
+      "action_id": 5197,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "429.00",
+      "profit": "21.45",
+      "description": "Hotellook sample booking 198",
+      "booked_at": "2026-01-09T10:00:00Z",
+      "updated_at": "2026-02-09T10:00:00Z"
+    },
+    {
+      "action_id": 5198,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "436.00",
+      "profit": "21.80",
+      "description": "Aviasales sample booking 199",
+      "booked_at": "2026-01-10T10:00:00Z",
+      "updated_at": "2026-02-10T10:00:00Z"
+    },
+    {
+      "action_id": 5199,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "443.00",
+      "profit": "22.15",
+      "description": "Hotellook sample booking 200",
+      "booked_at": "2026-01-11T10:00:00Z",
+      "updated_at": "2026-02-11T10:00:00Z"
+    },
+    {
+      "action_id": 5200,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "100.00",
+      "profit": "5.00",
+      "description": "Aviasales sample booking 201",
+      "booked_at": "2026-01-12T10:00:00Z",
+      "updated_at": "2026-02-12T10:00:00Z"
+    },
+    {
+      "action_id": 5201,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "107.00",
+      "profit": "5.35",
+      "description": "Hotellook sample booking 202",
+      "booked_at": "2026-01-13T10:00:00Z",
+      "updated_at": "2026-02-13T10:00:00Z"
+    },
+    {
+      "action_id": 5202,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "114.00",
+      "profit": "5.70",
+      "description": "Aviasales sample booking 203",
+      "booked_at": "2026-01-14T10:00:00Z",
+      "updated_at": "2026-02-14T10:00:00Z"
+    },
+    {
+      "action_id": 5203,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "121.00",
+      "profit": "6.05",
+      "description": "Hotellook sample booking 204",
+      "booked_at": "2026-01-15T10:00:00Z",
+      "updated_at": "2026-02-15T10:00:00Z"
+    },
+    {
+      "action_id": 5204,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "128.00",
+      "profit": "6.40",
+      "description": "Aviasales sample booking 205",
+      "booked_at": "2026-01-16T10:00:00Z",
+      "updated_at": "2026-02-16T10:00:00Z"
+    },
+    {
+      "action_id": 5205,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "135.00",
+      "profit": "6.75",
+      "description": "Hotellook sample booking 206",
+      "booked_at": "2026-01-17T10:00:00Z",
+      "updated_at": "2026-02-17T10:00:00Z"
+    },
+    {
+      "action_id": 5206,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "142.00",
+      "profit": "7.10",
+      "description": "Aviasales sample booking 207",
+      "booked_at": "2026-01-18T10:00:00Z",
+      "updated_at": "2026-02-18T10:00:00Z"
+    },
+    {
+      "action_id": 5207,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "149.00",
+      "profit": "7.45",
+      "description": "Hotellook sample booking 208",
+      "booked_at": "2026-01-19T10:00:00Z",
+      "updated_at": "2026-02-19T10:00:00Z"
+    },
+    {
+      "action_id": 5208,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "156.00",
+      "profit": "7.80",
+      "description": "Aviasales sample booking 209",
+      "booked_at": "2026-01-20T10:00:00Z",
+      "updated_at": "2026-02-20T10:00:00Z"
+    },
+    {
+      "action_id": 5209,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "163.00",
+      "profit": "8.15",
+      "description": "Hotellook sample booking 210",
+      "booked_at": "2026-01-21T10:00:00Z",
+      "updated_at": "2026-02-21T10:00:00Z"
+    },
+    {
+      "action_id": 5210,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "170.00",
+      "profit": "8.50",
+      "description": "Aviasales sample booking 211",
+      "booked_at": "2026-01-22T10:00:00Z",
+      "updated_at": "2026-02-22T10:00:00Z"
+    },
+    {
+      "action_id": 5211,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "177.00",
+      "profit": "8.85",
+      "description": "Hotellook sample booking 212",
+      "booked_at": "2026-01-23T10:00:00Z",
+      "updated_at": "2026-02-23T10:00:00Z"
+    },
+    {
+      "action_id": 5212,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "184.00",
+      "profit": "9.20",
+      "description": "Aviasales sample booking 213",
+      "booked_at": "2026-01-24T10:00:00Z",
+      "updated_at": "2026-02-24T10:00:00Z"
+    },
+    {
+      "action_id": 5213,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "191.00",
+      "profit": "9.55",
+      "description": "Hotellook sample booking 214",
+      "booked_at": "2026-01-25T10:00:00Z",
+      "updated_at": "2026-02-25T10:00:00Z"
+    },
+    {
+      "action_id": 5214,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "198.00",
+      "profit": "9.90",
+      "description": "Aviasales sample booking 215",
+      "booked_at": "2026-01-26T10:00:00Z",
+      "updated_at": "2026-02-26T10:00:00Z"
+    },
+    {
+      "action_id": 5215,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "205.00",
+      "profit": "10.25",
+      "description": "Hotellook sample booking 216",
+      "booked_at": "2026-01-27T10:00:00Z",
+      "updated_at": "2026-02-27T10:00:00Z"
+    },
+    {
+      "action_id": 5216,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "212.00",
+      "profit": "10.60",
+      "description": "Aviasales sample booking 217",
+      "booked_at": "2026-01-01T10:00:00Z",
+      "updated_at": "2026-02-01T10:00:00Z"
+    },
+    {
+      "action_id": 5217,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "219.00",
+      "profit": "10.95",
+      "description": "Hotellook sample booking 218",
+      "booked_at": "2026-01-02T10:00:00Z",
+      "updated_at": "2026-02-02T10:00:00Z"
+    },
+    {
+      "action_id": 5218,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "226.00",
+      "profit": "11.30",
+      "description": "Aviasales sample booking 219",
+      "booked_at": "2026-01-03T10:00:00Z",
+      "updated_at": "2026-02-03T10:00:00Z"
+    },
+    {
+      "action_id": 5219,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "233.00",
+      "profit": "11.65",
+      "description": "Hotellook sample booking 220",
+      "booked_at": "2026-01-04T10:00:00Z",
+      "updated_at": "2026-02-04T10:00:00Z"
+    },
+    {
+      "action_id": 5220,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "240.00",
+      "profit": "12.00",
+      "description": "Aviasales sample booking 221",
+      "booked_at": "2026-01-05T10:00:00Z",
+      "updated_at": "2026-02-05T10:00:00Z"
+    },
+    {
+      "action_id": 5221,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "247.00",
+      "profit": "12.35",
+      "description": "Hotellook sample booking 222",
+      "booked_at": "2026-01-06T10:00:00Z",
+      "updated_at": "2026-02-06T10:00:00Z"
+    },
+    {
+      "action_id": 5222,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "254.00",
+      "profit": "12.70",
+      "description": "Aviasales sample booking 223",
+      "booked_at": "2026-01-07T10:00:00Z",
+      "updated_at": "2026-02-07T10:00:00Z"
+    },
+    {
+      "action_id": 5223,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "261.00",
+      "profit": "13.05",
+      "description": "Hotellook sample booking 224",
+      "booked_at": "2026-01-08T10:00:00Z",
+      "updated_at": "2026-02-08T10:00:00Z"
+    },
+    {
+      "action_id": 5224,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "268.00",
+      "profit": "13.40",
+      "description": "Aviasales sample booking 225",
+      "booked_at": "2026-01-09T10:00:00Z",
+      "updated_at": "2026-02-09T10:00:00Z"
+    },
+    {
+      "action_id": 5225,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "275.00",
+      "profit": "13.75",
+      "description": "Hotellook sample booking 226",
+      "booked_at": "2026-01-10T10:00:00Z",
+      "updated_at": "2026-02-10T10:00:00Z"
+    },
+    {
+      "action_id": 5226,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "282.00",
+      "profit": "14.10",
+      "description": "Aviasales sample booking 227",
+      "booked_at": "2026-01-11T10:00:00Z",
+      "updated_at": "2026-02-11T10:00:00Z"
+    },
+    {
+      "action_id": 5227,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "289.00",
+      "profit": "14.45",
+      "description": "Hotellook sample booking 228",
+      "booked_at": "2026-01-12T10:00:00Z",
+      "updated_at": "2026-02-12T10:00:00Z"
+    },
+    {
+      "action_id": 5228,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "296.00",
+      "profit": "14.80",
+      "description": "Aviasales sample booking 229",
+      "booked_at": "2026-01-13T10:00:00Z",
+      "updated_at": "2026-02-13T10:00:00Z"
+    },
+    {
+      "action_id": 5229,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "303.00",
+      "profit": "15.15",
+      "description": "Hotellook sample booking 230",
+      "booked_at": "2026-01-14T10:00:00Z",
+      "updated_at": "2026-02-14T10:00:00Z"
+    },
+    {
+      "action_id": 5230,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "310.00",
+      "profit": "15.50",
+      "description": "Aviasales sample booking 231",
+      "booked_at": "2026-01-15T10:00:00Z",
+      "updated_at": "2026-02-15T10:00:00Z"
+    },
+    {
+      "action_id": 5231,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "317.00",
+      "profit": "15.85",
+      "description": "Hotellook sample booking 232",
+      "booked_at": "2026-01-16T10:00:00Z",
+      "updated_at": "2026-02-16T10:00:00Z"
+    },
+    {
+      "action_id": 5232,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "324.00",
+      "profit": "16.20",
+      "description": "Aviasales sample booking 233",
+      "booked_at": "2026-01-17T10:00:00Z",
+      "updated_at": "2026-02-17T10:00:00Z"
+    },
+    {
+      "action_id": 5233,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "331.00",
+      "profit": "16.55",
+      "description": "Hotellook sample booking 234",
+      "booked_at": "2026-01-18T10:00:00Z",
+      "updated_at": "2026-02-18T10:00:00Z"
+    },
+    {
+      "action_id": 5234,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "338.00",
+      "profit": "16.90",
+      "description": "Aviasales sample booking 235",
+      "booked_at": "2026-01-19T10:00:00Z",
+      "updated_at": "2026-02-19T10:00:00Z"
+    },
+    {
+      "action_id": 5235,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "345.00",
+      "profit": "17.25",
+      "description": "Hotellook sample booking 236",
+      "booked_at": "2026-01-20T10:00:00Z",
+      "updated_at": "2026-02-20T10:00:00Z"
+    },
+    {
+      "action_id": 5236,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "352.00",
+      "profit": "17.60",
+      "description": "Aviasales sample booking 237",
+      "booked_at": "2026-01-21T10:00:00Z",
+      "updated_at": "2026-02-21T10:00:00Z"
+    },
+    {
+      "action_id": 5237,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "359.00",
+      "profit": "17.95",
+      "description": "Hotellook sample booking 238",
+      "booked_at": "2026-01-22T10:00:00Z",
+      "updated_at": "2026-02-22T10:00:00Z"
+    },
+    {
+      "action_id": 5238,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "366.00",
+      "profit": "18.30",
+      "description": "Aviasales sample booking 239",
+      "booked_at": "2026-01-23T10:00:00Z",
+      "updated_at": "2026-02-23T10:00:00Z"
+    },
+    {
+      "action_id": 5239,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "373.00",
+      "profit": "18.65",
+      "description": "Hotellook sample booking 240",
+      "booked_at": "2026-01-24T10:00:00Z",
+      "updated_at": "2026-02-24T10:00:00Z"
+    },
+    {
+      "action_id": 5240,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "380.00",
+      "profit": "19.00",
+      "description": "Aviasales sample booking 241",
+      "booked_at": "2026-01-25T10:00:00Z",
+      "updated_at": "2026-02-25T10:00:00Z"
+    },
+    {
+      "action_id": 5241,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "387.00",
+      "profit": "19.35",
+      "description": "Hotellook sample booking 242",
+      "booked_at": "2026-01-26T10:00:00Z",
+      "updated_at": "2026-02-26T10:00:00Z"
+    },
+    {
+      "action_id": 5242,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "394.00",
+      "profit": "19.70",
+      "description": "Aviasales sample booking 243",
+      "booked_at": "2026-01-27T10:00:00Z",
+      "updated_at": "2026-02-27T10:00:00Z"
+    },
+    {
+      "action_id": 5243,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "401.00",
+      "profit": "20.05",
+      "description": "Hotellook sample booking 244",
+      "booked_at": "2026-01-01T10:00:00Z",
+      "updated_at": "2026-02-01T10:00:00Z"
+    },
+    {
+      "action_id": 5244,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "408.00",
+      "profit": "20.40",
+      "description": "Aviasales sample booking 245",
+      "booked_at": "2026-01-02T10:00:00Z",
+      "updated_at": "2026-02-02T10:00:00Z"
+    },
+    {
+      "action_id": 5245,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "415.00",
+      "profit": "20.75",
+      "description": "Hotellook sample booking 246",
+      "booked_at": "2026-01-03T10:00:00Z",
+      "updated_at": "2026-02-03T10:00:00Z"
+    },
+    {
+      "action_id": 5246,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "422.00",
+      "profit": "21.10",
+      "description": "Aviasales sample booking 247",
+      "booked_at": "2026-01-04T10:00:00Z",
+      "updated_at": "2026-02-04T10:00:00Z"
+    },
+    {
+      "action_id": 5247,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "429.00",
+      "profit": "21.45",
+      "description": "Hotellook sample booking 248",
+      "booked_at": "2026-01-05T10:00:00Z",
+      "updated_at": "2026-02-05T10:00:00Z"
+    },
+    {
+      "action_id": 5248,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "436.00",
+      "profit": "21.80",
+      "description": "Aviasales sample booking 249",
+      "booked_at": "2026-01-06T10:00:00Z",
+      "updated_at": "2026-02-06T10:00:00Z"
+    },
+    {
+      "action_id": 5249,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "443.00",
+      "profit": "22.15",
+      "description": "Hotellook sample booking 250",
+      "booked_at": "2026-01-07T10:00:00Z",
+      "updated_at": "2026-02-07T10:00:00Z"
+    },
+    {
+      "action_id": 5250,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "100.00",
+      "profit": "5.00",
+      "description": "Aviasales sample booking 251",
+      "booked_at": "2026-01-08T10:00:00Z",
+      "updated_at": "2026-02-08T10:00:00Z"
+    },
+    {
+      "action_id": 5251,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "107.00",
+      "profit": "5.35",
+      "description": "Hotellook sample booking 252",
+      "booked_at": "2026-01-09T10:00:00Z",
+      "updated_at": "2026-02-09T10:00:00Z"
+    },
+    {
+      "action_id": 5252,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "114.00",
+      "profit": "5.70",
+      "description": "Aviasales sample booking 253",
+      "booked_at": "2026-01-10T10:00:00Z",
+      "updated_at": "2026-02-10T10:00:00Z"
+    },
+    {
+      "action_id": 5253,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "121.00",
+      "profit": "6.05",
+      "description": "Hotellook sample booking 254",
+      "booked_at": "2026-01-11T10:00:00Z",
+      "updated_at": "2026-02-11T10:00:00Z"
+    },
+    {
+      "action_id": 5254,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "128.00",
+      "profit": "6.40",
+      "description": "Aviasales sample booking 255",
+      "booked_at": "2026-01-12T10:00:00Z",
+      "updated_at": "2026-02-12T10:00:00Z"
+    },
+    {
+      "action_id": 5255,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "135.00",
+      "profit": "6.75",
+      "description": "Hotellook sample booking 256",
+      "booked_at": "2026-01-13T10:00:00Z",
+      "updated_at": "2026-02-13T10:00:00Z"
+    },
+    {
+      "action_id": 5256,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "142.00",
+      "profit": "7.10",
+      "description": "Aviasales sample booking 257",
+      "booked_at": "2026-01-14T10:00:00Z",
+      "updated_at": "2026-02-14T10:00:00Z"
+    },
+    {
+      "action_id": 5257,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "149.00",
+      "profit": "7.45",
+      "description": "Hotellook sample booking 258",
+      "booked_at": "2026-01-15T10:00:00Z",
+      "updated_at": "2026-02-15T10:00:00Z"
+    },
+    {
+      "action_id": 5258,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "156.00",
+      "profit": "7.80",
+      "description": "Aviasales sample booking 259",
+      "booked_at": "2026-01-16T10:00:00Z",
+      "updated_at": "2026-02-16T10:00:00Z"
+    },
+    {
+      "action_id": 5259,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "163.00",
+      "profit": "8.15",
+      "description": "Hotellook sample booking 260",
+      "booked_at": "2026-01-17T10:00:00Z",
+      "updated_at": "2026-02-17T10:00:00Z"
+    },
+    {
+      "action_id": 5260,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "170.00",
+      "profit": "8.50",
+      "description": "Aviasales sample booking 261",
+      "booked_at": "2026-01-18T10:00:00Z",
+      "updated_at": "2026-02-18T10:00:00Z"
+    },
+    {
+      "action_id": 5261,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "177.00",
+      "profit": "8.85",
+      "description": "Hotellook sample booking 262",
+      "booked_at": "2026-01-19T10:00:00Z",
+      "updated_at": "2026-02-19T10:00:00Z"
+    },
+    {
+      "action_id": 5262,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "184.00",
+      "profit": "9.20",
+      "description": "Aviasales sample booking 263",
+      "booked_at": "2026-01-20T10:00:00Z",
+      "updated_at": "2026-02-20T10:00:00Z"
+    },
+    {
+      "action_id": 5263,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "191.00",
+      "profit": "9.55",
+      "description": "Hotellook sample booking 264",
+      "booked_at": "2026-01-21T10:00:00Z",
+      "updated_at": "2026-02-21T10:00:00Z"
+    },
+    {
+      "action_id": 5264,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "198.00",
+      "profit": "9.90",
+      "description": "Aviasales sample booking 265",
+      "booked_at": "2026-01-22T10:00:00Z",
+      "updated_at": "2026-02-22T10:00:00Z"
+    },
+    {
+      "action_id": 5265,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "205.00",
+      "profit": "10.25",
+      "description": "Hotellook sample booking 266",
+      "booked_at": "2026-01-23T10:00:00Z",
+      "updated_at": "2026-02-23T10:00:00Z"
+    },
+    {
+      "action_id": 5266,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "212.00",
+      "profit": "10.60",
+      "description": "Aviasales sample booking 267",
+      "booked_at": "2026-01-24T10:00:00Z",
+      "updated_at": "2026-02-24T10:00:00Z"
+    },
+    {
+      "action_id": 5267,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "219.00",
+      "profit": "10.95",
+      "description": "Hotellook sample booking 268",
+      "booked_at": "2026-01-25T10:00:00Z",
+      "updated_at": "2026-02-25T10:00:00Z"
+    },
+    {
+      "action_id": 5268,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "226.00",
+      "profit": "11.30",
+      "description": "Aviasales sample booking 269",
+      "booked_at": "2026-01-26T10:00:00Z",
+      "updated_at": "2026-02-26T10:00:00Z"
+    },
+    {
+      "action_id": 5269,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "233.00",
+      "profit": "11.65",
+      "description": "Hotellook sample booking 270",
+      "booked_at": "2026-01-27T10:00:00Z",
+      "updated_at": "2026-02-27T10:00:00Z"
+    },
+    {
+      "action_id": 5270,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "240.00",
+      "profit": "12.00",
+      "description": "Aviasales sample booking 271",
+      "booked_at": "2026-01-01T10:00:00Z",
+      "updated_at": "2026-02-01T10:00:00Z"
+    },
+    {
+      "action_id": 5271,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "247.00",
+      "profit": "12.35",
+      "description": "Hotellook sample booking 272",
+      "booked_at": "2026-01-02T10:00:00Z",
+      "updated_at": "2026-02-02T10:00:00Z"
+    },
+    {
+      "action_id": 5272,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "254.00",
+      "profit": "12.70",
+      "description": "Aviasales sample booking 273",
+      "booked_at": "2026-01-03T10:00:00Z",
+      "updated_at": "2026-02-03T10:00:00Z"
+    },
+    {
+      "action_id": 5273,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "261.00",
+      "profit": "13.05",
+      "description": "Hotellook sample booking 274",
+      "booked_at": "2026-01-04T10:00:00Z",
+      "updated_at": "2026-02-04T10:00:00Z"
+    },
+    {
+      "action_id": 5274,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "268.00",
+      "profit": "13.40",
+      "description": "Aviasales sample booking 275",
+      "booked_at": "2026-01-05T10:00:00Z",
+      "updated_at": "2026-02-05T10:00:00Z"
+    },
+    {
+      "action_id": 5275,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "275.00",
+      "profit": "13.75",
+      "description": "Hotellook sample booking 276",
+      "booked_at": "2026-01-06T10:00:00Z",
+      "updated_at": "2026-02-06T10:00:00Z"
+    },
+    {
+      "action_id": 5276,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "282.00",
+      "profit": "14.10",
+      "description": "Aviasales sample booking 277",
+      "booked_at": "2026-01-07T10:00:00Z",
+      "updated_at": "2026-02-07T10:00:00Z"
+    },
+    {
+      "action_id": 5277,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "289.00",
+      "profit": "14.45",
+      "description": "Hotellook sample booking 278",
+      "booked_at": "2026-01-08T10:00:00Z",
+      "updated_at": "2026-02-08T10:00:00Z"
+    },
+    {
+      "action_id": 5278,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "296.00",
+      "profit": "14.80",
+      "description": "Aviasales sample booking 279",
+      "booked_at": "2026-01-09T10:00:00Z",
+      "updated_at": "2026-02-09T10:00:00Z"
+    },
+    {
+      "action_id": 5279,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "303.00",
+      "profit": "15.15",
+      "description": "Hotellook sample booking 280",
+      "booked_at": "2026-01-10T10:00:00Z",
+      "updated_at": "2026-02-10T10:00:00Z"
+    },
+    {
+      "action_id": 5280,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "310.00",
+      "profit": "15.50",
+      "description": "Aviasales sample booking 281",
+      "booked_at": "2026-01-11T10:00:00Z",
+      "updated_at": "2026-02-11T10:00:00Z"
+    },
+    {
+      "action_id": 5281,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "317.00",
+      "profit": "15.85",
+      "description": "Hotellook sample booking 282",
+      "booked_at": "2026-01-12T10:00:00Z",
+      "updated_at": "2026-02-12T10:00:00Z"
+    },
+    {
+      "action_id": 5282,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "324.00",
+      "profit": "16.20",
+      "description": "Aviasales sample booking 283",
+      "booked_at": "2026-01-13T10:00:00Z",
+      "updated_at": "2026-02-13T10:00:00Z"
+    },
+    {
+      "action_id": 5283,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "331.00",
+      "profit": "16.55",
+      "description": "Hotellook sample booking 284",
+      "booked_at": "2026-01-14T10:00:00Z",
+      "updated_at": "2026-02-14T10:00:00Z"
+    },
+    {
+      "action_id": 5284,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "338.00",
+      "profit": "16.90",
+      "description": "Aviasales sample booking 285",
+      "booked_at": "2026-01-15T10:00:00Z",
+      "updated_at": "2026-02-15T10:00:00Z"
+    },
+    {
+      "action_id": 5285,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "345.00",
+      "profit": "17.25",
+      "description": "Hotellook sample booking 286",
+      "booked_at": "2026-01-16T10:00:00Z",
+      "updated_at": "2026-02-16T10:00:00Z"
+    },
+    {
+      "action_id": 5286,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "352.00",
+      "profit": "17.60",
+      "description": "Aviasales sample booking 287",
+      "booked_at": "2026-01-17T10:00:00Z",
+      "updated_at": "2026-02-17T10:00:00Z"
+    },
+    {
+      "action_id": 5287,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "359.00",
+      "profit": "17.95",
+      "description": "Hotellook sample booking 288",
+      "booked_at": "2026-01-18T10:00:00Z",
+      "updated_at": "2026-02-18T10:00:00Z"
+    },
+    {
+      "action_id": 5288,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "366.00",
+      "profit": "18.30",
+      "description": "Aviasales sample booking 289",
+      "booked_at": "2026-01-19T10:00:00Z",
+      "updated_at": "2026-02-19T10:00:00Z"
+    },
+    {
+      "action_id": 5289,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "373.00",
+      "profit": "18.65",
+      "description": "Hotellook sample booking 290",
+      "booked_at": "2026-01-20T10:00:00Z",
+      "updated_at": "2026-02-20T10:00:00Z"
+    },
+    {
+      "action_id": 5290,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "380.00",
+      "profit": "19.00",
+      "description": "Aviasales sample booking 291",
+      "booked_at": "2026-01-21T10:00:00Z",
+      "updated_at": "2026-02-21T10:00:00Z"
+    },
+    {
+      "action_id": 5291,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "387.00",
+      "profit": "19.35",
+      "description": "Hotellook sample booking 292",
+      "booked_at": "2026-01-22T10:00:00Z",
+      "updated_at": "2026-02-22T10:00:00Z"
+    },
+    {
+      "action_id": 5292,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "394.00",
+      "profit": "19.70",
+      "description": "Aviasales sample booking 293",
+      "booked_at": "2026-01-23T10:00:00Z",
+      "updated_at": "2026-02-23T10:00:00Z"
+    },
+    {
+      "action_id": 5293,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "401.00",
+      "profit": "20.05",
+      "description": "Hotellook sample booking 294",
+      "booked_at": "2026-01-24T10:00:00Z",
+      "updated_at": "2026-02-24T10:00:00Z"
+    },
+    {
+      "action_id": 5294,
+      "campaign_id": 100,
+      "action_state": "processing",
+      "price": "408.00",
+      "profit": "20.40",
+      "description": "Aviasales sample booking 295",
+      "booked_at": "2026-01-25T10:00:00Z",
+      "updated_at": "2026-02-25T10:00:00Z"
+    },
+    {
+      "action_id": 5295,
+      "campaign_id": 200,
+      "action_state": "paid",
+      "price": "415.00",
+      "profit": "20.75",
+      "description": "Hotellook sample booking 296",
+      "booked_at": "2026-01-26T10:00:00Z",
+      "updated_at": "2026-02-26T10:00:00Z"
+    },
+    {
+      "action_id": 5296,
+      "campaign_id": 100,
+      "action_state": "cancelled",
+      "price": "422.00",
+      "profit": "21.10",
+      "description": "Aviasales sample booking 297",
+      "booked_at": "2026-01-27T10:00:00Z",
+      "updated_at": "2026-02-27T10:00:00Z"
+    },
+    {
+      "action_id": 5297,
+      "campaign_id": 200,
+      "action_state": "processing",
+      "price": "429.00",
+      "profit": "21.45",
+      "description": "Hotellook sample booking 298",
+      "booked_at": "2026-01-01T10:00:00Z",
+      "updated_at": "2026-02-01T10:00:00Z"
+    },
+    {
+      "action_id": 5298,
+      "campaign_id": 100,
+      "action_state": "paid",
+      "price": "436.00",
+      "profit": "21.80",
+      "description": "Aviasales sample booking 299",
+      "booked_at": "2026-01-02T10:00:00Z",
+      "updated_at": "2026-02-02T10:00:00Z"
+    },
+    {
+      "action_id": 5299,
+      "campaign_id": 200,
+      "action_state": "cancelled",
+      "price": "443.00",
+      "profit": "22.15",
+      "description": "Hotellook sample booking 300",
+      "booked_at": "2026-01-03T10:00:00Z",
+      "updated_at": "2026-02-03T10:00:00Z"
+    }
+  ],
+  "total_price": "81690.00",
+  "total_profit": "4084.50",
+  "available_campaigns": [
+    {
+      "campaign_id": 100,
+      "name": "Aviasales"
+    },
+    {
+      "campaign_id": 200,
+      "name": "Hotellook"
+    }
+  ],
+  "count": 302,
+  "currency": "usd"
+}

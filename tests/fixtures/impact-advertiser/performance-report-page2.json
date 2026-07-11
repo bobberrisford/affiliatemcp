@@ -1,0 +1,18 @@
+{
+  "Records": [
+    {
+      "Date": "2026-05-02",
+      "MediaPartnerId": "MP-3",
+      "MediaPartner": "Cashback Corner",
+      "Clicks": 90,
+      "Actions": 2,
+      "SaleAmount": "150.00",
+      "Payout": "15.00",
+      "Currency": "USD",
+      "State": "APPROVED"
+    }
+  ],
+  "@page": "2",
+  "@numpages": "2",
+  "@nextpageuri": ""
+}

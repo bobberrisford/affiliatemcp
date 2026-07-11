@@ -1,0 +1,43 @@
+{
+  "offers": [
+    {
+      "network_offer_id": 1003,
+      "network_id": 42,
+      "name": "Ridge Runner Outdoors",
+      "offer_status": "active",
+      "currency_id": "GBP",
+      "preview_url": "https://www.ridge-runner.example.com",
+      "thumbnail_url": null,
+      "html_description": "Outdoor gear and apparel",
+      "visibility": "require_approval",
+      "default_payout": 8.0,
+      "payout_type": "cps",
+      "network_category_id": 5,
+      "network_category_name": "Sports",
+      "relationship": {
+        "status": "declined"
+      }
+    },
+    {
+      "network_offer_id": 1004,
+      "network_id": 42,
+      "name": "Lighthouse Home Goods",
+      "offer_status": "active",
+      "currency_id": "USD",
+      "preview_url": "https://www.lighthouse-home.example.com",
+      "thumbnail_url": null,
+      "html_description": "Homeware and kitchen essentials",
+      "visibility": "public",
+      "default_payout": 4.25,
+      "payout_type": "cpa",
+      "network_category_id": 9,
+      "network_category_name": "Home & Garden",
+      "relationship": {
+        "status": "approved"
+      }
+    }
+  ],
+  "page": 2,
+  "page_size": 2,
+  "total_count": 4
+}
