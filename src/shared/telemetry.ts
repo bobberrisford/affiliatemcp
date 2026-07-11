@@ -230,13 +230,15 @@ const ENVELOPE_TYPE_OUTCOMES: Record<string, TelemetryOutcome> = {
 /**
  * Classify a failed tool invocation into a countable outcome category.
  *
- * `structured` states whether the adapter threw a NetworkErrorEnvelope (or a
- * NetworkError wrapping one). An unstructured raw throw is a Principle 4.1
- * violation, so it is counted as `internal_error` regardless of what the
- * best-effort coercion later guesses for the user-facing envelope: the count
- * measures where the bug lives, not what the coercion inferred from message
- * text. Only the envelope's type and HTTP status class are read; no message,
- * body, or status line reaches the counter.
+ * `structured` states whether the throw spoke a documented error contract: a
+ * NetworkErrorEnvelope, a NetworkError wrapping one, or a sanctioned typed
+ * error the caller recognises (see `telemetryOutcomeForThrown` in server.ts).
+ * An unstructured raw throw is a Principle 4.1 violation, so it is counted as
+ * `internal_error` regardless of what the best-effort coercion later guesses
+ * for the user-facing envelope: the count measures where the bug lives, not
+ * what the coercion inferred from message text. Only the envelope's type and
+ * HTTP status class are read; no message, body, or status line reaches the
+ * counter.
  */
 export function telemetryOutcomeFromEnvelope(
   envelope: { type: string; httpStatus?: number },

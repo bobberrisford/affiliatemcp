@@ -61,6 +61,19 @@ export function toErrorEnvelope(
     });
   }
 
+  // BrandNotRegistered documents itself as a config_error envelope; without
+  // this branch it fell through to the message sniff below and surfaced as
+  // network_api_error, despite no network call having been made.
+  if (err instanceof BrandNotRegistered) {
+    return buildErrorEnvelope({
+      type: 'config_error',
+      network: context.network,
+      operation: context.operation,
+      message: err.message,
+      hint: 'Register the brand with `affiliate-networks-mcp setup`, or call affiliate_resolve_brand to see what is registered.',
+    });
+  }
+
   if (err instanceof Error) {
     const lower = err.message.toLowerCase();
     let type: NetworkErrorEnvelope['type'] = 'network_api_error';

@@ -23,7 +23,8 @@ fetch('/api/dashboard', { credentials: 'same-origin' })
         .filter((row) => row.outcome !== 'success')
         .reduce((sum, row) => sum + Number(row.count || 0), 0);
     // Categories that point at a bug in this codebase rather than an upstream
-    // incident or the user's environment. Keep in step with PRIVACY.md.
+    // incident or the user's environment. Keep in step with the legend above
+    // the Issues table in index.html.
     const bugSignal = new Set(['internal_error', 'upstream_4xx']);
     const issues = data.issues || [];
     const bugErrors = issues

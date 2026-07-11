@@ -184,11 +184,17 @@ async function dashboard(env: Env): Promise<Response> {
        ORDER BY count DESC LIMIT 200`,
     ).all(),
     // Error rows only, so a busy install's success counts cannot crowd field
-    // breakage out of the top-200 usage window above.
+    // breakage out of the top-200 usage window above. latest_version is the
+    // version reporting on the group's most recent day (MAX(package_version)
+    // would compare version strings lexicographically, where '0.6' > '0.17').
     env.DB.prepare(
       `SELECT network, operation, outcome, SUM(count) AS count,
-              MAX(package_version) AS latest_version, MAX(day) AS last_seen
-       FROM usage_daily WHERE day >= date('now', '-30 days') AND outcome != 'success'
+              (SELECT u2.package_version FROM usage_daily u2
+                WHERE u2.network = u.network AND u2.operation = u.operation
+                  AND u2.outcome = u.outcome AND u2.day >= date('now', '-30 days')
+                ORDER BY u2.day DESC LIMIT 1) AS latest_version,
+              MAX(day) AS last_seen
+       FROM usage_daily u WHERE day >= date('now', '-30 days') AND outcome != 'success'
        GROUP BY network, operation, outcome
        ORDER BY count DESC LIMIT 200`,
     ).all(),
