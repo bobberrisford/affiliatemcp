@@ -1,0 +1,14 @@
+name = "affiliate-mcp-waitlist"
+main = "src/index.ts"
+compatibility_date = "2026-03-25"
+
+# ── Non-secret vars (override per-env or in the dashboard) ─────────────────
+[vars]
+# The Resend audience (aud_…) that waitlist sign-ups are added to. Create it
+# in the Resend dashboard first: https://resend.com/audiences
+RESEND_AUDIENCE_ID = "REPLACE_WITH_RESEND_AUDIENCE_ID"
+# Origin allowed to POST /waitlist via CORS: the pricing-page form origin.
+SITE_ORIGIN = "https://agenticaffiliate.ai"
+
+# ── Secrets — set via `wrangler secret put <NAME>` (NEVER commit) ──────────
+#   RESEND_API_KEY   re_…   (Resend API key, from https://resend.com/api-keys)
