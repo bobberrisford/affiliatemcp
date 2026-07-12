@@ -19,6 +19,12 @@ planning. They are useful context, but accepted records under
 
 ## Active proposals and working drafts
 
+- [`solo-50k-revenue-plan.md`](./solo-50k-revenue-plan.md) is the working
+  commercial plan for reaching £50k/month solo, building on
+  [`hosted-version-scoping.md`](./hosted-version-scoping.md) and the accepted
+  paid-tier decisions. Direction, not authorisation.
+- [`hosted-version-scoping.md`](./hosted-version-scoping.md) is a discovery
+  proposal for a hosted version; it does not authorise implementation.
 - [`chatgpt-scoping.md`](./chatgpt-scoping.md) is a pre-implementation proposal.
 - [`agency-account-manager-deliverables.md`](./agency-account-manager-deliverables.md)
   is the active, capability-aware backlog for agency deliverables and skills.
