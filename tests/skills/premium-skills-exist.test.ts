@@ -7,8 +7,9 @@
  * deliberately a sibling of `skills/`, not a subdirectory: it is kept out of
  * `package.json`'s `files` array and out of the Claude plugin manifest's
  * auto-discovery of `skills/`, so it never ships in the free npm package or
- * plugin bundle. Wiring it into the desktop app's "pick" flow, premium shelf,
- * and entitlement gate is separate, later work.
+ * plugin bundle. The desktop app's existing `premium-skills/` wiring consumes
+ * this tree behind the entitlement gate; the premium shelf UI and billing
+ * land separately.
  *
  * Same proxy as the free-skill test: each SKILL.md exists, has valid
  * frontmatter (name + description), the description quotes at least one

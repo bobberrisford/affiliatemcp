@@ -8,9 +8,11 @@ Content for the paid, maintained skill packs described in
   ship in the published npm package or the `.mcpb` bundle;
 - it is a sibling of `skills/`, not a subdirectory, so the Claude plugin
   manifest's auto-discovery of `skills/` does not pick it up;
-- nothing under here is wired into the desktop app, an entitlement check, or
-  billing. That is explicitly out of scope for this content — see
-  "What ships here" below.
+- the desktop app already references `premium-skills/` (`desktop/main.js`,
+  `desktop/package.json` extraResources), so once this content merges it
+  becomes available in the next desktop build behind the existing
+  entitlement gate. Billing and the premium shelf UI remain out of scope
+  for this content.
 
 Each pack is a folder of `SKILL.md` folders in exactly the same shape as
 `skills/`: YAML frontmatter (`name`, `description` with quoted trigger
@@ -67,10 +69,10 @@ This PR is content and packaging only:
   files for every skill under this tree, the same way
   `tests/skills/skills-exist.test.ts` validates `skills/`.
 
-Wiring this content into the desktop app's "pick" flow, the premium shelf, and
-the entitlement gate is later, separate work per the decision record's
-implementation order (steps 3–4 land before a premium shelf can show step 5's
-content).
+The desktop app's existing `premium-skills/` wiring (`desktop/main.js`,
+extraResources) will pick this content up in its next build, behind the
+entitlement gate already on `main`. The premium shelf UI and billing land
+separately per the decision record's implementation order.
 
 ## Known limitation of this content itself
 
