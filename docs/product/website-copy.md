@@ -129,7 +129,7 @@ The local server runs free and complete. Premium options add skills and hosted c
 The open-source MCP server runs on your machine. All 86 network adapters, all core workflows, your credentials. No account, no telemetry unless you opt in. MIT licence.
 
 ### Skill packs
-Premium workflow packs, maintained and updated, delivered as Claude Desktop extensions. £20/month per pack. Use them alongside your free local server.
+One subscription, £20/month, unlocks the whole premium pack library: maintained workflow packs installed through the desktop app, kept working as network APIs change. Use them alongside your free local server.
 
 **Agency pack** (coming soon)
 QBR prep, client weekly report, portfolio rollup. Cross-programme performance analysis and client-ready exports.
@@ -140,17 +140,17 @@ Unpaid-commission chaser, earnings rollup across all networks, reversal investig
 ### Hosted tier
 Connector-hosted setup for organisations and teams. Pre-launch, waitlist-only, refundable until the tier ships to you.
 
-**Solo — £34/month**
+**Solo: £34/month**
 Hosted connector, up to 5 networks, weekly earnings digest, email delivery. For individual publishers testing hosted connectivity.
 
-**Pro — £99/month**
+**Pro: £99/month**
 All hosted-eligible networks, scheduled anomaly watch with email alert, unpaid-commission digest, QBR and weekly-report generation, CSV export, email delivery.
 
-**Team — £299/month**
-5 seats, client workspaces, shared brand context, audit log, client-ready report export, email delivery. Card self-serve, no SLA, no custom contracts. Contact for additional seats.
+**Team: £299/month**
+5 seats, client workspaces, shared brand context, audit log, client-ready report export, email delivery. Card self-serve, no SLA, no custom contracts.
 
 ### Founding offer
-Lock in **Founding Pro at £699/year** — the Pro plan at 41% discount (normally £1,188/year as monthly equivalent). Available to founding customers during pre-launch. Money-back guarantee: if the hosted tier doesn't ship to your region or networks in six months, refund is immediate, no questions asked. Clearly labelled pre-launch throughout.
+**Founding Pro: £699/year**, 41% off the standard £1,188 annual price. Available during pre-launch only, and fully refundable at any point until the hosted tier ships to you. Founding buyers keep this rate.
 
 **Waitlist question:** Which networks matter most to you for hosted first? Helps us prioritise.
 
@@ -158,7 +158,7 @@ Lock in **Founding Pro at £699/year** — the Pro plan at 41% discount (normall
 - **Pre-launch.** The hosted tier is not yet available. Founding offer holds your place.
 - **Not all networks go hosted.** Some affiliate networks' terms do not allow third-party credential holders. Those networks stay local-only, free, and complete.
 - **Local stays free and complete.** Whether or not you use hosted, the open-source server has full parity to what shipped before hosted existed.
-- **Keys are encrypted.** Hosted credentials are stored encrypted at rest, used only to serve you, and deletable any time. No network sees your hosted session; we forward requests on your behalf with your keys.
+- **Keys are encrypted.** Hosted credentials are stored encrypted, decrypted only at the moment a request runs, used only to serve you, and deletable along with your account at any time.
 
 ## To draft next
 - `/get-started` — the non-technical onboarding page.
