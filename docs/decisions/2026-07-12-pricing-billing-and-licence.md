@@ -8,8 +8,8 @@
   project licence posture
 - **Builds on:** [`2026-07-01-desktop-premium-skill-packs.md`](./2026-07-01-desktop-premium-skill-packs.md)
   (accepted), [`2026-06-30-paid-tier-entitlement-gate.md`](./2026-06-30-paid-tier-entitlement-gate.md)
-  (proposed), [`2026-07-12-hosted-credential-custody.md`](./2026-07-12-hosted-credential-custody.md)
-  (proposed)
+  (accepted 2026-07-12), [`2026-07-12-hosted-credential-custody.md`](./2026-07-12-hosted-credential-custody.md)
+  (accepted 2026-07-12)
 - **Relates to:** `docs/product/solo-50k-revenue-plan.md` (the commercial
   plan these prices implement)
 
@@ -33,7 +33,7 @@ record makes those answers a reviewable contract.
 
 ### Founding offer
 
-Founding Pro: annual at 40% off, £699/year (against £1,188), clearly labelled
+Founding Pro: £699/year (41% off the £1,188 annual price), clearly labelled
 pre-launch, refundable until the hosted tier ships to the buyer. The Phase 0
 build gate is 30 founding pre-orders or 500 qualified waitlist emails.
 

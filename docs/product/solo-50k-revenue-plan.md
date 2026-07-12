@@ -116,7 +116,7 @@ ChatGPT, or any remote MCP client with no runtime, no terminal, and no
 laptop-awake constraint. Read-only first; writes and browser handoffs stay
 local-only.
 
-Indicative self-serve tiers (exact prices are a Phase 0 decision):
+Self-serve tiers (confirmed 2026-07-12 in the pricing decision record):
 
 | Tier | Price | For | Includes |
 | --- | --- | --- | --- |
@@ -330,19 +330,18 @@ smallest foundation with its first real consumer, then stacked slices.
 
 ## 11. Decisions taken (2026-07-12)
 
-Rob answered the open questions on 2026-07-12. In-principle answers are
-recorded here; the binding versions are the decision records, which still
-need deliberate acceptance:
+Rob answered the open questions on 2026-07-12 and accepted the plan the same
+day. The binding decision records are Accepted:
 
-1. **Hosted credential custody: accepted in principle.** Drafted as
+1. **Hosted credential custody: accepted.** Recorded in
    [`2026-07-12-hosted-credential-custody.md`](../decisions/2026-07-12-hosted-credential-custody.md)
-   (Proposed). Nothing hosted is built before that record is accepted.
+   (Accepted 2026-07-12). Hosted foundation work is unblocked.
 2. **Pricing: the section 4 anchors stand** (£34/£99/£299, packs £20).
-   Founding offer: annual Pro at 40% off, £699/year, gate of 30 pre-orders or
-   500 waitlist emails. Billing is Stripe direct, with the tax-compliance
-   consequences recorded in
+   Founding offer: annual Pro at £699/year (41% off £1,188), gate of 30
+   pre-orders or 500 waitlist emails. Billing is Stripe direct, with the
+   tax-compliance consequences recorded in
    [`2026-07-12-pricing-billing-and-licence.md`](../decisions/2026-07-12-pricing-billing-and-licence.md)
-   (Proposed).
+   (Accepted 2026-07-12).
 3. **Licence: core stays MIT.** Same record.
 4. **Day-job conflict: checked and cleared.**
 5. **First skill packs: the agency pack and the publisher money pack.**
@@ -351,6 +350,7 @@ need deliberate acceptance:
 
 ## Next step
 
-Accept the two proposed decision records, then Phase 0 proceeds: skill-pack
-billing build, founding-offer landing page, and the content cadence. This
-document is direction; the decision records carry the authorisation.
+Both decision records are accepted, so Phase 0 proceeds: the premium skill
+packs, skill-pack billing, the founding-offer landing page, and the content
+cadence. This document is direction; the decision records carry the
+authorisation.

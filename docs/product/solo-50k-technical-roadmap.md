@@ -37,16 +37,15 @@ The order that matters, compressed:
 
 ### Decisions
 
-- [ ] **[decision]** Hosted credential custody: accepted in principle by Rob
-      (2026-07-12) and drafted as
+- [x] **[decision]** Hosted credential custody: accepted by Rob (2026-07-12)
+      as
       [`2026-07-12-hosted-credential-custody.md`](../decisions/2026-07-12-hosted-credential-custody.md).
-      Remaining step: deliberate acceptance of the record. Nothing hosted is
-      built before that.
-- [ ] **[decision]** Pricing, billing, and licence: answers taken (anchors
-      £34/£99/£299, packs £20, founding Pro £699/year, Stripe direct, MIT
-      stays) and drafted as
-      [`2026-07-12-pricing-billing-and-licence.md`](../decisions/2026-07-12-pricing-billing-and-licence.md).
-      Remaining step: deliberate acceptance of the record.
+      Hosted foundation work is unblocked.
+- [x] **[decision]** Pricing, billing, and licence: accepted by Rob
+      (2026-07-12) as
+      [`2026-07-12-pricing-billing-and-licence.md`](../decisions/2026-07-12-pricing-billing-and-licence.md)
+      (anchors £34/£99/£299, packs £20, founding Pro £699/year, Stripe
+      direct, MIT stays).
 - [ ] **[ops]** Stripe-direct compliance prerequisites before the first paid
       invoice: confirm trading entity, UK VAT and EU OSS registration, enable
       Stripe Tax. This replaces the merchant-of-record item; the consequences
@@ -61,11 +60,15 @@ The order that matters, compressed:
 - [ ] **[build]** Desktop entitlement check per
       [`2026-07-01-desktop-premium-skill-packs.md`](../decisions/2026-07-01-desktop-premium-skill-packs.md):
       periodic online check with an offline grace period.
-- [ ] **[build]** Land the stubbed brand-data entitlement gate from
+- [x] **[build]** The brand-data entitlement gate from
       [`2026-06-30-paid-tier-entitlement-gate.md`](../decisions/2026-06-30-paid-tier-entitlement-gate.md)
-      once that record is accepted: single dispatch choke point in
-      `src/server.ts`, `src/brand-data/entitlement.ts` stub, visible-but-locked
-      refusal. The stub is the seam the real billing later replaces.
+      is already shipped on `main` (`src/brand-data/entitlement.ts`, the
+      single dispatch choke point in `src/server.ts`, and tests; landed via
+      the brand-data workstream PRs). The record's acceptance in this change
+      set regularises that. Known deviation to resolve with billing: the
+      shipped default is entitled-by-default, asserted in a code comment as a
+      maintainer decision; the real billing wiring must set the final default
+      deliberately.
 - [ ] **[build]** First two premium skill packs, chosen by Rob (2026-07-12):
       the agency pack (QBR prep, client weekly report, portfolio rollup,
       drawn from
@@ -225,10 +228,10 @@ local single-user path preserved unchanged.
 ## Lane discipline for this roadmap
 
 The delivery protocol allows one `active-risk` PR at a time. The risk queue,
-in order: custody decision record, pricing/billing/licence decision record
-(both drafted 2026-07-12, awaiting acceptance), entitlement gate landing,
-identity foundation, credential vault, remote transport, hosted billing,
-Team-tier decision, certified-listing decision.
+in order: custody and pricing/billing/licence decision records (accepted
+2026-07-12; the entitlement gate is already shipped on `main`), skill-pack
+billing, identity foundation, credential vault, remote transport, hosted
+billing, Team-tier decision, certified-listing decision.
 Routine lanes carry the content tooling, docs reconciliation, and funnel work
 in parallel, since they are decision-complete and disjoint.
 
