@@ -126,7 +126,7 @@ auto-generates (see `website-plan.md` §8), never hand-typed.
 The local server runs free and complete. Premium options add skills and hosted connectivity for teams and agencies.
 
 ### Free: local server
-The open-source MCP server runs on your machine. All 86 network adapters, all core workflows, your credentials. No account, no telemetry unless you opt in. MIT licence.
+The open-source MCP server runs on your machine. Every network adapter, all core workflows, your credentials. No account, no telemetry unless you opt in. MIT licence.
 
 ### Skill packs
 One subscription, £20/month, unlocks the whole premium pack library: maintained workflow packs installed through the desktop app, kept working as network APIs change. Use them alongside your free local server.
@@ -138,16 +138,16 @@ QBR prep, client weekly report, portfolio rollup. Cross-programme performance an
 Unpaid-commission chaser, earnings rollup across all networks, reversal investigation. Monthly earnings digest.
 
 ### Hosted tier
-Connector-hosted setup for organisations and teams. Pre-launch, waitlist-only, refundable until the tier ships to you.
+Connector-hosted access for publishers, brands, and agencies: no install, no terminal, no laptop-awake constraint. Pre-launch, waitlist-only, refundable until the tier ships to you.
 
 **Solo: £34/month**
-Hosted connector, up to 5 networks, weekly earnings digest, email delivery. For individual publishers testing hosted connectivity.
+Hosted connector, up to 5 networks, weekly earnings digest by email. For individual publishers testing hosted connectivity.
 
 **Pro: £99/month**
-All hosted-eligible networks, scheduled anomaly watch with email alert, unpaid-commission digest, QBR and weekly-report generation, CSV export, email delivery.
+All hosted-eligible networks, scheduled anomaly watch, unpaid-commission digest, QBR and weekly-report generation, CSV export.
 
 **Team: £299/month**
-5 seats, client workspaces, shared brand context, audit log, client-ready report export, email delivery. Card self-serve, no SLA, no custom contracts.
+5 seats, client workspaces, shared brand context, audit log, client-ready report export. Card self-serve, no SLA, no custom contracts.
 
 ### Founding offer
 **Founding Pro: £699/year**, 41% off the standard £1,188 annual price. Available during pre-launch only, and fully refundable at any point until the hosted tier ships to you. Founding buyers keep this rate.
