@@ -129,6 +129,17 @@ Keep all of these in draft until this record is accepted.
   `2026-06-09-desktop-app-free.md` noting this record introduces a paid tier on
   the brand-data surface, so the two never read as contradictory.
 
+## Amendment: entitled-by-default during beta (2026-07-12, Rob)
+
+The shipped gate defaults to entitled (dormant): every user has the three
+gated tools unless `AFFILIATE_MCP_ENTITLED` is explicitly set to an off
+value. That inverts the default this record originally described and was
+previously justified only by a code comment. Rob confirmed the shipped
+behaviour as the intended one on 2026-07-12: the gate stays dormant during
+the beta to build goodwill, and the default flips to locked in the same
+change that ships the real paid flow, so no beta user loses access silently
+before payment exists.
+
 ## Open questions for the maintainer
 
 - **Entitlement granularity.** One flag for all three paid tools, or per-feature

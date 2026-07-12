@@ -12,8 +12,11 @@
   — a separate paid gate for brand-data MCP features (accepted 2026-07-12).
   Same entitlement family, distinct scope (MCP dispatch path, not desktop
   skill packs).
-- **Builds on:** [`2026-06-09-desktop-skill-deployment.md`](./2026-06-09-desktop-skill-deployment.md)
-  (the skills "pick" and "build" flow), which should be accepted and land first.
+- **Builds on:** the desktop skills "pick" and "build" flow. Note (2026-07-12,
+  Rob): the decision record this originally cited,
+  `2026-06-09-desktop-skill-deployment.md`, was never written; the shipped
+  flow in `desktop/main.js` and `src/core/facade.ts` is the de facto
+  foundation, accepted as built.
 
 ## Context
 

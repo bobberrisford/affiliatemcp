@@ -93,9 +93,10 @@ The order that matters, compressed:
 - [ ] **[build]** Reconcile public claims (README, website, package metadata);
       re-word the local-first stance once the custody decision lands so no
       surface contradicts another.
-- [ ] **[decision]** Adapter verification and promotion gates (canonical
-      roadmap package 3). Needed before any adapter is promoted to hosted and
-      before the API Index can rank networks defensibly.
+- [x] **[decision]** Adapter verification and promotion gates: already
+      accepted as `2026-06-15-adapter-promotion-gates.md`; this checkbox was
+      stale. The API Index generator is unblocked (Rob, 2026-07-12), with
+      publication of a ranking still a separate go/no-go.
 - [ ] **[build]** Telemetry reconciliation (canonical roadmap package 10): one
       taxonomy, one consent contract, retention and deletion operations.
       Sequence 5 makes this a prerequisite for evaluating remote hosting.
