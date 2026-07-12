@@ -37,26 +37,27 @@ The order that matters, compressed:
 
 ### Decisions
 
-- [ ] **[decision]** Hosted credential custody. Accept or reject
-      bring-your-own-key hosted execution: threat model, encryption and key
-      management approach, named security owner, breach disclosure plan, and a
-      hosted privacy contract extending `PRIVACY.md`. This is the crux named
-      in [`hosted-version-scoping.md`](./hosted-version-scoping.md); nothing
-      hosted is built before it.
-- [ ] **[decision]** Pricing and tier structure. Solo, Pro, Team price points,
-      the feature-to-tier map, the founding-offer terms, and confirmation that
-      the licence stays MIT.
-- [ ] **[decision]** Merchant of record. Paddle or Lemon Squeezy; this is a
-      payment surface, so it gets a short record naming the choice, the fee
-      trade-off, and the webhook-to-entitlement contract.
-- [ ] **[ops]** Day-job contract review: IP assignment, moonlighting, and
-      non-compete terms checked before the first paid invoice. Blocking,
-      not a repo task.
+- [ ] **[decision]** Hosted credential custody: accepted in principle by Rob
+      (2026-07-12) and drafted as
+      [`2026-07-12-hosted-credential-custody.md`](../decisions/2026-07-12-hosted-credential-custody.md).
+      Remaining step: deliberate acceptance of the record. Nothing hosted is
+      built before that.
+- [ ] **[decision]** Pricing, billing, and licence: answers taken (anchors
+      £34/£99/£299, packs £20, founding Pro £699/year, Stripe direct, MIT
+      stays) and drafted as
+      [`2026-07-12-pricing-billing-and-licence.md`](../decisions/2026-07-12-pricing-billing-and-licence.md).
+      Remaining step: deliberate acceptance of the record.
+- [ ] **[ops]** Stripe-direct compliance prerequisites before the first paid
+      invoice: confirm trading entity, UK VAT and EU OSS registration, enable
+      Stripe Tax. This replaces the merchant-of-record item; the consequences
+      are recorded in the pricing decision.
+- [x] **[ops]** Day-job contract review: checked and cleared by Rob
+      (2026-07-12). Re-check on contract renewal.
 
 ### Ship the accepted £20 skill packs (first revenue)
 
-- [ ] **[build]** Billing backend: merchant-of-record checkout, webhook
-      receiver, subscription state store, entitlement issuance.
+- [ ] **[build]** Billing backend: Stripe Checkout and Billing with Stripe
+      Tax, webhook receiver, subscription state store, entitlement issuance.
 - [ ] **[build]** Desktop entitlement check per
       [`2026-07-01-desktop-premium-skill-packs.md`](../decisions/2026-07-01-desktop-premium-skill-packs.md):
       periodic online check with an offline grace period.
@@ -65,9 +66,13 @@ The order that matters, compressed:
       once that record is accepted: single dispatch choke point in
       `src/server.ts`, `src/brand-data/entitlement.ts` stub, visible-but-locked
       refusal. The stub is the seam the real billing later replaces.
-- [ ] **[build]** First two premium skill packs, drawn from
-      [`agency-account-manager-deliverables.md`](./agency-account-manager-deliverables.md),
-      delivered through the desktop skills step.
+- [ ] **[build]** First two premium skill packs, chosen by Rob (2026-07-12):
+      the agency pack (QBR prep, client weekly report, portfolio rollup,
+      drawn from
+      [`agency-account-manager-deliverables.md`](./agency-account-manager-deliverables.md))
+      and the publisher money pack (unpaid-commission chaser, earnings
+      rollup, reversal investigation), delivered through the desktop skills
+      step.
 - [ ] **[content]** Pricing page and checkout flow on the website.
 
 ### Funnel foundation
@@ -220,9 +225,10 @@ local single-user path preserved unchanged.
 ## Lane discipline for this roadmap
 
 The delivery protocol allows one `active-risk` PR at a time. The risk queue,
-in order: custody decision, pricing decision, merchant-of-record record,
-entitlement gate landing, identity foundation, credential vault, remote
-transport, hosted billing, Team-tier decision, certified-listing decision.
+in order: custody decision record, pricing/billing/licence decision record
+(both drafted 2026-07-12, awaiting acceptance), entitlement gate landing,
+identity foundation, credential vault, remote transport, hosted billing,
+Team-tier decision, certified-listing decision.
 Routine lanes carry the content tooling, docs reconciliation, and funnel work
 in parallel, since they are decision-complete and disjoint.
 

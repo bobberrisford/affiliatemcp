@@ -183,7 +183,7 @@ flywheel matters more than any feature.
 
 Cost structure is favourable: the hosted tier proxies API calls and stores
 encrypted keys, but the user's own Claude or ChatGPT does the inference, so
-there is no LLM cost of goods. Infrastructure plus merchant-of-record fees
+there is no LLM cost of goods. Infrastructure plus payment fees
 should leave gross margin above 85%.
 
 Timeline honesty: solo, part-time, £50k/month is a top-decile outcome.
@@ -192,8 +192,11 @@ The phase gates below are the actual plan; the number is the direction.
 
 ## 6. Operating model: no sales, no support desk
 
-- **Billing.** A merchant of record (Paddle or Lemon Squeezy) handles VAT,
-  global sales tax, and invoicing, which a solo UK operator should not carry.
+- **Billing.** Decided 2026-07-12: Stripe directly (Checkout, Billing, and
+  Stripe Tax), per
+  [`2026-07-12-pricing-billing-and-licence.md`](../decisions/2026-07-12-pricing-billing-and-licence.md).
+  Rob is the merchant, so UK VAT and EU OSS registration and Stripe Tax setup
+  are Phase 0 prerequisites before the first paid invoice.
 - **Trial.** 14 days, no card, usage-capped. Upgrade walls sit at natural
   points: scheduling anything, exceeding the network count, inviting a
   teammate, exporting CSV, running the QBR action. Visible-but-locked, per the
@@ -311,10 +314,9 @@ smallest foundation with its first real consumer, then stacked slices.
 - **Solo bus factor and hours.** Everything automated, agents doing delivery,
   brutal scope discipline on the hosted MVP. If the day job flexes, the gates
   simply take longer; nothing in the plan requires a sprint.
-- **Day-job conflict.** The operator works in the affiliate industry. Before
-  charging money, check the contractor agreement for IP assignment,
-  moonlighting, and non-compete terms. This is a one-hour task with
-  plan-ending downside if skipped.
+- **Day-job conflict.** Checked and cleared by Rob (2026-07-12): the
+  contractor agreement permits this independent product. Re-check on any
+  contract renewal.
 - **Churn and seasonality.** Affiliate income is seasonal (Q4 heavy); expect
   publisher-tier churn to breathe with it and judge cohorts annually.
 
@@ -328,20 +330,29 @@ smallest foundation with its first real consumer, then stacked slices.
 - Closing the open core or rug-pulling shipped free features (the D3 line).
 - Outbound sales of any kind, including to networks for certified listings.
 
-## 11. Open decisions for Rob
+## 11. Decisions taken (2026-07-12)
 
-1. **Hosted credential custody in principle.** The blocking decision; nothing
-   hosted gets built before it is accepted (per the scoping doc and AGENTS.md).
-2. **Pricing points and the founding offer.** The table in section 4 is
-   indicative; the Phase 0 pre-sell tests it.
-3. **Licence stance.** This plan assumes MIT stays; confirm so it stops being
-   an open question.
-4. **Day-job conflict check.** Contract review before first paid invoice.
-5. **The Phase 0 gate numbers.** 30 pre-orders / 500 waitlist emails are
-   proposed thresholds; adjust to taste, but keep a written gate.
+Rob answered the open questions on 2026-07-12. In-principle answers are
+recorded here; the binding versions are the decision records, which still
+need deliberate acceptance:
+
+1. **Hosted credential custody: accepted in principle.** Drafted as
+   [`2026-07-12-hosted-credential-custody.md`](../decisions/2026-07-12-hosted-credential-custody.md)
+   (Proposed). Nothing hosted is built before that record is accepted.
+2. **Pricing: the section 4 anchors stand** (£34/£99/£299, packs £20).
+   Founding offer: annual Pro at 40% off, £699/year, gate of 30 pre-orders or
+   500 waitlist emails. Billing is Stripe direct, with the tax-compliance
+   consequences recorded in
+   [`2026-07-12-pricing-billing-and-licence.md`](../decisions/2026-07-12-pricing-billing-and-licence.md)
+   (Proposed).
+3. **Licence: core stays MIT.** Same record.
+4. **Day-job conflict: checked and cleared.**
+5. **First skill packs: the agency pack and the publisher money pack.**
+6. **Operator capacity: ~15 hours/week across both lanes**, content cadence
+   and risk-PR review in parallel from Phase 0.
 
 ## Next step
 
-If the direction holds, the next artefact is the hosted-credential-custody
-decision record under `docs/decisions/`, followed by the Phase 0 landing page
-and founding offer. This document is direction, not authorisation.
+Accept the two proposed decision records, then Phase 0 proceeds: skill-pack
+billing build, founding-offer landing page, and the content cadence. This
+document is direction; the decision records carry the authorisation.
