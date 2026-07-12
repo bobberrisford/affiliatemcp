@@ -30,8 +30,9 @@ Use Resend for waitlist capture and later founding-offer email. The shape:
 - Consent and honesty: the form states what the address is used for
   (waitlist and founding-offer updates only), sign-up is explicit, and every
   email includes an unsubscribe. Waitlist data is marketing capture and sits
-  outside the product privacy contract in `PRIVACY.md`, which continues to
-  govern product telemetry only; the form links the site privacy page.
+  outside the product privacy contract in `PRIVACY.md`, which governs
+  product data, not marketing capture; the form links the site privacy
+  page.
 - No affiliate data, credentials, or product usage data is ever attached to
   a waitlist record.
 
