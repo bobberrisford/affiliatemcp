@@ -26,6 +26,9 @@ planning. They are useful context, but accepted records under
 - [`solo-50k-technical-roadmap.md`](./solo-50k-technical-roadmap.md) is the
   phased technical to-do list for that plan. Decision-gated items need
   accepted records before implementation.
+- [`phase-0-go-live-checklist.md`](./phase-0-go-live-checklist.md) is the
+  maintainer-only operational checklist (Stripe, Worker deploy, key swap,
+  end-to-end proof) for taking the skill-pack tier live.
 - [`hosted-version-scoping.md`](./hosted-version-scoping.md) is a discovery
   proposal for a hosted version; it does not authorise implementation.
 - [`chatgpt-scoping.md`](./chatgpt-scoping.md) is a pre-implementation proposal.
