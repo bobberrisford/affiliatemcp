@@ -120,6 +120,46 @@ Hero directions considered (kept for reference):
 Network and adapter counts must be pulled from the same data the README
 auto-generates (see `website-plan.md` §8), never hand-typed.
 
+## Pricing
+
+### Overview
+The local server runs free and complete. Premium options add skills and hosted connectivity for teams and agencies.
+
+### Free: local server
+The open-source MCP server runs on your machine. Every network adapter, all core workflows, your credentials. No account, no telemetry unless you opt in. MIT licence.
+
+### Skill packs
+One subscription, £20/month, unlocks the whole premium pack library: maintained workflow packs installed through the desktop app, kept working as network APIs change. Use them alongside your free local server.
+
+**Agency pack** (coming soon)
+QBR prep, client weekly report, portfolio rollup. Cross-programme performance analysis and client-ready exports.
+
+**Publisher money pack** (coming soon)
+Unpaid-commission chaser, earnings rollup across all networks, reversal investigation. Monthly earnings digest.
+
+### Hosted tier
+Connector-hosted access for publishers, brands, and agencies: no install, no terminal, no laptop-awake constraint. Pre-launch, waitlist-only, refundable until the tier ships to you.
+
+**Solo: £34/month**
+Hosted connector, up to 5 networks, weekly earnings digest by email. For individual publishers testing hosted connectivity.
+
+**Pro: £99/month**
+All hosted-eligible networks, scheduled anomaly watch, unpaid-commission digest, QBR and weekly-report generation, CSV export.
+
+**Team: £299/month**
+5 seats, client workspaces, shared brand context, audit log, client-ready report export. Card self-serve, no SLA, no custom contracts.
+
+### Founding offer
+**Founding Pro: £699/year**, 41% off the standard £1,188 annual price. Available during pre-launch only, and fully refundable at any point until the hosted tier ships to you. Founding buyers keep this rate.
+
+**Waitlist question:** Which networks matter most to you for hosted first? Helps us prioritise.
+
+### Honesty notes on hosted
+- **Pre-launch.** The hosted tier is not yet available. Founding offer holds your place.
+- **Not all networks go hosted.** Some affiliate networks' terms do not allow third-party credential holders. Those networks stay local-only, free, and complete.
+- **Local stays free and complete.** Whether or not you use hosted, the open-source server has full parity to what shipped before hosted existed.
+- **Keys are encrypted.** Hosted credentials are stored encrypted, decrypted only at the moment a request runs, used only to serve you, and deletable along with your account at any time.
+
 ## To draft next
 - `/get-started` — the non-technical onboarding page.
 - `/what-you-can-ask` — full publisher/brand prompt list.
