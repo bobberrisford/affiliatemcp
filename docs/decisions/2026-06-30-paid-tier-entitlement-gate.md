@@ -1,7 +1,8 @@
 # A paid tier for brand-data features, gated by a local entitlement check
 
 - **Date:** 2026-06-30
-- **Status:** Proposed (decision pending)
+- **Status:** Accepted (2026-07-12, Rob, via acceptance of the solo revenue
+  plan and its Phase 0 technical roadmap, which lands this gate)
 - **Affects:** the MCP server dispatch path (`src/server.ts`), a new
   `src/brand-data/entitlement.ts`, the three brand-data meta-tools defined in the
   companion record `2026-06-30-brand-data-layer.md`, and the project's

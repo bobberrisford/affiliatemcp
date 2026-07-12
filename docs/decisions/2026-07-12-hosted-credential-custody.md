@@ -1,9 +1,8 @@
 # Hosted credential custody: bring-your-own-key hosted execution
 
 - **Date:** 2026-07-12
-- **Status:** Proposed (drafted from Rob's in-principle acceptance,
-  2026-07-12; needs deliberate acceptance on this record before any hosted
-  foundation is built)
+- **Status:** Accepted (2026-07-12, Rob; "Plan accepted" covering this record
+  and the solo revenue plan it implements)
 - **Affects:** the local-first boundary in `docs/product/manifesto.md`
   (Principle 2), `PRIVACY.md`, `README.md` claims, and every hosted work item
   in `docs/product/solo-50k-technical-roadmap.md`

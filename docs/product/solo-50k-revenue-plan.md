@@ -1,12 +1,10 @@
 # Solo revenue plan: £50k/month without sales
 
-> Status: working proposal, pre-decision. This document plans the commercial
-> path to £50,000/month recurring revenue operated by one person alongside a
-> day job. At the maintainer's direction it deliberately sets aside the
-> local-only README stance; a hosted tier still requires its own accepted
-> decision record before any foundation is built (see
-> [`hosted-version-scoping.md`](./hosted-version-scoping.md)). Accepted
-> decisions and shipped behaviour take precedence where they differ.
+> Status: accepted direction (2026-07-12, Rob). This document plans the
+> commercial path to £50,000/month recurring revenue operated by one person
+> alongside a day job. The custody and pricing decisions it depends on are
+> accepted under [`../decisions/`](../decisions). Accepted decisions and
+> shipped behaviour take precedence where they differ.
 
 ## 1. The constraint set
 

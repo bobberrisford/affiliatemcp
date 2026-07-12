@@ -1,8 +1,8 @@
 # Pricing, billing, and licence for the paid tiers
 
 - **Date:** 2026-07-12
-- **Status:** Proposed (drafted from Rob's in-principle answers, 2026-07-12;
-  needs deliberate acceptance on this record before checkout goes live)
+- **Status:** Accepted (2026-07-12, Rob; "Plan accepted" covering this record
+  and the solo revenue plan it implements)
 - **Affects:** the paid-tier structure across the desktop skill packs and the
   hosted tier, the billing integration, the website pricing page, and the
   project licence posture

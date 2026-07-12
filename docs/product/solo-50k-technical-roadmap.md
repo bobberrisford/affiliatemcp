@@ -1,10 +1,10 @@
 # Technical roadmap: the to-do list for the £50k plan
 
-> Status: working proposal, pre-decision. Companion to
+> Status: accepted direction (2026-07-12, Rob). Companion to
 > [`solo-50k-revenue-plan.md`](./solo-50k-revenue-plan.md); this document turns
-> that plan's phases into ordered, checkable work items. It is direction, not
-> authorisation: every item marked **[decision]** needs an accepted record
-> under [`../decisions/`](../decisions) before dependent implementation, per
+> that plan's phases into ordered, checkable work items. Items marked
+> **[decision]** need an accepted record under
+> [`../decisions/`](../decisions) before dependent implementation, per
 > AGENTS.md. [`roadmap.md`](./roadmap.md) remains canonical for
 > non-commercial sequencing; section "Relation to the canonical roadmap"
 > below records the one deliberate divergence.
