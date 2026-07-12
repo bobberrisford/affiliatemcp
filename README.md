@@ -77,15 +77,11 @@ brand and network pair you've registered.
 **Plain English, not filters.** No more clicking through date pickers and saved
 views. "Last quarter, status pending, sorted by amount" is the whole prompt.
 
-**Your data, your machine, by default.** The local server is free, complete,
-and local-first: your keys live in `~/.affiliate-mcp/.env`, locked to your
-user account. A hosted tier is planned, pre-launch, under an accepted custody
-contract: it would hold your API keys encrypted, used only to serve you,
-never for aggregation or any other purpose. The local server stays free and
-complete either way. Optional anonymous usage telemetry is off by default and
-never contains affiliate data, credentials, prompts, arguments, results, or
-error text. The networks see the same API calls they'd see from their
-dashboard.
+**Your data, your machine, by default.** It runs locally. Your keys live in
+`~/.affiliate-mcp/.env`, locked to your user account. Optional anonymous
+usage telemetry is off by default and never contains affiliate data,
+credentials, prompts, arguments, results, or error text. The networks see
+the same API calls they'd see from their dashboard.
 
 **Catches what dashboards bury.** Stale transactions, inactive programmes, dead
 deeplinks and week-on-week drops are surfaced by the packaged skills.
@@ -533,9 +529,7 @@ If you registered any brand-side networks, the wizard also writes
 nickname for each brand (e.g. `acme`) to the network's brand id on
 every network the brand is bound to. Empty for the publisher-only path.
 
-That is the local, free, complete path described above, and it stays that way.
-A hosted tier is planned, pre-launch, under an accepted custody contract that
-would hold your API keys encrypted, used only to serve you.
+That local path stays free and complete; a hosted tier is planned, opt-in.
 
 ## Managing brands
 
