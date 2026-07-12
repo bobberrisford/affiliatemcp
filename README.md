@@ -77,11 +77,11 @@ brand and network pair you've registered.
 **Plain English, not filters.** No more clicking through date pickers and saved
 views. "Last quarter, status pending, sorted by amount" is the whole prompt.
 
-**Your data, your machine.** It runs locally. Your keys live in
-`~/.affiliate-mcp/.env`, locked to your user account. There is no hosted
-account. Optional anonymous usage telemetry is off by default and never
-contains affiliate data, credentials, prompts, arguments, results, or error
-text. The networks see the same API calls they'd see from their dashboard.
+**Your data, your machine, by default.** It runs locally. Your keys live in
+`~/.affiliate-mcp/.env`, locked to your user account. Optional anonymous
+usage telemetry is off by default and never contains affiliate data,
+credentials, prompts, arguments, results, or error text. The networks see
+the same API calls they'd see from their dashboard.
 
 **Catches what dashboards bury.** Stale transactions, inactive programmes, dead
 deeplinks and week-on-week drops are surfaced by the packaged skills.
@@ -529,7 +529,7 @@ If you registered any brand-side networks, the wizard also writes
 nickname for each brand (e.g. `acme`) to the network's brand id on
 every network the brand is bound to. Empty for the publisher-only path.
 
-There is no hosted service. There is no account to create with us.
+That local path stays free and complete; a hosted tier is planned, opt-in.
 
 ## Managing brands
 
