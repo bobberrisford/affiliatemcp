@@ -96,3 +96,18 @@ jobs:
       - run: npm ci --prefix issuer
       - run: npm --prefix issuer run typecheck
       - run: npm --prefix issuer test
+
+  # The waitlist-capture Worker has its own workspace, so it needs its own
+  # gate — the root build never sees it.
+  waitlist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: waitlist/package-lock.json
+      - run: npm ci --prefix waitlist
+      - run: npm --prefix waitlist run typecheck
+      - run: npm --prefix waitlist test
