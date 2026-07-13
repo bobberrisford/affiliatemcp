@@ -76,9 +76,10 @@
 
 - [ ] Merge and verify the pricing page deploy (auto-deploys from `site/**`
       on main).
-- [ ] Replace the interim waitlist CTA with real capture once an email tool
-      is chosen (an `[ops]` roadmap item; the page ships with a no-backend
-      CTA until then).
+- [ ] Waitlist capture via Resend (chosen by Rob, 2026-07-12; see
+      `../decisions/2026-07-12-waitlist-email-resend.md`): create the Resend
+      account and audience, note the API key, deploy the waitlist Worker
+      (built in-repo), then swap the pricing page CTA to the form.
 - [ ] Announce on LinkedIn only after step 5 passes.
 
 ## Deliberately not done by agents

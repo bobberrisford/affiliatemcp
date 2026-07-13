@@ -1,5 +1,9 @@
 # `premium-skills/`
 
+> The additive-layer framing in each skill's "Premium scope note" (premium
+> deepens a free skill rather than replacing it) was accepted by Rob on
+> 2026-07-12.
+
 Content for the paid, maintained skill packs described in
 [`docs/decisions/2026-07-01-desktop-premium-skill-packs.md`](../docs/decisions/2026-07-01-desktop-premium-skill-packs.md)
 (accepted 2026-07-01). This tree is **not** part of the free product surface:
