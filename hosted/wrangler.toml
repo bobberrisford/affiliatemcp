@@ -36,6 +36,21 @@ binding = "HOSTED_VAULT"
 id = "REPLACE_WITH_VAULT_KV_ID"
 preview_id = "REPLACE_WITH_VAULT_PREVIEW_KV_ID"
 
+# ── KV: Stripe subscription state (H6) ───────────────────────────────────────
+# A THIRD, separate namespace — see hosted/src/env.ts and hosted/src/billing.ts.
+# Stores:
+#   sub:<userId>       -> JSON SubscriptionRecord { tier, status, email?, … }
+#   stripe-sub:<subId> -> <userId>  (reverse index for webhook events)
+#   evt:<eventId>      -> "1"       (idempotency marker, TTL'd)
+# Create a FRESH namespace before first deploy:
+#   npx wrangler kv namespace create HOSTED_BILLING
+#   npx wrangler kv namespace create HOSTED_BILLING --preview
+# then paste the returned ids below.
+[[kv_namespaces]]
+binding = "HOSTED_BILLING"
+id = "REPLACE_WITH_BILLING_KV_ID"
+preview_id = "REPLACE_WITH_BILLING_PREVIEW_KV_ID"
+
 # ── Non-secret vars (override per-env or in the dashboard) ─────────────────
 [vars]
 # The Worker's OWN public base URL, used to build the callback URL in sign-in
@@ -49,12 +64,25 @@ SITE_ORIGIN = "https://agenticaffiliate.ai"
 # Current key version of the VAULT_MASTER_KEY secret below. Bump this (and
 # rotate the secret) per the rotation procedure in hosted/README.md.
 VAULT_MASTER_KEY_VERSION = "1"
+# Stripe recurring Price ids (price_…) for the two hosted tiers, per
+# docs/decisions/2026-07-12-pricing-billing-and-licence.md. Env placeholders
+# until Rob wires up the real Stripe account at deploy.
+STRIPE_PRICE_ID_SOLO = "REPLACE_WITH_SOLO_34GBP_MONTHLY_PRICE_ID"
+STRIPE_PRICE_ID_PRO = "REPLACE_WITH_PRO_99GBP_MONTHLY_PRICE_ID"
+BILLING_SUCCESS_URL = "https://agenticaffiliate.ai/billing/success"
+BILLING_CANCEL_URL = "https://agenticaffiliate.ai/billing/cancel"
+# Lifetime of the short-lived session token POST /admin/session mints for the
+# hosted-digest job. Minutes, not the 30-day lifetime of a real sign-in
+# session — see hosted/src/routes/admin.ts.
+SERVICE_SESSION_TTL_SECONDS = "600"
 
 # ── Secrets — set via `wrangler secret put <NAME>` (NEVER commit) ──────────
 #   RESEND_API_KEY        re_…    (Resend API key, from https://resend.com/api-keys;
 #                                  the sending domain used in src/index.ts,
 #                                  sign-in@agenticaffiliate.ai, must be verified
-#                                  in the Resend dashboard first)
+#                                  in the Resend dashboard first; the H6 digest
+#                                  sends from digest@agenticaffiliate.ai on the
+#                                  same verified domain — see src/routes/digest.ts)
 #   SESSION_SIGNING_KEY    Ed25519 PKCS8 DER, base64 (the PRIVATE key only —
 #                                  this Worker derives the public verification
 #                                  key from it at call time; see `npm run gen-keypair`
@@ -65,3 +93,16 @@ VAULT_MASTER_KEY_VERSION = "1"
 #                                  section of hosted/README.md before deploying
 #                                  this — the Worker-secret design was
 #                                  accepted by Rob on 2026-07-14)
+#   STRIPE_SECRET_KEY      sk_live_… / sk_test_… (Stripe secret key for
+#                                  POST /billing/checkout; see src/stripe.ts)
+#   STRIPE_WEBHOOK_SECRET  whsec_…  (from the registered webhook endpoint for
+#                                  POST /billing/webhook)
+#   HOSTED_SERVICE_SECRET  a fresh random string authorising the hosted-digest
+#                                  job's service-authenticated routes
+#                                  (/admin/subscribers, /admin/session,
+#                                  /admin/entitlement, /digest/send). Read
+#                                  hosted/README.md "H6: digest and billing"
+#                                  before setting this — it is a genuine
+#                                  widening of the vault's threat model and
+#                                  needs Rob's explicit acceptance, the same
+#                                  way the VAULT_MASTER_KEY design did.

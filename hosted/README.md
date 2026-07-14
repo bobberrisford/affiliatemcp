@@ -1,10 +1,12 @@
 # affiliate-mcp hosted
 
 A Cloudflare Worker for the hosted service: user auth (workstream slice H2),
-the encrypted credential vault (workstream slice H3), and the guided connect
-flow (workstream slice H5), per `docs/product/hosted-mvp-workstream.md`.
+the encrypted credential vault (workstream slice H3), the guided connect flow
+(workstream slice H5), and Stripe subscription state plus the scheduled
+digest's send surface (workstream slice H6), per
+`docs/product/hosted-mvp-workstream.md`.
 
-Two KV namespaces, kept deliberately separate:
+Three KV namespaces, kept deliberately separate:
 
 - `HOSTED_USERS` (H2) holds **no affiliate credentials and no affiliate
   data**. It knows a user id and an email-hash lookup, and nothing else.
@@ -14,6 +16,13 @@ Two KV namespaces, kept deliberately separate:
   read on what the current master-key design does and does not protect
   against — **the master-key decision it raises was accepted by Rob on
   2026-07-14 (Worker-secret design for the MVP).**
+- `HOSTED_BILLING` (H6) holds Stripe subscription state: tier, status, and
+  (the one deliberate exception in this Worker) a billing email captured at
+  Checkout. See "H6: digest and billing" below for the design, and
+  "Service-authenticated routes: threat model" for the honest read on the
+  service-secret this slice introduces — **that decision is this slice's PR
+  asking for Rob's explicit acceptance, the same way H3's master-key design
+  was.**
 
 See the decision records: `docs/decisions/2026-07-12-hosted-credential-custody.md`
 (the custody contract this whole workstream operates under) and
@@ -573,6 +582,147 @@ workstream brief sets for H5 ("an end-to-end connect against a staging
 deploy for each of the four networks, with each ToS check recorded") still
 needs this table replaced with an actual per-network review before a staging
 or production deploy offers these networks to real users.
+## H6: digest and billing
+
+Workstream slice H6 (`docs/product/hosted-mvp-workstream.md`) adds Stripe
+subscription state and the scheduled digest's send surface: `src/billing.ts`,
+`src/stripe.ts`, `src/routes/billing.ts`, `src/routes/admin.ts`,
+`src/routes/digest.ts`, and a THIRD KV namespace, `HOSTED_BILLING`, kept
+separate from `HOSTED_USERS` (H2) and `HOSTED_VAULT` (H3) for the same reason
+those two are separate from each other: each namespace's contents should be
+inferable from its name alone, not from convention.
+
+### KV storage shapes (H6: `HOSTED_BILLING`)
+
+- **`sub:<userId>`** → `SubscriptionRecord`:
+  `{ tier: 'solo' | 'pro', status, customerId?, subscriptionId?, email?, updatedAt }`.
+  `status` mirrors Stripe's own subscription status string (`active`,
+  `trialing`, `past_due`, `canceled`, …); only `active`/`trialing` count as
+  entitled (`isActiveStatus`).
+- **`stripe-sub:<subscriptionId>`** → `<userId>`. Reverse index for
+  `customer.subscription.updated`/`.deleted` webhook events, which do not
+  reliably carry the userId directly. Mirrors the issuer Worker's
+  `sub:<subId> -> accountKey` pattern (`issuer/src/index.ts`).
+- **`evt:<eventId>`** → `"1"`, TTL'd 30 days. Webhook idempotency marker,
+  identical in shape and purpose to issuer's own.
+
+**The billing email exception.** `SubscriptionRecord.email` is a plaintext
+address, captured from Stripe Checkout's `customer_details.email` at
+`checkout.session.completed`. This is a deliberate, narrow exception to H2's
+"no raw email address anywhere in this Worker" posture (see "Email-key
+hashing trade-off" above): a paid subscription needs a billing email for
+Stripe receipts and, per the pricing decision, VAT invoices at the Team tier;
+Stripe Checkout already collects one regardless of what this Worker does with
+it. It lives ONLY in `HOSTED_BILLING`, never in `HOSTED_USERS`, so H2's
+existing no-PII invariant for the identity store is unaffected. It is used
+for exactly two purposes: Stripe's own billing correspondence, and resolving
+who to email in `POST /digest/send` — never analytics, matching the custody
+record's "what the keys are used for" clause extended to this one new field.
+
+### Why raw Stripe REST + WebCrypto, not the `stripe` npm package
+
+Unlike `issuer/` (which already depends on `stripe`), this build's rules were
+"no new deps", and everything else in `hosted/` is deliberately
+WebCrypto-and-`fetch`-only (`src/token.ts`, `src/vault.ts` both call this out
+as a design choice). `src/stripe.ts` hand-rolls the two calls this slice
+needs: a `POST /v1/checkout/sessions` form-encoded REST call, and Stripe's
+documented webhook-signature scheme (HMAC-SHA256 over `"{timestamp}.{payload}"`,
+compared against the `Stripe-Signature` header's `v1` value(s), with a
+5-minute replay-tolerance window). Both are small and bounded; if hosted's
+Stripe surface grows materially beyond checkout + webhook (the billing
+portal, proration previews), revisit this trade-off rather than keep hand
+extending it.
+
+### Tier derivation: metadata, not price-ID matching
+
+`POST /billing/checkout` stamps the requested tier onto BOTH the Checkout
+Session's own `metadata` and `subscription_data.metadata` at creation time
+(mirroring issuer's `subscription_data: { metadata: { akey } }` pattern,
+extended with a `tier` field). `checkout.session.completed` reads the
+Session's own metadata directly; `customer.subscription.updated`/`.deleted`
+read the Subscription's. Neither event needs to introspect price IDs or line
+items to recover the tier — it is simply carried on the object the event
+already delivers.
+
+### Service-authenticated routes: threat model
+
+`GET /admin/subscribers`, `POST /admin/session`, `POST /admin/entitlement`,
+and `POST /digest/send` (`src/routes/admin.ts`, `src/routes/digest.ts`) are
+gated by a single shared secret, `HOSTED_SERVICE_SECRET`, not by a user's own
+session token. This is a genuine widening of this Worker's threat model, not
+a detail, and is flagged here the same way the vault's master-key design was
+in "Vault threat model" above — **this is the decision this slice's PR asks
+Rob to accept before merge.**
+
+**Why a service credential exists at all.** Every other route in this Worker
+holds to "there is no service-level credential or elevated scope that could
+read a different user's vault" (see `src/routes/vault.ts`'s file-header
+comment) — every read is scoped to the caller's own session. The scheduled
+digest job breaks that assumption's premise: it runs unattended, on a cron
+schedule, for potentially many subscribed users in one run, with no user
+present to hold a session token. Something has to authorise it, and that
+something is, unavoidably, broader than any one user's session.
+
+**What each route can do, and what is narrowed:**
+
+- `GET /admin/subscribers` returns ids and tiers only — no emails, no
+  credentials, nothing beyond the opaque userId and tier the job already
+  needs to decide who to run for and which digest(s) they are entitled to.
+- `POST /admin/session` mints a session token scoped to ONE named userId,
+  short-lived (`SERVICE_SESSION_TTL_SECONDS`, default 600 seconds — minutes,
+  not the 30-day lifetime of a real sign-in session), using the exact same
+  `signSession` primitive H2's real sign-in flow uses. It is not a bypass:
+  the minted token is verified by the SAME `resolveValidSession` every other
+  route uses, and every downstream call (vault list, vault reveal) still
+  enforces "serves only that token's own userId" exactly as before. What
+  changes is WHO can mint a valid token for a given user without that user's
+  own sign-in flow — with this route, the answer is "anyone holding
+  `HOSTED_SERVICE_SECRET`".
+- `POST /admin/entitlement` is the MVP manual tier-set path (see "Manual
+  entitlement path" below) — grants or changes a tier with no live Stripe
+  subscription behind it.
+- `POST /digest/send` resolves the recipient's billing email itself (never
+  accepts one from the caller) and re-checks tier entitlement against
+  `HOSTED_BILLING` before sending, regardless of what the caller asked for —
+  a stale roster snapshot or a job-side bug can request a digest, but cannot
+  make this route send one the tier does not actually allow.
+
+**Compensating controls today:** `HOSTED_SERVICE_SECRET` is a single
+purpose-built secret, distinct from `SESSION_SIGNING_KEY` and
+`VAULT_MASTER_KEY` — compromising one does not compromise the others; the
+minted session is short-lived and carries no scope beyond a normal session;
+and every admin/digest route accepts only this one secret, never a user
+session, so a leaked user session token can never reach these routes.
+
+**What this does NOT yet have:** per-call audit of admin-route use beyond the
+existing `console.error` failure logging (the digest SEND path does carry its
+own audit line — userId, digestType, timestamp, outcome, in
+`src/routes/digest.ts` — but `/admin/session` and `/admin/subscribers` do
+not); and no automatic secret-rotation procedure (a manual
+`wrangler secret put` is the rotation path today, same as every other Worker
+secret in this repo). Revisit alongside the vault's own KMS migration if
+Team-tier or SOC 2 work raises the bar on this.
+
+### Manual entitlement path
+
+`POST /admin/entitlement` `{ userId, tier }` (service-secret gated) grants or
+changes a tier directly, with no Stripe subscription behind it. This exists
+for the MVP, ahead of a live Stripe integration on this deploy, and remains
+useful afterwards for support and testing. It is not the steady-state path —
+once Stripe is wired up, `POST /billing/checkout` and the webhook are the
+normal route to an entitlement.
+
+### The digest job lives in the root workspace, not here
+
+Mirroring H4's own precedent: the digest job (`src/hosted-digest/` in the
+root workspace) needs the full adapter registry and the H1 request-context
+seam to read `EarningsSummary` per network, exactly the same Node-only,
+non-Workers-portable code H4's write-up above explains this Worker cannot
+carry. This Worker's only H6-facing additions are the four service-routes and
+`POST /digest/send`'s Resend call; every adapter call, digest composition, and
+per-user orchestration happens in the root workspace. See
+`src/hosted-digest/index.ts`'s file-header comment for the crontab/systemd
+timer this job expects to be run under (no in-process scheduler).
 
 ## Deploy checklist (all human-supplied — the Worker is inert without these; Rob-only)
 
@@ -608,7 +758,25 @@ or production deploy offers these networks to real users.
 9. Confirm `SITE_ORIGIN` and `VAULT_MASTER_KEY_VERSION` in `wrangler.toml`
    match the live hosted-product front-end origin and the master key version
    just set.
-10. `npm run deploy`.
+10. **H6, before going further: read "Service-authenticated routes: threat
+    model" above and get Rob's explicit acceptance of the
+    `HOSTED_SERVICE_SECRET` design — the same gate step 7 applies to the
+    vault master key.** Generate a fresh random secret (e.g.
+    `openssl rand -base64 32`) and set it:
+    `npx wrangler secret put HOSTED_SERVICE_SECRET`.
+11. Create a THIRD, separate KV namespace for billing state:
+    `npx wrangler kv namespace create HOSTED_BILLING` (and `--preview`), and
+    paste those ids into `wrangler.toml`.
+12. In Stripe: create the Solo (£34/mo) and Pro (£99/mo) recurring Prices per
+    `docs/decisions/2026-07-12-pricing-billing-and-licence.md`, put their ids
+    in `STRIPE_PRICE_ID_SOLO`/`STRIPE_PRICE_ID_PRO`; enable Stripe Tax;
+    register the webhook endpoint (`/billing/webhook`) for
+    `checkout.session.completed`, `customer.subscription.updated`, and
+    `customer.subscription.deleted`.
+13. `npx wrangler secret put STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`.
+14. Set `BILLING_SUCCESS_URL`/`BILLING_CANCEL_URL` in `wrangler.toml` to the
+    hosted product's real success/cancel pages.
+15. `npm run deploy`.
 
 ## Local checks
 
@@ -616,20 +784,27 @@ or production deploy offers these networks to real users.
   response), the configured-origin magic link (a poisoned request Host never
   reaches the email), single-use token consumption, expiry, session
   sign/verify roundtrip, tamper rejection, health, CORS, that no log line
-  ever contains an email address (H2), and the vault's round-trip
+  ever contains an email address (H2); the vault's round-trip
   encrypt/decrypt, wrong-master-key failure, per-user isolation, complete
   deletion, master-key rotation, no-plaintext-in-logs, route auth, and
   list-never-returns-values (H3, `test/vault.test.ts` and
-  `test/vault-routes.test.ts`), and the H5 connect flow's sign-in gating,
+  `test/vault-routes.test.ts`); the H5 connect flow's sign-in gating,
   the rejection of a session token in any URL query parameter, POST-body
   navigation, per-network form rendering, store-then-test success and
   failure paths, that no batch/multi-network endpoint exists, that no HTML
   response ever carries an unmasked credential value, that no URL in any
   rendered page carries the session token, and that every connect response
   carries `cache-control: no-store` and `referrer-policy: no-referrer`
-  (`test/connect-routes.test.ts`). Resend and every per-network connection
-  test are mocked via a spy on `fetch`; KV is an in-memory fake. No live
-  network calls.
+  (`test/connect-routes.test.ts`); and (H6) subscription-state resolution and
+  the manual entitlement path (`test/billing.test.ts`), the Stripe
+  webhook-signature verifier (`test/stripe.test.ts`), and the billing,
+  admin, and digest routes — checkout metadata, webhook idempotency and tier
+  derivation, entitlement session-gating, service-secret enforcement on
+  every admin/digest route, tier re-checking at send time, and that a
+  digest's recipient email never appears in any response the caller sees
+  (`test/billing-routes.test.ts`). Resend, Stripe, and every per-network
+  connection test are mocked via a spy on `fetch`; KV is an in-memory fake.
+  No live network calls.
 - `npm run typecheck`.
 
 ## What this slice deliberately does not do
@@ -640,8 +815,6 @@ or production deploy offers these networks to real users.
   lives in the root workspace, not here" above. This Worker's only H4-facing
   addition is the `GET /vault/credentials/:network/reveal` route that Node
   service calls, over HTTP, with the caller's own session token.
-- No billing/entitlement enforcement (H6) — H5's connect flow (above) has now
-  shipped.
 - No OAuth browser-redirect flow for any network — see "H5: guided connect
   flow" above for why all four are guided-paste.
 - No automatic first-value report generated by this Worker. The H5 success
@@ -657,6 +830,13 @@ or production deploy offers these networks to real users.
   (`workerSecretMasterKey`) wraps data keys with a Worker secret; see "Vault
   threat model" above for what that does and does not protect against, and
   the decision this slice's PR leaves open for Rob.
+- No admin-route audit trail beyond `/digest/send`'s own audit line, and no
+  automated `HOSTED_SERVICE_SECRET` rotation procedure. See "Service-authenticated
+  routes: threat model" above.
+- No billing portal (cancel/manage self-serve) route. `POST /billing/checkout`
+  and the webhook are the only Stripe-facing surface this slice adds; a
+  portal route is a small, separate addition if the hosted product needs one
+  before Rob is ready to build full self-serve account management.
 
 `src/shared/request-context.ts` (H1) is the seam H4 will use to run adapter
 calls under a per-tenant identity; this slice does not touch it or wire any

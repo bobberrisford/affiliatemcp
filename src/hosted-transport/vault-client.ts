@@ -76,3 +76,36 @@ export class VaultUnavailableError extends Error {
     this.name = 'VaultUnavailableError';
   }
 }
+
+/**
+ * List the distinct networks the caller has connected (H6:
+ * `docs/product/hosted-mvp-workstream.md`). Calls the same
+ * `GET /vault/credentials` list route H5's connect flow uses, with the
+ * caller's own session token — never a service credential. This is the one
+ * read the Solo-tier network cap (`tier-gate.ts`) needs: the cap counts
+ * DISTINCT connected networks, not tool calls, so the transport must know
+ * the caller's full connected set before it can tell "still under five" from
+ * "adding a sixth".
+ */
+export async function listConnectedNetworks(bearerToken: string, vaultUrl: string): Promise<string[]> {
+  let res: Response;
+  try {
+    res = await fetch(`${vaultUrl}/vault/credentials`, {
+      method: 'GET',
+      headers: { authorization: `Bearer ${bearerToken}` },
+    });
+  } catch (err) {
+    throw new VaultUnavailableError(`could not reach the hosted vault: ${(err as Error).message}`);
+  }
+  if (res.status === 401) {
+    throw new VaultUnavailableError('the hosted vault rejected the session token used to reach it');
+  }
+  if (!res.ok) {
+    throw new VaultUnavailableError(`the hosted vault returned HTTP ${res.status}`);
+  }
+  const body = (await res.json()) as { networks?: unknown };
+  if (!Array.isArray(body.networks) || !body.networks.every((n) => typeof n === 'string')) {
+    throw new VaultUnavailableError('the hosted vault returned a malformed network list');
+  }
+  return body.networks as string[];
+}

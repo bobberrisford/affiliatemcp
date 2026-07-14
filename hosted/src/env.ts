@@ -2,16 +2,20 @@
  * Worker environment bindings. Secrets are injected by Wrangler at runtime;
  * vars come from wrangler.toml `[vars]` or the dashboard.
  *
- * Two KV namespaces, deliberately separate:
+ * Three KV namespaces, deliberately separate:
  *   - `HOSTED_USERS` (H2) holds NO affiliate credentials and NO affiliate
  *     data — only account identity (user records and an email-hash lookup)
  *     and short-lived pending sign-in tokens.
  *   - `HOSTED_VAULT` (H3) holds the encrypted credential vault: wrapped
  *     per-user data keys and encrypted per-network credential blobs. Nothing
  *     is ever written there in plaintext.
+ *   - `HOSTED_BILLING` (H6) holds Stripe subscription state: tier, status,
+ *     and (the one deliberate exception in this Worker) a billing email
+ *     captured at Checkout. See `src/billing.ts` for the exact shapes and why
+ *     the email exception is scoped to this namespace only.
  * Keeping them apart means every "no affiliate data in HOSTED_USERS" claim in
  * `hosted/README.md` and `src/index.ts` stays true by construction, not by
- * convention. See `hosted/README.md` for the exact key shapes of both.
+ * convention. See `hosted/README.md` for the exact key shapes of all three.
  */
 
 import type { MasterKeyProvider } from './vault.js';
@@ -34,9 +38,17 @@ export interface Env {
    * See `src/vault.ts` for the exact shapes and the envelope-encryption design.
    */
   HOSTED_VAULT: KVNamespace;
+  /**
+   * KV namespace holding Stripe subscription state (H6), keyed as:
+   *   sub:<userId>          -> JSON SubscriptionRecord (tier, status, email, …)
+   *   stripe-sub:<subId>    -> <userId>   (reverse index for webhook events)
+   *   evt:<eventId>         -> "1"        (idempotency marker, TTL'd)
+   * See `src/billing.ts` for the exact shapes and the entitlement model.
+   */
+  HOSTED_BILLING: KVNamespace;
 
   // ── Secrets (wrangler secret put) ──────────────────────────────────────
-  /** Resend API key (re_…), used to send the magic-link sign-in email. */
+  /** Resend API key (re_…), used to send the magic-link sign-in email and (H6) the scheduled digest. */
   RESEND_API_KEY: string;
   /**
    * Ed25519 PRIVATE key, PKCS8 DER base64 — signs and (by deriving the public
@@ -54,6 +66,24 @@ export interface Env {
    * to generate one.
    */
   VAULT_MASTER_KEY: string;
+  /**
+   * Stripe secret key (sk_live_… / sk_test_…), for `POST /billing/checkout`.
+   * See `src/stripe.ts` for why this Worker calls Stripe's REST API directly
+   * over `fetch` rather than depending on the `stripe` npm package.
+   */
+  STRIPE_SECRET_KEY?: string;
+  /** Stripe webhook signing secret (whsec_…), for `POST /billing/webhook`. */
+  STRIPE_WEBHOOK_SECRET?: string;
+  /**
+   * A single shared secret authorising the hosted-digest job (`src/hosted-digest/`,
+   * root workspace) and any other trusted operational caller to reach the
+   * service-authenticated routes: `GET /admin/subscribers`,
+   * `POST /admin/session`, `POST /admin/entitlement`, and `POST /digest/send`.
+   * Never accepted as a session token substitute on any user-facing route.
+   * See `hosted/README.md` "H6: digest and billing" for the threat model this
+   * secret's existence introduces, and why it is scoped this narrowly.
+   */
+  HOSTED_SERVICE_SECRET?: string;
 
   // ── Vars ───────────────────────────────────────────────────────────────
   /**
@@ -78,6 +108,24 @@ export interface Env {
    * data key still wrapped under the previous version.
    */
   VAULT_MASTER_KEY_VERSION?: string;
+  /** Stripe recurring Price id (price_…) for the £34/mo Solo tier. Env placeholder until Rob's
+   * Stripe account is wired up at deploy — see `hosted/README.md` "H6: digest and billing". */
+  STRIPE_PRICE_ID_SOLO?: string;
+  /** Stripe recurring Price id (price_…) for the £99/mo Pro tier. Same placeholder status as
+   * `STRIPE_PRICE_ID_SOLO`. */
+  STRIPE_PRICE_ID_PRO?: string;
+  /** Success-redirect URL for the billing Checkout session. */
+  BILLING_SUCCESS_URL?: string;
+  /** Cancel-redirect URL for the billing Checkout session. */
+  BILLING_CANCEL_URL?: string;
+  /**
+   * Lifetime, in seconds, of the short-lived session token `POST /admin/session`
+   * mints for the digest job. Deliberately short — minutes, not the 30-day
+   * lifetime of a real sign-in session — since it exists purely to let the
+   * digest job reuse the existing vault-reveal route for the span of one
+   * scheduled run. Defaults to 600 (10 minutes).
+   */
+  SERVICE_SESSION_TTL_SECONDS?: string;
 }
 
 /**

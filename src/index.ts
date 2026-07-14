@@ -58,6 +58,7 @@ function printHelp(): void {
   write('  affiliate-networks-mcp update disable  Turn off silent auto-apply');
   write('  affiliate-networks-mcp cowork-mirror   Create a private GitHub mirror for Claude Cowork');
   write('  affiliate-networks-mcp hosted-transport  Start the hosted streamable-HTTP MCP transport (H4)');
+  write('  affiliate-networks-mcp hosted-digest     Run the hosted scheduled digest once (H6, cron-invoked)');
   write('  affiliate-networks-mcp validate <slug> Run the full validation suite against one network');
   write('  affiliate-networks-mcp cache clear     Delete every cached response');
   write('  affiliate-networks-mcp --help          Show this help');
@@ -293,6 +294,14 @@ async function main(argv: string[]): Promise<number> {
       log.info({ port: handle.port }, 'hosted MCP transport started');
       await new Promise<never>(() => {});
       return 0; // unreachable
+    }
+    case 'hosted-digest': {
+      // Workstream H6 (`docs/product/hosted-mvp-workstream.md`): the
+      // scheduled digest job. Runs once and exits — no in-process scheduler.
+      // Invoke on a schedule via cron or a systemd timer; see
+      // `src/hosted-digest/index.ts` for example unit files.
+      const { runHostedDigestCli } = await import('./hosted-digest/index.js');
+      return await runHostedDigestCli();
     }
     default: {
       write(`Unknown command: ${cmd}`);

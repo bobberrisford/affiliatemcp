@@ -1,5 +1,5 @@
 /**
- * Hosted MCP `Server` wiring (H4).
+ * Hosted MCP `Server` wiring (H4, extended by H6).
  *
  * Deliberately structured to mirror `src/server.ts`'s `CallToolRequestSchema`
  * handler closely — same tool registry (`generateAllTools`), same entitlement
@@ -7,10 +7,21 @@
  * classification — so a reviewer can diff the two side by side. `src/server.ts`
  * itself is untouched by this slice (the workstream brief requires the local
  * stdio path stay byte-identical); this is a parallel, additive module, not a
- * refactor of it. The only behavioural additions are hosted-only: resolving
- * the per-request identity and vault-credential overlay
+ * refactor of it. The behavioural additions are hosted-only: resolving the
+ * per-request identity and vault-credential overlay
  * (`getHostedCallInfo`/`resolveCredentialOverlay`), the per-user rate limit
- * (`checkRateLimit`), and the per-user audit line (`recordHostedAudit`).
+ * (`checkRateLimit`), the per-user audit line (`recordHostedAudit`), and (H6)
+ * the billing-tier gate — an active Solo/Pro subscription is required before
+ * any hosted tool call proceeds, and Solo is additionally capped at
+ * `SOLO_NETWORK_CAP` distinct connected networks (`tier-gate.ts`).
+ *
+ * H6 gate ordering, cheapest-refusal-first: tool lookup -> brand-data
+ * entitlement gate (unchanged) -> hosted billing-tier gate (one HTTP call to
+ * the hosted Worker) -> per-tier rate limit (no HTTP call) -> Solo network
+ * cap (one HTTP call, vault list) -> vault-credential overlay (one HTTP
+ * call) -> adapter dispatch. An unsubscribed caller is refused before ANY of
+ * the three HTTP round trips below it, so a `tier: 'none'` caller never
+ * causes a vault read.
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -41,10 +52,13 @@ import { classifyToolForTelemetry } from '../server.js';
 import '../networks/index.js';
 
 import { getHostedCallInfo } from './call-context.js';
-import { checkRateLimit, resolveCredentialOverlay } from './dispatch.js';
+import { checkRateLimit, META_NETWORK, resolveCredentialOverlay } from './dispatch.js';
 import { recordHostedAudit } from './audit.js';
 import type { TokenBucketRateLimiter } from './rate-limiter.js';
 import type { HostedTransportConfig } from './env.js';
+import { fetchHostedEntitlement, HostedEntitlementUnavailableError } from './entitlement-client.js';
+import { listConnectedNetworks, VaultUnavailableError } from './vault-client.js';
+import { checkNetworkCap, checkTierEntitlement } from './tier-gate.js';
 
 const log = createLogger('hosted-transport');
 
@@ -53,9 +67,17 @@ const SERVER_INFO = {
   version: PACKAGE_VERSION,
 } as const;
 
+/** Per-tier rate limiters (H6). `pro` also serves as the fallback for any tier not otherwise
+ * differentiated; today that is only `solo` when no Solo-specific env override is set (see
+ * `env.ts`'s `rateLimitCapacitySolo`/`rateLimitRefillPerSecondSolo` fallback). */
+export interface HostedTierRateLimiters {
+  solo: TokenBucketRateLimiter;
+  pro: TokenBucketRateLimiter;
+}
+
 export interface HostedMcpServerDeps {
   config: HostedTransportConfig;
-  limiter: TokenBucketRateLimiter;
+  limiters: HostedTierRateLimiters;
 }
 
 /** Builds one hosted `Server` instance with every tool/prompt handler wired. A fresh instance is
@@ -150,9 +172,54 @@ export function buildHostedMcpServer(deps: HostedMcpServerDeps): Server {
       };
     }
 
-    // Per-user rate limit (H4): checked before any vault call or adapter
-    // dispatch, so an over-limit user never even causes a vault round-trip.
-    const rateLimitEnvelope = checkRateLimit(deps.limiter, userId, telemetry.network, telemetry.operation);
+    // H6 billing-tier gate, part 1: does this caller have any hosted tier at
+    // all? Cheapest check first — one HTTP call to the hosted Worker's
+    // billing route, no vault read, no rate-limit bucket touched, so a
+    // `tier: 'none'` caller never causes anything downstream to run.
+    let entitlement;
+    try {
+      entitlement = await fetchHostedEntitlement(bearerToken, deps.config.authUrl);
+    } catch (err) {
+      const message =
+        err instanceof HostedEntitlementUnavailableError
+          ? err.message
+          : `unexpected error reading the hosted billing service: ${(err as Error).message}`;
+      recordTelemetry(telemetry.network, telemetry.operation, 'other_error');
+      recordHostedAudit({ userId, network: telemetry.network, operation: telemetry.operation, outcome: 'error' });
+      return {
+        isError: true,
+        content: [
+          {
+            type: 'text' as const,
+            text: JSON.stringify(
+              {
+                error: 'billing_unavailable',
+                message: `Could not read the hosted subscription state: ${message}`,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }
+
+    const tierRefusal = checkTierEntitlement(entitlement.tier);
+    if (tierRefusal) {
+      recordTelemetry(telemetry.network, telemetry.operation, 'other_error');
+      recordHostedAudit({ userId, network: telemetry.network, operation: telemetry.operation, outcome: 'denied' });
+      return {
+        isError: true,
+        content: [{ type: 'text' as const, text: JSON.stringify(tierRefusal, null, 2) }],
+      };
+    }
+
+    // Per-user rate limit (H4, tier-aware since H6): checked before any
+    // vault call or adapter dispatch, so an over-limit user never even
+    // causes a vault round-trip. Solo and Pro draw from separate buckets so
+    // one tier's traffic can never exhaust the other's limit.
+    const limiter = entitlement.tier === 'solo' ? deps.limiters.solo : deps.limiters.pro;
+    const rateLimitEnvelope = checkRateLimit(limiter, userId, telemetry.network, telemetry.operation);
     if (rateLimitEnvelope) {
       recordTelemetry(telemetry.network, telemetry.operation, 'rate_limit');
       recordHostedAudit({
@@ -165,6 +232,45 @@ export function buildHostedMcpServer(deps: HostedMcpServerDeps): Server {
         isError: true,
         content: [{ type: 'text' as const, text: JSON.stringify(rateLimitEnvelope, null, 2) }],
       };
+    }
+
+    // H6 billing-tier gate, part 2: the Solo-tier distinct-network cap. Only
+    // Solo callers pay this extra vault round-trip; Pro and (unreachable
+    // here) none skip straight past `checkNetworkCap`.
+    if (entitlement.tier === 'solo' && telemetry.network !== META_NETWORK) {
+      let connectedNetworks: string[];
+      try {
+        connectedNetworks = await listConnectedNetworks(bearerToken, deps.config.vaultUrl);
+      } catch (err) {
+        const message =
+          err instanceof VaultUnavailableError
+            ? err.message
+            : `unexpected error reading the hosted vault: ${(err as Error).message}`;
+        recordTelemetry(telemetry.network, telemetry.operation, 'other_error');
+        recordHostedAudit({ userId, network: telemetry.network, operation: telemetry.operation, outcome: 'error' });
+        return {
+          isError: true,
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(
+                { error: 'vault_unavailable', message: `Could not read the connected-network list: ${message}` },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      }
+      const capRefusal = checkNetworkCap(entitlement.tier, telemetry.network, connectedNetworks);
+      if (capRefusal) {
+        recordTelemetry(telemetry.network, telemetry.operation, 'other_error');
+        recordHostedAudit({ userId, network: telemetry.network, operation: telemetry.operation, outcome: 'denied' });
+        return {
+          isError: true,
+          content: [{ type: 'text' as const, text: JSON.stringify(capRefusal, null, 2) }],
+        };
+      }
     }
 
     // Per-request vault-credential overlay (H4 + H1 + H3): read this user's

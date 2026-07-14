@@ -1,5 +1,5 @@
 /**
- * affiliate-mcp hosted Worker (workstream slices H2, H3, and H5:
+ * affiliate-mcp hosted Worker (workstream slices H2, H3, H5, and H6:
  * `docs/product/hosted-mvp-workstream.md`).
  *
  * H2 (auth) holds NO affiliate credentials and NO affiliate data in
@@ -64,6 +64,33 @@
  *   POST /connect/:network               store, then connection-test, one network
  *   GET|POST /connect/:network/retest    re-run the connection test, no resubmit
  *
+ * H6 (`docs/product/hosted-mvp-workstream.md`, `src/billing.ts`) adds Stripe
+ * subscription state and the scheduled digest's send surface
+ * (`src/routes/billing.ts`, `src/routes/admin.ts`, `src/routes/digest.ts`):
+ *   POST /billing/checkout      session-gated, creates a Stripe Checkout
+ *                              Session for the requested tier
+ *   POST /billing/webhook      Stripe-signature-verified, mirrors the
+ *                              subscription lifecycle into HOSTED_BILLING
+ *   GET  /billing/entitlement  session-gated, { tier, status } — the ONE
+ *                              billing route the hosted MCP transport calls
+ *   GET  /admin/subscribers    service-secret-gated, { userId, tier } roster
+ *                              for the hosted-digest job — ids and tiers
+ *                              only, never emails
+ *   POST /admin/session        service-secret-gated, mints a short-lived
+ *                              session token for one named userId, so the
+ *                              digest job can reuse the existing
+ *                              session-gated vault routes under that user's
+ *                              own identity
+ *   POST /admin/entitlement    service-secret-gated, the MVP manual tier-set
+ *                              path (see `src/routes/admin.ts`)
+ *   POST /digest/send          service-secret-gated, { userId, digestType,
+ *                              subject, body } — resolves the billing email
+ *                              itself and sends via Resend; the digest job
+ *                              never sees the address
+ * See `src/routes/admin.ts`'s file-header comment for the threat-model
+ * trade-off the service-secret routes introduce, and `hosted/README.md`,
+ * "H6: digest and billing", for the full write-up this PR asks Rob to accept.
+ *
  * Resend note: the rescinded waitlist-Resend decision
  * (`docs/decisions/2026-07-12-waitlist-email-resend.md`) was specifically
  * about marketing capture, and was rescinded only because the pre-sell gate
@@ -100,6 +127,9 @@ import {
   handlePutCredentials,
   handleRevealCredentials,
 } from './routes/vault.js';
+import { handleAdminIssueSession, handleAdminListSubscribers, handleAdminSetEntitlement } from './routes/admin.js';
+import { handleBillingCheckout, handleBillingEntitlement, handleBillingWebhook } from './routes/billing.js';
+import { handleDigestSend } from './routes/digest.js';
 import { buildSessionPayload, generateUserId, signSession, verifySession } from './token.js';
 
 const RESEND_API_BASE = 'https://api.resend.com';
@@ -426,6 +456,31 @@ export default {
     }
     if (connectNetworkMatch && request.method === 'POST') {
       return handleConnectSubmit(request, env, decodeURIComponent(connectNetworkMatch[1] as string));
+    }
+
+    // ── H6: billing (src/billing.ts, src/routes/billing.ts) ────────────────
+    if (url.pathname === '/billing/checkout' && request.method === 'POST') {
+      return handleBillingCheckout(request, env, cors);
+    }
+    if (url.pathname === '/billing/webhook' && request.method === 'POST') {
+      return handleBillingWebhook(request, env, cors);
+    }
+    if (url.pathname === '/billing/entitlement' && request.method === 'GET') {
+      return handleBillingEntitlement(request, env, cors);
+    }
+
+    // ── H6: service-authenticated admin + digest routes (src/routes/admin.js, digest.js) ──
+    if (url.pathname === '/admin/subscribers' && request.method === 'GET') {
+      return handleAdminListSubscribers(request, env, cors);
+    }
+    if (url.pathname === '/admin/session' && request.method === 'POST') {
+      return handleAdminIssueSession(request, env, cors);
+    }
+    if (url.pathname === '/admin/entitlement' && request.method === 'POST') {
+      return handleAdminSetEntitlement(request, env, cors);
+    }
+    if (url.pathname === '/digest/send' && request.method === 'POST') {
+      return handleDigestSend(request, env, cors);
     }
 
     if ((url.pathname === '/' || url.pathname === '/health') && request.method === 'GET') {

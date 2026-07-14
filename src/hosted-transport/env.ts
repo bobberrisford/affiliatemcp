@@ -22,10 +22,20 @@ export interface HostedTransportConfig {
   vaultUrl: string;
   /** TCP port the Node HTTP server listens on. */
   port: number;
-  /** Token-bucket capacity: the maximum burst of tool calls a single user may make. */
+  /** Token-bucket capacity: the maximum burst of tool calls a single user may make. Used for the
+   * Pro tier, and as the Solo-tier default when no Solo-specific override is set (H6). */
   rateLimitCapacity: number;
-  /** Token-bucket refill rate, in tool calls per second, per user. */
+  /** Token-bucket refill rate, in tool calls per second, per user. Same Pro/Solo-default split
+   * as `rateLimitCapacity`. */
   rateLimitRefillPerSecond: number;
+  /** Solo-tier token-bucket capacity override (H6: `docs/product/hosted-mvp-workstream.md`,
+   * "Rate-limit tiers may differ by tier via env config"). Falls back to `rateLimitCapacity`
+   * when unset — Solo and Pro share one limiter configuration until an operator deliberately
+   * differentiates them. Optional so existing callers that construct this config directly
+   * (tests, and any future caller) are not forced to set it. */
+  rateLimitCapacitySolo?: number;
+  /** Solo-tier refill-rate override. Falls back to `rateLimitRefillPerSecond` when unset. */
+  rateLimitRefillPerSecondSolo?: number;
 }
 
 function readUrl(name: string): string {
@@ -58,14 +68,22 @@ function readPositiveInt(name: string, fallback: number): number {
 
 /** Read and validate the hosted transport's configuration from `process.env`. */
 export function loadHostedTransportConfig(): HostedTransportConfig {
+  const rateLimitCapacity = readPositiveInt('HOSTED_RATE_LIMIT_CAPACITY', DEFAULT_RATE_LIMIT_CAPACITY);
+  const rateLimitRefillPerSecond = readPositiveInt(
+    'HOSTED_RATE_LIMIT_REFILL_PER_SECOND',
+    DEFAULT_RATE_LIMIT_REFILL_PER_SECOND,
+  );
   return {
     authUrl: readUrl('HOSTED_AUTH_URL'),
     vaultUrl: readUrl('HOSTED_VAULT_URL'),
     port: readPositiveInt('HOSTED_TRANSPORT_PORT', DEFAULT_PORT),
-    rateLimitCapacity: readPositiveInt('HOSTED_RATE_LIMIT_CAPACITY', DEFAULT_RATE_LIMIT_CAPACITY),
-    rateLimitRefillPerSecond: readPositiveInt(
-      'HOSTED_RATE_LIMIT_REFILL_PER_SECOND',
-      DEFAULT_RATE_LIMIT_REFILL_PER_SECOND,
+    rateLimitCapacity,
+    rateLimitRefillPerSecond,
+    // Solo-tier overrides fall back to the shared/Pro values when unset (H6).
+    rateLimitCapacitySolo: readPositiveInt('HOSTED_RATE_LIMIT_CAPACITY_SOLO', rateLimitCapacity),
+    rateLimitRefillPerSecondSolo: readPositiveInt(
+      'HOSTED_RATE_LIMIT_REFILL_PER_SECOND_SOLO',
+      rateLimitRefillPerSecond,
     ),
   };
 }

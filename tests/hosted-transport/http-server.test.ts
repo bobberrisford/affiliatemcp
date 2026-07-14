@@ -31,10 +31,23 @@ interface FakeSession {
   exp: number; // unix seconds
 }
 
+interface FakeEntitlement {
+  tier: 'none' | 'solo' | 'pro';
+  status: string;
+}
+
 interface FakeHostedWorker {
   url: string;
   sessions: Map<string, FakeSession>;
   vault: Map<string, Record<string, string>>;
+  /** Defaults every session to `pro` (uncapped, unrestricted) when a test does not set an entry
+   * explicitly — every H4-era test in this file predates the H6 billing gate and expects
+   * unrestricted hosted access, so `pro` is the behaviour-preserving default. H6's own tests
+   * (`tier-gate.test.ts`, and the new describe block below) set this map explicitly per case. */
+  entitlements: Map<string, FakeEntitlement>;
+  /** When true, `/billing/entitlement` returns a 500 regardless of session validity — simulates
+   * a billing-service outage distinct from "this token is invalid" or "tier is none". */
+  billingUnavailable: boolean;
   close: () => Promise<void>;
 }
 
@@ -59,6 +72,17 @@ function sendJson(res: ServerResponse, status: number, body: unknown): void {
 function startFakeHostedWorker(): Promise<FakeHostedWorker> {
   const sessions = new Map<string, FakeSession>();
   const vault = new Map<string, Record<string, string>>();
+  const entitlements = new Map<string, FakeEntitlement>();
+  const state = { billingUnavailable: false };
+
+  function sessionFor(req: IncomingMessage): FakeSession | undefined {
+    const authHeader = req.headers['authorization'];
+    const token =
+      typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
+        ? authHeader.slice('Bearer '.length)
+        : undefined;
+    return token ? sessions.get(token) : undefined;
+  }
 
   const server: HttpServer = createServer((req, res) => {
     void (async () => {
@@ -80,14 +104,43 @@ function startFakeHostedWorker(): Promise<FakeHostedWorker> {
         return;
       }
 
+      // H6: GET /billing/entitlement — session-gated. Defaults an unregistered
+      // session to `pro` (see the FakeHostedWorker.entitlements doc comment).
+      if (url.pathname === '/billing/entitlement' && req.method === 'GET') {
+        if (state.billingUnavailable) {
+          sendJson(res, 500, { error: 'internal_error' });
+          return;
+        }
+        const session = sessionFor(req);
+        if (!session) {
+          sendJson(res, 401, { error: 'missing_session' });
+          return;
+        }
+        const entitlement = entitlements.get(session.userId) ?? { tier: 'pro', status: 'active' };
+        sendJson(res, 200, entitlement);
+        return;
+      }
+
+      // H6: GET /vault/credentials — session-gated list of connected networks
+      // (never values), for the Solo-tier network cap.
+      if (url.pathname === '/vault/credentials' && req.method === 'GET') {
+        const session = sessionFor(req);
+        if (!session) {
+          sendJson(res, 401, { error: 'missing_session' });
+          return;
+        }
+        const prefix = `${session.userId}:`;
+        const networks = Array.from(vault.keys())
+          .filter((k) => k.startsWith(prefix))
+          .map((k) => k.slice(prefix.length))
+          .sort();
+        sendJson(res, 200, { networks });
+        return;
+      }
+
       const revealMatch = url.pathname.match(/^\/vault\/credentials\/([^/]+)\/reveal$/);
       if (revealMatch && req.method === 'GET') {
-        const authHeader = req.headers['authorization'];
-        const token =
-          typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
-            ? authHeader.slice('Bearer '.length)
-            : undefined;
-        const session = token ? sessions.get(token) : undefined;
+        const session = sessionFor(req);
         if (!session) {
           sendJson(res, 401, { error: 'missing_session' });
           return;
@@ -113,6 +166,13 @@ function startFakeHostedWorker(): Promise<FakeHostedWorker> {
         url: `http://127.0.0.1:${port}`,
         sessions,
         vault,
+        entitlements,
+        get billingUnavailable() {
+          return state.billingUnavailable;
+        },
+        set billingUnavailable(v: boolean) {
+          state.billingUnavailable = v;
+        },
         close: () => new Promise((res, rej) => server.close((err) => (err ? rej(err) : res()))),
       });
     });
@@ -296,6 +356,122 @@ describe('hosted MCP transport (H4) end to end', () => {
     const client = await connectClient(token);
     const result = await client.callTool({ name: 'affiliate_cj_verify_auth', arguments: {} });
     expect(result.isError).toBeFalsy();
+    await client.close();
+  });
+});
+
+describe('hosted MCP transport (H6) billing-tier gate', () => {
+  function connectedNetworkFields(userId: string, networks: string[]): void {
+    for (const network of networks) {
+      fakeWorker.vault.set(`${userId}:${network}`, { PLACEHOLDER: 'x' });
+    }
+  }
+
+  it('refuses every tool call for tier "none", before any vault or adapter call', async () => {
+    const userId = 'hosted_usr_test_none_tier';
+    const token = 'amcps_test.session.none_tier';
+    fakeWorker.sessions.set(token, { userId, exp: Math.floor(Date.now() / 1000) + 3600 });
+    fakeWorker.entitlements.set(userId, { tier: 'none', status: 'none' });
+    const cjSpy = mockCjNetworkCall('1');
+
+    const client = await connectClient(token);
+    const result = await client.callTool({ name: 'affiliate_cj_verify_auth', arguments: {} });
+
+    expect(result.isError).toBe(true);
+    const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? '';
+    const refusal = JSON.parse(text) as { error: string; entitled: boolean; tier: string };
+    expect(refusal.error).toBe('entitlement_required');
+    expect(refusal.entitled).toBe(false);
+    expect(refusal.tier).toBe('none');
+    expect(cjSpy.mock.calls.some(([input]) => String(input).includes('commissions.api.cj.com'))).toBe(false);
+
+    await client.close();
+  });
+
+  it('solo tier: allows a new network while under the 5-network cap', async () => {
+    const userId = 'hosted_usr_test_solo_under_cap';
+    const token = 'amcps_test.session.solo_under_cap';
+    fakeWorker.sessions.set(token, { userId, exp: Math.floor(Date.now() / 1000) + 3600 });
+    fakeWorker.entitlements.set(userId, { tier: 'solo', status: 'active' });
+    connectedNetworkFields(userId, ['awin', 'impact']);
+    fakeWorker.vault.set(`${userId}:cj`, { CJ_API_TOKEN: 't', CJ_COMPANY_ID: '55' });
+    mockCjNetworkCall('55');
+
+    const client = await connectClient(token);
+    const result = await client.callTool({ name: 'affiliate_cj_verify_auth', arguments: {} });
+    expect(result.isError).toBeFalsy();
+    await client.close();
+  });
+
+  it('solo tier: denies a NEW 6th network once already at the cap, without ever calling it', async () => {
+    const userId = 'hosted_usr_test_solo_at_cap';
+    const token = 'amcps_test.session.solo_at_cap';
+    fakeWorker.sessions.set(token, { userId, exp: Math.floor(Date.now() / 1000) + 3600 });
+    fakeWorker.entitlements.set(userId, { tier: 'solo', status: 'active' });
+    connectedNetworkFields(userId, ['awin', 'impact', 'rakuten', 'shareasale', 'admitad']);
+    // Deliberately NOT connecting cj — this is the 6th, new network.
+    const cjSpy = mockCjNetworkCall('1');
+
+    const client = await connectClient(token);
+    const result = await client.callTool({ name: 'affiliate_cj_verify_auth', arguments: {} });
+
+    expect(result.isError).toBe(true);
+    const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? '';
+    const refusal = JSON.parse(text) as { error: string; tier: string };
+    expect(refusal.error).toBe('network_cap_exceeded');
+    expect(refusal.tier).toBe('solo');
+    expect(cjSpy.mock.calls.some(([input]) => String(input).includes('commissions.api.cj.com'))).toBe(false);
+
+    await client.close();
+  });
+
+  it('solo tier: still allows continued use of an already-connected network even at the cap', async () => {
+    const userId = 'hosted_usr_test_solo_reuse_at_cap';
+    const token = 'amcps_test.session.solo_reuse_at_cap';
+    fakeWorker.sessions.set(token, { userId, exp: Math.floor(Date.now() / 1000) + 3600 });
+    fakeWorker.entitlements.set(userId, { tier: 'solo', status: 'active' });
+    connectedNetworkFields(userId, ['awin', 'impact', 'rakuten', 'shareasale']);
+    fakeWorker.vault.set(`${userId}:cj`, { CJ_API_TOKEN: 't', CJ_COMPANY_ID: '99' });
+    mockCjNetworkCall('99');
+
+    const client = await connectClient(token);
+    const result = await client.callTool({ name: 'affiliate_cj_verify_auth', arguments: {} });
+    expect(result.isError).toBeFalsy();
+    await client.close();
+  });
+
+  it('pro tier: uncapped even with more than 5 networks already connected', async () => {
+    const userId = 'hosted_usr_test_pro_uncapped';
+    const token = 'amcps_test.session.pro_uncapped';
+    fakeWorker.sessions.set(token, { userId, exp: Math.floor(Date.now() / 1000) + 3600 });
+    fakeWorker.entitlements.set(userId, { tier: 'pro', status: 'active' });
+    connectedNetworkFields(userId, ['awin', 'impact', 'rakuten', 'shareasale', 'admitad', 'ebay']);
+    fakeWorker.vault.set(`${userId}:cj`, { CJ_API_TOKEN: 't', CJ_COMPANY_ID: '7' });
+    mockCjNetworkCall('7');
+
+    const client = await connectClient(token);
+    const result = await client.callTool({ name: 'affiliate_cj_verify_auth', arguments: {} });
+    expect(result.isError).toBeFalsy();
+    await client.close();
+  });
+
+  it('surfaces a billing-service outage as its own distinct envelope, never as tier "none"', async () => {
+    const userId = 'hosted_usr_test_billing_outage';
+    const token = 'amcps_test.session.billing_outage';
+    fakeWorker.sessions.set(token, { userId, exp: Math.floor(Date.now() / 1000) + 3600 });
+    // /auth/session/verify still works; only /billing/entitlement fails —
+    // proves the transport tells this apart from "this token is invalid" and
+    // from "tier is none".
+    fakeWorker.billingUnavailable = true;
+
+    const client = await connectClient(token);
+    const result = await client.callTool({ name: 'affiliate_cj_verify_auth', arguments: {} });
+
+    expect(result.isError).toBe(true);
+    const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? '';
+    const body = JSON.parse(text) as { error: string };
+    expect(body.error).toBe('billing_unavailable');
+
     await client.close();
   });
 });
