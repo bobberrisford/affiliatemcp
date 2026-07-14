@@ -336,6 +336,47 @@ and KMS key, alongside Cloudflare) that the current v1 design has none of.
 before Team-tier or SOC 2 work; migration is a data-key re-wrap, not a
 data migration.
 
+## H4: remote MCP transport lives in the root workspace, not here
+
+The workstream brief's own H2 write-up (above, "Adapter fetch portability")
+assumed H4's remote MCP transport might run inside this Worker, calling
+`getCredentials` (`src/vault.ts`) directly, in-process. H4's implementation
+PR investigated that and found it infeasible, so the transport is a **Node
+service in the root workspace** (`src/hosted-transport/`), not code added to
+this Worker. The reasoning, so it is not silently assumed:
+
+- **Code volume and Node-only dependencies.** `src/networks/**` (this repo's
+  86 adapters) is roughly 120,000 lines, and the tool/prompt generators around
+  them pull in `pino` (`src/shared/logging.ts`) and `node:fs`-based
+  config, caching, and telemetry (`src/shared/config.ts`, `cache.ts`,
+  `telemetry.ts`, `update-check.ts`, `cli/doctor.ts`, `cli/setup.ts`). None of
+  that is Workers-portable the way this Worker's own code deliberately is —
+  `src/token.ts`, `src/identity.ts`, and `src/vault.ts` use WebCrypto and
+  `fetch` only, on purpose, specifically so they could run on Workers. The
+  adapters and their supporting code were never written to that constraint.
+- **Bundle size.** Even ignoring the portability problem, 120k+ lines across
+  86 adapters is well past what a Workers script bundle can carry (1 MB
+  compressed on the free plan, 10 MB on paid — and that is before this
+  Worker's own code and dependencies).
+- **What reversing this would cost.** Moving the transport into this Worker
+  later would mean either rewriting every Node-only primitive above for the
+  Workers runtime (an open-ended project touching shared code every adapter
+  depends on) or accepting a nodejs_compat-based bundle at the code-volume
+  cost noted above. Neither is a slice-sized change, which is why this is
+  recorded as a real architectural decision, not a detail.
+
+What this means for this Worker: it gains exactly one new route for H4,
+**`GET /vault/credentials/:network/reveal`** (`src/routes/vault.ts`), which
+decrypts and returns one network's credential to the session token's own
+owner — the sole exception to "never returns a decrypted credential value
+over HTTP" stated elsewhere in this document. It runs the identical
+`requireSession` guard every other vault route uses, so it can only ever
+serve the calling session's own credentials. The Node transport calls it with
+the SAME bearer token the MCP client authenticated with — no service key with
+elevated or cross-user read access exists anywhere in this design. See
+`src/hosted-transport/http-server.ts` in the root workspace for the transport
+itself, and `docs/product/hosted-mvp-workstream.md` for the full H4 slice.
+
 ## Deploy checklist (all human-supplied — the Worker is inert without these; Rob-only)
 
 1. `npm install`.
@@ -388,10 +429,12 @@ data migration.
 
 ## What this slice deliberately does not do
 
-- No remote MCP transport, no adapter wiring, no rate limiting or audit log
-  (H4). `getCredentials` (`src/vault.ts`) is the primitive H4 will call at
-  call time to run an adapter under a caller's own identity; nothing wires
-  it to an adapter yet.
+- No remote MCP transport, adapter wiring, rate limiting, or audit log HERE —
+  H4 built all of that as a Node service in the root workspace
+  (`src/hosted-transport/`), not in this Worker; see "H4: remote MCP transport
+  lives in the root workspace, not here" above. This Worker's only H4-facing
+  addition is the `GET /vault/credentials/:network/reveal` route that Node
+  service calls, over HTTP, with the caller's own session token.
 - No guided connect flow, no billing/entitlement enforcement (H5, H6).
 - No session revocation. Session tokens are stateless (see `src/token.ts`);
   `DELETE /account` removes everything a token could reach but does not

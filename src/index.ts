@@ -57,6 +57,7 @@ function printHelp(): void {
   write('  affiliate-networks-mcp update enable   Turn on silent auto-apply on launch (opt-in)');
   write('  affiliate-networks-mcp update disable  Turn off silent auto-apply');
   write('  affiliate-networks-mcp cowork-mirror   Create a private GitHub mirror for Claude Cowork');
+  write('  affiliate-networks-mcp hosted-transport  Start the hosted streamable-HTTP MCP transport (H4)');
   write('  affiliate-networks-mcp validate <slug> Run the full validation suite against one network');
   write('  affiliate-networks-mcp cache clear     Delete every cached response');
   write('  affiliate-networks-mcp --help          Show this help');
@@ -279,6 +280,19 @@ async function main(argv: string[]): Promise<number> {
     case 'cache': {
       const { runCache } = await import('./cli/cache.js');
       return runCache({ subcommand: rest[0] });
+    }
+    case 'hosted-transport': {
+      // Workstream H4 (`docs/product/hosted-mvp-workstream.md`): the remote,
+      // multi-tenant streamable-HTTP MCP transport. Distinct from the no-arg
+      // path above — this is additive, not a replacement for local stdio.
+      // `startHostedHttpServer` never resolves until the caller stops it, so
+      // block the same way the stdio server does below.
+      const { loadHostedTransportConfig, startHostedHttpServer } = await import('./hosted-transport/index.js');
+      const config = loadHostedTransportConfig();
+      const handle = await startHostedHttpServer(config);
+      log.info({ port: handle.port }, 'hosted MCP transport started');
+      await new Promise<never>(() => {});
+      return 0; // unreachable
     }
     default: {
       write(`Unknown command: ${cmd}`);
