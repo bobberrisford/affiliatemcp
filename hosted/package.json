@@ -1,0 +1,23 @@
+{
+  "name": "affiliate-mcp-hosted",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Hosted-service scaffold and user-auth Cloudflare Worker for affiliate-mcp (workstream slice H2): email magic-link sign-in and Ed25519-signed session tokens. Holds no affiliate credentials or affiliate data.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "wrangler deploy --dry-run --outdir dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "gen-keypair": "tsx scripts/gen-keypair.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250101.0",
+    "tsx": "^4.22.3",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "wrangler": "^3.90.0"
+  }
+}
