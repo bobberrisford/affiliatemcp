@@ -171,8 +171,12 @@ local single-user path preserved unchanged.
       signal is thin.
       Promotion per network requires: the accepted adapter promotion gate met,
       a terms-of-service check for third-party credential use recorded in the
-      network's docs, and the connect flow extended. Networks that fail the
-      ToS check stay local-only and the pricing page says so.
+      network's docs, the connect flow extended, and any module-level OAuth
+      token cache keyed by request identity (nine non-MVP adapters hold
+      unkeyed caches today; promoting one without keying would
+      cross-contaminate tenants; see the H1 review finding, 2026-07-14).
+      Networks that fail the ToS check stay local-only and the pricing page
+      says so.
 - [ ] **[build]** Scheduled anomaly watch (Pro): threshold and trend checks
       over the same adapter operations the local anomaly skill uses.
 - [ ] **[build]** Unpaid-commission chaser digest (Pro).
