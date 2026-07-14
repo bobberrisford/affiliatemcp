@@ -1,10 +1,12 @@
 /**
  * Route-level tests for the H6 billing routes (checkout, webhook,
- * entitlement), exercised through the same `worker.fetch` entry point as
- * `test/worker.test.ts` and `test/vault-routes.test.ts`. Stripe is mocked
- * via a spy on `fetch`; KV is an in-memory fake. No live network calls.
- * Token-scope enforcement across every session-gated route lives in
- * `test/scope.test.ts`; the scheduled digest in `test/digest-scheduled.test.ts`.
+ * entitlement, and the Stripe-wiring follow-up's portal route), exercised
+ * through the same `worker.fetch` entry point as `test/worker.test.ts` and
+ * `test/vault-routes.test.ts`. Stripe is mocked via a spy on `fetch`; KV is
+ * an in-memory fake. No live network calls. Token-scope enforcement across
+ * every session-gated route lives in `test/scope.test.ts`; the scheduled
+ * digest in `test/digest-scheduled.test.ts`; the billing page's browser-facing
+ * hand-off to checkout/portal in `test/billing-page.test.ts`.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -62,6 +64,7 @@ async function makeEnv(signingKey: string, overrides: Partial<Env> = {}): Promis
     STRIPE_PRICE_ID_PRO: 'price_pro',
     BILLING_SUCCESS_URL: 'https://hosted.test/success',
     BILLING_CANCEL_URL: 'https://hosted.test/cancel',
+    BILLING_PORTAL_RETURN_URL: 'https://hosted.test/connect/billing',
     ...overrides,
   };
   return { env, billingKv };
@@ -306,5 +309,89 @@ describe('GET /billing/entitlement', () => {
     const token = await issueSessionToken(signingKey, 'hosted_usr_6');
     const res = await worker.fetch(req('/billing/entitlement', 'GET', { token }), env);
     expect(await res.json()).toEqual({ tier: 'pro', status: 'active' });
+  });
+});
+
+describe('POST /billing/portal', () => {
+  it('requires a session', async () => {
+    const { env } = await makeEnv('x');
+    const res = await worker.fetch(req('/billing/portal', 'POST', {}), env);
+    expect(res.status).toBe(401);
+  });
+
+  it('returns unknown_account for a caller with no recorded Stripe customer id', async () => {
+    const signingKey = await generatePrivateKeyB64();
+    const { env } = await makeEnv(signingKey);
+    const token = await issueSessionToken(signingKey, 'hosted_usr_7');
+    const res = await worker.fetch(req('/billing/portal', 'POST', { token, body: {} }), env);
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: 'unknown_account' });
+  });
+
+  it('returns billing_not_configured when BILLING_PORTAL_RETURN_URL is unset', async () => {
+    const signingKey = await generatePrivateKeyB64();
+    const { env, billingKv } = await makeEnv(signingKey, { BILLING_PORTAL_RETURN_URL: undefined });
+    await putSubscriptionRecord(billingKv, 'hosted_usr_8', {
+      tier: 'pro',
+      status: 'active',
+      customerId: 'cus_1',
+      updatedAt: 0,
+    });
+    const token = await issueSessionToken(signingKey, 'hosted_usr_8');
+    const res = await worker.fetch(req('/billing/portal', 'POST', { token, body: {} }), env);
+    expect(res.status).toBe(503);
+  });
+
+  it('creates a Stripe Billing Portal session for the caller\'s OWN customer id', async () => {
+    const signingKey = await generatePrivateKeyB64();
+    const { env, billingKv } = await makeEnv(signingKey);
+    await putSubscriptionRecord(billingKv, 'hosted_usr_9', {
+      tier: 'solo',
+      status: 'active',
+      customerId: 'cus_mine',
+      updatedAt: 0,
+    });
+    // A second user's record, to prove the portal route never reads anyone
+    // else's customer id, only the caller's own.
+    await putSubscriptionRecord(billingKv, 'hosted_usr_other', {
+      tier: 'pro',
+      status: 'active',
+      customerId: 'cus_other',
+      updatedAt: 0,
+    });
+    const token = await issueSessionToken(signingKey, 'hosted_usr_9');
+    const stripeSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify({ id: 'bps_1', url: 'https://billing.stripe.com/session/bps_1' }), {
+          status: 200,
+        }),
+      );
+
+    const res = await worker.fetch(req('/billing/portal', 'POST', { token, body: {} }), env);
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ url: 'https://billing.stripe.com/session/bps_1' });
+    const [, init] = stripeSpy.mock.calls[0] as [string, RequestInit];
+    const sentBody = new URLSearchParams(init.body as string);
+    expect(sentBody.get('customer')).toBe('cus_mine');
+    expect(sentBody.get('return_url')).toBe('https://hosted.test/connect/billing');
+  });
+
+  it('surfaces a Stripe failure as portal_failed, not a fabricated success', async () => {
+    const signingKey = await generatePrivateKeyB64();
+    const { env, billingKv } = await makeEnv(signingKey);
+    await putSubscriptionRecord(billingKv, 'hosted_usr_10', {
+      tier: 'solo',
+      status: 'active',
+      customerId: 'cus_1',
+      updatedAt: 0,
+    });
+    const token = await issueSessionToken(signingKey, 'hosted_usr_10');
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('portal not enabled', { status: 400 }));
+
+    const res = await worker.fetch(req('/billing/portal', 'POST', { token, body: {} }), env);
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({ error: 'portal_failed' });
   });
 });

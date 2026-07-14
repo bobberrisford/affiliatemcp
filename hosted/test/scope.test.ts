@@ -75,6 +75,7 @@ async function makeContext(): Promise<TestContext> {
     STRIPE_PRICE_ID_PRO: 'price_pro',
     BILLING_SUCCESS_URL: 'https://hosted.test/success',
     BILLING_CANCEL_URL: 'https://hosted.test/cancel',
+    BILLING_PORTAL_RETURN_URL: 'https://hosted.test/connect/billing',
   };
   const userId = 'hosted_usr_scope_test';
   const iss = Math.floor(Date.now() / 1000);
@@ -224,6 +225,13 @@ describe('digest-scoped token: every other session-gated surface refuses it', ()
     expect(await res.json()).toEqual({ error: 'insufficient_scope' });
   });
 
+  it('POST /billing/portal returns 403 insufficient_scope', async () => {
+    const ctx = await makeContext();
+    const res = await worker.fetch(authed('/billing/portal', 'POST', ctx.digestToken, {}), ctx.env);
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'insufficient_scope' });
+  });
+
   it('the connect list page treats a digest token as not signed in (header variant)', async () => {
     const ctx = await makeContext();
     const res = await worker.fetch(authed('/connect', 'GET', ctx.digestToken), ctx.env);
@@ -250,6 +258,20 @@ describe('digest-scoped token: every other session-gated surface refuses it', ()
     expect(await submitRes.text()).toContain('sign in required');
     // Nothing was stored by the refused submit.
     expect((ctx.env.HOSTED_VAULT as unknown as { store: Map<string, string> }).store.size).toBe(0);
+  });
+
+  it('the billing page treats a digest token as not signed in (POST body variant)', async () => {
+    const ctx = await makeContext();
+    const form = new URLSearchParams({ token: ctx.digestToken });
+    const res = await worker.fetch(
+      new Request('https://hosted.test/connect/billing', {
+        method: 'POST',
+        headers: { 'content-type': 'application/x-www-form-urlencoded' },
+        body: form.toString(),
+      }),
+      ctx.env,
+    );
+    expect(await res.text()).toContain('sign in required');
   });
 
   it('a FULL session still passes the same full-scope routes (guard change is not over-broad)', async () => {

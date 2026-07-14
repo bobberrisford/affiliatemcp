@@ -7,7 +7,12 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { createCheckoutSession, signStripePayloadForTest, verifyStripeSignature } from '../src/stripe.js';
+import {
+  createBillingPortalSession,
+  createCheckoutSession,
+  signStripePayloadForTest,
+  verifyStripeSignature,
+} from '../src/stripe.js';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -86,5 +91,35 @@ describe('createCheckoutSession', () => {
         subscriptionMetadata: {},
       }),
     ).rejects.toThrow(/HTTP 402/);
+  });
+});
+
+describe('createBillingPortalSession', () => {
+  it('posts the customer id and return url to Stripe and returns the portal url', async () => {
+    const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ id: 'bps_test_1', url: 'https://billing.stripe.com/session/bps_test_1' }), {
+        status: 200,
+      }),
+    );
+
+    const session = await createBillingPortalSession('sk_test_x', {
+      customerId: 'cus_1',
+      returnUrl: 'https://hosted.test/connect/billing',
+    });
+
+    expect(session).toEqual({ url: 'https://billing.stripe.com/session/bps_test_1' });
+    const [url, init] = spy.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe('https://api.stripe.com/v1/billing_portal/sessions');
+    expect((init.headers as Record<string, string>)['authorization']).toBe('Bearer sk_test_x');
+    const sentBody = new URLSearchParams(init.body as string);
+    expect(sentBody.get('customer')).toBe('cus_1');
+    expect(sentBody.get('return_url')).toBe('https://hosted.test/connect/billing');
+  });
+
+  it('throws a StripeApiError on a non-2xx response', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('portal not enabled', { status: 400 }));
+    await expect(
+      createBillingPortalSession('sk_test_x', { customerId: 'cus_1', returnUrl: 'https://hosted.test/connect/billing' }),
+    ).rejects.toThrow(/HTTP 400/);
   });
 });

@@ -115,10 +115,26 @@ export interface Env {
   /** Stripe recurring Price id (price_…) for the £99/mo Pro tier. Same placeholder status as
    * `STRIPE_PRICE_ID_SOLO`. */
   STRIPE_PRICE_ID_PRO?: string;
-  /** Success-redirect URL for the billing Checkout session. */
+  /**
+   * Success-redirect URL for the billing Checkout session. Point this at this
+   * Worker's own billing page, `${PUBLIC_BASE_URL}/connect/billing?checkout=success`,
+   * rather than an external page: see `src/routes/billing-page.ts` for why
+   * that landing hit necessarily arrives with no session (Stripe's redirect
+   * cannot carry a bearer token) and how the page states that honestly.
+   */
   BILLING_SUCCESS_URL?: string;
-  /** Cancel-redirect URL for the billing Checkout session. */
+  /** Cancel-redirect URL for the billing Checkout session. Same guidance as
+   * `BILLING_SUCCESS_URL`: `${PUBLIC_BASE_URL}/connect/billing?checkout=cancelled`. */
   BILLING_CANCEL_URL?: string;
+  /**
+   * Return URL for a Stripe Billing Portal session (`POST /billing/portal`,
+   * `src/routes/billing.ts`): where Stripe sends the browser back after the
+   * subscriber closes the portal. Set to
+   * `${PUBLIC_BASE_URL}/connect/billing`, same reasoning as
+   * `BILLING_SUCCESS_URL`/`BILLING_CANCEL_URL`: this is this Worker's own
+   * page, and the returning hit carries no session either.
+   */
+  BILLING_PORTAL_RETURN_URL?: string;
   /**
    * Base URL of the Node digest-compose service (`src/hosted-digest/`, root
    * workspace) the scheduled digest handler calls (`src/digest.ts`). While

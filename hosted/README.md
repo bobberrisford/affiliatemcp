@@ -727,12 +727,86 @@ rotation procedure (manual `wrangler secret put` plus updating the compose
 service's env, same as every other secret in this repo). Revisit alongside
 the vault's KMS migration if Team-tier or SOC 2 work raises the bar.
 
-### Manual tier administration (MVP: no admin route, by decision)
+### Billing (Stripe checkout, portal, and the billing page)
 
-There is no HTTP route that sets a tier — that was part of the rejected
-design. Until the live Stripe wiring is deployed, Rob grants or changes a
-tier directly in KV with Wrangler (run from `hosted/`; these act on the
-namespace ids in `wrangler.toml`):
+Stripe-wiring follow-up to H6: subscribing, upgrading, and managing a
+subscription are now entirely self-serve through the Worker's own billing
+page, `GET|POST /connect/billing` (`src/routes/billing-page.ts`), reachable
+from a `billing` link on the connect list page
+(`GET|POST /connect`, `src/routes/connect.ts`). No manual step is needed for
+the normal case of a user signing up, upgrading Solo to Pro, or cancelling.
+
+The page reads the caller's tier and status from the existing
+`GET /billing/entitlement` logic (called in-process, not over HTTP) and shows:
+
+- **Tier none:** a "Subscribe Solo" button (£34/month) and a "Subscribe Pro"
+  button (£99/month).
+- **Tier Solo:** an "Upgrade to Pro" button and a "Manage subscription"
+  button.
+- **Tier Pro:** a "Manage subscription" button only (nothing higher to
+  subscribe to).
+
+Each button is a small inline POST form carrying the hidden session token,
+identical in shape to every other navigation form in this connect flow (see
+"Session gating on plain HTML pages" above); the subscribe/upgrade buttons
+also carry a hidden `tier` field. Two further POST-only routes do the actual
+work:
+
+- **`POST /connect/billing/checkout`** resolves the browser's session, then
+  calls `handleBillingCheckout` (`src/routes/billing.ts`) directly, in
+  process, with a synthetic same-worker request carrying that session as an
+  `Authorization` header (never sent over the wire, never in a URL), and
+  303-redirects the browser to the Stripe Checkout URL it returns.
+- **`POST /connect/billing/portal`** does the same for the new
+  **`POST /billing/portal`** route (`src/routes/billing.ts`,
+  `createBillingPortalSession` in `src/stripe.ts`): it creates a Stripe
+  Billing Portal session for the caller's OWN Stripe customer id, read from
+  their own `sub:<userId>` record, never a customer id supplied by the
+  request. The portal is where a subscriber actually cancels, changes payment
+  method, or (if enabled in the Stripe dashboard's portal configuration)
+  switches plans; this Worker only mints the one-time URL and never sees
+  what happens inside it. `POST /billing/portal` is full-session-gated
+  exactly like checkout and entitlement, and returns `404 unknown_account`
+  for a caller with no recorded Stripe customer id (never subscribed, or
+  subscribed but the webhook has not yet run) rather than a generic error.
+
+**Stripe-return honesty, no workaround.** `BILLING_SUCCESS_URL`,
+`BILLING_CANCEL_URL`, and `BILLING_PORTAL_RETURN_URL` (`src/env.ts`,
+`wrangler.toml`) should all point back at this Worker's own billing page:
+`${PUBLIC_BASE_URL}/connect/billing`, with `?checkout=success` or
+`?checkout=cancelled` on the Checkout redirects (a plain, non-sensitive
+status flag, never a token). Stripe's redirect is a plain browser GET with no
+mechanism to carry our bearer session token, and it must never be asked to
+try. That landing hit therefore always arrives signed out. The billing page
+does not invent a session, silently poll Stripe, or fabricate a "you're
+subscribed" result on that hit: with no valid session it shows the ordinary
+sign-in prompt, with one added, honest line describing what the `checkout`
+flag claims happened ("Stripe reports checkout is complete. Sign back in
+above..." or "Checkout was cancelled. Nothing was charged."). Once the caller
+pastes their session token back in, `GET /billing/entitlement` (read
+in-process on the billing page too) is the only source of truth for what
+actually happened, never the redirect itself.
+
+**Dashboard prerequisites** (Rob-only, one-time, per the deploy checklist
+below): create the Solo and Pro recurring Prices, set the two price-id env
+vars, and if Solo-to-Pro in-place upgrades should avoid opening the portal,
+put both Prices on one Stripe Product so Checkout's subscription-mode
+behaviour replaces the existing subscription's price on the next invoice
+rather than starting a second one. Enabling the **Stripe Customer Portal**
+itself, in the Stripe dashboard's Billing settings, is required before
+`POST /billing/portal` will succeed; an unconfigured portal returns a Stripe
+API error, surfaced here as `502 portal_failed`.
+
+### Manual tier administration (break-glass only, now that Stripe is wired)
+
+There is still no HTTP admin route that sets a tier for an arbitrary user:
+that was part of the rejected all-capability-secret design (see "Digest
+orchestration and token scopes" above) and remains rejected. With the billing
+page above, this is no longer the documented path for a normal subscribe,
+upgrade, or cancel; keep it as a break-glass appendix for support cases the
+billing page cannot reach (a stuck webhook, a manual comp, an account with no
+email on file). Rob grants or changes a tier directly in KV with Wrangler
+(run from `hosted/`; these act on the namespace ids in `wrangler.toml`):
 
 ```sh
 # Grant (or overwrite) a tier. updatedAt is unix seconds; email is optional
@@ -750,20 +824,18 @@ npx wrangler kv key put --binding HOSTED_BILLING "sub:hosted_usr_<id>" \
 npx wrangler kv key delete --binding HOSTED_BILLING "sub:hosted_usr_<id>"
 ```
 
-Once Stripe is wired up, `POST /billing/checkout` and the webhook are the
-normal route to an entitlement; these commands remain for support and
-testing.
-
 ### Account deletion and Stripe
 
 `DELETE /account` removes the subscription record (billing email included)
 and the `stripe-sub:` reverse-index entry along with everything H2/H3
 deleted — see `src/routes/account.ts`. Cancelling the live Stripe
-subscription is a Rob-side step in the same runbook: Stripe keeps billing
-until cancelled on Stripe's side, and a later `customer.subscription.updated`
-webhook event could rewrite the deleted record from Stripe's own data. Until
-a self-serve billing portal exists, treat "account deleted" as "cancel the
-subscription in the Stripe dashboard now".
+subscription is a separate step: Stripe keeps billing until cancelled on
+Stripe's side, and a later `customer.subscription.updated` webhook event
+could rewrite the deleted record from Stripe's own data. With the billing
+portal now wired up, a user can cancel there themselves before deleting
+their account (`POST /connect/billing/portal`, above); if they do not, treat
+"account deleted" as "cancel the subscription in the Stripe dashboard now",
+same as before this follow-up.
 
 ## Deploy checklist (all human-supplied — the Worker is inert without these; Rob-only)
 
@@ -807,10 +879,18 @@ subscription in the Stripe dashboard now".
     in `STRIPE_PRICE_ID_SOLO`/`STRIPE_PRICE_ID_PRO`; enable Stripe Tax;
     register the webhook endpoint (`/billing/webhook`) for
     `checkout.session.completed`, `customer.subscription.updated`, and
-    `customer.subscription.deleted`.
+    `customer.subscription.deleted`; enable the **Stripe Customer Portal**
+    in the dashboard's Billing settings (required before
+    `POST /billing/portal` will succeed); put the Solo and Pro Prices on one
+    Stripe Product if Solo-to-Pro upgrades should replace the price in place
+    rather than rely on the portal for the switch.
 12. `npx wrangler secret put STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`.
-13. Set `BILLING_SUCCESS_URL`/`BILLING_CANCEL_URL` in `wrangler.toml` to the
-    hosted product's real success/cancel pages.
+13. Set `BILLING_SUCCESS_URL`, `BILLING_CANCEL_URL`, and
+    `BILLING_PORTAL_RETURN_URL` in `wrangler.toml` to this Worker's OWN
+    billing page (`${PUBLIC_BASE_URL}/connect/billing`, with
+    `?checkout=success`/`?checkout=cancelled` on the first two), not an
+    external page: see "Billing (Stripe checkout, portal, and the billing
+    page)" above for why.
 14. Deploy the Node digest-compose service (`src/hosted-digest/` in the root
     workspace, `affiliate-networks-mcp hosted-digest` — see its
     `index.ts` header for the systemd unit) wherever the hosted MCP
@@ -843,13 +923,21 @@ subscription in the Stripe dashboard now".
   carries `cache-control: no-store` and `referrer-policy: no-referrer`
   (`test/connect-routes.test.ts`); and (H6) subscription-state resolution
   and complete billing deletion (`test/billing.test.ts`), the Stripe
-  webhook-signature verifier (`test/stripe.test.ts`), the billing routes —
-  checkout metadata, webhook idempotency and tier derivation, the
-  ignored-checkout warning, full-session gating (`test/billing-routes.test.ts`)
-  — token-scope enforcement across every session-gated surface (digest
-  tokens accepted by exactly the two vault read routes, refused everywhere
-  else: `test/scope.test.ts`), account deletion covering all three KV
-  namespaces including the billing email and digest roster
+  webhook-signature verifier plus the billing-portal session request shape
+  (`test/stripe.test.ts`), the billing routes: checkout metadata, webhook
+  idempotency and tier derivation, the ignored-checkout warning,
+  `POST /billing/portal`'s own-customer-id scoping and `unknown_account`/
+  `billing_not_configured` handling, full-session gating
+  (`test/billing-routes.test.ts`); the billing page's auth-gating, tier-none
+  subscribe buttons, Solo/Pro manage-and-upgrade actions, the
+  checkout/portal hand-off calling the existing routes in-process with the
+  right tier, no session token in any URL, and the Stripe-return landing
+  showing the sign-in prompt with an honest status line rather than a
+  fabricated result (`test/billing-page.test.ts`); token-scope enforcement
+  across every session-gated surface (digest tokens accepted by exactly the
+  two vault read routes, refused everywhere else, including
+  `POST /billing/portal`: `test/scope.test.ts`), account deletion covering
+  all three KV namespaces including the billing email and digest roster
   (`test/vault-routes.test.ts`), and the scheduled digest orchestration:
   in-process roster, digest-scoped 15-minute token minting verified against
   the real signing key, userId-only compose bodies, Worker-side email
@@ -886,14 +974,17 @@ subscription in the Stripe dashboard now".
 - No admin routes and no service credential that can enumerate tenants or
   mint sessions from outside this Worker — deliberately, by Rob's 2026-07-14
   decision. See "Digest orchestration and token scopes: threat model" above;
-  tier administration before the Stripe wiring is manual `wrangler kv key
-  put` ("Manual tier administration").
-- No billing portal (cancel/manage self-serve) route. `POST /billing/checkout`
-  and the webhook are the only Stripe-facing surface this slice adds; a
-  portal route is a small, separate addition if the hosted product needs one
-  before Rob is ready to build full self-serve account management. Until
-  then, cancelling the Stripe subscription after an account deletion is a
-  Rob-side runbook step ("Account deletion and Stripe" above).
+  tier administration outside the normal Stripe checkout/portal flow is
+  manual `wrangler kv key put`, kept now only as a break-glass appendix
+  ("Manual tier administration (break-glass only, now that Stripe is
+  wired)").
+- The billing page (`GET|POST /connect/billing`, "Billing (Stripe checkout,
+  portal, and the billing page)" above) has no server-side polling or
+  webhook-status view of its own: it reads `GET /billing/entitlement`
+  in-process on every load, so a Checkout or Portal action is reflected the
+  next time the page is opened, never instantly on the redirect back (Stripe's
+  redirect cannot carry a session token; see that section for why this is
+  stated plainly rather than worked around).
 
 `src/shared/request-context.ts` (H1) is the seam H4 will use to run adapter
 calls under a per-tenant identity; this slice does not touch it or wire any
