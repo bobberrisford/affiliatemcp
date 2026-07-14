@@ -323,9 +323,11 @@ small, bounded number of extra calls, not a per-request tax on every
 credential read) and a second cloud dependency (an AWS account, IAM policy,
 and KMS key, alongside Cloudflare) that the current v1 design has none of.
 
-**Decision required from Rob before this slice merges: accept the
-Worker-secret design for MVP, or require the KMS provider first. The
-`MasterKeyProvider` seam makes migration possible either way.**
+**Decision: Rob accepted the Worker-secret design for the MVP on
+2026-07-14** (in-session, via the maintainer question tool), with the
+`MasterKeyProvider` seam as the sanctioned KMS migration path. Revisit
+before Team-tier or SOC 2 work; migration is a data-key re-wrap, not a
+data migration.
 
 ## Deploy checklist (all human-supplied — the Worker is inert without these; Rob-only)
 
