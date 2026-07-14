@@ -12,9 +12,12 @@
  * over `"{timestamp}.{payload}"`, compared to the `v1` value(s) in the
  * `Stripe-Signature` header, with a timestamp-tolerance replay check) — both
  * are a small, bounded amount of code, so hand-rolling them keeps this
- * dependency-free rather than adding the SDK for two calls. If hosted's
- * Stripe surface grows materially beyond checkout + webhook (e.g. the
- * billing portal, proration previews), revisit that trade-off.
+ * dependency-free rather than adding the SDK for two calls. A third call,
+ * `POST /v1/billing_portal/sessions` (`createBillingPortalSession` below),
+ * followed the same shape closely enough (one more form-encoded POST) that it
+ * did not change this trade-off; revisit if hosted's Stripe surface grows
+ * again beyond checkout, webhook, and portal (for example, proration
+ * previews).
  */
 
 const STRIPE_API_BASE = 'https://api.stripe.com/v1';
@@ -106,6 +109,45 @@ export async function createCheckoutSession(
   }
   const json = (await res.json()) as { id: string; url: string | null };
   return { id: json.id, url: json.url };
+}
+
+export interface CreateBillingPortalSessionParams {
+  customerId: string;
+  returnUrl: string;
+}
+
+export interface StripeBillingPortalSession {
+  url: string;
+}
+
+/**
+ * Create a Stripe Billing Portal session for one customer, mirroring the
+ * entitlement-issuer Worker's `handlePortal` (`issuer/src/index.ts`,
+ * `stripe.billingPortal.sessions.create`) but as a hand-rolled REST call, for
+ * the same "no new deps" reason `createCheckoutSession` above is. The portal
+ * itself is where a subscriber cancels, changes payment method, or (if
+ * enabled in the Stripe dashboard) switches plans; this Worker only mints the
+ * one-time session URL and never sees what happens inside it.
+ */
+export async function createBillingPortalSession(
+  secretKey: string,
+  params: CreateBillingPortalSessionParams,
+): Promise<StripeBillingPortalSession> {
+  const body = new URLSearchParams();
+  appendFormEntries(body, 'customer', params.customerId);
+  appendFormEntries(body, 'return_url', params.returnUrl);
+
+  const res = await fetch(`${STRIPE_API_BASE}/billing_portal/sessions`, {
+    method: 'POST',
+    headers: stripeHeaders(secretKey),
+    body: body.toString(),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new StripeApiError(`Stripe billing portal session create failed: HTTP ${res.status} ${text}`, res.status);
+  }
+  const json = (await res.json()) as { url: string };
+  return { url: json.url };
 }
 
 function hexToBytes(hex: string): Uint8Array {

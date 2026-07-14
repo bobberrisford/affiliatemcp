@@ -1,11 +1,20 @@
 /**
  * H6 billing routes: session-gated Stripe Checkout creation, the webhook that
- * mirrors Stripe's subscription lifecycle into `HOSTED_BILLING`, and the
+ * mirrors Stripe's subscription lifecycle into `HOSTED_BILLING`, the
  * entitlement read the hosted MCP transport (`src/hosted-transport/`, root
- * workspace) consults on every tool call. Mirrors the entitlement-issuer
- * Worker's shape (`issuer/src/index.ts`) — see `src/billing.ts`'s file-header
- * comment for the one deliberate difference (a real authenticated userId
- * instead of an anonymous account key).
+ * workspace) consults on every tool call, and (Stripe-wiring follow-up) the
+ * Billing Portal session creation the billing page's Manage button uses.
+ * Mirrors the entitlement-issuer Worker's shape (`issuer/src/index.ts`) — see
+ * `src/billing.ts`'s file-header comment for the one deliberate difference
+ * (a real authenticated userId instead of an anonymous account key).
+ *
+ * `src/routes/billing-page.ts` is the ONLY caller of `handleBillingCheckout`
+ * and `handleBillingPortal` other than the router (`src/index.ts`): the
+ * billing page resolves the browser's session itself, then calls these two
+ * functions directly, in-process, with a synthetic same-process `Request`
+ * carrying that session as an `Authorization` header: never a second bearer
+ * token anywhere a browser could see it, and never a duplicated copy of this
+ * checkout/portal logic.
  */
 
 import type { Env } from '../env.js';
@@ -19,7 +28,7 @@ import {
   putSubscriptionReverseIndex,
   resolveEntitlement,
 } from '../billing.js';
-import { createCheckoutSession, verifyStripeSignature } from '../stripe.js';
+import { createBillingPortalSession, createCheckoutSession, verifyStripeSignature } from '../stripe.js';
 // Full-scope only (H6, `./guard.ts`): a digest-scoped token has no business
 // creating checkout sessions or reading billing state — its whole job is two
 // vault reads. The webhook route carries no session at all (Stripe signs it).
@@ -212,6 +221,51 @@ export async function handleBillingEntitlement(
 
   const entitlement = await resolveEntitlement(env.HOSTED_BILLING, auth.userId);
   return json(entitlement, { status: 200 }, cors);
+}
+
+// ── POST /billing/portal ──────────────────────────────────────────────────
+// Full-session-gated (same reasoning as checkout above), mirroring the
+// entitlement-issuer Worker's `POST /portal` (`issuer/src/index.ts`): create
+// a Stripe Billing Portal session for the CALLER'S OWN Stripe customer id,
+// read from their own `sub:<userId>` record, never a customer id supplied
+// by the request, so this route cannot be pointed at anyone else's billing.
+// Cancellation, payment-method changes, and (if enabled in the Stripe
+// dashboard's portal configuration) plan switching all happen inside the
+// portal itself; this Worker only mints the one-time URL.
+export async function handleBillingPortal(
+  request: Request,
+  env: Env,
+  cors: Record<string, string>,
+): Promise<Response> {
+  const auth = await requireFullSession(request, env, cors);
+  if (auth instanceof Response) return auth;
+
+  if (!env.STRIPE_SECRET_KEY) {
+    return json({ error: 'billing_not_configured' }, { status: 503 }, cors);
+  }
+  if (!env.BILLING_PORTAL_RETURN_URL) {
+    return json({ error: 'billing_not_configured' }, { status: 503 }, cors);
+  }
+
+  const record = await getSubscriptionRecord(env.HOSTED_BILLING, auth.userId);
+  if (!record?.customerId) {
+    // Never subscribed, or subscribed but the webhook has not yet recorded a
+    // Stripe customer id: either way, there is no portal to open. Distinct
+    // from `billing_not_configured` (a deploy-time gap): this is a per-user
+    // state the caller can act on ("subscribe first"), not a server fault.
+    return json({ error: 'unknown_account' }, { status: 404 }, cors);
+  }
+
+  try {
+    const portal = await createBillingPortalSession(env.STRIPE_SECRET_KEY, {
+      customerId: record.customerId,
+      returnUrl: env.BILLING_PORTAL_RETURN_URL,
+    });
+    return json({ url: portal.url }, { status: 200 }, cors);
+  } catch (err) {
+    console.error(`[billing] portal failed userId=${auth.userId} message=${(err as Error).message}`);
+    return json({ error: 'portal_failed' }, { status: 502 }, cors);
+  }
 }
 
 export { isActiveStatus };

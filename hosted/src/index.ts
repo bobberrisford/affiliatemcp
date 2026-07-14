@@ -64,17 +64,30 @@
  *   POST /connect/:network               store, then connection-test, one network
  *   GET|POST /connect/:network/retest    re-run the connection test, no resubmit
  *
+ * Also part of the connect UI, matched BEFORE the generic `/connect/:network`
+ * patterns above since "billing" is not a network slug (Stripe-wiring
+ * follow-up to H6; `src/routes/billing-page.ts`):
+ *   GET|POST /connect/billing            current tier/status + subscribe,
+ *                              upgrade, and manage buttons
+ *   POST /connect/billing/checkout       browser hand-off to Stripe Checkout
+ *   POST /connect/billing/portal         browser hand-off to the Stripe
+ *                              Billing Portal
+ *
  * H6 (`docs/product/hosted-mvp-workstream.md`, `src/billing.ts`) adds Stripe
  * subscription state (`src/routes/billing.ts`) and the scheduled digest
- * (`src/digest.ts`, driven by the `scheduled` handler below — a Cloudflare
+ * (`src/digest.ts`, driven by the `scheduled` handler below, a Cloudflare
  * Cron Trigger, not an HTTP route):
  *   POST /billing/checkout      full-session-gated, creates a Stripe
  *                              Checkout Session for the requested tier
  *   POST /billing/webhook      Stripe-signature-verified, mirrors the
  *                              subscription lifecycle into HOSTED_BILLING
- *   GET  /billing/entitlement  full-session-gated, { tier, status } — the
+ *   GET  /billing/entitlement  full-session-gated, { tier, status }, the
  *                              ONE billing route the hosted MCP transport
  *                              calls
+ *   POST /billing/portal       full-session-gated, creates a Stripe Billing
+ *                              Portal session for the caller's own customer
+ *                              id (Stripe-wiring follow-up; the billing
+ *                              page above is its browser-facing caller)
  * There are NO service-authenticated admin routes and NO all-tenant
  * credential: Rob rejected that design on 2026-07-14 (`hosted/README.md`,
  * "Digest orchestration and token scopes"). The scheduled handler
@@ -121,12 +134,22 @@ import {
   handleConnectSubmit,
 } from './routes/connect.js';
 import {
+  handleBillingPage,
+  handleBillingPageCheckout,
+  handleBillingPagePortal,
+} from './routes/billing-page.js';
+import {
   handleDeleteCredential,
   handleListCredentials,
   handlePutCredentials,
   handleRevealCredentials,
 } from './routes/vault.js';
-import { handleBillingCheckout, handleBillingEntitlement, handleBillingWebhook } from './routes/billing.js';
+import {
+  handleBillingCheckout,
+  handleBillingEntitlement,
+  handleBillingPortal,
+  handleBillingWebhook,
+} from './routes/billing.js';
 import { runScheduledDigest } from './digest.js';
 import { buildSessionPayload, generateUserId, sessionScope, signSession, verifySession } from './token.js';
 
@@ -445,6 +468,19 @@ export default {
     if (url.pathname === '/connect' && (request.method === 'GET' || request.method === 'POST')) {
       return handleConnectList(request, env);
     }
+    // Billing/account page: an exact-path match, checked BEFORE the generic
+    // /connect/:network patterns below, since "billing" is not one of the
+    // four hosted-eligible network slugs (src/networks.ts) and would
+    // otherwise fall through to those handlers' "network not found" page.
+    if (url.pathname === '/connect/billing' && (request.method === 'GET' || request.method === 'POST')) {
+      return handleBillingPage(request, env);
+    }
+    if (url.pathname === '/connect/billing/checkout' && request.method === 'POST') {
+      return handleBillingPageCheckout(request, env);
+    }
+    if (url.pathname === '/connect/billing/portal' && request.method === 'POST') {
+      return handleBillingPagePortal(request, env);
+    }
     const connectFormMatch = url.pathname.match(/^\/connect\/([^/]+)\/form$/);
     if (connectFormMatch && request.method === 'POST') {
       return handleConnectForm(request, env, decodeURIComponent(connectFormMatch[1] as string));
@@ -470,6 +506,9 @@ export default {
     }
     if (url.pathname === '/billing/entitlement' && request.method === 'GET') {
       return handleBillingEntitlement(request, env, cors);
+    }
+    if (url.pathname === '/billing/portal' && request.method === 'POST') {
+      return handleBillingPortal(request, env, cors);
     }
 
     if ((url.pathname === '/' || url.pathname === '/health') && request.method === 'GET') {

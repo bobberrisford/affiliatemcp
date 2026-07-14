@@ -100,7 +100,7 @@ const PAGE_STYLE = `
   .note { border:1px dashed #0a0a0a; padding:10px; font-size:12px; margin:14px 0; }
 `;
 
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -118,7 +118,7 @@ function escapeHtml(value: string): string {
  * token-free URLs here leak nothing outbound through the external
  * documentation links these pages contain.
  */
-function page(title: string, bodyHtml: string): Response {
+export function page(title: string, bodyHtml: string): Response {
   const res = html(`<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHtml(title)}</title>
@@ -142,7 +142,7 @@ export interface BrowserSession {
  * for a non-POST request or an unreadable body. Parsed once per request and
  * threaded through, because a request body can only be consumed once.
  */
-async function maybeFormData(request: Request): Promise<FormData | null> {
+export async function maybeFormData(request: Request): Promise<FormData | null> {
   if (request.method !== 'POST') return null;
   try {
     return await request.formData();
@@ -164,7 +164,7 @@ async function maybeFormData(request: Request): Promise<FormData | null> {
  * page rather than a JSON 403) is correct here: a human holding only a
  * digest token is not signed in for this flow's purposes.
  */
-async function resolveBrowserSession(
+export async function resolveBrowserSession(
   request: Request,
   env: Env,
   form: FormData | null,
@@ -179,13 +179,25 @@ async function resolveBrowserSession(
   return { userId: payload.sub, token };
 }
 
-function signInPromptPage(env: Env): Response {
+/**
+ * Shared across every page in this connect family, including the billing
+ * page (`./billing-page.ts`): one sign-in prompt, one wording, so "signed
+ * out" reads the same regardless of which page sent the visitor here.
+ * `extraNote` renders as one boxed line above the explanation, for a caller
+ * with page-specific context to add (for example, the billing page's
+ * Stripe-return landing: see that file for why a `checkout` status can only
+ * ever be shown here, never on a fabricated "subscribed" page, since
+ * Stripe's redirect cannot carry a session token).
+ */
+export function signInPromptPage(env: Env, extraNote?: string): Response {
   const front = env.SITE_ORIGIN || 'https://agenticaffiliate.ai';
+  const extraHtml = extraNote ? `<div class="note">${escapeHtml(extraNote)}</div>` : '';
   return page(
     'sign in required',
     `
     <h1>sign in required</h1>
-    <p>Connecting a network needs a signed-in hosted session.</p>
+    ${extraHtml}
+    <p>This page needs a signed-in hosted session.</p>
     <p>Sign in at <a href="${escapeHtml(front)}">${escapeHtml(front)}</a> to request a magic
     sign-in link by email, then open the link. It leads to a page with a
     session token box and a copy button (the same one your MCP client uses to
@@ -209,10 +221,25 @@ function signInPromptPage(env: Env): Response {
  * way to move between these pages in a browser without JavaScript while
  * keeping the token out of request URLs (and therefore out of Cloudflare
  * request logs, history, bookmarks, and Referer).
+ *
+ * `extraFields` lets a caller carry additional hidden fields alongside the
+ * token (for example, the billing page's tier choice on its subscribe and
+ * upgrade buttons, `./billing-page.ts`) without inventing a second
+ * navigation-form shape: one hidden-field POST form remains the only way
+ * this connect family moves the browser anywhere.
  */
-function navForm(action: string, token: string, label: string): string {
+export function navForm(
+  action: string,
+  token: string,
+  label: string,
+  extraFields: Record<string, string> = {},
+): string {
+  const extraHtml = Object.entries(extraFields)
+    .map(([name, value]) => `<input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(value)}">`)
+    .join('');
   return `<form class="nav" method="post" action="${escapeHtml(action)}">
     <input type="hidden" name="token" value="${escapeHtml(token)}">
+    ${extraHtml}
     <button type="submit">${escapeHtml(label)}</button>
   </form>`;
 }
@@ -253,6 +280,7 @@ export async function handleConnectList(request: Request, env: Env): Promise<Res
     this repo has and has not verified about each network's terms for
     third-party credential use.</p>
     <ul class="network-list">${rows}</ul>
+    <p>${navForm('/connect/billing', session.token, 'billing')}</p>
     <p class="muted">Networks are connected one at a time by design: there is
     no combined "connect all" submission. This keeps each stored credential's
     one-time data-key setup (see <code>hosted/README.md</code>, "KV storage

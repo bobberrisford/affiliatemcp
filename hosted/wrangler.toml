@@ -77,8 +77,17 @@ VAULT_MASTER_KEY_VERSION = "1"
 # until Rob wires up the real Stripe account at deploy.
 STRIPE_PRICE_ID_SOLO = "REPLACE_WITH_SOLO_34GBP_MONTHLY_PRICE_ID"
 STRIPE_PRICE_ID_PRO = "REPLACE_WITH_PRO_99GBP_MONTHLY_PRICE_ID"
-BILLING_SUCCESS_URL = "https://agenticaffiliate.ai/billing/success"
-BILLING_CANCEL_URL = "https://agenticaffiliate.ai/billing/cancel"
+# Point Checkout's success/cancel redirect and the Billing Portal's return
+# URL at this Worker's OWN billing page (src/routes/billing-page.ts), not an
+# external page: replace REPLACE_WITH_PUBLIC_BASE_URL above with the deployed
+# origin and these three resolve automatically. See hosted/README.md,
+# "Billing (Stripe checkout, portal, and the billing page)", for why the
+# landing hit necessarily arrives signed out (Stripe's redirect cannot carry
+# our bearer session token) and how the page states that honestly rather than
+# working around it with a token in the URL.
+BILLING_SUCCESS_URL = "REPLACE_WITH_PUBLIC_BASE_URL/connect/billing?checkout=success"
+BILLING_CANCEL_URL = "REPLACE_WITH_PUBLIC_BASE_URL/connect/billing?checkout=cancelled"
+BILLING_PORTAL_RETURN_URL = "REPLACE_WITH_PUBLIC_BASE_URL/connect/billing"
 # Base URL of the Node digest-compose service (src/hosted-digest/ in the root
 # workspace). Leave unset until that service is deployed — the cron trigger
 # above no-ops safely while this is empty (see hosted/src/digest.ts).
