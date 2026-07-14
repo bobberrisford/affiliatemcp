@@ -21,6 +21,7 @@ id = "REPLACE_WITH_KV_ID"
 preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
 
 # ── Non-secret vars (override per-env or in the dashboard) ─────────────────
+[vars]
 # Origin allowed to call /auth/request-link and /auth/session/verify via CORS.
 SITE_ORIGIN = "https://agenticaffiliate.ai"
 
