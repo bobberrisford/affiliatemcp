@@ -63,5 +63,5 @@ VAULT_MASTER_KEY_VERSION = "1"
 #                                  the credential vault; see `npm run gen-vault-key`,
 #                                  src/vault.ts, and the "Vault threat model"
 #                                  section of hosted/README.md before deploying
-#                                  this — Rob's master-key decision gates this
-#                                  slice's merge, not just this secret's value)
+#                                  this — the Worker-secret design was
+#                                  accepted by Rob on 2026-07-14)

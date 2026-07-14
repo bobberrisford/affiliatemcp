@@ -146,8 +146,10 @@ The data key itself is never written to storage unencrypted; it is wrapped by
 a master key first. The current implementation wraps that master key with a
 Cloudflare Worker secret rather than an external key-management service.
 `hosted/README.md` ("Vault threat model") states plainly what that design
-does and does not protect against, and it is under explicit maintainer review
-before any hosted credential is stored in a live environment.
+does and does not protect against; the maintainer reviewed and accepted it
+for the MVP on 2026-07-14, before any hosted credential is stored in a live
+environment. Credentials are decrypted only at call time, in memory, to
+serve the request that needs them; plaintext is never written to storage.
 
 **Who can access it.** A stored credential serves only that user's own
 requests and their own scheduled jobs. It is never used for aggregation

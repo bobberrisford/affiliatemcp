@@ -12,8 +12,8 @@ Two KV namespaces, kept deliberately separate:
   key per user and one encrypted blob per connected network. See "Vault
   (H3)" below for the design, and "Vault threat model" for the honest
   read on what the current master-key design does and does not protect
-  against — **this section ends with an explicit decision this slice's PR
-  leaves for Rob before merge.**
+  against — **the master-key decision it raises was accepted by Rob on
+  2026-07-14 (Worker-secret design for the MVP).**
 
 See the decision records: `docs/decisions/2026-07-12-hosted-credential-custody.md`
 (the custody contract this whole workstream operates under) and
@@ -241,6 +241,13 @@ can point different calls at different providers during a rotation.
   `{ v: 1, provider, keyVersion, algorithm: "AES-256-GCM", iv, ciphertext, createdAt, rotatedAt? }`.
   One per user, created on their first `putCredentials` call, re-wrapped
   (never re-created) by `rotateMasterKey`.
+  Known residual: two concurrent first-ever `putCredentials` calls for the
+  same user can each mint a data key and race this single write; the losing
+  call's credential blob becomes permanently undecryptable, silently. KV has
+  no atomic primitive to close this. Compensating controls: H5's connect
+  flow must store credentials sequentially per user (one network at a time),
+  and a Durable Object per user is the real fix if parallel stores are ever
+  needed.
 - **`vault:cred:<userId>:<network>`** → `StoredCredentialBlob`:
   `{ v: 1, network, algorithm: "AES-256-GCM", iv, ciphertext, createdAt, updatedAt }`.
   One per connected network. `network` is validated against a
