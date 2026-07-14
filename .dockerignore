@@ -30,6 +30,7 @@ skills
 # does not run inside this image.
 hosted
 issuer
+waitlist
 telemetry-cloudflare
 containers
 

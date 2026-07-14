@@ -966,7 +966,9 @@ origin and leaves every byte of `hosted/src/*.ts` untouched. See
    both `HOSTED_AUTH_URL` and `HOSTED_VAULT_URL`, and the digest-compose
    container needs it for `HOSTED_VAULT_URL` (see
    `containers/src/index.ts`'s `ensureRunning` calls for exactly which env
-   var each role gets).
+   var each role gets). Note: `ensureRunning` passes env only when an
+   instance first starts, so changing a var (for example
+   `HOSTED_WORKER_ORIGIN`) requires restarting the instance to take effect.
 4. If this Worker's `DIGEST_COMPOSE_SECRET` (step 14 above) is set, mirror it
    here: `npx wrangler secret put DIGEST_COMPOSE_SECRET` in `containers/`,
    same value.
