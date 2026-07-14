@@ -1,13 +1,17 @@
 /**
- * affiliate-mcp hosted Worker (workstream slice H2:
+ * affiliate-mcp hosted Worker (workstream slices H2 and H3:
  * `docs/product/hosted-mvp-workstream.md`).
  *
- * Scaffold and user auth ONLY. This Worker holds NO affiliate credentials and
- * NO affiliate data — it knows a user id and an email-hash lookup, nothing
- * else. The encrypted credential vault is H3, gated on its own KMS decision
- * (`docs/decisions/2026-07-12-hosted-credential-custody.md`); nothing in this
- * file stores, decrypts, or forwards a network API key. H4 (remote MCP
- * transport) is the first consumer of the session token this Worker issues.
+ * H2 (auth) holds NO affiliate credentials and NO affiliate data in
+ * `HOSTED_USERS` — a user id and an email-hash lookup, nothing else. H3 (the
+ * encrypted credential vault, `src/vault.ts`) adds a SEPARATE KV namespace,
+ * `HOSTED_VAULT`, that does hold per-user encrypted network credentials,
+ * gated on the open master-key question this slice's PR leaves for Rob (see
+ * `hosted/README.md` "Vault threat model"). Every H3 route in this file
+ * requires the same session token H2 issues; none of the H2 auth routes
+ * below touch `HOSTED_VAULT`. H4 (remote MCP transport) is the first
+ * consumer of both: the session token, and `getCredentials` from
+ * `src/vault.ts` to run an adapter call under the caller's own identity.
  *
  * Endpoints:
  *   POST /auth/request-link   { email } → creates a single-use, 15-minute
@@ -36,6 +40,15 @@
  *                              { userId, exp }.
  *   GET  /health               → liveness.
  *
+ * H3 (`docs/product/hosted-mvp-workstream.md`, `src/vault.ts`) adds the
+ * encrypted credential vault and its routes (`src/routes/vault.ts`,
+ * `src/routes/account.ts`), every one of them requiring the same session
+ * token this file issues:
+ *   POST   /vault/credentials          store one network's credential
+ *   GET    /vault/credentials          list connected networks, never values
+ *   DELETE /vault/credentials/:network remove one network's credential
+ *   DELETE /account                    complete account deletion
+ *
  * Resend note: the rescinded waitlist-Resend decision
  * (`docs/decisions/2026-07-12-waitlist-email-resend.md`) was specifically
  * about marketing capture, and was rescinded only because the pre-sell gate
@@ -50,6 +63,7 @@
 
 import type { Env } from './env.js';
 import { publicBaseUrl } from './env.js';
+import { corsHeaders, html, json, nowSeconds } from './http.js';
 import {
   emailLookupKey,
   generateLinkToken,
@@ -58,9 +72,10 @@ import {
   isValidEmail,
   normaliseEmail,
 } from './identity.js';
+import { handleDeleteAccount } from './routes/account.js';
+import { handleDeleteCredential, handleListCredentials, handlePutCredentials } from './routes/vault.js';
 import { buildSessionPayload, generateUserId, signSession, verifySession } from './token.js';
 
-const DEFAULT_SITE_ORIGIN = 'https://agenticaffiliate.ai';
 const RESEND_API_BASE = 'https://api.resend.com';
 const SIGN_IN_FROM_ADDRESS = 'affiliate-mcp <sign-in@agenticaffiliate.ai>';
 
@@ -80,6 +95,15 @@ const RATE_LIMIT_MAX_PER_IP = 20;
 interface UserRecord {
   id: string;
   createdAt: number;
+  /**
+   * The `email-hash:<hmacHex>` key that resolves to this user, stored on the
+   * record itself so `DELETE /account` (`src/routes/account.ts`) can remove
+   * that reverse-lookup entry too. Without this, deletion would strand the
+   * `email-hash:` entry pointing at a userId that no longer exists — H3's
+   * "complete deletion" requirement is what surfaced this gap; H2 had no
+   * deletion path to expose it.
+   */
+  emailHash: string;
 }
 
 interface PendingLinkRecord {
@@ -88,38 +112,8 @@ interface PendingLinkRecord {
 }
 
 // ── small helpers ────────────────────────────────────────────────────────
-
-function json(body: unknown, init: ResponseInit = {}, cors: Record<string, string> = {}): Response {
-  return new Response(JSON.stringify(body), {
-    ...init,
-    headers: { 'content-type': 'application/json', ...cors, ...(init.headers ?? {}) },
-  });
-}
-
-function html(body: string, status = 200): Response {
-  return new Response(body, { status, headers: { 'content-type': 'text/html; charset=utf-8' } });
-}
-
-function corsHeaders(requestOrigin: string | null, env: Env): Record<string, string> {
-  const allowedOrigin = env.SITE_ORIGIN || DEFAULT_SITE_ORIGIN;
-  const headers: Record<string, string> = {
-    'access-control-allow-methods': 'POST, GET, OPTIONS',
-    'access-control-allow-headers': 'content-type',
-    'access-control-max-age': '86400',
-    vary: 'Origin',
-  };
-  // Only reflect the configured site origin, matching the waitlist Worker's
-  // stance: this is a public endpoint reachable from any browser tab, so
-  // cross-origin reads must stay opt-in rather than '*'.
-  if (requestOrigin && requestOrigin === allowedOrigin) {
-    headers['access-control-allow-origin'] = allowedOrigin;
-  }
-  return headers;
-}
-
-function nowSeconds(): number {
-  return Math.floor(Date.now() / 1000);
-}
+// json, html, corsHeaders, nowSeconds moved to ./http.js — shared with the
+// H3 vault/account routes so every route builds responses the same way.
 
 const userKey = (id: string) => `user:${id}`;
 const pendingLinkKey = (tokenHash: string) => `pending-link:${tokenHash}`;
@@ -132,7 +126,7 @@ async function getOrCreateUser(env: Env, emailHash: string): Promise<string> {
   const existing = await getUserByEmailHash(env, emailHash);
   if (existing) return existing;
   const id = generateUserId();
-  const record: UserRecord = { id, createdAt: nowSeconds() };
+  const record: UserRecord = { id, createdAt: nowSeconds(), emailHash };
   await env.HOSTED_USERS.put(userKey(id), JSON.stringify(record));
   await env.HOSTED_USERS.put(emailHash, id);
   return id;
@@ -362,6 +356,22 @@ export default {
     if (url.pathname === '/auth/session/verify' && request.method === 'POST') {
       return handleSessionVerify(request, env, cors);
     }
+
+    // ── H3: encrypted credential vault (src/vault.ts, src/routes/*) ────────
+    if (url.pathname === '/vault/credentials' && request.method === 'POST') {
+      return handlePutCredentials(request, env, cors);
+    }
+    if (url.pathname === '/vault/credentials' && request.method === 'GET') {
+      return handleListCredentials(request, env, cors);
+    }
+    const vaultCredentialMatch = url.pathname.match(/^\/vault\/credentials\/([^/]+)$/);
+    if (vaultCredentialMatch && request.method === 'DELETE') {
+      return handleDeleteCredential(request, env, decodeURIComponent(vaultCredentialMatch[1] as string), cors);
+    }
+    if (url.pathname === '/account' && request.method === 'DELETE') {
+      return handleDeleteAccount(request, env, cors);
+    }
+
     if ((url.pathname === '/' || url.pathname === '/health') && request.method === 'GET') {
       return new Response('affiliate-mcp hosted', { status: 200 });
     }

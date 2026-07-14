@@ -29,11 +29,18 @@ async function generatePrivateKeyB64(): Promise<string> {
   return btoa(String.fromCharCode(...pkcs8));
 }
 
+// 32 raw bytes ("0123456789abcdef0123456789abcdef"), base64-encoded — a
+// syntactically valid VAULT_MASTER_KEY for tests that do not exercise the
+// vault routes directly (see test/vault-routes.test.ts for those).
+const TEST_VAULT_MASTER_KEY_B64 = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
+
 function makeEnv(kv: KVNamespace, signingKey: string, overrides: Partial<Env> = {}): Env {
   return {
     HOSTED_USERS: kv,
+    HOSTED_VAULT: fakeKV(),
     RESEND_API_KEY: 're_test_x',
     SESSION_SIGNING_KEY: signingKey,
+    VAULT_MASTER_KEY: TEST_VAULT_MASTER_KEY_B64,
     PUBLIC_BASE_URL: 'https://hosted.test',
     SITE_ORIGIN: 'https://agenticaffiliate.ai',
     ...overrides,
