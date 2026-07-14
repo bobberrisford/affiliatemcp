@@ -38,6 +38,7 @@ function makeEnv(kv: KVNamespace, signingKey: string, overrides: Partial<Env> = 
   return {
     HOSTED_USERS: kv,
     HOSTED_VAULT: fakeKV(),
+    HOSTED_BILLING: fakeKV(),
     RESEND_API_KEY: 're_test_x',
     SESSION_SIGNING_KEY: signingKey,
     VAULT_MASTER_KEY: TEST_VAULT_MASTER_KEY_B64,

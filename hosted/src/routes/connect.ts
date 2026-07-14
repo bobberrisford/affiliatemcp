@@ -64,7 +64,7 @@ import { bearerToken, html } from '../http.js';
 import { testConnection, type ConnectionTestResult } from '../connect-test.js';
 import { CONNECT_NETWORKS, findConnectNetwork, type ConnectNetwork } from '../networks.js';
 import { getCredentials, isValidCredentialRecord, listNetworks, putCredentials } from '../vault.js';
-import { resolveValidSession } from '../token.js';
+import { resolveValidSession, sessionScope } from '../token.js';
 
 // ── Shared page chrome ──────────────────────────────────────────────────────
 // Same monospace, boxed-card look as the H2 callback page
@@ -156,6 +156,13 @@ async function maybeFormData(request: Request): Promise<FormData | null> {
  * field in the POST body — NEVER from the URL. See the file header for why a
  * query-parameter fallback is deliberately absent (RFC 6750 §2.3: bearer
  * tokens in URLs end up in request logs, history, and Referer headers).
+ *
+ * FULL sessions only (H6): a digest-scoped token (`sessionScope`,
+ * `../token.js`) is refused exactly like an invalid one — the connect pages
+ * read and WRITE credentials, and the digest token's entire entitlement is
+ * two vault read routes. The browser-flavoured outcome (the sign-in prompt
+ * page rather than a JSON 403) is correct here: a human holding only a
+ * digest token is not signed in for this flow's purposes.
  */
 async function resolveBrowserSession(
   request: Request,
@@ -168,6 +175,7 @@ async function resolveBrowserSession(
   if (!token) return null;
   const payload = await resolveValidSession(token, env.SESSION_SIGNING_KEY);
   if (!payload) return null;
+  if (sessionScope(payload) !== 'full') return null;
   return { userId: payload.sub, token };
 }
 

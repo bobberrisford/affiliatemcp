@@ -58,6 +58,7 @@ function printHelp(): void {
   write('  affiliate-networks-mcp update disable  Turn off silent auto-apply');
   write('  affiliate-networks-mcp cowork-mirror   Create a private GitHub mirror for Claude Cowork');
   write('  affiliate-networks-mcp hosted-transport  Start the hosted streamable-HTTP MCP transport (H4)');
+  write('  affiliate-networks-mcp hosted-digest     Start the hosted digest-compose service (H6)');
   write('  affiliate-networks-mcp validate <slug> Run the full validation suite against one network');
   write('  affiliate-networks-mcp cache clear     Delete every cached response');
   write('  affiliate-networks-mcp --help          Show this help');
@@ -291,6 +292,19 @@ async function main(argv: string[]): Promise<number> {
       const config = loadHostedTransportConfig();
       const handle = await startHostedHttpServer(config);
       log.info({ port: handle.port }, 'hosted MCP transport started');
+      await new Promise<never>(() => {});
+      return 0; // unreachable
+    }
+    case 'hosted-digest': {
+      // Workstream H6 (`docs/product/hosted-mvp-workstream.md`): the
+      // digest-compose service. The SCHEDULE lives in the hosted Worker as
+      // a Cloudflare Cron Trigger; this service only composes one user's
+      // digest text per request, authorised by the Worker-minted,
+      // digest-scoped, per-user token. Long-running, like the transport.
+      const { loadHostedDigestConfig, startHostedDigestServer } = await import('./hosted-digest/index.js');
+      const config = loadHostedDigestConfig();
+      const handle = await startHostedDigestServer(config);
+      log.info({ port: handle.port }, 'digest-compose service started');
       await new Promise<never>(() => {});
       return 0; // unreachable
     }

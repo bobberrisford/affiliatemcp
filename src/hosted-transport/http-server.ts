@@ -102,10 +102,19 @@ export interface HostedHttpServerHandle {
  * liveness, matching every other Worker in this repo.
  */
 export async function startHostedHttpServer(config: HostedTransportConfig): Promise<HostedHttpServerHandle> {
-  const limiter = new TokenBucketRateLimiter({
-    capacity: config.rateLimitCapacity,
-    refillPerSecond: config.rateLimitRefillPerSecond,
-  });
+  // Two independent buckets (H6): Solo and Pro traffic can never exhaust each
+  // other's limit. Solo falls back to the shared/Pro values when no
+  // Solo-specific override is configured (`env.ts`).
+  const limiters = {
+    pro: new TokenBucketRateLimiter({
+      capacity: config.rateLimitCapacity,
+      refillPerSecond: config.rateLimitRefillPerSecond,
+    }),
+    solo: new TokenBucketRateLimiter({
+      capacity: config.rateLimitCapacitySolo ?? config.rateLimitCapacity,
+      refillPerSecond: config.rateLimitRefillPerSecondSolo ?? config.rateLimitRefillPerSecond,
+    }),
+  };
 
   const sessions = new Map<string, McpSessionEntry>();
 
@@ -157,7 +166,7 @@ export async function startHostedHttpServer(config: HostedTransportConfig): Prom
           return;
         }
         if (!sessionId && isInitializeRequest(parsedBody)) {
-          const server = buildHostedMcpServer({ config, limiter });
+          const server = buildHostedMcpServer({ config, limiters });
           const transport = new StreamableHTTPServerTransport({
             sessionIdGenerator: () => randomUUID(),
             onsessioninitialized: (id) => {

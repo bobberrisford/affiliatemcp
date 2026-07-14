@@ -1,5 +1,5 @@
 /**
- * affiliate-mcp hosted Worker (workstream slices H2, H3, and H5:
+ * affiliate-mcp hosted Worker (workstream slices H2, H3, H5, and H6:
  * `docs/product/hosted-mvp-workstream.md`).
  *
  * H2 (auth) holds NO affiliate credentials and NO affiliate data in
@@ -64,6 +64,32 @@
  *   POST /connect/:network               store, then connection-test, one network
  *   GET|POST /connect/:network/retest    re-run the connection test, no resubmit
  *
+ * H6 (`docs/product/hosted-mvp-workstream.md`, `src/billing.ts`) adds Stripe
+ * subscription state (`src/routes/billing.ts`) and the scheduled digest
+ * (`src/digest.ts`, driven by the `scheduled` handler below — a Cloudflare
+ * Cron Trigger, not an HTTP route):
+ *   POST /billing/checkout      full-session-gated, creates a Stripe
+ *                              Checkout Session for the requested tier
+ *   POST /billing/webhook      Stripe-signature-verified, mirrors the
+ *                              subscription lifecycle into HOSTED_BILLING
+ *   GET  /billing/entitlement  full-session-gated, { tier, status } — the
+ *                              ONE billing route the hosted MCP transport
+ *                              calls
+ * There are NO service-authenticated admin routes and NO all-tenant
+ * credential: Rob rejected that design on 2026-07-14 (`hosted/README.md`,
+ * "Digest orchestration and token scopes"). The scheduled handler
+ * enumerates subscribers in-process from HOSTED_BILLING KV, mints
+ * short-lived digest-scoped tokens itself (it already holds
+ * SESSION_SIGNING_KEY), calls the Node compose service for the rendered
+ * text, and sends via Resend Worker-side. Tier administration before the
+ * live Stripe wiring is manual `wrangler kv key put` (documented in
+ * `hosted/README.md`, "Manual tier administration"), not a route.
+ *
+ * H6 also introduces token scopes (`src/token.ts`): digest-scoped tokens
+ * are accepted only by the vault list and reveal routes; every other
+ * session-gated surface requires a full session
+ * (`requireFullSession`, `src/routes/guard.ts`).
+ *
  * Resend note: the rescinded waitlist-Resend decision
  * (`docs/decisions/2026-07-12-waitlist-email-resend.md`) was specifically
  * about marketing capture, and was rescinded only because the pre-sell gate
@@ -100,7 +126,9 @@ import {
   handlePutCredentials,
   handleRevealCredentials,
 } from './routes/vault.js';
-import { buildSessionPayload, generateUserId, signSession, verifySession } from './token.js';
+import { handleBillingCheckout, handleBillingEntitlement, handleBillingWebhook } from './routes/billing.js';
+import { runScheduledDigest } from './digest.js';
+import { buildSessionPayload, generateUserId, sessionScope, signSession, verifySession } from './token.js';
 
 const RESEND_API_BASE = 'https://api.resend.com';
 const SIGN_IN_FROM_ADDRESS = 'affiliate-mcp <sign-in@agenticaffiliate.ai>';
@@ -362,7 +390,12 @@ async function handleSessionVerify(
   if (!payload) return json({ error: 'invalid_token' }, { status: 401 }, cors);
   if (payload.exp <= nowSeconds()) return json({ error: 'expired_token' }, { status: 401 }, cors);
 
-  return json({ userId: payload.sub, exp: payload.exp }, { status: 200 }, cors);
+  // `scope` (H6, `src/token.ts`): "full" for every sign-in session, "digest"
+  // for the short-lived tokens the scheduled digest mints. The hosted MCP
+  // transport reads this to REFUSE digest-scoped tokens
+  // (`src/hosted-transport/session-auth.ts`, root workspace) — a digest
+  // token authorises two vault reads, not interactive tool calls.
+  return json({ userId: payload.sub, exp: payload.exp, scope: sessionScope(payload) }, { status: 200 }, cors);
 }
 
 // ── Router ──────────────────────────────────────────────────────────────────
@@ -428,9 +461,32 @@ export default {
       return handleConnectSubmit(request, env, decodeURIComponent(connectNetworkMatch[1] as string));
     }
 
+    // ── H6: billing (src/billing.ts, src/routes/billing.ts) ────────────────
+    if (url.pathname === '/billing/checkout' && request.method === 'POST') {
+      return handleBillingCheckout(request, env, cors);
+    }
+    if (url.pathname === '/billing/webhook' && request.method === 'POST') {
+      return handleBillingWebhook(request, env, cors);
+    }
+    if (url.pathname === '/billing/entitlement' && request.method === 'GET') {
+      return handleBillingEntitlement(request, env, cors);
+    }
+
     if ((url.pathname === '/' || url.pathname === '/health') && request.method === 'GET') {
       return new Response('affiliate-mcp hosted', { status: 200 });
     }
     return new Response('not found', { status: 404 });
+  },
+
+  /**
+   * H6: the scheduled digest (`src/digest.ts`), driven by the Cron Trigger
+   * in `wrangler.toml` (`[triggers]`). The whole orchestration runs
+   * in-process — roster from KV, per-user digest-scoped token minting,
+   * compose-service call, Resend send — so no external credential can
+   * enumerate tenants or mint sessions. No-ops with one log line while
+   * `DIGEST_SERVICE_URL` is unset.
+   */
+  async scheduled(_controller: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
+    await runScheduledDigest(env);
   },
 };

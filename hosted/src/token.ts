@@ -25,13 +25,29 @@
 export const SESSION_TOKEN_PREFIX = 'amcps_';
 export const SESSION_PRODUCT = 'hosted-session';
 
-/** The canonical hosted-session payload. Do not reorder these keys. */
+/**
+ * Token scopes (H6). A token with no `scope` claim is a FULL session — the
+ * 30-day token the sign-in flow issues, accepted everywhere. `scope:
+ * "digest"` marks the short-lived token the Worker's own scheduled digest
+ * handler mints for the compose service (`src/digest.ts`): it is accepted
+ * ONLY by the read routes the digest actually needs (vault list and reveal,
+ * still serving only its own userId) and rejected by every other
+ * session-gated surface (`requireFullSession`, `src/routes/guard.ts`).
+ * Absence-means-full keeps every previously issued token exactly as valid
+ * as it was, with no re-issue or migration.
+ */
+export type SessionScope = 'full' | 'digest';
+
+/** The canonical hosted-session payload. Do not reorder these keys. `scope`
+ * is appended last and OMITTED entirely for full-scope tokens, so the wire
+ * bytes of a full-scope token are byte-identical to pre-H6 tokens. */
 export interface SessionPayload {
   sub: string; // userId
   product: typeof SESSION_PRODUCT;
   iss: number; // issued-at, unix seconds
   exp: number; // expiry, unix seconds
   v: 1;
+  scope?: 'digest'; // absent = full scope
 }
 
 /** base64url (RFC 4648 §5), no padding. Works in Workers and Node. */
@@ -56,14 +72,22 @@ export function generateUserId(): string {
   return `hosted_usr_${uuid}`;
 }
 
-/** Build the canonical payload in the EXACT key order the verifier expects. */
-export function buildSessionPayload(args: { sub: string; iss: number; exp: number }): SessionPayload {
+/** Build the canonical payload in the EXACT key order the verifier expects.
+ * `scope` is only materialised for digest tokens — a full-scope payload
+ * carries no `scope` key at all (see the `SessionPayload` doc comment). */
+export function buildSessionPayload(args: {
+  sub: string;
+  iss: number;
+  exp: number;
+  scope?: 'digest';
+}): SessionPayload {
   return {
     sub: args.sub,
     product: SESSION_PRODUCT,
     iss: args.iss,
     exp: args.exp,
     v: 1,
+    ...(args.scope === 'digest' ? { scope: 'digest' as const } : {}),
   };
 }
 
@@ -142,7 +166,17 @@ export async function verifySession(
   ) {
     return null;
   }
+  // Closed scope vocabulary: absent means full; the only recognised value is
+  // "digest". Any other value is a malformed token, not a scope to guess at.
+  if (payload.scope !== undefined && payload.scope !== 'digest') {
+    return null;
+  }
   return payload;
+}
+
+/** The effective scope of a verified payload: absent claim = full session. */
+export function sessionScope(payload: SessionPayload): SessionScope {
+  return payload.scope === 'digest' ? 'digest' : 'full';
 }
 
 /**

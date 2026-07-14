@@ -8,4 +8,12 @@
 
 export { startHostedHttpServer, type HostedHttpServerHandle } from './http-server.js';
 export { loadHostedTransportConfig, type HostedTransportConfig } from './env.js';
-export { buildHostedMcpServer } from './mcp-server.js';
+export { buildHostedMcpServer, type HostedMcpServerDeps, type HostedTierRateLimiters } from './mcp-server.js';
+export {
+  fetchHostedEntitlement,
+  HostedEntitlementUnavailableError,
+  type HostedEntitlement,
+  type HostedTier,
+} from './entitlement-client.js';
+export { checkNetworkCap, checkTierEntitlement, SOLO_NETWORK_CAP, type HostedTierRefusal } from './tier-gate.js';
+export { listConnectedNetworks } from './vault-client.js';

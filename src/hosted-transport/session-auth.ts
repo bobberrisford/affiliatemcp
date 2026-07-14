@@ -52,8 +52,15 @@ export async function verifySessionRemote(token: string, authUrl: string): Promi
     throw new HostedAuthUnavailableError(`session verification returned HTTP ${res.status}`);
   }
 
-  const body = (await res.json()) as { userId?: unknown; exp?: unknown };
+  const body = (await res.json()) as { userId?: unknown; exp?: unknown; scope?: unknown };
   if (typeof body.userId !== 'string' || typeof body.exp !== 'number') return null;
+  // Digest-scoped tokens (H6, `hosted/src/token.ts`) authorise exactly two
+  // vault read routes for the scheduled digest's compose service — never
+  // interactive MCP tool calls. Refusing them here keeps this transport's
+  // credential surface identical to before scopes existed: only a real
+  // sign-in session reaches it. Older Worker deploys omit `scope` entirely;
+  // absence means a full session, so nothing pre-H6 changes behaviour.
+  if (body.scope === 'digest') return null;
   return { userId: body.userId, exp: body.exp };
 }
 
