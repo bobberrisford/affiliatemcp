@@ -1,5 +1,5 @@
 /**
- * affiliate-mcp hosted Worker (workstream slices H2 and H3:
+ * affiliate-mcp hosted Worker (workstream slices H2, H3, and H5:
  * `docs/product/hosted-mvp-workstream.md`).
  *
  * H2 (auth) holds NO affiliate credentials and NO affiliate data in
@@ -52,6 +52,14 @@
  *                              comment in `src/routes/vault.ts`)
  *   DELETE /account                    complete account deletion
  *
+ * H5 (`docs/product/hosted-mvp-workstream.md`, `src/routes/connect.ts`) adds
+ * the guided connect flow — server-rendered HTML, session-gated, no client
+ * framework:
+ *   GET  /connect                       list the four networks + status
+ *   GET  /connect/:network              guided credential form for one network
+ *   POST /connect/:network              store, then connection-test, one network
+ *   GET  /connect/:network/retest       re-run the connection test, no resubmit
+ *
  * Resend note: the rescinded waitlist-Resend decision
  * (`docs/decisions/2026-07-12-waitlist-email-resend.md`) was specifically
  * about marketing capture, and was rescinded only because the pre-sell gate
@@ -76,6 +84,12 @@ import {
   normaliseEmail,
 } from './identity.js';
 import { handleDeleteAccount } from './routes/account.js';
+import {
+  handleConnectForm,
+  handleConnectList,
+  handleConnectRetest,
+  handleConnectSubmit,
+} from './routes/connect.js';
 import {
   handleDeleteCredential,
   handleListCredentials,
@@ -382,6 +396,26 @@ export default {
     }
     if (url.pathname === '/account' && request.method === 'DELETE') {
       return handleDeleteAccount(request, env, cors);
+    }
+
+    // ── H5: guided connect flow (src/routes/connect.ts) ────────────────────
+    // Server-rendered HTML, session-gated via a browser-flavoured check (see
+    // the file-header comment in src/routes/connect.ts for why this differs
+    // from requireSession's bearer-only check). Route order matters: the
+    // `/retest` suffix must be matched before the bare `/:network` GET.
+    if (url.pathname === '/connect' && request.method === 'GET') {
+      return handleConnectList(request, env);
+    }
+    const connectRetestMatch = url.pathname.match(/^\/connect\/([^/]+)\/retest$/);
+    if (connectRetestMatch && request.method === 'GET') {
+      return handleConnectRetest(request, env, decodeURIComponent(connectRetestMatch[1] as string));
+    }
+    const connectNetworkMatch = url.pathname.match(/^\/connect\/([^/]+)$/);
+    if (connectNetworkMatch && request.method === 'GET') {
+      return handleConnectForm(request, env, decodeURIComponent(connectNetworkMatch[1] as string));
+    }
+    if (connectNetworkMatch && request.method === 'POST') {
+      return handleConnectSubmit(request, env, decodeURIComponent(connectNetworkMatch[1] as string));
     }
 
     if ((url.pathname === '/' || url.pathname === '/health') && request.method === 'GET') {
