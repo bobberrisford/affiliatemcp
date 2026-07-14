@@ -14,17 +14,25 @@
  *     than the data call — a particularly confusing failure mode.
  *   - Generate a noisy access-log on Rakuten's side that we don't need.
  *
- * The cache here is a single module-scope object: `{ token, expiresAt }`.
+ * The cache here is keyed by request identity (`{ token, expiresAt }` per
+ * key), from `getRequestIdentity()` (`src/shared/request-context.ts`, hosted
+ * workstream H1). The local server never sets a request context identity
+ * beyond the fixed `LOCAL_IDENTITY`, so this is behaviourally the same single
+ * cache entry it always was — one key, one entry, same lifecycle. A hosted
+ * deployment (H2+) runs each tenant's calls under a distinct identity, so
+ * their tokens do not collide in a shared process.
  * Concurrency story: Node is single-threaded; a single in-flight request that
- * triggers a refresh blocks subsequent refreshes via the `inFlightRefresh`
- * promise so two parallel callers don't both round-trip the token endpoint.
+ * triggers a refresh blocks subsequent refreshes to the same identity via the
+ * `inFlightRefreshByIdentity` map so two parallel callers for the same tenant
+ * don't both round-trip the token endpoint.
  *
  * --- Module-level mutable state ----------------------------------------------
  *
  * This is the ONLY mutable module-level state in the Rakuten adapter. Future
  * contributors: if you find yourself adding a second piece of module state,
  * stop and think. The cache here is justified because:
- *   - It's keyed by process identity (the credentials don't change at runtime).
+ *   - It's keyed by request identity (local default: a single constant key;
+ *     hosted: one key per tenant).
  *   - The refresh is observable (logged at debug+) — the token-refresh-on-401
  *     path is NOT hidden.
  *   - Tests can call `_resetTokenCache()` to isolate.
@@ -57,6 +65,7 @@ import { requireCredential } from '../../shared/config.js';
 import { buildErrorEnvelope, NetworkError } from '../../shared/errors.js';
 import { HttpStatusError, withResilience, DEFAULT_RESILIENCE } from '../../shared/resilience.js';
 import { createLogger } from '../../shared/logging.js';
+import { getRequestIdentity } from '../../shared/request-context.js';
 import type {
   CredentialValidationResult,
   NetworkErrorEnvelope,
@@ -85,52 +94,62 @@ interface TokenCacheEntry {
   expiresAt: number;
 }
 
-/** Module-scope cache. The single piece of mutable state in the adapter. */
-let cache: TokenCacheEntry | null = null;
+/**
+ * Module-scope cache, keyed by request identity (`getRequestIdentity()`).
+ * The single piece of mutable state in the adapter. The local server always
+ * resolves the same identity (`LOCAL_IDENTITY`), so in practice this holds
+ * exactly one entry, exactly as the old unkeyed cache did.
+ */
+const cacheByIdentity = new Map<string, TokenCacheEntry>();
 
 /**
- * In-flight refresh deduplication. If callers A and B both notice the token
- * is stale at the same time, only one of them hits the network; the other
- * awaits the same promise.
+ * In-flight refresh deduplication, per identity. If callers A and B both
+ * notice the same identity's token is stale at the same time, only one of
+ * them hits the network; the other awaits the same promise.
  */
-let inFlightRefresh: Promise<string> | null = null;
+const inFlightRefreshByIdentity = new Map<string, Promise<string>>();
 
 /** Refresh proactively when this many ms remain on the lifetime. */
 const PROACTIVE_REFRESH_MARGIN_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
- * Test-only: clear the cache so an isolated test doesn't leak token state
- * into another test. Not exported in production builds via tsconfig — but
- * available to vitest because it imports the source directly.
+ * Test-only: clear every identity's cache so an isolated test doesn't leak
+ * token state into another test. Not exported in production builds via
+ * tsconfig — but available to vitest because it imports the source directly.
  */
 export function _resetTokenCache(): void {
-  cache = null;
-  inFlightRefresh = null;
+  cacheByIdentity.clear();
+  inFlightRefreshByIdentity.clear();
 }
 
 /**
- * Return a usable access token, refreshing if necessary. Throws a NetworkError
- * (auth_error envelope) on failure.
+ * Return a usable access token for the active request identity, refreshing
+ * if necessary. Throws a NetworkError (auth_error envelope) on failure.
  *
  * `forceRefresh` is set by the client after a 401 — see `client.ts`. We DO
  * surface that path at debug level so the refresh is observable. Per the
  * project's "no silent retries" rule, the refresh is not hidden from logs.
  */
 export async function getAccessToken(opts: { forceRefresh?: boolean } = {}): Promise<string> {
+  const identity = getRequestIdentity();
   const now = Date.now();
-  if (!opts.forceRefresh && cache && cache.expiresAt - now > PROACTIVE_REFRESH_MARGIN_MS) {
-    return cache.token;
+  const cached = cacheByIdentity.get(identity);
+  if (!opts.forceRefresh && cached && cached.expiresAt - now > PROACTIVE_REFRESH_MARGIN_MS) {
+    return cached.token;
   }
   return refreshToken({ reason: opts.forceRefresh ? 'forced (401)' : 'expired or missing' });
 }
 
 /**
- * Force a token refresh. Deduplicates concurrent callers via `inFlightRefresh`.
+ * Force a token refresh for the active request identity. Deduplicates
+ * concurrent callers for the same identity via `inFlightRefreshByIdentity`.
  */
 export async function refreshToken(opts: { reason: string }): Promise<string> {
-  if (inFlightRefresh) return inFlightRefresh;
+  const identity = getRequestIdentity();
+  const inFlight = inFlightRefreshByIdentity.get(identity);
+  if (inFlight) return inFlight;
 
-  inFlightRefresh = (async () => {
+  const refreshPromise = (async () => {
     log.debug({ reason: opts.reason, tokenUrl: tokenUrl() }, 'rakuten token refresh');
     try {
       const clientId = requireCredential('RAKUTEN_CLIENT_ID', {
@@ -150,15 +169,16 @@ export async function refreshToken(opts: { reason: string }): Promise<string> {
       });
 
       const exchanged = await exchangeForToken(clientId, clientSecret, sid);
-      cache = exchanged;
+      cacheByIdentity.set(identity, exchanged);
       log.debug({ expiresAt: new Date(exchanged.expiresAt).toISOString() }, 'rakuten token cached');
       return exchanged.token;
     } finally {
-      inFlightRefresh = null;
+      inFlightRefreshByIdentity.delete(identity);
     }
   })();
 
-  return inFlightRefresh;
+  inFlightRefreshByIdentity.set(identity, refreshPromise);
+  return refreshPromise;
 }
 
 /**

@@ -28,16 +28,10 @@ import { getAdapters } from '../shared/registry.js';
 import { getCredential, setupInstructionForSurface } from '../shared/config.js';
 import { computeReadiness, snapshotCredentials } from '../shared/action-map.js';
 import { collectActionDescriptors } from './action-map.js';
-import { isValidBrandSlug, loadBrands } from '../shared/brands.js';
-import {
-  type ClientStrategySummary,
-  isOrphan,
-  listClientStrategies,
-  loadClientStrategy,
-  parseKpiBlock,
-  saveKpi,
-  saveStrategy,
-} from '../shared/client-strategy.js';
+import { isValidBrandSlug } from '../shared/brands.js';
+import { getActiveBrandStore } from '../shared/brand-store.js';
+import { type ClientStrategySummary, parseKpiBlock } from '../shared/client-strategy.js';
+import { getActiveClientStrategyStore } from '../shared/client-strategy-store.js';
 import { generateAwinTools } from '../networks/awin/tools.js';
 import { generateImpactAdvertiserTools } from '../networks/impact-advertiser/tools.js';
 import { generateAwinAdvertiserTools } from '../networks/awin-advertiser/tools.js';
@@ -662,7 +656,7 @@ export function generateMetaTools(): ToolDefinition[] {
           .object({ network: z.string().optional() })
           .strict()
           .parse(args ?? {});
-        const file = loadBrands();
+        const file = getActiveBrandStore().load();
         const rows: ResolveBrandMetaResult = [];
         for (const [slug, bindings] of Object.entries(file.brands)) {
           for (const b of bindings) {
@@ -687,7 +681,7 @@ export function generateMetaTools(): ToolDefinition[] {
       },
       handle: async (args): Promise<GetClientStrategyMetaResult> => {
         const parsed = z.object({ brand: z.string() }).strict().parse(args ?? {});
-        const c = loadClientStrategy(parsed.brand);
+        const c = getActiveClientStrategyStore().loadClientStrategy(parsed.brand);
         return {
           brand: c.brand,
           orphan: c.orphan,
@@ -750,16 +744,22 @@ export function generateMetaTools(): ToolDefinition[] {
           }
         }
 
+        const strategyStore = getActiveClientStrategyStore();
         const wrote = { strategy: false, kpi: false };
         if (parsed.strategyMarkdown !== undefined) {
-          saveStrategy(parsed.brand, parsed.strategyMarkdown);
+          strategyStore.saveStrategy(parsed.brand, parsed.strategyMarkdown);
           wrote.strategy = true;
         }
         if (parsed.kpiMarkdown !== undefined) {
-          saveKpi(parsed.brand, parsed.kpiMarkdown);
+          strategyStore.saveKpi(parsed.brand, parsed.kpiMarkdown);
           wrote.kpi = true;
         }
-        return { brand: parsed.brand, written: true, wrote, orphan: isOrphan(parsed.brand) };
+        return {
+          brand: parsed.brand,
+          written: true,
+          wrote,
+          orphan: strategyStore.isOrphan(parsed.brand),
+        };
       },
     },
     {
@@ -769,7 +769,8 @@ export function generateMetaTools(): ToolDefinition[] {
         'Use this to drive a portfolio rollup or to prompt the operator to record strategy for a brand that has none. ' +
         'Returns an array of { slug, hasStrategy, hasKpi, registered, orphan }; orphan flags a strategy directory whose slug has no brand binding.',
       inputSchema: { type: 'object', properties: {}, additionalProperties: false },
-      handle: async (): Promise<ListClientStrategiesMetaResult> => listClientStrategies(),
+      handle: async (): Promise<ListClientStrategiesMetaResult> =>
+        getActiveClientStrategyStore().listClientStrategies(),
     },
     {
       name: 'affiliate_list_actions',
@@ -791,7 +792,7 @@ export function generateMetaTools(): ToolDefinition[] {
         }
         let brandNetworks: Set<string> | undefined;
         if (f.brand !== undefined) {
-          const bindings = loadBrands().brands[f.brand];
+          const bindings = getActiveBrandStore().load().brands[f.brand];
           if (!bindings || bindings.length === 0) {
             return {
               unsupportedScope: { dimension: 'brand', value: f.brand },
@@ -938,10 +939,10 @@ export function generateMetaTools(): ToolDefinition[] {
         const { loadSnapshot } = await import('../brand-data/store.js');
         const { entitlementState } = await import('../brand-data/entitlement.js');
         const snapshot = loadSnapshot(parsed.brand);
-        const strategy = loadClientStrategy(parsed.brand);
+        const strategy = getActiveClientStrategyStore().loadClientStrategy(parsed.brand);
         const registeredNetworks = new Set(getAdapters().map((a) => a.slug));
         const brandNetworks = new Set(
-          (loadBrands().brands[parsed.brand] ?? [])
+          (getActiveBrandStore().load().brands[parsed.brand] ?? [])
             .map((b) => b.network)
             .filter((n) => registeredNetworks.has(n)),
         );

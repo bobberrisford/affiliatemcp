@@ -8,6 +8,25 @@
  *
  * Missing required credentials surface as `config_error` envelopes via
  * `requireCredential` — never silently substituted.
+ *
+ * --- Request-scoped resolution (hosted workstream H1) -----------------------
+ *
+ * `getCredential` is the one place nearly every adapter's credential read
+ * already funnels through (directly, or via a per-network `requireToken` /
+ * `requireAccountSid`-style helper that calls `requireCredential`, which
+ * calls this). That makes it the correct, and only, seam for request-scoped
+ * credential resolution: extending it here means every adapter that already
+ * reads credentials this way gains request-scoped resolution for free,
+ * without rewriting adapters one by one — see
+ * `src/shared/request-context.ts` for why this is the single seam and
+ * `docs/product/hosted-mvp-workstream.md` (H1) for the workstream this
+ * belongs to.
+ *
+ * The added lookup is strictly additive: `getContextCredential` only returns
+ * a value when a request context is active AND that context's `credentials`
+ * overlay names this credential. Outside of any `runInRequestContext` call —
+ * the entire local server path — it returns `undefined` and `getCredential`
+ * falls through to `process.env` exactly as before this change.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -15,6 +34,7 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 
 import { buildErrorEnvelope, NetworkError } from './errors.js';
+import { getContextCredential } from './request-context.js';
 import type { NetworkSlug } from './types.js';
 import { createLogger } from './logging.js';
 import { telemetrySurface, type TelemetrySurface } from './telemetry.js';
@@ -135,13 +155,18 @@ export function isPlaceholderCredential(value: string): boolean {
 }
 
 /**
- * Read an env variable. Returns `undefined` when unset, blank, or set to a
- * recognised unresolved placeholder / example sentinel (see
- * `isPlaceholderCredential`). Does NOT throw — see `requireCredential` for the
- * throw-on-missing variant.
+ * Read a credential. Checks the active request context's `credentials`
+ * overlay first (see the file-level "Request-scoped resolution" note),
+ * then falls back to `process.env[name]` — the only source before this
+ * seam existed, and the only source whenever no request context is active.
+ *
+ * Returns `undefined` when unset, blank, or set to a recognised unresolved
+ * placeholder / example sentinel (see `isPlaceholderCredential`). Does NOT
+ * throw — see `requireCredential` for the throw-on-missing variant.
  */
 export function getCredential(name: string): string | undefined {
-  const v = process.env[name];
+  const contextValue = getContextCredential(name);
+  const v = contextValue !== undefined ? contextValue : process.env[name];
   if (v === undefined) return undefined;
   if (v.trim() === '') return undefined;
   if (isPlaceholderCredential(v)) return undefined;
