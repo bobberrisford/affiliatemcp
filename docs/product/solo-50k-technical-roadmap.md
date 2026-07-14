@@ -165,7 +165,10 @@ local single-user path preserved unchanged.
 
 ## Phase 2: breadth and the money features (months 6 to 12)
 
-- [ ] **[build]** Hosted promotion for the top 12 networks by waitlist demand.
+- [ ] **[build]** Hosted promotion for the top 12 networks, ordered by
+      hosted usage and connect-flow requests (the waitlist signal was
+      rescinded 2026-07-13), with an explicit maintainer call where the
+      signal is thin.
       Promotion per network requires: the accepted adapter promotion gate met,
       a terms-of-service check for third-party credential use recorded in the
       network's docs, and the connect flow extended. Networks that fail the

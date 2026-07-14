@@ -34,11 +34,16 @@ authorisation per the standing delivery window or explicit approval.
    Workers, matching the three existing Workers; the slice PR records the
    trade-offs (adapter fetch portability, CPU limits for large report
    aggregation) and is the point to reverse if Workers prove unfit.
-3. **H3: encrypted credential vault.** Per-user envelope encryption (master
-   key in Worker secrets, per-user data keys, WebCrypto), decrypt only at
-   call time, key-rotation procedure documented, deletion is complete.
-   Acceptance proof: vault tests including rotation and hard delete; a
-   documented threat model note in the PR.
+3. **H3: encrypted credential vault.** Per-user envelope encryption with
+   per-user data keys, decrypt only at call time, key-rotation procedure
+   documented, deletion complete. Open custody question H3's threat-model
+   note must resolve before merge, not silently default: a master key in
+   Worker secrets is envelope encryption on managed infrastructure but not
+   KMS-backed in the usual sense (the master key is exposed to application
+   code); H3 either names an actual KMS or records Rob's explicit acceptance
+   of the Worker-secret design. Acceptance proof: vault tests including
+   rotation and hard delete; the threat-model note resolving the KMS
+   question.
 4. **H4: remote MCP transport.** Streamable HTTP MCP endpoint with per-user
    token auth, per-tier rate limits, and a per-user audit log (network,
    operation, timestamp; never payloads). Adapters untouched; requests run
@@ -47,10 +52,16 @@ authorisation per the standing delivery window or explicit approval.
 5. **H5: guided connect flow.** Browser onboarding for the four production
    networks: OAuth where supported, guided paste-once otherwise, connection
    test on save, automatic first-value report. Terms-of-service check per
-   network recorded before it is offered hosted.
+   network recorded before it is offered hosted, and the flow instructs
+   users to create scoped or read-only API keys where the network offers
+   them, per the custody record's least-privilege clause. Acceptance proof:
+   an end-to-end connect against a staging deploy for each of the four
+   networks, with each ToS check recorded.
 6. **H6: scheduled digest and billing tie-in.** The digest job runner and
    the Stripe subscription state enforced at the transport boundary,
-   reusing the issuer's billing pattern.
+   reusing the issuer's billing pattern. Acceptance proof: a digest
+   delivered end to end to a test user on a staging deploy, and the
+   entitlement-denied path proven at the transport boundary.
 
 Cross-slice docs (trust page, PRIVACY.md hosted section) land with H3 and
 H4 respectively, per the custody record's follow-ups.

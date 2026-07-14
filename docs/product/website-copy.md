@@ -122,6 +122,12 @@ auto-generates (see `website-plan.md` §8), never hand-typed.
 
 ## Pricing
 
+> Repoint queued (2026-07-13): the waitlist was rescinded by
+> `../decisions/2026-07-13-build-hosted-without-presell.md`. The live page's
+> waitlist CTA and this deck's waitlist wording are queued to repoint to the
+> hosted product as workstream slices ship; first slice to touch the page
+> takes this with it.
+
 ### Overview
 The local server runs free and complete. Premium options add skills and hosted connectivity for teams and agencies.
 

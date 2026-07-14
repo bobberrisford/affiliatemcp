@@ -275,7 +275,9 @@ smallest foundation with its first real consumer, then stacked slices.
 
 ### Phase 2 (months 6 to 12): breadth and the money features
 
-- Extend hosted coverage to the top 12 networks by waitlist demand.
+- Extend hosted coverage to the top 12 networks, ordered by hosted usage
+  and connect-flow requests (the waitlist ordering signal was rescinded
+  2026-07-13), with an explicit maintainer call where the signal is thin.
 - Ship scheduled anomaly watch and the unpaid-commission chaser digest.
 - Ship the brand-data QBR and weekly-report actions behind Pro (the
   entitlement-gate decision's feature set).

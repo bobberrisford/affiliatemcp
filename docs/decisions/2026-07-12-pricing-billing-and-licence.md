@@ -36,6 +36,10 @@ record makes those answers a reviewable contract.
 Founding Pro: £699/year (41% off the £1,188 annual price), clearly labelled
 pre-launch, refundable until the hosted tier ships to the buyer. The Phase 0
 build gate is 30 founding pre-orders or 500 qualified waitlist emails.
+(Amendment 2026-07-13: this gate was rescinded by
+[`2026-07-13-build-hosted-without-presell.md`](./2026-07-13-build-hosted-without-presell.md);
+the prices, founding-offer terms, Stripe choice, and licence stance are
+unaffected.)
 
 ### Billing: Stripe directly
 
@@ -90,6 +94,5 @@ implementation choice, not a licence change to this repo.
   the hosted terms-of-service check, an honest local-only marker.
 - Prices are launch anchors, not permanent: repricing is routine, but
   grandfathering founding buyers at their rate is a promise and is kept.
-- The Phase 0 gate numbers (30 pre-orders / 500 emails) live in
-  `docs/product/solo-50k-revenue-plan.md` and are read from the gate
-  dashboard, not adjusted retrospectively.
+- The Phase 0 gate numbers and their dashboard were rescinded on
+  2026-07-13 with the pre-sell gate (see the amendment above).
