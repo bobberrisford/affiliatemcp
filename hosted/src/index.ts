@@ -12,14 +12,17 @@
  * Endpoints:
  *   POST /auth/request-link   { email } → creates a single-use, 15-minute
  *                              sign-in token, stores only its hash in KV, and
- *                              emails the magic link via Resend's transactional
- *                              send API. Always 200 with a neutral body for any
- *                              validly-shaped email, whether or not an account
- *                              exists — see `handleRequestLink` for the exact
- *                              boundary between this and a 400 (shape errors
- *                              carry no account-existence signal, so they stay
- *                              a 400, matching the waitlist Worker's
- *                              precedent).
+ *                              emails the magic link (built on the configured
+ *                              PUBLIC_BASE_URL, never the request's own Host)
+ *                              via Resend's transactional send API. Always 200
+ *                              with a neutral body for any validly-shaped
+ *                              email, whether or not an account exists and
+ *                              whether or not the cheap per-address/per-IP
+ *                              abuse limit was hit — see `handleRequestLink`
+ *                              for the exact boundary between this and a 400
+ *                              (shape errors carry no account-existence
+ *                              signal, so they stay a 400, matching the
+ *                              waitlist Worker's precedent).
  *   GET  /auth/callback       ?token=… → verifies and consumes the sign-in
  *                              token (single-use: its KV record is deleted on
  *                              first use), creates the user record if new,
@@ -46,10 +49,12 @@
  */
 
 import type { Env } from './env.js';
+import { publicBaseUrl } from './env.js';
 import {
   emailLookupKey,
   generateLinkToken,
   hashLinkToken,
+  ipRateLimitHash,
   isValidEmail,
   normaliseEmail,
 } from './identity.js';
@@ -61,6 +66,16 @@ const SIGN_IN_FROM_ADDRESS = 'affiliate-mcp <sign-in@agenticaffiliate.ai>';
 
 const LINK_TOKEN_TTL_SECONDS = 15 * 60; // 15 minutes, per the workstream brief.
 const SESSION_TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days.
+
+// Basic abuse limits on /auth/request-link. These are a cheap KV-counter
+// backstop against email-bombing a victim address or burning Resend quota,
+// NOT the product's real rate-limiting story: H4's transport-level per-user
+// limits supersede these. Per-address is deliberately tight (a human retries
+// a sign-in link a handful of times); per-IP is looser because NAT puts many
+// legitimate users behind one address.
+const RATE_LIMIT_WINDOW_SECONDS = 60 * 60;
+const RATE_LIMIT_MAX_PER_EMAIL = 5;
+const RATE_LIMIT_MAX_PER_IP = 20;
 
 interface UserRecord {
   id: string;
@@ -130,12 +145,15 @@ async function getOrCreateUser(env: Env, emailHash: string): Promise<string> {
 // never on whether an account exists, so it is not an enumeration channel.
 // Once the email is a validly-shaped address, every branch below returns 200
 // with the same body, whether the address belongs to an existing user, a
-// brand-new one, or nobody at all, and regardless of whether the Resend send
-// itself succeeds — a differing status here would let a caller distinguish
-// "this address has an account" from "this address doesn't" by racing the
-// Resend failure mode, which is exactly the oracle this endpoint must not
+// brand-new one, or nobody at all, whether the abuse limit has been hit, and
+// regardless of whether the Resend send itself succeeds — a differing status
+// on any of those branches would let a caller distinguish account state or
+// probe the limiter, which is exactly the oracle this endpoint must not
 // offer. Upstream failures are only observable server-side, via the status
-// code (never the email address) on stderr.
+// code (never the email address) on stderr. The one non-neutral non-400
+// response is a 500 for a missing/invalid PUBLIC_BASE_URL: a configuration
+// error is identical for every caller and every address, so it carries no
+// enumeration signal either.
 async function handleRequestLink(request: Request, env: Env, cors: Record<string, string>): Promise<Response> {
   let body: { email?: unknown };
   try {
@@ -148,16 +166,36 @@ async function handleRequestLink(request: Request, env: Env, cors: Record<string
   }
   const email = normaliseEmail(body.email);
 
+  // The emailed link's origin comes from configuration, never from the
+  // request's own URL/Host — see the PUBLIC_BASE_URL note in env.ts.
+  let linkOrigin: string;
+  try {
+    linkOrigin = publicBaseUrl(env);
+  } catch (err) {
+    console.error(`[auth] configuration error: ${(err as Error).message}`);
+    return json({ ok: false, error: 'server_misconfigured' }, { status: 500 }, cors);
+  }
+
+  const emailHash = await emailLookupKey(email, env);
+  const clientIp = request.headers.get('cf-connecting-ip') ?? 'unknown';
+  const ipHash = await ipRateLimitHash(clientIp);
+  const emailAllowed = await bumpRateLimit(env, `rl:${emailHash}`, RATE_LIMIT_MAX_PER_EMAIL);
+  const ipAllowed = await bumpRateLimit(env, `rl:ip:${ipHash}`, RATE_LIMIT_MAX_PER_IP);
+  if (!emailAllowed || !ipAllowed) {
+    // Over-limit gets the IDENTICAL neutral response — the send is skipped,
+    // but the caller learns nothing (not even that a limit exists).
+    return json({ ok: true }, { status: 200 }, cors);
+  }
+
   const rawToken = generateLinkToken();
   const tokenHash = await hashLinkToken(rawToken);
-  const emailHash = await emailLookupKey(email, env);
   const expiresAt = nowSeconds() + LINK_TOKEN_TTL_SECONDS;
   const pending: PendingLinkRecord = { emailHash, expiresAt };
   await env.HOSTED_USERS.put(pendingLinkKey(tokenHash), JSON.stringify(pending), {
     expirationTtl: LINK_TOKEN_TTL_SECONDS,
   });
 
-  const callbackUrl = `${new URL(request.url).origin}/auth/callback?token=${rawToken}`;
+  const callbackUrl = `${linkOrigin}/auth/callback?token=${rawToken}`;
   try {
     const res = await sendSignInEmail(env, email, callbackUrl);
     if (!res.ok) {
@@ -170,6 +208,23 @@ async function handleRequestLink(request: Request, env: Env, cors: Record<string
   }
 
   return json({ ok: true }, { status: 200 }, cors);
+}
+
+/**
+ * Increment-and-check a KV rate-limit counter. Returns true when the request
+ * is within `max` for the current window; false (without incrementing
+ * further) once the limit is reached. KV get/put is not atomic, so
+ * concurrent requests can slightly overshoot the cap, and each increment
+ * refreshes the window TTL, making this a rolling-ish window rather than a
+ * precise one — both acceptable for a cheap abuse backstop that H4's
+ * transport-level limits will supersede.
+ */
+async function bumpRateLimit(env: Env, key: string, max: number): Promise<boolean> {
+  const raw = await env.HOSTED_USERS.get(key);
+  const count = raw ? Number(raw) : 0;
+  if (count >= max) return false;
+  await env.HOSTED_USERS.put(key, String(count + 1), { expirationTtl: RATE_LIMIT_WINDOW_SECONDS });
+  return true;
 }
 
 async function sendSignInEmail(env: Env, email: string, callbackUrl: string): Promise<Response> {

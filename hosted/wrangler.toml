@@ -11,6 +11,8 @@ compatibility_date = "2026-03-25"
 #   user:<userId>            -> JSON { id, createdAt }
 #   email-hash:<hmacHex>     -> <userId>
 #   pending-link:<sha256Hex> -> JSON { emailHash, expiresAt }  (TTL'd, single-use)
+#   rl:email-hash:<hmacHex>  -> counter  (request-link rate limit, TTL'd)
+#   rl:ip:<sha256Hex>        -> counter  (request-link rate limit, TTL'd)
 # Create a FRESH namespace before first deploy:
 #   npx wrangler kv namespace create HOSTED_USERS
 #   npx wrangler kv namespace create HOSTED_USERS --preview
@@ -22,6 +24,12 @@ preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
 
 # ── Non-secret vars (override per-env or in the dashboard) ─────────────────
 [vars]
+# The Worker's OWN public base URL, used to build the callback URL in sign-in
+# emails. Configured explicitly (never derived from the request's Host) so a
+# fronting proxy can never poison the emailed link. Set it to the deployed
+# Worker origin, e.g. "https://affiliate-mcp-hosted.robertberrisford.workers.dev"
+# or the custom domain once one exists.
+PUBLIC_BASE_URL = "REPLACE_WITH_PUBLIC_BASE_URL"
 # Origin allowed to call /auth/request-link and /auth/session/verify via CORS.
 SITE_ORIGIN = "https://agenticaffiliate.ai"
 

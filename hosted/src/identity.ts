@@ -90,3 +90,16 @@ export async function emailLookupKey(email: string, env: Env): Promise<string> {
   );
   return `email-hash:${bytesToHex(new Uint8Array(sig))}`;
 }
+
+const IP_RATE_LIMIT_LABEL = 'affiliate-mcp-hosted:rl-ip:v1';
+
+/**
+ * A one-way hash of the caller's IP for the request-link rate-limit counter
+ * key. Domain-separated SHA-256 (not HMAC): unlike the email lookup, this key
+ * only needs to be non-reversible-at-a-glance in a KV listing and is TTL'd
+ * away within the hour, so a keyed pepper buys little here. The raw IP is
+ * never stored and never logged.
+ */
+export async function ipRateLimitHash(ip: string): Promise<string> {
+  return sha256Hex(`${IP_RATE_LIMIT_LABEL}:${ip}`);
+}

@@ -17,12 +17,18 @@ directly, and why the waitlist Worker's Resend pattern is reused here).
 
 1. **`POST /auth/request-link`** `{ email }` → creates a single-use, 15-minute
    sign-in token, stores only its SHA-256 hash in KV, and emails the magic
-   link via Resend's transactional send API. Always returns `200 { ok: true }`
-   for any validly-shaped email address, whether or not an account already
-   exists for it, and regardless of whether the upstream Resend call itself
-   succeeds — see the "no account enumeration" note below. A malformed
-   request (bad JSON, missing or malformed email) is a `400`, because that
-   response depends only on what the caller typed, not on any account state.
+   link via Resend's transactional send API. The link's origin comes from the
+   configured `PUBLIC_BASE_URL` var, never from the request's own URL or Host
+   header, so a proxy or misrouted Host in front of the Worker can never
+   poison the emailed link. Always returns `200 { ok: true }` for any
+   validly-shaped email address, whether or not an account already exists for
+   it, whether or not the abuse limit below was hit, and regardless of
+   whether the upstream Resend call itself succeeds — see the "no account
+   enumeration" note below. A malformed request (bad JSON, missing or
+   malformed email) is a `400`, because that response depends only on what
+   the caller typed, not on any account state. A missing or invalid
+   `PUBLIC_BASE_URL` is a `500`: a configuration error is identical for
+   every caller and every address, so it carries no enumeration signal.
 2. **`GET /auth/callback?token=…`** → verifies and consumes the sign-in token
    (its KV record is deleted before anything else happens, enforcing
    single-use), creates the user record on first sign-in, and returns a
@@ -49,6 +55,21 @@ simplest response shape to reason about and to test. Failures are only
 observable server-side, in the Worker's own logs, and only as a status code —
 never the email address, never the Resend response body (which could itself
 echo the address back).
+
+### Request-link abuse limit
+
+`/auth/request-link` carries a cheap KV-counter backstop: at most 5 requests
+per address per hour (keyed by the existing HMAC email hash, never the raw
+address) and 20 per IP per hour (keyed by a one-way SHA-256 of
+`CF-Connecting-IP`; the raw IP is never stored or logged). An over-limit
+request receives the identical neutral `200 { ok: true }` — the send is
+simply skipped — so the limiter is not probeable and adds no enumeration
+signal. KV counters are not atomic, so concurrent requests can slightly
+overshoot the cap, and each increment refreshes the window TTL; both are
+acceptable for what this is: protection against email-bombing a victim
+address and burning Resend quota, not the product's rate-limiting story.
+H4's transport-level per-user rate limits supersede this backstop for
+everything behind a session.
 
 ### Callback delivery: page vs cookie
 
@@ -106,7 +127,17 @@ them:
   reads it, so the record functions as both the "does this token exist"
   check and the single-use marker. The explicit `expiresAt` field is a
   defensive backstop against KV's TTL propagation delay, not the primary
-  expiry mechanism.
+  expiry mechanism. Known residual: KV is eventually consistent across PoPs,
+  so two concurrent callbacks hitting different PoPs can both read the
+  record before either delete propagates and both be issued a session — and
+  the in-memory test fake is strongly consistent, so no unit test can catch
+  this. Compensating controls: the 15-minute TTL bounds the race window now,
+  H4's transport-level rate limits bound what a duplicated session can do
+  later, and a Durable Object (per-token single-writer) is the fix if
+  double-redeem ever matters in practice.
+- **`rl:email-hash:<hmacHex>`** and **`rl:ip:<sha256Hex>`** → a small
+  counter, written with a one-hour `expirationTtl`. The request-link abuse
+  limit above; no addresses, no raw IPs.
 
 ## Runtime choice: Cloudflare Workers
 
@@ -166,16 +197,22 @@ workstream):
    there is no public key to distribute anywhere else; this Worker derives
    its own verification key from the private one at call time (see
    `src/token.ts`).
-6. Confirm `SITE_ORIGIN` in `wrangler.toml` matches the live hosted-product
+6. Set `PUBLIC_BASE_URL` in `wrangler.toml` to the Worker's own deployed
+   origin (the `workers.dev` URL or the custom domain). Sign-in emails embed
+   this origin in the magic link; the Worker refuses to mint links (500)
+   while it is unset or invalid.
+7. Confirm `SITE_ORIGIN` in `wrangler.toml` matches the live hosted-product
    front-end origin.
-7. `npm run deploy`.
+8. `npm run deploy`.
 
 ## Local checks
 
-- `npm test` — request-link neutrality, single-use token consumption,
-  expiry, session sign/verify roundtrip, tamper rejection, health, CORS, and
-  that no log line ever contains an email address. Resend is mocked via a
-  spy on `fetch`; KV is an in-memory fake. No live network calls.
+- `npm test` — request-link neutrality (including the identical over-limit
+  response), the configured-origin magic link (a poisoned request Host never
+  reaches the email), single-use token consumption, expiry, session
+  sign/verify roundtrip, tamper rejection, health, CORS, and that no log
+  line ever contains an email address. Resend is mocked via a spy on
+  `fetch`; KV is an in-memory fake. No live network calls.
 - `npm run typecheck`.
 
 ## What this slice deliberately does not do

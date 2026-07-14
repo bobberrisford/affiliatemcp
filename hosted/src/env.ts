@@ -13,6 +13,8 @@ export interface Env {
    *   user:<userId>              -> JSON { id, createdAt }
    *   email-hash:<hmacHex>       -> <userId>   (HMAC-keyed lookup; see README)
    *   pending-link:<sha256Hex>   -> JSON { emailHash, expiresAt } (TTL'd, single-use)
+   *   rl:email-hash:<hmacHex>    -> counter    (request-link rate limit, TTL'd)
+   *   rl:ip:<sha256Hex>          -> counter    (request-link rate limit, TTL'd)
    */
   HOSTED_USERS: KVNamespace;
 
@@ -30,9 +32,42 @@ export interface Env {
 
   // ── Vars ───────────────────────────────────────────────────────────────
   /**
+   * The Worker's own public base URL, used to build the magic-link callback
+   * URL placed in sign-in emails. Configured explicitly rather than derived
+   * from `new URL(request.url).origin` so a proxy or misrouted Host header in
+   * front of the Worker can never poison the emailed link (host-header
+   * injection into a magic link is a link-hijack primitive). Validated by
+   * `publicBaseUrl` below before any link is minted.
+   */
+  PUBLIC_BASE_URL: string;
+  /**
    * Origin allowed to call `/auth/request-link` and `/auth/session/verify`
    * via CORS: the hosted product's front-end origin. Defaults to the
    * production site if unset, matching the waitlist Worker's convention.
    */
   SITE_ORIGIN?: string;
+}
+
+/**
+ * Parse and validate `PUBLIC_BASE_URL`, returning its origin (no trailing
+ * slash, no path). Throws a descriptive error when the var is missing or not
+ * an absolute http(s) URL — callers surface that as a 500, which is safe: a
+ * configuration error is identical for every caller and every address, so it
+ * carries no account-enumeration signal.
+ */
+export function publicBaseUrl(env: Env): string {
+  const raw = env.PUBLIC_BASE_URL;
+  if (typeof raw !== 'string' || raw.length === 0) {
+    throw new Error('PUBLIC_BASE_URL is not configured');
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error('PUBLIC_BASE_URL is not a valid absolute URL');
+  }
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    throw new Error('PUBLIC_BASE_URL must be an http(s) URL');
+  }
+  return parsed.origin;
 }

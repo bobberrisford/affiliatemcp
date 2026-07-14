@@ -34,6 +34,7 @@ function makeEnv(kv: KVNamespace, signingKey: string, overrides: Partial<Env> = 
     HOSTED_USERS: kv,
     RESEND_API_KEY: 're_test_x',
     SESSION_SIGNING_KEY: signingKey,
+    PUBLIC_BASE_URL: 'https://hosted.test',
     SITE_ORIGIN: 'https://agenticaffiliate.ai',
     ...overrides,
   };
@@ -162,6 +163,42 @@ describe('POST /auth/request-link neutrality', () => {
     expect(payload.text).toContain('/auth/callback?token=');
   });
 
+  it('builds the emailed link from PUBLIC_BASE_URL, never from the request host', async () => {
+    const fetchSpy = mockResendSuccess();
+    const env = makeEnv(fakeKV(), await generatePrivateKeyB64());
+    // Simulate a host-poisoned request arriving via a fronting proxy: the
+    // request URL claims a different host than the configured base URL.
+    const req = new Request('https://attacker-proxy.example/auth/request-link', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'person@example.com' }),
+    });
+    const res = await worker.fetch(req, env);
+    expect(res.status).toBe(200);
+
+    const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    const payload = JSON.parse(init.body as string) as { text: string; html: string };
+    expect(payload.text).toContain('https://hosted.test/auth/callback?token=');
+    expect(payload.text).not.toContain('attacker-proxy.example');
+    expect(payload.html).not.toContain('attacker-proxy.example');
+  });
+
+  it('returns a 500 and sends nothing when PUBLIC_BASE_URL is missing', async () => {
+    const fetchSpy = mockResendSuccess();
+    const env = makeEnv(fakeKV(), 'x', { PUBLIC_BASE_URL: '' });
+    const res = await worker.fetch(post('/auth/request-link', { email: 'person@example.com' }), env);
+    expect(res.status).toBe(500);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('returns a 500 and sends nothing when PUBLIC_BASE_URL is not a URL', async () => {
+    const fetchSpy = mockResendSuccess();
+    const env = makeEnv(fakeKV(), 'x', { PUBLIC_BASE_URL: 'not a url' });
+    const res = await worker.fetch(post('/auth/request-link', { email: 'person@example.com' }), env);
+    expect(res.status).toBe(500);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
   it('never logs the submitted email address, on success or upstream failure', async () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
@@ -176,11 +213,70 @@ describe('POST /auth/request-link neutrality', () => {
   });
 });
 
+describe('POST /auth/request-link abuse limit', () => {
+  it('returns the identical neutral body once the per-address limit is hit, and skips the send', async () => {
+    const fetchSpy = mockResendSuccess();
+    const env = makeEnv(fakeKV(), await generatePrivateKeyB64());
+
+    let firstBody: unknown;
+    for (let i = 0; i < 5; i++) {
+      const res = await worker.fetch(post('/auth/request-link', { email: 'victim@example.com' }), env);
+      expect(res.status).toBe(200);
+      if (i === 0) firstBody = await res.json();
+    }
+    expect(fetchSpy).toHaveBeenCalledTimes(5);
+
+    const sixth = await worker.fetch(post('/auth/request-link', { email: 'victim@example.com' }), env);
+    expect(sixth.status).toBe(200);
+    // Byte-identical neutral body: the limiter is not probeable.
+    expect(await sixth.json()).toEqual(firstBody);
+    // And Resend was NOT called a sixth time — the send was skipped.
+    expect(fetchSpy).toHaveBeenCalledTimes(5);
+  });
+
+  it('limits per address: a different address from the same client still gets a send', async () => {
+    const fetchSpy = mockResendSuccess();
+    const env = makeEnv(fakeKV(), await generatePrivateKeyB64());
+
+    for (let i = 0; i < 6; i++) {
+      await worker.fetch(post('/auth/request-link', { email: 'victim@example.com' }), env);
+    }
+    expect(fetchSpy).toHaveBeenCalledTimes(5); // 6th was over the address limit
+
+    await worker.fetch(post('/auth/request-link', { email: 'someone-else@example.com' }), env);
+    expect(fetchSpy).toHaveBeenCalledTimes(6);
+  });
+
+  it('enforces the per-IP limit across different addresses', async () => {
+    const fetchSpy = mockResendSuccess();
+    const env = makeEnv(fakeKV(), await generatePrivateKeyB64());
+    const fromIp = (email: string) =>
+      new Request('https://hosted.test/auth/request-link', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'cf-connecting-ip': '203.0.113.9' },
+        body: JSON.stringify({ email }),
+      });
+
+    for (let i = 0; i < 20; i++) {
+      const res = await worker.fetch(fromIp(`user${i}@example.com`), env);
+      expect(res.status).toBe(200);
+    }
+    expect(fetchSpy).toHaveBeenCalledTimes(20);
+
+    const overLimit = await worker.fetch(fromIp('user20@example.com'), env);
+    expect(overLimit.status).toBe(200);
+    expect(await overLimit.json()).toEqual({ ok: true });
+    expect(fetchSpy).toHaveBeenCalledTimes(20); // send skipped
+  });
+});
+
 describe('GET /auth/callback', () => {
   async function requestLinkAndExtractToken(env: Env): Promise<string> {
     const fetchSpy = mockResendSuccess();
     await worker.fetch(post('/auth/request-link', { email: 'person@example.com' }), env);
-    const [, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    // Read the LAST Resend call: within one test, repeated vi.spyOn calls
+    // reuse the same underlying mock, so earlier sends stay in mock.calls.
+    const [, init] = fetchSpy.mock.calls[fetchSpy.mock.calls.length - 1] as [string, RequestInit];
     const payload = JSON.parse(init.body as string) as { text: string };
     const match = payload.text.match(/token=([^\s]+)/);
     if (!match) throw new Error('no token found in email body');
