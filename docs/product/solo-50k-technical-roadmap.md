@@ -80,13 +80,13 @@ The order that matters, compressed:
 
 ### Funnel foundation
 
-- [ ] **[content]** Founding-offer landing page for the hosted tier with
-      waitlist capture, including the per-network demand question that later
-      orders Phase 2 breadth.
-- [ ] **[ops]** Privacy-respecting site analytics (for example Plausible) and
-      an email list tool; wire waitlist and checkout events to it.
-- [ ] **[ops]** A simple gate dashboard: pre-orders, waitlist count, skill-pack
-      MRR, so the Phase 0 gate is read from data, not memory.
+- [x] **[content]** Pricing and founding-offer page shipped (PR #350).
+      Waitlist capture was rescinded on 2026-07-13
+      ([`2026-07-13-build-hosted-without-presell.md`](../decisions/2026-07-13-build-hosted-without-presell.md));
+      the CTA repoints to the hosted product as slices ship.
+- [ ] **[ops]** Privacy-respecting site analytics (for example Plausible),
+      once Rob picks the account.
+- Gate dashboard: dropped with the pre-sell gate.
 
 ### Hygiene that gates later phases (already on the canonical roadmap)
 
@@ -101,8 +101,9 @@ The order that matters, compressed:
       taxonomy, one consent contract, retention and deletion operations.
       Sequence 5 makes this a prerequisite for evaluating remote hosting.
 
-**Gate to build Phase 1:** 30 founding pre-orders or 500 qualified waitlist
-emails, and the custody decision accepted.
+**Gate to build Phase 1: rescinded** (2026-07-13, Rob). The custody
+decision is accepted and the hosted MVP proceeds per
+[`hosted-mvp-workstream.md`](./hosted-mvp-workstream.md).
 
 ## Phase 1: hosted MVP, charge from day one (months 2 to 6)
 
@@ -164,7 +165,10 @@ local single-user path preserved unchanged.
 
 ## Phase 2: breadth and the money features (months 6 to 12)
 
-- [ ] **[build]** Hosted promotion for the top 12 networks by waitlist demand.
+- [ ] **[build]** Hosted promotion for the top 12 networks, ordered by
+      hosted usage and connect-flow requests (the waitlist signal was
+      rescinded 2026-07-13), with an explicit maintainer call where the
+      signal is thin.
       Promotion per network requires: the accepted adapter promotion gate met,
       a terms-of-service check for third-party credential use recorded in the
       network's docs, and the connect flow extended. Networks that fail the

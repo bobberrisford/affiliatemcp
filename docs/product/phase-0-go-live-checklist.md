@@ -76,10 +76,10 @@
 
 - [ ] Merge and verify the pricing page deploy (auto-deploys from `site/**`
       on main).
-- [ ] Waitlist capture via Resend (chosen by Rob, 2026-07-12; see
-      `../decisions/2026-07-12-waitlist-email-resend.md`): create the Resend
-      account and audience, note the API key, deploy the waitlist Worker
-      (built in-repo), then swap the pricing page CTA to the form.
+- Waitlist: rescinded (2026-07-13, Rob; see
+      `../decisions/2026-07-13-build-hosted-without-presell.md`). The
+      `waitlist/` Worker stays undeployed; the pricing CTA repoints to the
+      hosted product as workstream slices ship.
 - [ ] Announce on LinkedIn only after step 5 passes.
 
 ## Deliberately not done by agents

@@ -257,11 +257,12 @@ smallest foundation with its first real consumer, then stacked slices.
   Until custody is accepted, hosted work stays at discovery.
 - Ship the accepted £20 skill packs: first revenue, first billing ops, first
   churn data.
-- Put the hosted tier on the website as a founding offer (annual, discounted,
-  clearly pre-launch) behind a waitlist.
-- **Gate to build:** 30 founding pre-orders (roughly £15k to £20k cash) or
-  500 qualified waitlist emails. If the gate fails, the wedge or price is
-  wrong; revisit before building anything.
+- Put the hosted tier on the website as a founding offer (annual,
+  discounted, clearly pre-launch).
+- **Gate to build: rescinded** (2026-07-13, Rob; see
+  [`2026-07-13-build-hosted-without-presell.md`](../decisions/2026-07-13-build-hosted-without-presell.md)).
+  The hosted MVP is built without pre-sell evidence; demand risk is
+  accepted knowingly.
 
 ### Phase 1 (months 2 to 6): hosted MVP, charge from day one
 
@@ -274,7 +275,9 @@ smallest foundation with its first real consumer, then stacked slices.
 
 ### Phase 2 (months 6 to 12): breadth and the money features
 
-- Extend hosted coverage to the top 12 networks by waitlist demand.
+- Extend hosted coverage to the top 12 networks, ordered by hosted usage
+  and connect-flow requests (the waitlist ordering signal was rescinded
+  2026-07-13), with an explicit maintainer call where the signal is thin.
 - Ship scheduled anomaly watch and the unpaid-commission chaser digest.
 - Ship the brand-data QBR and weekly-report actions behind Pro (the
   entitlement-gate decision's feature set).

@@ -1,7 +1,10 @@
 # Waitlist and email capture via Resend
 
 - **Date:** 2026-07-12
-- **Status:** Accepted (2026-07-12, Rob)
+- **Status:** Rescinded (2026-07-13, Rob) by
+  [`2026-07-13-build-hosted-without-presell.md`](./2026-07-13-build-hosted-without-presell.md):
+  no waitlist; the hosted MVP is built directly. The `waitlist/` Worker
+  stays in the tree as inert, undeployed code.
 - **Affects:** the pricing page waitlist CTA (`site/pricing.html`), a new
   small waitlist Worker, and the funnel items in
   `../product/solo-50k-technical-roadmap.md` and
