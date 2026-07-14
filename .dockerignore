@@ -1,0 +1,45 @@
+# Keep the Cloudflare Containers build context small. The image only needs
+# package.json, package-lock.json, tsconfig.json, and src/ (see Dockerfile) —
+# everything below is excluded from the build context entirely, not merely
+# unused by the final image.
+
+.git
+.github
+.claude
+.claude-plugin
+.agents
+
+node_modules
+dist
+coverage
+.artifacts
+
+# Not needed by the hosted Node services' build or runtime.
+desktop
+site
+docs
+tests
+mcpb
+examples
+premium-skills
+design-system
+templates
+skills
+
+# Other Cloudflare Workers in this repo — each has its own deploy path and
+# does not run inside this image.
+hosted
+issuer
+telemetry-cloudflare
+containers
+
+# Root-level docs and metadata — no runtime relevance.
+*.md
+LICENCE
+.env
+.env.example
+.env.local
+.eslintrc.cjs
+.prettierrc
+.gitignore
+.dockerignore
