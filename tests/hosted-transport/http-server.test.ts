@@ -29,6 +29,8 @@ import { _resetBreakers } from '../../src/shared/resilience.js';
 interface FakeSession {
   userId: string;
   exp: number; // unix seconds
+  /** H6 token scope, as the real verify route reports it ("full" when omitted). */
+  scope?: 'full' | 'digest';
 }
 
 interface FakeEntitlement {
@@ -100,7 +102,7 @@ function startFakeHostedWorker(): Promise<FakeHostedWorker> {
           sendJson(res, 401, { error: 'expired_token' });
           return;
         }
-        sendJson(res, 200, { userId: session.userId, exp: session.exp });
+        sendJson(res, 200, { userId: session.userId, exp: session.exp, scope: session.scope ?? 'full' });
         return;
       }
 
@@ -287,6 +289,19 @@ describe('hosted MCP transport (H4) end to end', () => {
     const userId = 'hosted_usr_test_expired';
     const token = 'amcps_test.session.expired';
     fakeWorker.sessions.set(token, { userId, exp: Math.floor(Date.now() / 1000) - 10 });
+
+    const transport = new StreamableHTTPClientTransport(
+      new URL(`http://127.0.0.1:${transportHandle.port}/mcp`),
+      { requestInit: { headers: { authorization: `Bearer ${token}` } } },
+    );
+    const client = new Client({ name: 'hosted-transport-test-client', version: '0.0.0' });
+    await expect(client.connect(transport)).rejects.toThrow();
+  });
+
+  it('rejects a digest-scoped token as a 401 — the digest token authorises two vault reads, never MCP tool calls (H6)', async () => {
+    const userId = 'hosted_usr_test_digest_scope';
+    const token = 'amcps_test.session.digest_scope';
+    fakeWorker.sessions.set(token, { userId, exp: Math.floor(Date.now() / 1000) + 900, scope: 'digest' });
 
     const transport = new StreamableHTTPClientTransport(
       new URL(`http://127.0.0.1:${transportHandle.port}/mcp`),

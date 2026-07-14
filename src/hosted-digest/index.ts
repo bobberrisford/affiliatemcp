@@ -1,60 +1,47 @@
 /**
- * Public entrypoint for the hosted-digest job (H6). Re-exports the pieces a
- * caller needs: `runHostedDigest` for the CLI subcommand
- * (`src/index.ts`, `hosted-digest`) and for tests, and
+ * Public entrypoint for the digest-compose service (H6, redesigned per
+ * Rob's 2026-07-14 decision — see `hosted/README.md`, "Digest orchestration
+ * and token scopes"). Re-exports the pieces a caller needs:
+ * `startHostedDigestServer` for both the CLI subcommand (`src/index.ts`,
+ * `hosted-digest`) and the test suite (`tests/hosted-digest/`), and
  * `loadHostedDigestConfig` to read `process.env` the same way the CLI does.
  *
- * Runnable as `affiliate-networks-mcp hosted-digest` — a single run, then
- * exit. There is no in-process scheduler; run it on a schedule via cron or a
- * systemd timer. Example crontab entry (once a week, Monday 06:00):
+ * The service is long-running (`affiliate-networks-mcp hosted-digest`
+ * starts it and blocks, like `hosted-transport`); the SCHEDULE lives in the
+ * hosted Worker as a Cloudflare Cron Trigger (`hosted/wrangler.toml`,
+ * `[triggers]`), which calls this service's `POST /compose` once per
+ * subscriber per digest type and sends the email itself. There is no
+ * roster, no scheduler, and no email address anywhere in this process.
  *
- *   0 6 * * 1 cd /path/to/affiliate-mcp && HOSTED_AUTH_URL=... HOSTED_VAULT_URL=... \
- *     HOSTED_SERVICE_SECRET=... /usr/bin/node dist/index.js hosted-digest >> /var/log/affiliate-mcp-digest.log 2>&1
+ * Deployment shape: run this service wherever the hosted MCP transport
+ * runs (it has the same needs — the adapter registry and outbound network
+ * access) and point the Worker's `DIGEST_SERVICE_URL` var at it. A systemd
+ * unit is the recommended supervisor:
  *
- * Example systemd timer/service pair (`affiliate-mcp-digest.timer` +
- * `affiliate-mcp-digest.service`), for a host that prefers systemd over cron:
- *
- *   # affiliate-mcp-digest.service
+ *   # affiliate-mcp-digest-compose.service
  *   [Service]
- *   Type=oneshot
- *   EnvironmentFile=/etc/affiliate-mcp/digest.env
+ *   EnvironmentFile=/etc/affiliate-mcp/digest-compose.env   # HOSTED_VAULT_URL, DIGEST_SERVICE_PORT, DIGEST_COMPOSE_SECRET
  *   ExecStart=/usr/bin/node /opt/affiliate-mcp/dist/index.js hosted-digest
- *
- *   # affiliate-mcp-digest.timer
- *   [Timer]
- *   OnCalendar=Mon *-*-* 06:00:00
- *   Persistent=true
+ *   Restart=on-failure
  *   [Install]
- *   WantedBy=timers.target
+ *   WantedBy=multi-user.target
  *
- * Exit code is non-zero only when the job itself could not run at all (the
- * roster call failed); a per-user failure is recorded in the run summary and
- * logged to stderr, but does not fail the whole run — see `run.ts`.
+ * For a local or manual run (compose one digest by hand):
+ *
+ *   HOSTED_VAULT_URL=... npm run dev:hosted-digest
+ *   curl -X POST localhost:8788/compose \
+ *     -H "authorization: Bearer <a valid session token>" \
+ *     -H "content-type: application/json" \
+ *     -d '{"userId":"hosted_usr_...","digestType":"earnings"}'
  */
 
-export { runDigestForSubscriber, runHostedDigest, type DigestRunSummary, type DigestSendRecord, type UserRunError } from './run.js';
+export { startHostedDigestServer, type HostedDigestServerHandle } from './server.js';
 export { loadHostedDigestConfig, type HostedDigestConfig } from './env.js';
-export { composeEarningsDigest, composeUnpaidCommissionsDigest, type ComposedDigest, type DigestType, type NetworkEarningsResult } from './compose.js';
-export { listSubscribers, issueServiceSession, sendDigest, HostedDigestServiceError, type Subscriber, type DigestSendOutcome } from './service-client.js';
-
-import { createLogger } from '../shared/logging.js';
-import { loadHostedDigestConfig } from './env.js';
-import { runHostedDigest } from './run.js';
-
-const log = createLogger('hosted-digest');
-
-/** CLI entrypoint body: run once, log a summary, and signal failure via the return code. Called
- * by `src/index.ts`'s `hosted-digest` subcommand. */
-export async function runHostedDigestCli(): Promise<number> {
-  const config = loadHostedDigestConfig();
-  try {
-    const summary = await runHostedDigest(config);
-    if (summary.errors.length > 0) {
-      log.warn({ errorCount: summary.errors.length }, 'hosted digest run completed with per-user errors');
-    }
-    return 0;
-  } catch (err) {
-    log.error({ message: (err as Error).message }, 'hosted digest run failed to start');
-    return 1;
-  }
-}
+export { composeDigestForUser } from './run.js';
+export {
+  composeEarningsDigest,
+  composeUnpaidCommissionsDigest,
+  type ComposedDigest,
+  type DigestType,
+  type NetworkEarningsResult,
+} from './compose.js';

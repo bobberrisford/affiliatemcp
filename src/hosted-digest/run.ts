@@ -1,66 +1,54 @@
 /**
- * Orchestrates one hosted-digest run (workstream slice H6:
- * `docs/product/hosted-mvp-workstream.md`). Cron-invoked, no in-process
- * scheduler — see `src/hosted-digest/README.md` for the crontab/systemd
- * timer this expects to be run under.
+ * Per-user digest composition (workstream slice H6, redesigned per Rob's
+ * 2026-07-14 decision — see `hosted/README.md`, "Digest orchestration and
+ * token scopes"). The ORCHESTRATION (who to run for, when, which digest
+ * types, and the email send) lives in the hosted Worker's scheduled handler
+ * (`hosted/src/digest.ts`); this module composes ONE user's digest text
+ * when asked, using the caller-supplied, digest-scoped, per-user session
+ * token against the hosted Worker's existing vault list/reveal routes,
+ * exactly as the hosted MCP transport uses them — this is a second caller
+ * of the H1 seam and H4 vault-client, not a parallel reimplementation.
  *
- * For each subscribed user: mint a short-lived service session
- * (`service-client.ts`), list their connected networks and read each one's
- * `EarningsSummary` through the exact same H1 request-context seam and H4
- * vault-client the hosted MCP transport uses (`resolveCredentialOverlay`,
- * `listConnectedNetworks`, `runInRequestContext`) — this job is a second
- * caller of that seam, not a parallel reimplementation of it. Compose the
- * digest(s) the user's tier entitles them to (`compose.ts`), and hand the
- * composed text to the hosted Worker's `POST /digest/send`
- * (`service-client.ts`), which resolves the recipient's email itself — this
- * job never sees it.
+ * This module never sees an email address, never enumerates users, and
+ * holds no credential of its own: everything it can read is bounded by the
+ * one token the caller presented, for the one user that token names, for
+ * the few minutes it lives.
  *
- * Never logs a composed digest's subject or body. The one line per send
- * carries exactly userId, digestType, timestamp, and outcome, mirroring
- * `src/hosted-transport/audit.ts`'s "never payloads" contract.
+ * Never logs digest contents. One stderr line per compose request lives in
+ * `server.ts` (userId, digestType, timestamp, outcome) — the same
+ * "never payloads" audit contract as `src/hosted-transport/audit.ts`.
  */
 
 import type { NetworkSlug } from '../shared/types.js';
 import { getAdapter } from '../shared/registry.js';
 import { runInRequestContext } from '../shared/request-context.js';
-import { createLogger } from '../shared/logging.js';
 import { resolveCredentialOverlay } from '../hosted-transport/dispatch.js';
-import { listConnectedNetworks, VaultUnavailableError } from '../hosted-transport/vault-client.js';
+import { listConnectedNetworks } from '../hosted-transport/vault-client.js';
 
 // Side-effect import: registers every network adapter with the shared registry, matching
-// `mcp-server.ts`'s own import — this job calls adapters directly, so it needs the same
+// `mcp-server.ts`'s own import — this service calls adapters directly, so it needs the same
 // registration, not just the tool-generation layer.
 import '../networks/index.js';
 
-import type { HostedDigestConfig } from './env.js';
-import { composeEarningsDigest, composeUnpaidCommissionsDigest, type DigestType, type NetworkEarningsResult } from './compose.js';
 import {
-  HostedDigestServiceError,
-  issueServiceSession,
-  listSubscribers,
-  sendDigest,
-  type DigestSendOutcome,
-  type Subscriber,
-} from './service-client.js';
-
-const log = createLogger('hosted-digest');
+  composeEarningsDigest,
+  composeUnpaidCommissionsDigest,
+  type ComposedDigest,
+  type DigestType,
+  type NetworkEarningsResult,
+} from './compose.js';
 
 const DIGEST_WINDOW_DAYS = 7;
 
 function weekPeriod(): { from: string; to: string; label: string } {
   const to = new Date();
   const from = new Date(to.getTime() - DIGEST_WINDOW_DAYS * 24 * 60 * 60 * 1000);
-  const iso = (d: Date) => (d.toISOString().split('T')[0] as string);
+  const iso = (d: Date) => d.toISOString().split('T')[0] as string;
   return { from: from.toISOString(), to: to.toISOString(), label: `${iso(from)} to ${iso(to)}` };
 }
 
-/** One audit line per send attempt. NEVER the composed subject/body. */
-function recordDigestJobAudit(userId: string, digestType: DigestType, outcome: DigestSendOutcome | 'error'): void {
-  log.info({ userId, digestType, timestamp: new Date().toISOString(), outcome }, 'hosted digest send');
-}
-
 /** Read one network's `EarningsSummary` under the given user's identity, using the caller's own
- * (service-minted) session token for the vault read — never invents a result on failure. */
+ * digest-scoped token for the vault read — never invents a result on failure. */
 async function readNetworkEarnings(
   userId: string,
   network: NetworkSlug,
@@ -86,89 +74,29 @@ async function readNetworkEarnings(
   }
 }
 
-export interface DigestSendRecord {
-  userId: string;
-  digestType: DigestType;
-  outcome: DigestSendOutcome | 'error';
-}
-
-export interface UserRunError {
-  userId: string;
-  message: string;
-}
-
-export interface DigestRunSummary {
-  subscriberCount: number;
-  sends: DigestSendRecord[];
-  errors: UserRunError[];
-}
-
-/** Run the digest job once for one subscriber. Exported separately from `runHostedDigest` so a
- * test can drive a single user's path without needing a full roster. */
-export async function runDigestForSubscriber(
-  config: HostedDigestConfig,
-  subscriber: Subscriber,
-): Promise<DigestSendRecord[]> {
+/**
+ * Compose one digest for one user: list their connected networks (with the
+ * caller's token, via the vault), read each network's earnings through the
+ * H1 seam, and render the requested digest type. Throws
+ * `VaultUnavailableError` when the vault itself cannot be reached or
+ * rejects the token — `server.ts` maps that to an honest HTTP status
+ * rather than an empty digest.
+ */
+export async function composeDigestForUser(
+  vaultUrl: string,
+  userId: string,
+  digestType: DigestType,
+  bearerToken: string,
+): Promise<ComposedDigest> {
   const period = weekPeriod();
-  const sessionToken = await issueServiceSession(config.authUrl, config.serviceSecret, subscriber.userId);
-  const networks = await listConnectedNetworks(sessionToken, config.vaultUrl);
+  const networks = await listConnectedNetworks(bearerToken, vaultUrl);
 
   const results: NetworkEarningsResult[] = [];
   for (const network of networks) {
-    results.push(await readNetworkEarnings(subscriber.userId, network, sessionToken, config.vaultUrl, period));
+    results.push(await readNetworkEarnings(userId, network, bearerToken, vaultUrl, period));
   }
 
-  const records: DigestSendRecord[] = [];
-
-  const earnings = composeEarningsDigest(results, period.label);
-  const earningsOutcome = await sendDigest(config.authUrl, config.serviceSecret, {
-    userId: subscriber.userId,
-    digestType: 'earnings',
-    subject: earnings.subject,
-    body: earnings.body,
-  });
-  recordDigestJobAudit(subscriber.userId, 'earnings', earningsOutcome);
-  records.push({ userId: subscriber.userId, digestType: 'earnings', outcome: earningsOutcome });
-
-  if (subscriber.tier === 'pro') {
-    const unpaid = composeUnpaidCommissionsDigest(results, period.label);
-    const unpaidOutcome = await sendDigest(config.authUrl, config.serviceSecret, {
-      userId: subscriber.userId,
-      digestType: 'unpaid-commissions',
-      subject: unpaid.subject,
-      body: unpaid.body,
-    });
-    recordDigestJobAudit(subscriber.userId, 'unpaid-commissions', unpaidOutcome);
-    records.push({ userId: subscriber.userId, digestType: 'unpaid-commissions', outcome: unpaidOutcome });
-  }
-
-  return records;
-}
-
-/** Run the digest job for every currently-subscribed user. Errors for one user (a vault outage,
- * an unreadable network) never abort the run for the rest of the roster — each user's failure is
- * recorded and the job continues, matching the brief's "for each subscribed user" framing. */
-export async function runHostedDigest(config: HostedDigestConfig): Promise<DigestRunSummary> {
-  const subscribers = await listSubscribers(config.authUrl, config.serviceSecret);
-  const sends: DigestSendRecord[] = [];
-  const errors: UserRunError[] = [];
-
-  for (const subscriber of subscribers) {
-    try {
-      sends.push(...(await runDigestForSubscriber(config, subscriber)));
-    } catch (err) {
-      const message =
-        err instanceof HostedDigestServiceError || err instanceof VaultUnavailableError || err instanceof Error
-          ? err.message
-          : String(err);
-      log.warn({ userId: subscriber.userId, message }, 'hosted digest run failed for user');
-      errors.push({ userId: subscriber.userId, message });
-    }
-  }
-
-  log.info(
-    { subscriberCount: subscribers.length, sent: sends.length, errored: errors.length },
-    'hosted digest run complete',
-  );
-  return { subscriberCount: subscribers.length, sends, errors };
+  return digestType === 'unpaid-commissions'
+    ? composeUnpaidCommissionsDigest(results, period.label)
+    : composeEarningsDigest(results, period.label);
 }

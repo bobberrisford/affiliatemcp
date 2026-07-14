@@ -39,10 +39,6 @@ const ACTIVE_STATUSES = new Set(['active', 'trialing']);
 export type HostedTier = 'none' | 'solo' | 'pro';
 export type PaidHostedTier = 'solo' | 'pro';
 
-export function isPaidTier(tier: HostedTier): tier is PaidHostedTier {
-  return tier === 'solo' || tier === 'pro';
-}
-
 /** Stored subscription record, keyed by hosted userId. */
 export interface SubscriptionRecord {
   tier: PaidHostedTier;
@@ -62,11 +58,6 @@ export interface Entitlement {
 
 const subKey = (userId: string): string => `sub:${userId}`;
 const stripeSubKey = (subscriptionId: string): string => `stripe-sub:${subscriptionId}`;
-export const eventKey = (eventId: string): string => `evt:${eventId}`;
-
-function nowSeconds(): number {
-  return Math.floor(Date.now() / 1000);
-}
 
 export function isActiveStatus(status: string | undefined): boolean {
   return !!status && ACTIVE_STATUSES.has(status);
@@ -113,47 +104,42 @@ export async function putSubscriptionReverseIndex(
 }
 
 /**
- * The admin manual-set path for the MVP (per the workstream brief: "a
- * hosted-side KV shape + a manual-set admin path documented" — real Stripe
- * checkout wiring for hosted tiers follows the issuer pattern and Rob's
- * Stripe account at deploy). Lets Rob grant or change a tier directly,
- * without a live Stripe subscription behind it — useful before Stripe is
- * wired up, and for support/testing afterwards. Guarded by
- * `requireServiceSecret` at the route layer (`routes/admin.ts`), never
- * exposed to a normal session token.
+ * Complete billing-state deletion for one user: the `sub:<userId>` record
+ * (which carries the plaintext billing email — the one piece of PII this
+ * Worker holds) and, when the record names a Stripe subscription, its
+ * `stripe-sub:<subId>` reverse-index entry. Called by `DELETE /account`
+ * (`routes/account.ts`) so account deletion is complete across all three KV
+ * namespaces, per the custody record's clause 5 — without this, a deleted
+ * user's billing email would survive deletion and `listActiveSubscribers`
+ * would keep them on the digest roster. Idempotent: deleting a user who
+ * never subscribed is a no-op. Cancelling the live Stripe subscription
+ * itself is a separate, Rob-side operational step (see `hosted/README.md`);
+ * this removes every piece of stored state.
  */
-export async function setEntitlementManual(
-  kv: KVNamespace,
-  userId: string,
-  tier: PaidHostedTier,
-): Promise<SubscriptionRecord> {
-  const existing = await getSubscriptionRecord(kv, userId);
-  const record: SubscriptionRecord = {
-    ...(existing ?? {}),
-    tier,
-    status: 'active',
-    updatedAt: nowSeconds(),
-  };
-  await putSubscriptionRecord(kv, userId, record);
-  return record;
+export async function deleteSubscription(kv: KVNamespace, userId: string): Promise<void> {
+  const record = await getSubscriptionRecord(kv, userId);
+  if (record?.subscriptionId) {
+    await kv.delete(stripeSubKey(record.subscriptionId));
+  }
+  await kv.delete(subKey(userId));
 }
 
-/** One row of the digest job's subscriber roster: an id and a tier, never an email — the digest
- * job enumerates WHO to run for and WHICH digest(s) they are entitled to, nothing more. */
+/** One row of the scheduled digest's subscriber roster: an id and a tier — WHO to run for and
+ * WHICH digest(s) they are entitled to, nothing more. The full record (email included) is only
+ * loaded later, at send time, inside the Worker (`src/digest.ts`). */
 export interface SubscriberSummary {
   userId: string;
   tier: PaidHostedTier;
 }
 
 /**
- * List every user with an active paid subscription, for the digest job's
- * admin-enumeration route (`GET /admin/subscribers`). KV `list` does not
- * support "value contains X" queries, so this walks every `sub:` key; that is
- * the right and only shape here — the digest job runs at most a few times a
- * week over a subscriber base this KV is sized for, not a hot path. Returns
- * ids and tiers only, per the workstream brief's "returning ids only — no
- * emails" (tier is not personally identifying and the digest job needs it to
- * pick which digest(s) a user is entitled to).
+ * List every user with an active paid subscription, for the Worker's own
+ * scheduled digest handler (`src/digest.ts`) — enumerated in-process from
+ * this KV, never exposed over HTTP (Rob's 2026-07-14 decision: no credential
+ * may enumerate tenants from outside the Worker). KV `list` does not support
+ * "value contains X" queries, so this walks every `sub:` key; that is the
+ * right and only shape here — the digest runs at most a few times a week
+ * over a subscriber base this KV is sized for, not a hot path.
  */
 export async function listActiveSubscribers(kv: KVNamespace): Promise<SubscriberSummary[]> {
   const prefix = 'sub:';
@@ -176,8 +162,8 @@ export async function listActiveSubscribers(kv: KVNamespace): Promise<Subscriber
 
 /** Which digest types a tier is entitled to receive. Solo: weekly earnings only, per the pricing
  * decision. Pro: earnings plus the unpaid-commissions digest. `none` (lapsed or never
- * subscribed) is entitled to nothing — `routes/digest.ts` enforces this even when the caller is
- * the digest job itself, so a stale roster entry can never over-send. */
+ * subscribed) is entitled to nothing — `src/digest.ts` re-checks this against the freshly-read
+ * record at send time, so a roster entry that lapsed mid-run can never over-send. */
 export type DigestType = 'earnings' | 'unpaid-commissions';
 
 export function tierEntitledToDigest(tier: HostedTier, digestType: DigestType): boolean {

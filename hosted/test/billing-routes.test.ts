@@ -1,8 +1,10 @@
 /**
- * Route-level tests for the H6 billing, admin, and digest routes, exercised
- * through the same `worker.fetch` entry point as `test/worker.test.ts` and
- * `test/vault-routes.test.ts`. Stripe and Resend are mocked via a spy on
- * `fetch`; KV is an in-memory fake. No live network calls.
+ * Route-level tests for the H6 billing routes (checkout, webhook,
+ * entitlement), exercised through the same `worker.fetch` entry point as
+ * `test/worker.test.ts` and `test/vault-routes.test.ts`. Stripe is mocked
+ * via a spy on `fetch`; KV is an in-memory fake. No live network calls.
+ * Token-scope enforcement across every session-gated route lives in
+ * `test/scope.test.ts`; the scheduled digest in `test/digest-scheduled.test.ts`.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -41,7 +43,6 @@ async function generatePrivateKeyB64(): Promise<string> {
 }
 
 const TEST_VAULT_MASTER_KEY_B64 = 'MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=';
-const SERVICE_SECRET = 'test-service-secret';
 const STRIPE_WEBHOOK_SECRET = 'whsec_test';
 
 async function makeEnv(signingKey: string, overrides: Partial<Env> = {}): Promise<{ env: Env; billingKv: ReturnType<typeof fakeKV> }> {
@@ -57,7 +58,6 @@ async function makeEnv(signingKey: string, overrides: Partial<Env> = {}): Promis
     SITE_ORIGIN: 'https://agenticaffiliate.ai',
     STRIPE_SECRET_KEY: 'sk_test_x',
     STRIPE_WEBHOOK_SECRET,
-    HOSTED_SERVICE_SECRET: SERVICE_SECRET,
     STRIPE_PRICE_ID_SOLO: 'price_solo',
     STRIPE_PRICE_ID_PRO: 'price_pro',
     BILLING_SUCCESS_URL: 'https://hosted.test/success',
@@ -73,10 +73,9 @@ async function issueSessionToken(signingKey: string, userId: string): Promise<st
   return signSession(buildSessionPayload({ sub: userId, iss, exp }), signingKey);
 }
 
-function req(path: string, method: string, opts: { token?: string; serviceSecret?: string; body?: unknown } = {}): Request {
+function req(path: string, method: string, opts: { token?: string; body?: unknown } = {}): Request {
   const headers: Record<string, string> = { 'content-type': 'application/json' };
   if (opts.token) headers['authorization'] = `Bearer ${opts.token}`;
-  if (opts.serviceSecret) headers['authorization'] = `Bearer ${opts.serviceSecret}`;
   return new Request(`https://hosted.test${path}`, {
     method,
     headers,
@@ -216,6 +215,44 @@ describe('POST /billing/webhook', () => {
     expect(billingKv.store.get('sub:hosted_usr_3')).toBeDefined();
   });
 
+  it('logs a structured, PII-free warning when a completed checkout cannot be attributed (missing tier metadata)', async () => {
+    const { env, billingKv } = await makeEnv('x');
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    // A Checkout Session created OUTSIDE handleBillingCheckout: no tier in
+    // metadata, so the handler must grant nothing but must say so.
+    const payload = JSON.stringify({
+      id: 'evt_unattributable',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          client_reference_id: 'hosted_usr_mystery',
+          subscription: 'sub_mystery',
+          customer_details: { email: 'mystery@example.com' },
+          payment_status: 'paid',
+          metadata: {},
+        },
+      },
+    });
+    const sig = await signStripePayloadForTest(payload, STRIPE_WEBHOOK_SECRET);
+
+    const res = await worker.fetch(
+      new Request('https://hosted.test/billing/webhook', {
+        method: 'POST',
+        headers: { 'stripe-signature': sig },
+        body: payload,
+      }),
+      env,
+    );
+
+    expect(res.status).toBe(200);
+    expect(billingKv.store.get('sub:hosted_usr_mystery')).toBeUndefined();
+    const warning = errorSpy.mock.calls.map((c) => String(c[0])).find((line) => line.includes('ignored'));
+    expect(warning).toBeDefined();
+    expect(warning).toContain('evt_unattributable');
+    expect(warning).toContain('tierValid=false');
+    expect(warning).not.toContain('mystery@example.com');
+  });
+
   it('cancels the tier on customer.subscription.deleted', async () => {
     const { env, billingKv } = await makeEnv('x');
     await putSubscriptionRecord(billingKv, 'hosted_usr_4', {
@@ -269,184 +306,5 @@ describe('GET /billing/entitlement', () => {
     const token = await issueSessionToken(signingKey, 'hosted_usr_6');
     const res = await worker.fetch(req('/billing/entitlement', 'GET', { token }), env);
     expect(await res.json()).toEqual({ tier: 'pro', status: 'active' });
-  });
-});
-
-describe('service-authenticated admin routes', () => {
-  it('GET /admin/subscribers requires the service secret, not a session token', async () => {
-    const signingKey = await generatePrivateKeyB64();
-    const { env } = await makeEnv(signingKey);
-    const token = await issueSessionToken(signingKey, 'hosted_usr_7');
-    const res = await worker.fetch(req('/admin/subscribers', 'GET', { token }), env);
-    expect(res.status).toBe(401);
-  });
-
-  it('GET /admin/subscribers returns ids and tiers only, never emails', async () => {
-    const { env, billingKv } = await makeEnv('x');
-    await putSubscriptionRecord(billingKv, 'hosted_usr_8', {
-      tier: 'solo',
-      status: 'active',
-      email: 'should-not-appear@example.com',
-      updatedAt: 0,
-    });
-    const res = await worker.fetch(req('/admin/subscribers', 'GET', { serviceSecret: SERVICE_SECRET }), env);
-    expect(res.status).toBe(200);
-    const body = (await res.json()) as { subscribers: Array<{ userId: string; tier: string }> };
-    expect(body.subscribers).toEqual([{ userId: 'hosted_usr_8', tier: 'solo' }]);
-    expect(JSON.stringify(body)).not.toContain('should-not-appear@example.com');
-  });
-
-  it('rejects an invalid service secret', async () => {
-    const { env } = await makeEnv('x');
-    const res = await worker.fetch(req('/admin/subscribers', 'GET', { serviceSecret: 'wrong' }), env);
-    expect(res.status).toBe(401);
-  });
-
-  it('POST /admin/session mints a token valid for the named userId only', async () => {
-    const signingKey = await generatePrivateKeyB64();
-    const { env } = await makeEnv(signingKey);
-    const res = await worker.fetch(
-      req('/admin/session', 'POST', { serviceSecret: SERVICE_SECRET, body: { userId: 'hosted_usr_9' } }),
-      env,
-    );
-    expect(res.status).toBe(200);
-    const { token } = (await res.json()) as { token: string; exp: number };
-
-    const verifyRes = await worker.fetch(
-      new Request('https://hosted.test/auth/session/verify', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ token }),
-      }),
-      env,
-    );
-    expect(verifyRes.status).toBe(200);
-    expect(await verifyRes.json()).toMatchObject({ userId: 'hosted_usr_9' });
-  });
-
-  it('POST /admin/entitlement grants a tier with no Stripe subscription behind it', async () => {
-    const { env, billingKv } = await makeEnv('x');
-    const res = await worker.fetch(
-      req('/admin/entitlement', 'POST', { serviceSecret: SERVICE_SECRET, body: { userId: 'hosted_usr_10', tier: 'pro' } }),
-      env,
-    );
-    expect(res.status).toBe(200);
-    const stored = JSON.parse(billingKv.store.get('sub:hosted_usr_10') as string);
-    expect(stored.tier).toBe('pro');
-    expect(stored.status).toBe('active');
-  });
-});
-
-describe('POST /digest/send', () => {
-  it('requires the service secret', async () => {
-    const { env } = await makeEnv('x');
-    const res = await worker.fetch(
-      req('/digest/send', 'POST', { body: { userId: 'hosted_usr_11', digestType: 'earnings', subject: 's', body: 'b' } }),
-      env,
-    );
-    expect(res.status).toBe(401);
-  });
-
-  it('denies an unpaid-commissions digest for a solo subscriber', async () => {
-    const { env, billingKv } = await makeEnv('x');
-    await putSubscriptionRecord(billingKv, 'hosted_usr_12', {
-      tier: 'solo',
-      status: 'active',
-      email: 'solo@example.com',
-      updatedAt: 0,
-    });
-    const res = await worker.fetch(
-      req('/digest/send', 'POST', {
-        serviceSecret: SERVICE_SECRET,
-        body: { userId: 'hosted_usr_12', digestType: 'unpaid-commissions', subject: 's', body: 'b' },
-      }),
-      env,
-    );
-    expect(res.status).toBe(403);
-  });
-
-  it('denies any digest for a user with no active subscription', async () => {
-    const { env } = await makeEnv('x');
-    const res = await worker.fetch(
-      req('/digest/send', 'POST', {
-        serviceSecret: SERVICE_SECRET,
-        body: { userId: 'hosted_usr_never', digestType: 'earnings', subject: 's', body: 'b' },
-      }),
-      env,
-    );
-    expect(res.status).toBe(403);
-  });
-
-  it('sends an earnings digest for a solo subscriber and never exposes the email in the response', async () => {
-    const { env, billingKv } = await makeEnv('x');
-    await putSubscriptionRecord(billingKv, 'hosted_usr_13', {
-      tier: 'solo',
-      status: 'active',
-      email: 'solo13@example.com',
-      updatedAt: 0,
-    });
-    const resendSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ id: 'em_1' }), { status: 200 }));
-
-    const res = await worker.fetch(
-      req('/digest/send', 'POST', {
-        serviceSecret: SERVICE_SECRET,
-        body: { userId: 'hosted_usr_13', digestType: 'earnings', subject: 'Your weekly earnings', body: 'plain text digest content' },
-      }),
-      env,
-    );
-
-    expect(res.status).toBe(200);
-    const responseText = JSON.stringify(await res.clone().json());
-    expect(responseText).not.toContain('solo13@example.com');
-    expect(responseText).not.toContain('plain text digest content');
-
-    const [, init] = resendSpy.mock.calls[0] as [string, RequestInit];
-    const sentBody = JSON.parse(init.body as string) as { to: string; text: string };
-    expect(sentBody.to).toBe('solo13@example.com');
-    expect(sentBody.text).toBe('plain text digest content');
-  });
-
-  it('sends an unpaid-commissions digest for a pro subscriber', async () => {
-    const { env, billingKv } = await makeEnv('x');
-    await putSubscriptionRecord(billingKv, 'hosted_usr_14', { tier: 'pro', status: 'active', email: 'pro14@example.com', updatedAt: 0 });
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ id: 'em_2' }), { status: 200 }));
-
-    const res = await worker.fetch(
-      req('/digest/send', 'POST', {
-        serviceSecret: SERVICE_SECRET,
-        body: { userId: 'hosted_usr_14', digestType: 'unpaid-commissions', subject: 'subj', body: 'body' },
-      }),
-      env,
-    );
-    expect(res.status).toBe(200);
-  });
-
-  it('returns 422 when the subscriber has no billing email on file (e.g. manually granted)', async () => {
-    const { env, billingKv } = await makeEnv('x');
-    await putSubscriptionRecord(billingKv, 'hosted_usr_15', { tier: 'solo', status: 'active', updatedAt: 0 });
-    const res = await worker.fetch(
-      req('/digest/send', 'POST', {
-        serviceSecret: SERVICE_SECRET,
-        body: { userId: 'hosted_usr_15', digestType: 'earnings', subject: 's', body: 'b' },
-      }),
-      env,
-    );
-    expect(res.status).toBe(422);
-  });
-
-  it('surfaces a Resend failure as a 502 without ever logging the address (checked structurally: response omits it)', async () => {
-    const { env, billingKv } = await makeEnv('x');
-    await putSubscriptionRecord(billingKv, 'hosted_usr_16', { tier: 'solo', status: 'active', email: 'fail16@example.com', updatedAt: 0 });
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('bad request', { status: 400 }));
-
-    const res = await worker.fetch(
-      req('/digest/send', 'POST', {
-        serviceSecret: SERVICE_SECRET,
-        body: { userId: 'hosted_usr_16', digestType: 'earnings', subject: 's', body: 'b' },
-      }),
-      env,
-    );
-    expect(res.status).toBe(502);
-    expect(JSON.stringify(await res.clone().json())).not.toContain('fail16@example.com');
   });
 });

@@ -34,7 +34,13 @@ import {
   putCredentials,
   VaultError,
 } from '../vault.js';
-import { requireSession } from './guard.js';
+// Scope split (H6, `./guard.ts`): the two READ routes the scheduled digest
+// needs — list and reveal — accept any valid session, including the
+// short-lived digest-scoped tokens `src/digest.ts` mints (both still serve
+// only the token's own userId). The two WRITE routes — store and delete —
+// require a full session: the digest has no business writing credentials, so
+// its token cannot.
+import { requireFullSession, requireSession } from './guard.js';
 
 interface PutCredentialsBody {
   network?: unknown;
@@ -51,7 +57,7 @@ export async function handlePutCredentials(
   env: Env,
   cors: Record<string, string>,
 ): Promise<Response> {
-  const auth = await requireSession(request, env, cors);
+  const auth = await requireFullSession(request, env, cors);
   if (auth instanceof Response) return auth;
 
   let body: PutCredentialsBody;
@@ -101,7 +107,7 @@ export async function handleDeleteCredential(
   network: string,
   cors: Record<string, string>,
 ): Promise<Response> {
-  const auth = await requireSession(request, env, cors);
+  const auth = await requireFullSession(request, env, cors);
   if (auth instanceof Response) return auth;
 
   if (!isValidNetworkSlug(network)) {

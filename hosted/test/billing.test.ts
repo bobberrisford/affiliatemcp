@@ -6,13 +6,13 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  deleteSubscription,
   getSubscriptionRecord,
   getUserIdForSubscription,
   listActiveSubscribers,
   putSubscriptionRecord,
   putSubscriptionReverseIndex,
   resolveEntitlement,
-  setEntitlementManual,
   tierEntitledToDigest,
   type SubscriptionRecord,
 } from '../src/billing.js';
@@ -82,28 +82,39 @@ describe('subscription reverse index', () => {
   });
 });
 
-describe('setEntitlementManual', () => {
-  it('grants a tier with no prior record', async () => {
+describe('deleteSubscription', () => {
+  it('deletes the subscription record and its Stripe reverse-index entry', async () => {
     const kv = fakeKV();
-    const record = await setEntitlementManual(kv, 'hosted_usr_new', 'pro');
-    expect(record.tier).toBe('pro');
-    expect(record.status).toBe('active');
-    expect(await resolveEntitlement(kv, 'hosted_usr_new')).toEqual({ tier: 'pro', status: 'active' });
-  });
-
-  it('changes an existing tier without disturbing other fields', async () => {
-    const kv = fakeKV();
-    await putSubscriptionRecord(kv, 'hosted_usr_existing', {
-      tier: 'solo',
+    await putSubscriptionRecord(kv, 'hosted_usr_del', {
+      tier: 'pro',
       status: 'active',
-      customerId: 'cus_1',
-      email: 'existing@example.com',
+      subscriptionId: 'sub_del_1',
+      email: 'delete-me@example.com',
       updatedAt: 0,
     });
-    const record = await setEntitlementManual(kv, 'hosted_usr_existing', 'pro');
-    expect(record.tier).toBe('pro');
-    expect(record.customerId).toBe('cus_1');
-    expect(record.email).toBe('existing@example.com');
+    await putSubscriptionReverseIndex(kv, 'sub_del_1', 'hosted_usr_del');
+
+    await deleteSubscription(kv, 'hosted_usr_del');
+
+    expect(await getSubscriptionRecord(kv, 'hosted_usr_del')).toBeNull();
+    expect(await getUserIdForSubscription(kv, 'sub_del_1')).toBeNull();
+    // Nothing PII-bearing survives anywhere in the namespace.
+    expect(JSON.stringify([...kv.store.entries()])).not.toContain('delete-me@example.com');
+  });
+
+  it('removes the user from the digest roster', async () => {
+    const kv = fakeKV();
+    await putSubscriptionRecord(kv, 'hosted_usr_roster', { tier: 'solo', status: 'active', updatedAt: 0 });
+    expect(await listActiveSubscribers(kv)).toHaveLength(1);
+
+    await deleteSubscription(kv, 'hosted_usr_roster');
+
+    expect(await listActiveSubscribers(kv)).toEqual([]);
+  });
+
+  it('is idempotent for a user who never subscribed', async () => {
+    const kv = fakeKV();
+    await expect(deleteSubscription(kv, 'hosted_usr_never')).resolves.toBeUndefined();
   });
 });
 

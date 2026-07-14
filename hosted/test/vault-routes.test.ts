@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import worker from '../src/index.js';
 import type { Env } from '../src/env.js';
 import { buildSessionPayload, generateUserId, signSession } from '../src/token.js';
+import { listActiveSubscribers, putSubscriptionRecord, putSubscriptionReverseIndex } from '../src/billing.js';
 
 function fakeKV(): KVNamespace & { store: Map<string, string> } {
   const store = new Map<string, string>();
@@ -48,24 +49,26 @@ interface TestEnv {
   env: Env;
   usersKv: KVNamespace & { store: Map<string, string> };
   vaultKv: KVNamespace & { store: Map<string, string> };
+  billingKv: KVNamespace & { store: Map<string, string> };
   signingKey: string;
 }
 
 async function makeTestEnv(): Promise<TestEnv> {
   const usersKv = fakeKV();
   const vaultKv = fakeKV();
+  const billingKv = fakeKV();
   const signingKey = await generatePrivateKeyB64();
   const env: Env = {
     HOSTED_USERS: usersKv,
     HOSTED_VAULT: vaultKv,
-    HOSTED_BILLING: fakeKV(),
+    HOSTED_BILLING: billingKv,
     RESEND_API_KEY: 're_test_x',
     SESSION_SIGNING_KEY: signingKey,
     VAULT_MASTER_KEY: await randomMasterKeyB64(),
     PUBLIC_BASE_URL: 'https://hosted.test',
     SITE_ORIGIN: 'https://agenticaffiliate.ai',
   };
-  return { env, usersKv, vaultKv, signingKey };
+  return { env, usersKv, vaultKv, billingKv, signingKey };
 }
 
 async function issueSessionToken(signingKey: string, userId: string): Promise<string> {
@@ -314,8 +317,8 @@ describe('GET /vault/credentials/:network/reveal — H4 decrypt-and-serve', () =
 });
 
 describe('DELETE /account — complete deletion', () => {
-  it('removes the vault, the user record, and the email-hash lookup, covering both KV namespaces', async () => {
-    const { env, usersKv, vaultKv } = await makeTestEnv();
+  it('removes the vault, the user record, the email-hash lookup, and the billing record, covering all three KV namespaces', async () => {
+    const { env, usersKv, vaultKv, billingKv } = await makeTestEnv();
 
     // Sign in for real via the H2 auth flow so a user record + email-hash
     // entry exist in HOSTED_USERS, matching what a real account looks like.
@@ -343,14 +346,26 @@ describe('DELETE /account — complete deletion', () => {
     );
     const { userId } = (await verifyRes.json()) as { userId: string };
 
-    // Connect a network, then delete the account.
+    // Connect a network and give the account an active PAID subscription —
+    // the billing record carries the plaintext billing email and keeps the
+    // user on the scheduled digest's roster, so deletion must remove it too
+    // (custody record clause 5; the reviewer blocker this test pins).
     await worker.fetch(
       authed('/vault/credentials', 'POST', sessionToken, { network: 'awin', credentials: { apiKey: 'x' } }),
       env,
     );
+    await putSubscriptionRecord(billingKv, userId, {
+      tier: 'pro',
+      status: 'active',
+      subscriptionId: 'sub_acct_del',
+      email: 'delete-me@example.com',
+      updatedAt: 0,
+    });
+    await putSubscriptionReverseIndex(billingKv, 'sub_acct_del', userId);
     expect(Array.from(usersKv.store.keys()).some((k) => k.startsWith('user:'))).toBe(true);
     expect(Array.from(usersKv.store.keys()).some((k) => k.startsWith('email-hash:'))).toBe(true);
     expect(vaultKv.store.size).toBeGreaterThan(0);
+    expect(await listActiveSubscribers(billingKv)).toHaveLength(1);
 
     const deleteRes = await worker.fetch(authed('/account', 'DELETE', sessionToken), env);
     expect(deleteRes.status).toBe(200);
@@ -358,6 +373,14 @@ describe('DELETE /account — complete deletion', () => {
     expect(Array.from(usersKv.store.keys()).some((k) => k === `user:${userId}`)).toBe(false);
     expect(Array.from(usersKv.store.keys()).some((k) => k.startsWith('email-hash:'))).toBe(false);
     expect(vaultKv.store.size).toBe(0);
+
+    // Billing state is gone: no subscription record, no Stripe reverse
+    // index, no roster entry (the digest can never email this account
+    // again), and no trace of the billing email anywhere in the namespace.
+    expect(billingKv.store.get(`sub:${userId}`)).toBeUndefined();
+    expect(billingKv.store.get('stripe-sub:sub_acct_del')).toBeUndefined();
+    expect(await listActiveSubscribers(billingKv)).toEqual([]);
+    expect(JSON.stringify([...billingKv.store.entries()])).not.toContain('delete-me@example.com');
 
     const listAfter = await worker.fetch(authed('/vault/credentials', 'GET', sessionToken), env);
     expect((await listAfter.json()) as { networks: string[] }).toEqual({ networks: [] });

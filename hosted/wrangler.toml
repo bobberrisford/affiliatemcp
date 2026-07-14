@@ -5,6 +5,14 @@ compatibility_date = "2026-03-25"
 # nodejs_compat flag is needed (unlike issuer, which needs it for Stripe's
 # fetch client).
 
+# ── Cron Trigger: the scheduled digest (H6, src/digest.ts) ──────────────────
+# Weekly, Monday 06:00 UTC — the workstream's "weekly digest" cadence; Rob
+# adjusts at deploy if a different send time suits subscribers better. Safe
+# to deploy ahead of the Node compose service: the scheduled handler no-ops
+# with one log line while DIGEST_SERVICE_URL below is unset.
+[triggers]
+crons = ["0 6 * * 1"]
+
 # ── KV: hosted-account identity ─────────────────────────────────────────────
 # Stores (NO affiliate credentials, NO affiliate data — see hosted/README.md
 # for the exact key shapes):
@@ -71,10 +79,10 @@ STRIPE_PRICE_ID_SOLO = "REPLACE_WITH_SOLO_34GBP_MONTHLY_PRICE_ID"
 STRIPE_PRICE_ID_PRO = "REPLACE_WITH_PRO_99GBP_MONTHLY_PRICE_ID"
 BILLING_SUCCESS_URL = "https://agenticaffiliate.ai/billing/success"
 BILLING_CANCEL_URL = "https://agenticaffiliate.ai/billing/cancel"
-# Lifetime of the short-lived session token POST /admin/session mints for the
-# hosted-digest job. Minutes, not the 30-day lifetime of a real sign-in
-# session — see hosted/src/routes/admin.ts.
-SERVICE_SESSION_TTL_SECONDS = "600"
+# Base URL of the Node digest-compose service (src/hosted-digest/ in the root
+# workspace). Leave unset until that service is deployed — the cron trigger
+# above no-ops safely while this is empty (see hosted/src/digest.ts).
+# DIGEST_SERVICE_URL = "https://REPLACE_WITH_DIGEST_SERVICE_ORIGIN"
 
 # ── Secrets — set via `wrangler secret put <NAME>` (NEVER commit) ──────────
 #   RESEND_API_KEY        re_…    (Resend API key, from https://resend.com/api-keys;
@@ -82,7 +90,7 @@ SERVICE_SESSION_TTL_SECONDS = "600"
 #                                  sign-in@agenticaffiliate.ai, must be verified
 #                                  in the Resend dashboard first; the H6 digest
 #                                  sends from digest@agenticaffiliate.ai on the
-#                                  same verified domain — see src/routes/digest.ts)
+#                                  same verified domain — see src/digest.ts)
 #   SESSION_SIGNING_KEY    Ed25519 PKCS8 DER, base64 (the PRIVATE key only —
 #                                  this Worker derives the public verification
 #                                  key from it at call time; see `npm run gen-keypair`
@@ -97,12 +105,11 @@ SERVICE_SESSION_TTL_SECONDS = "600"
 #                                  POST /billing/checkout; see src/stripe.ts)
 #   STRIPE_WEBHOOK_SECRET  whsec_…  (from the registered webhook endpoint for
 #                                  POST /billing/webhook)
-#   HOSTED_SERVICE_SECRET  a fresh random string authorising the hosted-digest
-#                                  job's service-authenticated routes
-#                                  (/admin/subscribers, /admin/session,
-#                                  /admin/entitlement, /digest/send). Read
-#                                  hosted/README.md "H6: digest and billing"
-#                                  before setting this — it is a genuine
-#                                  widening of the vault's threat model and
-#                                  needs Rob's explicit acceptance, the same
-#                                  way the VAULT_MASTER_KEY design did.
+#   DIGEST_COMPOSE_SECRET  optional doorbell for the compose service: sent as
+#                                  x-compose-auth on every POST /compose call
+#                                  the scheduled digest makes. Leaking it
+#                                  grants no data access — every read is
+#                                  authorised by the per-user digest-scoped
+#                                  token, never this value. See
+#                                  hosted/README.md, "Digest orchestration
+#                                  and token scopes".

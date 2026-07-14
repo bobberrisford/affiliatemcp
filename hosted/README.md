@@ -17,12 +17,14 @@ Three KV namespaces, kept deliberately separate:
   against — **the master-key decision it raises was accepted by Rob on
   2026-07-14 (Worker-secret design for the MVP).**
 - `HOSTED_BILLING` (H6) holds Stripe subscription state: tier, status, and
-  (the one deliberate exception in this Worker) a billing email captured at
-  Checkout. See "H6: digest and billing" below for the design, and
-  "Service-authenticated routes: threat model" for the honest read on the
-  service-secret this slice introduces — **that decision is this slice's PR
-  asking for Rob's explicit acceptance, the same way H3's master-key design
-  was.**
+  (the one deliberate exception in this Worker, **accepted by Rob on
+  2026-07-14**) a billing email captured at Checkout. See "H6: digest and
+  billing" below for the design, and "Digest orchestration and token
+  scopes: threat model" for the redesign history — **the first H6 draft's
+  all-capability service secret was rejected by Rob on 2026-07-14; the
+  in-Worker Cron Trigger plus digest-scoped tokens documented there is the
+  replacement, and no credential in the system can enumerate tenants or
+  mint sessions from outside the Worker.**
 
 See the decision records: `docs/decisions/2026-07-12-hosted-credential-custody.md`
 (the custody contract this whole workstream operates under) and
@@ -585,12 +587,13 @@ or production deploy offers these networks to real users.
 ## H6: digest and billing
 
 Workstream slice H6 (`docs/product/hosted-mvp-workstream.md`) adds Stripe
-subscription state and the scheduled digest's send surface: `src/billing.ts`,
-`src/stripe.ts`, `src/routes/billing.ts`, `src/routes/admin.ts`,
-`src/routes/digest.ts`, and a THIRD KV namespace, `HOSTED_BILLING`, kept
-separate from `HOSTED_USERS` (H2) and `HOSTED_VAULT` (H3) for the same reason
-those two are separate from each other: each namespace's contents should be
-inferable from its name alone, not from convention.
+subscription state and the scheduled digest: `src/billing.ts`,
+`src/stripe.ts`, `src/routes/billing.ts`, `src/digest.ts` (the scheduled
+orchestrator, driven by the Cron Trigger in `wrangler.toml`), and a THIRD KV
+namespace, `HOSTED_BILLING`, kept separate from `HOSTED_USERS` (H2) and
+`HOSTED_VAULT` (H3) for the same reason those two are separate from each
+other: each namespace's contents should be inferable from its name alone,
+not from convention.
 
 ### KV storage shapes (H6: `HOSTED_BILLING`)
 
@@ -606,18 +609,23 @@ inferable from its name alone, not from convention.
 - **`evt:<eventId>`** → `"1"`, TTL'd 30 days. Webhook idempotency marker,
   identical in shape and purpose to issuer's own.
 
-**The billing email exception.** `SubscriptionRecord.email` is a plaintext
-address, captured from Stripe Checkout's `customer_details.email` at
-`checkout.session.completed`. This is a deliberate, narrow exception to H2's
-"no raw email address anywhere in this Worker" posture (see "Email-key
-hashing trade-off" above): a paid subscription needs a billing email for
-Stripe receipts and, per the pricing decision, VAT invoices at the Team tier;
-Stripe Checkout already collects one regardless of what this Worker does with
-it. It lives ONLY in `HOSTED_BILLING`, never in `HOSTED_USERS`, so H2's
-existing no-PII invariant for the identity store is unaffected. It is used
-for exactly two purposes: Stripe's own billing correspondence, and resolving
-who to email in `POST /digest/send` — never analytics, matching the custody
-record's "what the keys are used for" clause extended to this one new field.
+**The billing email exception (accepted by Rob, 2026-07-14).**
+`SubscriptionRecord.email` is a plaintext address, captured from Stripe
+Checkout's `customer_details.email` at `checkout.session.completed`. This is
+a deliberate, narrow exception to H2's "no raw email address anywhere in
+this Worker" posture (see "Email-key hashing trade-off" above): a paid
+subscription needs a billing email for Stripe receipts and, per the pricing
+decision, VAT invoices at the Team tier; Stripe Checkout already collects
+one regardless of what this Worker does with it. It lives ONLY in
+`HOSTED_BILLING`, never in `HOSTED_USERS`, so H2's existing no-PII invariant
+for the identity store is unaffected. It is used for exactly two purposes:
+Stripe's own billing correspondence, and resolving who to email when the
+scheduled digest sends (`src/digest.ts`) — never analytics, matching the
+custody record's "what the keys are used for" clause extended to this one
+new field. `DELETE /account` deletes it with everything else
+(`deleteSubscription`, `src/billing.ts`) — after deletion there is no
+address left and the digest roster no longer contains the account.
+`PRIVACY.md`'s hosted section states the same in user-facing terms.
 
 ### Why raw Stripe REST + WebCrypto, not the `stripe` npm package
 
@@ -644,85 +652,118 @@ read the Subscription's. Neither event needs to introspect price IDs or line
 items to recover the tier — it is simply carried on the object the event
 already delivers.
 
-### Service-authenticated routes: threat model
+### Digest orchestration and token scopes: threat model
 
-`GET /admin/subscribers`, `POST /admin/session`, `POST /admin/entitlement`,
-and `POST /digest/send` (`src/routes/admin.ts`, `src/routes/digest.ts`) are
-gated by a single shared secret, `HOSTED_SERVICE_SECRET`, not by a user's own
-session token. This is a genuine widening of this Worker's threat model, not
-a detail, and is flagged here the same way the vault's master-key design was
-in "Vault threat model" above — **this is the decision this slice's PR asks
-Rob to accept before merge.**
+**Decision history, stated plainly.** The first H6 implementation authorised
+an external digest job with a single all-capability shared secret
+(`HOSTED_SERVICE_SECRET`) that could enumerate every subscriber and mint a
+session for any userId from outside this Worker. **Rob rejected that design
+on 2026-07-14** and required this narrower shape; in the same decision he
+**accepted the billing-email KV exception** (above). The invariant the
+rejection restored: **no credential anywhere in this system can enumerate
+tenants or mint sessions for arbitrary users from outside the Worker.**
 
-**Why a service credential exists at all.** Every other route in this Worker
-holds to "there is no service-level credential or elevated scope that could
-read a different user's vault" (see `src/routes/vault.ts`'s file-header
-comment) — every read is scoped to the caller's own session. The scheduled
-digest job breaks that assumption's premise: it runs unattended, on a cron
-schedule, for potentially many subscribed users in one run, with no user
-present to hold a session token. Something has to authorise it, and that
-something is, unavoidably, broader than any one user's session.
+**The shape that replaced it.** The digest loop runs INSIDE this Worker, as
+a Cloudflare Cron Trigger (`scheduled` in `src/index.ts`, orchestration in
+`src/digest.ts`, schedule in `wrangler.toml` `[triggers]`):
 
-**What each route can do, and what is narrowed:**
+1. The roster is enumerated in-process from `HOSTED_BILLING` KV
+   (`listActiveSubscribers`) — it is never exposed over HTTP.
+2. For each subscriber, the Worker mints a session token SCOPED to
+   `digest` (`src/token.ts`, `scope` claim) for exactly that userId, valid
+   for at most 15 minutes (`DIGEST_TOKEN_TTL_SECONDS`). The Worker already
+   holds `SESSION_SIGNING_KEY`, so this adds no new credential — minting is
+   a capability it had by construction.
+3. It calls the Node compose service (`src/hosted-digest/` in the root
+   workspace; `DIGEST_SERVICE_URL`) with `{ userId, digestType }` and that
+   token as the bearer, and receives the rendered `{ subject, body }` text
+   back. The compose service needs the 86-adapter registry and the H1 seam
+   — the same Node-only code H4's write-up above explains this Worker
+   cannot carry — and uses the token against the vault list/reveal routes
+   exactly as the hosted MCP transport does.
+4. It re-checks tier entitlement against the freshly-read record, resolves
+   the billing email from `HOSTED_BILLING`, and sends via Resend — the
+   email never leaves this Worker. One audit line per send attempt (userId,
+   digestType, timestamp, outcome; never the address, never the content).
 
-- `GET /admin/subscribers` returns ids and tiers only — no emails, no
-  credentials, nothing beyond the opaque userId and tier the job already
-  needs to decide who to run for and which digest(s) they are entitled to.
-- `POST /admin/session` mints a session token scoped to ONE named userId,
-  short-lived (`SERVICE_SESSION_TTL_SECONDS`, default 600 seconds — minutes,
-  not the 30-day lifetime of a real sign-in session), using the exact same
-  `signSession` primitive H2's real sign-in flow uses. It is not a bypass:
-  the minted token is verified by the SAME `resolveValidSession` every other
-  route uses, and every downstream call (vault list, vault reveal) still
-  enforces "serves only that token's own userId" exactly as before. What
-  changes is WHO can mint a valid token for a given user without that user's
-  own sign-in flow — with this route, the answer is "anyone holding
-  `HOSTED_SERVICE_SECRET`".
-- `POST /admin/entitlement` is the MVP manual tier-set path (see "Manual
-  entitlement path" below) — grants or changes a tier with no live Stripe
-  subscription behind it.
-- `POST /digest/send` resolves the recipient's billing email itself (never
-  accepts one from the caller) and re-checks tier entitlement against
-  `HOSTED_BILLING` before sending, regardless of what the caller asked for —
-  a stale roster snapshot or a job-side bug can request a digest, but cannot
-  make this route send one the tier does not actually allow.
+**What a digest-scoped token can and cannot do.** Accepted by exactly two
+routes, both read-only and both still serving only the token's own userId:
+`GET /vault/credentials` (list) and `GET /vault/credentials/:network/reveal`.
+Rejected everywhere else, each with a test (`test/scope.test.ts`): vault
+store and delete, `DELETE /account`, `POST /billing/checkout`,
+`GET /billing/entitlement`, every connect page, and the hosted MCP transport
+itself (`src/hosted-transport/session-auth.ts`, root workspace, refuses
+`scope: "digest"` at verification). Tokens with no scope claim are full
+sessions, so every previously issued token behaves exactly as before.
 
-**Compensating controls today:** `HOSTED_SERVICE_SECRET` is a single
-purpose-built secret, distinct from `SESSION_SIGNING_KEY` and
-`VAULT_MASTER_KEY` — compromising one does not compromise the others; the
-minted session is short-lived and carries no scope beyond a normal session;
-and every admin/digest route accepts only this one secret, never a user
-session, so a leaked user session token can never reach these routes.
+**Every remaining secret, and what its leak grants — one sentence each:**
 
-**What this does NOT yet have:** per-call audit of admin-route use beyond the
-existing `console.error` failure logging (the digest SEND path does carry its
-own audit line — userId, digestType, timestamp, outcome, in
-`src/routes/digest.ts` — but `/admin/session` and `/admin/subscribers` do
-not); and no automatic secret-rotation procedure (a manual
-`wrangler secret put` is the rotation path today, same as every other Worker
-secret in this repo). Revisit alongside the vault's own KMS migration if
-Team-tier or SOC 2 work raises the bar on this.
+- `SESSION_SIGNING_KEY`: full compromise — the holder can mint valid
+  sessions for any user (unchanged from H2; this key was always the crown
+  jewel, and it never leaves this Worker).
+- `VAULT_MASTER_KEY`: decrypts every stored credential IF the holder also
+  has the `HOSTED_VAULT` KV contents (unchanged from H3's accepted
+  threat model, "Vault threat model" above).
+- `RESEND_API_KEY`: the holder can send email as the verified domain and
+  read Resend-side delivery metadata; it reaches no affiliate data and no
+  stored addresses in this system.
+- `STRIPE_SECRET_KEY`: full Stripe account API access — billing compromise
+  (customers, subscriptions, refunds), no affiliate data.
+- `STRIPE_WEBHOOK_SECRET`: the holder can forge subscription-lifecycle
+  events, granting or cancelling ENTITLEMENTS (tier state) — but cannot
+  read credentials, data, or email addresses through any route.
+- `DIGEST_COMPOSE_SECRET` (optional): the holder can ring the compose
+  service's endpoint and nothing more — every read the compose service
+  performs is authorised by a per-user digest token it does not have; a
+  doorbell, not a key.
 
-### Manual entitlement path
+There is deliberately NO secret in that list whose leak enumerates users or
+mints tokens: the roster never crosses a network boundary, and minting
+requires `SESSION_SIGNING_KEY` itself.
 
-`POST /admin/entitlement` `{ userId, tier }` (service-secret gated) grants or
-changes a tier directly, with no Stripe subscription behind it. This exists
-for the MVP, ahead of a live Stripe integration on this deploy, and remains
-useful afterwards for support and testing. It is not the steady-state path —
-once Stripe is wired up, `POST /billing/checkout` and the webhook are the
-normal route to an entitlement.
+**What this does NOT yet have:** no per-run audit beyond the per-send lines
+and the run summary (counts only); and the doorbell has no automatic
+rotation procedure (manual `wrangler secret put` plus updating the compose
+service's env, same as every other secret in this repo). Revisit alongside
+the vault's KMS migration if Team-tier or SOC 2 work raises the bar.
 
-### The digest job lives in the root workspace, not here
+### Manual tier administration (MVP: no admin route, by decision)
 
-Mirroring H4's own precedent: the digest job (`src/hosted-digest/` in the
-root workspace) needs the full adapter registry and the H1 request-context
-seam to read `EarningsSummary` per network, exactly the same Node-only,
-non-Workers-portable code H4's write-up above explains this Worker cannot
-carry. This Worker's only H6-facing additions are the four service-routes and
-`POST /digest/send`'s Resend call; every adapter call, digest composition, and
-per-user orchestration happens in the root workspace. See
-`src/hosted-digest/index.ts`'s file-header comment for the crontab/systemd
-timer this job expects to be run under (no in-process scheduler).
+There is no HTTP route that sets a tier — that was part of the rejected
+design. Until the live Stripe wiring is deployed, Rob grants or changes a
+tier directly in KV with Wrangler (run from `hosted/`; these act on the
+namespace ids in `wrangler.toml`):
+
+```sh
+# Grant (or overwrite) a tier. updatedAt is unix seconds; email is optional
+# but without one the digest cannot send (records a "no_email" outcome).
+npx wrangler kv key put --binding HOSTED_BILLING "sub:hosted_usr_<id>" \
+  '{"tier":"solo","status":"active","email":"person@example.com","updatedAt":1752505200}'
+
+# Inspect a record.
+npx wrangler kv key get --binding HOSTED_BILLING "sub:hosted_usr_<id>"
+
+# Revoke: prefer status, which preserves the audit trail of having subscribed…
+npx wrangler kv key put --binding HOSTED_BILLING "sub:hosted_usr_<id>" \
+  '{"tier":"solo","status":"canceled","updatedAt":1752505200}'
+# …or delete outright.
+npx wrangler kv key delete --binding HOSTED_BILLING "sub:hosted_usr_<id>"
+```
+
+Once Stripe is wired up, `POST /billing/checkout` and the webhook are the
+normal route to an entitlement; these commands remain for support and
+testing.
+
+### Account deletion and Stripe
+
+`DELETE /account` removes the subscription record (billing email included)
+and the `stripe-sub:` reverse-index entry along with everything H2/H3
+deleted — see `src/routes/account.ts`. Cancelling the live Stripe
+subscription is a Rob-side step in the same runbook: Stripe keeps billing
+until cancelled on Stripe's side, and a later `customer.subscription.updated`
+webhook event could rewrite the deleted record from Stripe's own data. Until
+a self-serve billing portal exists, treat "account deleted" as "cancel the
+subscription in the Stripe dashboard now".
 
 ## Deploy checklist (all human-supplied — the Worker is inert without these; Rob-only)
 
@@ -758,25 +799,30 @@ timer this job expects to be run under (no in-process scheduler).
 9. Confirm `SITE_ORIGIN` and `VAULT_MASTER_KEY_VERSION` in `wrangler.toml`
    match the live hosted-product front-end origin and the master key version
    just set.
-10. **H6, before going further: read "Service-authenticated routes: threat
-    model" above and get Rob's explicit acceptance of the
-    `HOSTED_SERVICE_SECRET` design — the same gate step 7 applies to the
-    vault master key.** Generate a fresh random secret (e.g.
-    `openssl rand -base64 32`) and set it:
-    `npx wrangler secret put HOSTED_SERVICE_SECRET`.
-11. Create a THIRD, separate KV namespace for billing state:
+10. Create a THIRD, separate KV namespace for billing state:
     `npx wrangler kv namespace create HOSTED_BILLING` (and `--preview`), and
     paste those ids into `wrangler.toml`.
-12. In Stripe: create the Solo (£34/mo) and Pro (£99/mo) recurring Prices per
+11. In Stripe: create the Solo (£34/mo) and Pro (£99/mo) recurring Prices per
     `docs/decisions/2026-07-12-pricing-billing-and-licence.md`, put their ids
     in `STRIPE_PRICE_ID_SOLO`/`STRIPE_PRICE_ID_PRO`; enable Stripe Tax;
     register the webhook endpoint (`/billing/webhook`) for
     `checkout.session.completed`, `customer.subscription.updated`, and
     `customer.subscription.deleted`.
-13. `npx wrangler secret put STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`.
-14. Set `BILLING_SUCCESS_URL`/`BILLING_CANCEL_URL` in `wrangler.toml` to the
+12. `npx wrangler secret put STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`.
+13. Set `BILLING_SUCCESS_URL`/`BILLING_CANCEL_URL` in `wrangler.toml` to the
     hosted product's real success/cancel pages.
-15. `npm run deploy`.
+14. Deploy the Node digest-compose service (`src/hosted-digest/` in the root
+    workspace, `affiliate-networks-mcp hosted-digest` — see its
+    `index.ts` header for the systemd unit) wherever the hosted MCP
+    transport runs, then set `DIGEST_SERVICE_URL` in `wrangler.toml` to its
+    origin. Optionally generate a doorbell (`openssl rand -base64 32`), set
+    it on BOTH sides: `npx wrangler secret put DIGEST_COMPOSE_SECRET` here,
+    the same value as `DIGEST_COMPOSE_SECRET` in the compose service's env.
+    The Worker can be deployed BEFORE the compose service exists: the cron
+    trigger no-ops with one log line while `DIGEST_SERVICE_URL` is unset.
+15. Confirm the digest cadence in `wrangler.toml` `[triggers]` (weekly,
+    Monday 06:00 UTC by default).
+16. `npm run deploy`.
 
 ## Local checks
 
@@ -795,16 +841,23 @@ timer this job expects to be run under (no in-process scheduler).
   response ever carries an unmasked credential value, that no URL in any
   rendered page carries the session token, and that every connect response
   carries `cache-control: no-store` and `referrer-policy: no-referrer`
-  (`test/connect-routes.test.ts`); and (H6) subscription-state resolution and
-  the manual entitlement path (`test/billing.test.ts`), the Stripe
-  webhook-signature verifier (`test/stripe.test.ts`), and the billing,
-  admin, and digest routes — checkout metadata, webhook idempotency and tier
-  derivation, entitlement session-gating, service-secret enforcement on
-  every admin/digest route, tier re-checking at send time, and that a
-  digest's recipient email never appears in any response the caller sees
-  (`test/billing-routes.test.ts`). Resend, Stripe, and every per-network
-  connection test are mocked via a spy on `fetch`; KV is an in-memory fake.
-  No live network calls.
+  (`test/connect-routes.test.ts`); and (H6) subscription-state resolution
+  and complete billing deletion (`test/billing.test.ts`), the Stripe
+  webhook-signature verifier (`test/stripe.test.ts`), the billing routes —
+  checkout metadata, webhook idempotency and tier derivation, the
+  ignored-checkout warning, full-session gating (`test/billing-routes.test.ts`)
+  — token-scope enforcement across every session-gated surface (digest
+  tokens accepted by exactly the two vault read routes, refused everywhere
+  else: `test/scope.test.ts`), account deletion covering all three KV
+  namespaces including the billing email and digest roster
+  (`test/vault-routes.test.ts`), and the scheduled digest orchestration:
+  in-process roster, digest-scoped 15-minute token minting verified against
+  the real signing key, userId-only compose bodies, Worker-side email
+  resolution, Solo/Pro digest-type split, send-time entitlement re-check,
+  and per-failure isolation (`test/digest-scheduled.test.ts`). Resend,
+  Stripe, the compose service, and every per-network connection test are
+  mocked via a spy on `fetch`; KV is an in-memory fake. No live network
+  calls.
 - `npm run typecheck`.
 
 ## What this slice deliberately does not do
@@ -830,13 +883,17 @@ timer this job expects to be run under (no in-process scheduler).
   (`workerSecretMasterKey`) wraps data keys with a Worker secret; see "Vault
   threat model" above for what that does and does not protect against, and
   the decision this slice's PR leaves open for Rob.
-- No admin-route audit trail beyond `/digest/send`'s own audit line, and no
-  automated `HOSTED_SERVICE_SECRET` rotation procedure. See "Service-authenticated
-  routes: threat model" above.
+- No admin routes and no service credential that can enumerate tenants or
+  mint sessions from outside this Worker — deliberately, by Rob's 2026-07-14
+  decision. See "Digest orchestration and token scopes: threat model" above;
+  tier administration before the Stripe wiring is manual `wrangler kv key
+  put` ("Manual tier administration").
 - No billing portal (cancel/manage self-serve) route. `POST /billing/checkout`
   and the webhook are the only Stripe-facing surface this slice adds; a
   portal route is a small, separate addition if the hosted product needs one
-  before Rob is ready to build full self-serve account management.
+  before Rob is ready to build full self-serve account management. Until
+  then, cancelling the Stripe subscription after an account deletion is a
+  Rob-side runbook step ("Account deletion and Stripe" above).
 
 `src/shared/request-context.ts` (H1) is the seam H4 will use to run adapter
 calls under a per-tenant identity; this slice does not touch it or wire any

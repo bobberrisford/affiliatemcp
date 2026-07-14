@@ -75,15 +75,16 @@ export interface Env {
   /** Stripe webhook signing secret (whsec_…), for `POST /billing/webhook`. */
   STRIPE_WEBHOOK_SECRET?: string;
   /**
-   * A single shared secret authorising the hosted-digest job (`src/hosted-digest/`,
-   * root workspace) and any other trusted operational caller to reach the
-   * service-authenticated routes: `GET /admin/subscribers`,
-   * `POST /admin/session`, `POST /admin/entitlement`, and `POST /digest/send`.
-   * Never accepted as a session token substitute on any user-facing route.
-   * See `hosted/README.md` "H6: digest and billing" for the threat model this
-   * secret's existence introduces, and why it is scoped this narrowly.
+   * Optional doorbell secret sent to the Node compose service as an
+   * `x-compose-auth` header on every `POST /compose` call the scheduled
+   * digest makes (`src/digest.ts`). It stops strangers from invoking the
+   * compose service's HTTP endpoint; leaking it grants NO data access —
+   * every read the compose service performs is authorised by the
+   * short-lived, per-user, digest-scoped session token, never by this
+   * value. A doorbell, not a key. See `hosted/README.md`, "Digest
+   * orchestration and token scopes".
    */
-  HOSTED_SERVICE_SECRET?: string;
+  DIGEST_COMPOSE_SECRET?: string;
 
   // ── Vars ───────────────────────────────────────────────────────────────
   /**
@@ -119,13 +120,12 @@ export interface Env {
   /** Cancel-redirect URL for the billing Checkout session. */
   BILLING_CANCEL_URL?: string;
   /**
-   * Lifetime, in seconds, of the short-lived session token `POST /admin/session`
-   * mints for the digest job. Deliberately short — minutes, not the 30-day
-   * lifetime of a real sign-in session — since it exists purely to let the
-   * digest job reuse the existing vault-reveal route for the span of one
-   * scheduled run. Defaults to 600 (10 minutes).
+   * Base URL of the Node digest-compose service (`src/hosted-digest/`, root
+   * workspace) the scheduled digest handler calls (`src/digest.ts`). While
+   * unset, the cron trigger no-ops with a single log line — a Worker deploy
+   * ahead of the compose service must not error-spam or half-run.
    */
-  SERVICE_SESSION_TTL_SECONDS?: string;
+  DIGEST_SERVICE_URL?: string;
 }
 
 /**

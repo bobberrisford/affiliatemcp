@@ -134,10 +134,15 @@ the same change set as the credential vault it describes, so the policy is
 accurate before the first paying hosted customer rather than after.
 
 **What is stored.** Per-user affiliate network API credentials and OAuth
-tokens, plus per-tenant brand and client-strategy context. Nothing else.
-Browser session credentials are never held; browser-driven operations and
-write actions stay local-only until a separate hosted-action safety contract
-exists.
+tokens, plus per-tenant brand and client-strategy context. For paying
+subscribers only, one more thing: the billing email address captured at
+Stripe Checkout, stored with the subscription record (tier and status). It
+is used for exactly two purposes — Stripe billing correspondence, and
+delivering the scheduled digest emails the paid tiers include — never for
+marketing, analytics, or anything else, and it is deleted completely with
+the account (see "Deletion" below). Nothing else is stored. Browser session
+credentials are never held; browser-driven operations and write actions stay
+local-only until a separate hosted-action safety contract exists.
 
 **Encryption.** Envelope encryption: a random AES-256-GCM data key is
 generated for each user on their first connected network, and every stored
@@ -156,10 +161,14 @@ requests and their own scheduled jobs. It is never used for aggregation
 across users, never for analytics, and never for any purpose beyond serving
 its owner.
 
-**Deletion.** Deleting a hosted account deletes its stored credentials
-completely: the encrypted credential data, the wrapped key protecting it, and
-the account record. Deletion is not a soft flag; once it runs, there is
-nothing left to decrypt.
+**Deletion.** Deleting a hosted account deletes its stored data completely:
+the encrypted credential data, the wrapped key protecting it, the account
+record, and the subscription record including the billing email — after
+deletion there is no address left to send a digest to, and the scheduled
+digest's subscriber roster no longer contains the account. Deletion is not a
+soft flag; once it runs, there is nothing left to decrypt and nobody left to
+email. Cancelling the Stripe subscription itself happens on Stripe's side as
+part of the same deletion runbook (`hosted/README.md`).
 
 **No aggregation.** The hosted tier changes where a credential lives, not
 what this project is allowed to do with it: no cross-tenant aggregation, no

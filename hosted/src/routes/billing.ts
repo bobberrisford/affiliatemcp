@@ -20,7 +20,10 @@ import {
   resolveEntitlement,
 } from '../billing.js';
 import { createCheckoutSession, verifyStripeSignature } from '../stripe.js';
-import { requireSession } from './guard.js';
+// Full-scope only (H6, `./guard.ts`): a digest-scoped token has no business
+// creating checkout sessions or reading billing state — its whole job is two
+// vault reads. The webhook route carries no session at all (Stripe signs it).
+import { requireFullSession } from './guard.js';
 
 interface CheckoutBody {
   tier?: unknown;
@@ -40,7 +43,7 @@ export async function handleBillingCheckout(
   env: Env,
   cors: Record<string, string>,
 ): Promise<Response> {
-  const auth = await requireSession(request, env, cors);
+  const auth = await requireFullSession(request, env, cors);
   if (auth instanceof Response) return auth;
 
   let body: CheckoutBody;
@@ -153,6 +156,19 @@ export async function handleBillingWebhook(
           updatedAt: Math.floor(Date.now() / 1000),
         });
         await putSubscriptionReverseIndex(env.HOSTED_BILLING, subscriptionId, userId);
+      } else {
+        // A completed checkout this handler cannot attribute grants nothing —
+        // that is correct (never guess a tier or user), but it must not be
+        // silent: someone PAID and got no entitlement. A Checkout Session
+        // created outside `handleBillingCheckout` (a hand-built payment link,
+        // a misconfigured dashboard product) arrives without our metadata and
+        // lands here. Log the structured reason (event id and which fields
+        // were missing; never the email or any customer detail) so it is
+        // diagnosable from the Worker's logs.
+        console.error(
+          `[billing] webhook checkout.session.completed ignored eventId=${event.id} ` +
+            `hasUserId=${Boolean(userId)} tierValid=${isPaidTierInput(tier)} hasSubscriptionId=${Boolean(subscriptionId)}`,
+        );
       }
     } else if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
       const sub = event.data.object as StripeSubscriptionObject;
@@ -191,7 +207,7 @@ export async function handleBillingEntitlement(
   env: Env,
   cors: Record<string, string>,
 ): Promise<Response> {
-  const auth = await requireSession(request, env, cors);
+  const auth = await requireFullSession(request, env, cors);
   if (auth instanceof Response) return auth;
 
   const entitlement = await resolveEntitlement(env.HOSTED_BILLING, auth.userId);
