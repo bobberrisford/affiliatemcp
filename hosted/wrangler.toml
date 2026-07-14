@@ -1,0 +1,35 @@
+name = "affiliate-mcp-hosted"
+main = "src/index.ts"
+compatibility_date = "2026-03-25"
+# WebCrypto Ed25519 + fetch are native to the Workers runtime; no
+# nodejs_compat flag is needed (unlike issuer, which needs it for Stripe's
+# fetch client).
+
+# ── KV: hosted-account identity ─────────────────────────────────────────────
+# Stores (NO affiliate credentials, NO affiliate data — see hosted/README.md
+# for the exact key shapes):
+#   user:<userId>            -> JSON { id, createdAt }
+#   email-hash:<hmacHex>     -> <userId>
+#   pending-link:<sha256Hex> -> JSON { emailHash, expiresAt }  (TTL'd, single-use)
+# Create a FRESH namespace before first deploy:
+#   npx wrangler kv namespace create HOSTED_USERS
+#   npx wrangler kv namespace create HOSTED_USERS --preview
+# then paste the returned ids below.
+[[kv_namespaces]]
+binding = "HOSTED_USERS"
+id = "REPLACE_WITH_KV_ID"
+preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
+
+# ── Non-secret vars (override per-env or in the dashboard) ─────────────────
+# Origin allowed to call /auth/request-link and /auth/session/verify via CORS.
+SITE_ORIGIN = "https://agenticaffiliate.ai"
+
+# ── Secrets — set via `wrangler secret put <NAME>` (NEVER commit) ──────────
+#   RESEND_API_KEY        re_…    (Resend API key, from https://resend.com/api-keys;
+#                                  the sending domain used in src/index.ts,
+#                                  sign-in@agenticaffiliate.ai, must be verified
+#                                  in the Resend dashboard first)
+#   SESSION_SIGNING_KEY    Ed25519 PKCS8 DER, base64 (the PRIVATE key only —
+#                                  this Worker derives the public verification
+#                                  key from it at call time; see `npm run gen-keypair`
+#                                  and src/token.ts)
