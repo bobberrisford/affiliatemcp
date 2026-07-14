@@ -1,0 +1,112 @@
+name = "affiliate-mcp-containers"
+main = "src/index.ts"
+compatibility_date = "2026-03-25"
+
+# ── What this Worker is, and why it exists as its own Worker ────────────────
+#
+# affiliate-mcp's hosted product has three moving parts today: the `hosted/`
+# Cloudflare Worker (auth, vault, connect, billing, the digest cron trigger)
+# and two Node services that cannot run as Workers — the H4 remote MCP
+# transport (`src/hosted-transport/`, root workspace) and the H6
+# digest-compose service (`src/hosted-digest/`, root workspace). See
+# `hosted/README.md`, "H4: remote MCP transport lives in the root workspace,
+# not here", for why those two are Node, not Workers (86 adapters, ~120k
+# lines, Node-only dependencies, well past a Workers script bundle limit).
+#
+# This Worker is the Cloudflare Containers front door for those two Node
+# services, so Rob's entire hosted stack — Worker plus both Node services —
+# lives in one Cloudflare account. It is a SEPARATE Worker from `hosted/`
+# rather than config added to that Worker's own `wrangler.toml`/`src/index.ts`,
+# for one concrete reason: `hosted/`'s Worker already owns the top-level
+# `/health` path for its own liveness (`hosted/src/index.ts`) — colocating the
+# container routes on the same Worker would either collide with that path or
+# force renaming an existing, tested route, which is exactly the kind of
+# restructuring of `hosted/`'s existing code this PR was asked not to do. A
+# dedicated Worker with its own origin gives the container routes an
+# unambiguous namespace and leaves every byte of `hosted/src/*.ts` untouched.
+# See `containers/src/index.ts`'s file header for the full routing design,
+# including the one open question this PR flags rather than guesses at:
+# MCP session affinity if this Worker's container class ever scales past one
+# instance.
+#
+# VERIFY AT DEPLOY: the [[containers]] / [[durable_objects.bindings]] /
+# [[migrations]] block below is written to the documented Cloudflare
+# Containers public API shape (class_name / image / max_instances /
+# instance_type; durable_objects.bindings; migrations.new_sqlite_classes),
+# corroborated via web search against developers.cloudflare.com's own
+# "Getting started" and "Limits and Instance Types" pages and the
+# cloudflare/containers example repository. This sandboxed build environment
+# could not load developers.cloudflare.com directly (403 to automated
+# fetches), so this could not be checked against a live rendering of the
+# primary docs. Confirm every field name and the migrations tag format
+# against the current Containers docs before the first `wrangler deploy`.
+
+# ── Cloudflare Containers: one Dockerfile, two independently-scaled classes ─
+# Both classes reference the repo-root Dockerfile (multi-stage build; one
+# image, role selected by CONTAINER_SERVICE at start — see the Dockerfile's
+# own header for why one image was chosen over two). `image` is relative to
+# this wrangler.toml's directory, so "../Dockerfile" resolves to the repo
+# root.
+[[containers]]
+class_name = "McpTransportContainer"
+image = "../Dockerfile"
+# Pinned to a single instance until MCP session affinity across replicas is
+# designed — see containers/src/index.ts's file header. Do not raise this
+# without first solving that: the transport keeps per-session state
+# (src/hosted-transport/http-server.ts's in-memory `sessions` map) in the one
+# process handling it, and Cloudflare's container routing derives its
+# scaling from the Durable Object id you choose per request, which this
+# router cannot yet do consistently for a session before its id exists.
+max_instances = 1
+instance_type = "basic"
+
+[[containers]]
+class_name = "DigestComposeContainer"
+image = "../Dockerfile"
+# Stateless per request (POST /compose composes one user's digest and
+# returns) — safe to scale. Kept low because the cron trigger in
+# hosted/wrangler.toml fires at most weekly per subscriber batch; raise this
+# if the subscriber roster grows enough to need more concurrency during a
+# single scheduled run.
+max_instances = 2
+instance_type = "basic"
+
+[[durable_objects.bindings]]
+class_name = "McpTransportContainer"
+name = "MCP_TRANSPORT_CONTAINER"
+
+[[durable_objects.bindings]]
+class_name = "DigestComposeContainer"
+name = "DIGEST_COMPOSE_CONTAINER"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["McpTransportContainer", "DigestComposeContainer"]
+
+# ── Non-secret vars ──────────────────────────────────────────────────────────
+[vars]
+# The deployed hosted Worker's own origin (hosted/wrangler.toml's own
+# PUBLIC_BASE_URL, once that Worker is deployed). The transport container
+# needs this for BOTH HOSTED_AUTH_URL and HOSTED_VAULT_URL (the same Worker
+# serves both surfaces today — src/hosted-transport/env.ts), and the
+# digest-compose container needs it for HOSTED_VAULT_URL. One var here
+# covers both because it is the same origin; see containers/src/index.ts for
+# where each container's own env is assembled from it.
+HOSTED_WORKER_ORIGIN = "REPLACE_WITH_HOSTED_WORKER_ORIGIN"
+
+# ── Secrets — set via `wrangler secret put <NAME>` (NEVER commit) ──────────
+#   DIGEST_COMPOSE_SECRET  optional doorbell shared with hosted/'s own
+#                          DIGEST_COMPOSE_SECRET secret (hosted/wrangler.toml).
+#                          Forwarded into the digest-compose container's own
+#                          env at start; see src/hosted-digest/env.ts and
+#                          hosted/README.md, "Digest orchestration and token
+#                          scopes" for why leaking it grants no data access.
+
+# ── Once deployed ────────────────────────────────────────────────────────────
+# - Point MCP clients at this Worker's own origin + /mcp (see
+#   containers/src/index.ts for the exact route).
+# - Set hosted/wrangler.toml's DIGEST_SERVICE_URL to
+#   "https://<this-worker's-origin>/digest" (hosted/src/digest.ts appends
+#   "/compose" itself).
+# - See hosted/README.md, "Deploy on Cloudflare (all-in-one)" for the
+#   complete step list.

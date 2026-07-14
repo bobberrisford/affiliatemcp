@@ -904,6 +904,175 @@ same as before this follow-up.
     Monday 06:00 UTC by default).
 16. `npm run deploy`.
 
+## Deploy on Cloudflare (all-in-one)
+
+Step 14 above (deploy the Node digest-compose service) and H4's own deploy
+note ("no real URL to give" — "First-value pointer, honestly bounded") both
+assumed the two Node services (`src/hosted-transport/`, `src/hosted-digest/`,
+root workspace) would run on a separate host from this Worker — a VPS,
+Fly.io, Railway. Rob asked for an option to run those two services on
+Cloudflare as well, via **Cloudflare Containers** (a container instance
+attached to a Worker through a Durable Object binding), so the entire hosted
+stack — this Worker, the vault, the transport, the digest-compose service —
+can live in one Cloudflare account if that is the deploy Rob prefers. This
+section documents that path. It is additive: nothing above changes, and
+running the two Node services on a plain VPS/Fly.io/Railway host instead
+(steps 14 above) remains equally valid — see "Fallback: any container host"
+below.
+
+### What was built, and where
+
+- **`Dockerfile`** (repo root) — a multi-stage build (`npm ci` + `npm run
+  build`, then a slim `node:22-alpine` runtime) that packages BOTH Node
+  services into one image. A `CONTAINER_SERVICE` env var
+  (`hosted-transport` or `hosted-digest`) selects which of the two the
+  container process runs; see the Dockerfile's own header comment for why
+  one image was chosen over two (the build step is identical for both, and
+  Cloudflare's container scaling unit is the container CLASS in
+  `wrangler.toml`, not the image).
+- **`.dockerignore`** (repo root) — keeps the build context to
+  `package.json`, `package-lock.json`, `tsconfig.json`, and `src/`; excludes
+  `desktop/`, `docs/`, `site/`, `tests/`, the other Workers in this repo, and
+  everything else this image does not run.
+- **`containers/`** (repo root, a new, separate Worker workspace) — the
+  Cloudflare Containers front door: `containers/wrangler.toml` declares two
+  container classes (`McpTransportContainer`, `DigestComposeContainer`),
+  both built from the repo-root `Dockerfile`, each bound to this Worker via a
+  Durable Object binding; `containers/src/index.ts` implements the two
+  Durable Object classes (each starts its container role and proxies the
+  request to it over `getTcpPort`) and a small top-level router (`/mcp` and
+  `/health` to the transport container; `/digest/health` and
+  `/digest/compose` to the digest-compose container).
+
+**Why a separate Worker, not code added to this one.** This Worker already
+owns the top-level `/health` path for its own liveness (see the router at
+the bottom of `src/index.ts`). Adding the container routes here would either
+collide with that path or force renaming an existing, tested route — exactly
+the restructuring of this Worker's existing code this change was scoped to
+avoid. A dedicated Worker gives the container routes their own unambiguous
+origin and leaves every byte of `hosted/src/*.ts` untouched. See
+`containers/wrangler.toml`'s own header comment for the full reasoning.
+
+### Deploy steps
+
+1. `npm ci` at the repo root (the Dockerfile's build stage does this itself
+   during the container image build; this step is only needed here if you
+   want to build/test the image locally first — see "Local build proof"
+   below).
+2. `cd containers && npm install`.
+3. Set `containers/wrangler.toml`'s `HOSTED_WORKER_ORIGIN` var to this
+   Worker's own deployed origin (the same value as this Worker's own
+   `PUBLIC_BASE_URL`, step 8 above) — the transport container needs it for
+   both `HOSTED_AUTH_URL` and `HOSTED_VAULT_URL`, and the digest-compose
+   container needs it for `HOSTED_VAULT_URL` (see
+   `containers/src/index.ts`'s `ensureRunning` calls for exactly which env
+   var each role gets). Note: `ensureRunning` passes env only when an
+   instance first starts, so changing a var (for example
+   `HOSTED_WORKER_ORIGIN`) requires restarting the instance to take effect.
+4. If this Worker's `DIGEST_COMPOSE_SECRET` (step 14 above) is set, mirror it
+   here: `npx wrangler secret put DIGEST_COMPOSE_SECRET` in `containers/`,
+   same value.
+5. `cd containers && npm run deploy` (`wrangler deploy`). This builds the
+   Docker image from the repo-root `Dockerfile` and pushes it to Cloudflare's
+   container registry as part of the deploy — a working Docker CLI/daemon on
+   the machine running this command is required (see "Local build proof"
+   below for why that could not be exercised in this PR's build
+   environment).
+6. Back in this Worker's own `wrangler.toml`, set `DIGEST_SERVICE_URL` to
+   `https://<containers-worker-origin>/digest` (`src/digest.ts` appends
+   `/compose` itself, matching `containers/src/index.ts`'s
+   `/digest/compose` route) and redeploy this Worker.
+7. Point MCP clients at `https://<containers-worker-origin>/mcp` instead of a
+   separately-hosted transport URL.
+
+### Env vars per service (inside the container)
+
+| Var | Service | Source |
+| --- | --- | --- |
+| `HOSTED_AUTH_URL` | transport | `containers/wrangler.toml`'s `HOSTED_WORKER_ORIGIN`, forwarded by `McpTransportContainer` |
+| `HOSTED_VAULT_URL` | both | same |
+| `HOSTED_TRANSPORT_PORT` | transport | fixed at `8787` by `containers/src/index.ts` |
+| `DIGEST_SERVICE_PORT` | digest-compose | fixed at `8788` by `containers/src/index.ts` |
+| `DIGEST_COMPOSE_SECRET` | digest-compose | `containers/wrangler.toml` secret, forwarded if set |
+| `CONTAINER_SERVICE` | both | set by the Dockerfile default (`hosted-transport`) or overridden per container class by `containers/src/index.ts` |
+
+None of these are baked into the image; every one is supplied at container
+start time (`ContainerStartupOptions.env`), matching how every other secret
+in this repo is handled — never committed, never in the image.
+
+### Local build proof: deferred, and why
+
+A working Docker CLI and daemon ARE available in this PR's build
+environment, and `containers/wrangler.toml`'s shape was validated directly
+with `npx wrangler deploy --dry-run --outdir dist --containers-rollout=none`
+(wrangler v4 — v3.90, the version this repo's other Workers pin, rejects the
+`[[containers]]` array syntax entirely with "containers should be an object,
+but got an array"; `containers/package.json` pins `wrangler@^4` and
+`@cloudflare/workers-types@^5` for this reason, one version ahead of
+`hosted/`, `issuer/`, and `waitlist/`). That dry run confirmed both container
+classes resolve to the repo-root `Dockerfile` and both Durable Object
+bindings wire up correctly.
+
+A full `docker build .` of the Dockerfile itself could not complete in this
+build environment: the base-image pull (`node:22-alpine`) is blocked by an
+organisation egress policy at the proxy layer (`production.cloudfront.docker.com`
+returns 403 to the CONNECT), not by a Dockerfile defect. As a substitute
+proof, the Dockerfile's actual build+run steps were exercised directly on
+the host: `npm ci && npm run build` (the Dockerfile's build stage, verbatim)
+followed by running the exact same commands the image's `CMD` runs —
+`node dist/index.js hosted-transport` and `node dist/index.js hosted-digest`,
+each with the same env vars a container instance would receive — and both
+returned `200` on `GET /health`. This proves the build script and runtime
+entrypoint are correct; it does not prove the Docker layer itself builds
+end to end. Run `docker build -t affiliate-mcp-hosted-services .` from the
+repo root in an environment with normal Docker Hub access before the first
+deploy, as the final confirmation this PR could not complete itself.
+
+### Streaming (SSE) through the container binding: verify before relying on it
+
+The transport's `GET /mcp` long-lived SSE connections
+(`StreamableHTTPServerTransport`, `src/hosted-transport/http-server.ts`) need
+to pass through `container.getTcpPort(port).fetch(request)` unbuffered.
+Cloudflare's container binding is documented as a plain HTTP/TCP proxy, which
+is consistent with streaming passing through, but this repo's build
+environment could not load `developers.cloudflare.com` directly to confirm
+against a worked streaming example (see `containers/wrangler.toml`'s header
+comment for the same 403-to-automated-fetch limitation). **Verify this first
+at deploy**, with a real `GET /mcp` SSE round-trip against a staging deploy,
+before depending on it in production.
+
+### MCP session affinity: the transport container is pinned to one instance
+
+`src/hosted-transport/http-server.ts` keeps its MCP session state (the
+in-memory `sessions` map, keyed by `mcp-session-id`) in the one process
+handling it. Cloudflare's own container-routing guidance states plainly that
+the Durable Object id you route by IS your scaling strategy — session-sticky
+routing across multiple container replicas needs a stable per-session key on
+every request, and the transport's `mcp-session-id` does not exist until
+after the `initialize` round-trip that creates it, so there is no key to
+route the very first request by. Rather than guess at an unverified affinity
+scheme, `containers/src/index.ts` routes every `/mcp` and `/health` request
+to one fixed Durable Object name, and `containers/wrangler.toml` pins
+`McpTransportContainer` to `max_instances = 1` to match. This is not a
+capability regression (a single Node process was already the deployment
+shape being replaced), but it does mean this path does not yet give the
+transport horizontal scale. Raising `max_instances` above 1 needs either a
+session-affinity design or moving the transport's session state out of
+process — design that before relying on more than one instance.
+
+### Fallback: any container host runs the same image
+
+The repo-root `Dockerfile` is a standard multi-stage Node image with no
+Cloudflare-specific step in it. Fly.io, Railway, a plain VPS with Docker, or
+any other container host runs it unchanged — set `CONTAINER_SERVICE`,
+`HOSTED_AUTH_URL`/`HOSTED_VAULT_URL`, and (for the digest-compose role)
+`DIGEST_SERVICE_PORT`/`DIGEST_COMPOSE_SECRET` as plain environment variables,
+same as step 14's original systemd-unit deploy shape
+(`src/hosted-digest/index.ts`'s file header). This is the fallback if the
+Cloudflare Containers streaming or session-affinity questions above do not
+resolve favourably, or if Rob simply prefers to keep the Node services off
+Cloudflare.
+
 ## Local checks
 
 - `npm test` — request-link neutrality (including the identical over-limit
