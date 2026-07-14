@@ -1,11 +1,14 @@
 /**
  * H5 connect-flow route tests, exercised through the same `worker.fetch`
  * entry point as `test/worker.test.ts` and `test/vault-routes.test.ts`.
- * Covers: sign-in gating for an unauthenticated visitor, form rendering per
- * network, store + mocked connection-test success and failure, that no
+ * Covers: sign-in gating for an unauthenticated visitor, the hard rejection
+ * of a session token in a URL query parameter (RFC 6750 §2.3 — bearer tokens
+ * never travel in URLs in this flow), POST-body navigation, form rendering
+ * per network, store + mocked connection-test success and failure, that no
  * batch/multi-network endpoint exists, that a stored credential value never
- * appears unmasked in any HTML response, and that every connect response
- * inherits the Worker-wide `no-store` cache header.
+ * appears unmasked in any HTML response, that no URL inside any rendered
+ * page ever carries the session token, and that every connect response
+ * carries `cache-control: no-store` and `referrer-policy: no-referrer`.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -87,6 +90,20 @@ function postForm(path: string, fields: Record<string, string>): Request {
   });
 }
 
+/**
+ * The load-bearing URL-hygiene assertion (RFC 6750 §2.3): no URL anywhere in
+ * the rendered HTML — href, action, or otherwise — may carry the session
+ * token, and no `token=` query string may appear anywhere in the page. The
+ * token is allowed ONLY as a hidden form field's value and inside the
+ * success page's copyable <textarea>.
+ */
+function expectNoTokenInAnyUrl(body: string, token: string): void {
+  expect(body).not.toMatch(/href="[^"]*amcps_[^"]*"/);
+  expect(body).not.toMatch(/action="[^"]*amcps_[^"]*"/);
+  expect(body).not.toContain('?token=');
+  expect(body).not.toContain(`token=${token}`);
+}
+
 afterEach(() => {
   vi.restoreAllMocks();
 });
@@ -101,6 +118,13 @@ describe('sign-in gating', () => {
     const body = await res.text();
     expect(body).toContain('sign in required');
     expect(body).not.toContain('"error"');
+  });
+
+  it('the sign-in prompt form submits the token via POST body, never GET', async () => {
+    const { env } = await makeTestEnv();
+    const body = await (await worker.fetch(get('/connect'), env)).text();
+    expect(body).toContain('<form method="post" action="/connect">');
+    expect(body).not.toContain('method="get"');
   });
 
   it('GET /connect/:network without a session shows the sign-in prompt', async () => {
@@ -126,13 +150,28 @@ describe('sign-in gating', () => {
     expect(vaultKv.store.size).toBe(0);
   });
 
-  it('an invalid/tampered token also falls back to the sign-in prompt', async () => {
+  it('an invalid/tampered token in the POST body also falls back to the sign-in prompt', async () => {
     const { env } = await makeTestEnv();
-    const res = await worker.fetch(get('/connect?token=amcps_not.real'), env);
+    const res = await worker.fetch(postForm('/connect', { token: 'amcps_not.real' }), env);
     expect(await res.text()).toContain('sign in required');
   });
 
-  it('a valid token via the Authorization header (not just the query string) is accepted', async () => {
+  it('a VALID token in a URL query parameter is rejected — bearer tokens never travel in URLs', async () => {
+    const { env, signingKey } = await makeTestEnv();
+    const token = await issueSessionToken(signingKey, generateUserId());
+    for (const path of [
+      `/connect?token=${token}`,
+      `/connect/awin?token=${token}`,
+      `/connect/awin/retest?token=${token}`,
+    ]) {
+      const res = await worker.fetch(get(path), env);
+      const body = await res.text();
+      expect(body).toContain('sign in required');
+      expect(body).not.toContain('connect a network');
+    }
+  });
+
+  it('a valid token via the Authorization header is accepted on the GET variants', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
     const res = await worker.fetch(
@@ -141,25 +180,36 @@ describe('sign-in gating', () => {
     );
     expect(await res.text()).toContain('connect a network');
   });
-});
 
-// ── GET /connect (list) ──────────────────────────────────────────────────────
-describe('GET /connect', () => {
-  it('lists all four networks as not connected for a fresh account', async () => {
+  it('a valid token via the POST body is accepted', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
-    const res = await worker.fetch(get(`/connect?token=${token}`), env);
+    const res = await worker.fetch(postForm('/connect', { token }), env);
+    expect(await res.text()).toContain('connect a network');
+  });
+});
+
+// ── GET|POST /connect (list) ─────────────────────────────────────────────────
+describe('POST /connect (list)', () => {
+  it('lists all four networks as not connected for a fresh account, with POST-form navigation only', async () => {
+    const { env, signingKey } = await makeTestEnv();
+    const token = await issueSessionToken(signingKey, generateUserId());
+    const res = await worker.fetch(postForm('/connect', { token }), env);
     const body = await res.text();
     for (const name of ['Awin', 'CJ Affiliate', 'Impact', 'Rakuten Advertising']) {
       expect(body).toContain(name);
     }
     expect(body).toContain('not connected');
     expect(body).not.toContain('class="status-connected"');
+    // Navigation to each network's form is a POST form, not a GET link.
+    expect(body).toContain('action="/connect/awin/form"');
+    expect(body).toContain('action="/connect/rakuten/form"');
+    expectNoTokenInAnyUrl(body, token);
   });
 });
 
-// ── GET /connect/:network (form) ─────────────────────────────────────────────
-describe('GET /connect/:network', () => {
+// ── POST /connect/:network/form (guided form) ───────────────────────────────
+describe('POST /connect/:network/form', () => {
   it('renders the guided form with fields, where-to-find copy, and the least-privilege note, per network', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
@@ -171,21 +221,32 @@ describe('GET /connect/:network', () => {
       { slug: 'rakuten', fields: ['RAKUTEN_CLIENT_ID', 'RAKUTEN_CLIENT_SECRET', 'RAKUTEN_SID'] },
     ];
     for (const { slug, fields } of cases) {
-      const res = await worker.fetch(get(`/connect/${slug}?token=${token}`), env);
+      const res = await worker.fetch(postForm(`/connect/${slug}/form`, { token }), env);
       expect(res.status).toBe(200);
       const body = await res.text();
       for (const field of fields) {
         expect(body).toContain(`name="${field}"`);
       }
       expect(body.toLowerCase()).toContain('lesser-privileged alternative documented here today');
-      expect(body).toContain('<form method="post"');
+      expect(body).toContain(`action="/connect/${slug}"`);
+      expectNoTokenInAnyUrl(body, token);
     }
+  });
+
+  it('the same form is reachable via GET with an Authorization header', async () => {
+    const { env, signingKey } = await makeTestEnv();
+    const token = await issueSessionToken(signingKey, generateUserId());
+    const res = await worker.fetch(
+      new Request('https://hosted.test/connect/awin', { headers: { authorization: `Bearer ${token}` } }),
+      env,
+    );
+    expect(await res.text()).toContain('name="AWIN_API_TOKEN"');
   });
 
   it('returns a plain not-found page for a network outside the four hosted-eligible ones', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
-    const res = await worker.fetch(get(`/connect/some-other-network?token=${token}`), env);
+    const res = await worker.fetch(postForm('/connect/some-other-network/form', { token }), env);
     expect(await res.text()).toContain('network not found');
   });
 });
@@ -213,6 +274,7 @@ describe('POST /connect/:network — store then connection test', () => {
     expect(body).toContain('Connection test passed');
     expect(body).toContain('1234'); // masked last-4 only
     expect(body).not.toContain('super-secret-marker-1234');
+    expectNoTokenInAnyUrl(body, token);
     // A stored credential blob now exists for this user/network.
     const hasCredKey = Array.from(vaultKv.store.keys()).some((k) => k.includes('awin'));
     expect(hasCredKey).toBe(true);
@@ -238,6 +300,7 @@ describe('POST /connect/:network — store then connection test', () => {
     expect(body).toContain('Unauthorized: bad token');
     expect(body).toContain('retry the connection test');
     expect(body).not.toContain('wrong-token-marker-5678');
+    expectNoTokenInAnyUrl(body, token);
     // The credential is still stored despite the failing test — never un-stored.
     const hasCredKey = Array.from(vaultKv.store.keys()).some((k) => k.includes('awin'));
     expect(hasCredKey).toBe(true);
@@ -328,8 +391,8 @@ describe('POST /connect/:network — store then connection test', () => {
   });
 });
 
-// ── GET /connect/:network/retest ─────────────────────────────────────────────
-describe('GET /connect/:network/retest', () => {
+// ── POST /connect/:network/retest ────────────────────────────────────────────
+describe('POST /connect/:network/retest', () => {
   it('re-runs the test on the already-stored credential without resubmitting the form', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
@@ -338,18 +401,19 @@ describe('GET /connect/:network/retest', () => {
     await worker.fetch(postForm('/connect/awin', { token, AWIN_API_TOKEN: 'retest-marker-9999', AWIN_PUBLISHER_ID: '1' }), env);
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response('[]', { status: 200 }));
-    const res = await worker.fetch(get(`/connect/awin/retest?token=${token}`), env);
+    const res = await worker.fetch(postForm('/connect/awin/retest', { token }), env);
     const body = await res.text();
     expect(body).toContain('Connection test passed');
     expect(body).toContain('9999');
     expect(body).not.toContain('retest-marker-9999');
+    expectNoTokenInAnyUrl(body, token);
   });
 
   it('returns a not-connected page, never a fabricated test result, when nothing was stored', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
-    const res = await worker.fetch(get(`/connect/cj/retest?token=${token}`), env);
+    const res = await worker.fetch(postForm('/connect/cj/retest', { token }), env);
     const body = await res.text();
     expect(body).toContain('not connected');
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -358,11 +422,21 @@ describe('GET /connect/:network/retest', () => {
 
 // ── No batch endpoint (sequential by construction) ───────────────────────────
 describe('no batch connect endpoint exists', () => {
-  it('POST /connect (no network in the path) is not found, never a multi-network submission', async () => {
-    const { env, signingKey } = await makeTestEnv();
+  it('POST /connect renders the list and stores nothing, even when credential fields are smuggled in', async () => {
+    const { env, vaultKv, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
-    const res = await worker.fetch(postForm('/connect', { token, network: 'awin' }), env);
-    expect(res.status).toBe(404);
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const res = await worker.fetch(
+      postForm('/connect', {
+        token,
+        AWIN_API_TOKEN: 'batch-smuggle-a',
+        CJ_API_TOKEN: 'batch-smuggle-b',
+      }),
+      env,
+    );
+    expect(await res.text()).toContain('connect a network');
+    expect(vaultKv.store.size).toBe(0);
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it('a submitted field not declared for the target network is silently dropped, never stored', async () => {
@@ -390,26 +464,29 @@ describe('no batch connect endpoint exists', () => {
   });
 });
 
-// ── no-store header inheritance ──────────────────────────────────────────────
-describe('no-store on every connect response', () => {
-  it('GET /connect carries cache-control: no-store', async () => {
+// ── no-store and no-referrer on every connect response ──────────────────────
+describe('security headers on every connect response', () => {
+  it('POST /connect carries cache-control: no-store and referrer-policy: no-referrer', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
-    const res = await worker.fetch(get(`/connect?token=${token}`), env);
+    const res = await worker.fetch(postForm('/connect', { token }), env);
     expect(res.headers.get('cache-control')).toBe('no-store');
+    expect(res.headers.get('referrer-policy')).toBe('no-referrer');
   });
 
-  it('the sign-in prompt page also carries cache-control: no-store', async () => {
+  it('the sign-in prompt page also carries both headers', async () => {
     const { env } = await makeTestEnv();
     const res = await worker.fetch(get('/connect'), env);
     expect(res.headers.get('cache-control')).toBe('no-store');
+    expect(res.headers.get('referrer-policy')).toBe('no-referrer');
   });
 
-  it('the connection-test result page carries cache-control: no-store', async () => {
+  it('the connection-test result page carries both headers', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('[]', { status: 200 }));
     const res = await worker.fetch(postForm('/connect/awin', { token, AWIN_API_TOKEN: 'a', AWIN_PUBLISHER_ID: '1' }), env);
     expect(res.headers.get('cache-control')).toBe('no-store');
+    expect(res.headers.get('referrer-policy')).toBe('no-referrer');
   });
 });

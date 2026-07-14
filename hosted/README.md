@@ -385,10 +385,11 @@ HTML pages, no client framework, no external resources — matching the minimal
 style of the H2 callback page. Routes, all session-gated:
 
 ```
-GET  /connect                       list the four networks + connection status
-GET  /connect/:network              guided credential form for one network
-POST /connect/:network              store the credential, then connection-test it
-GET  /connect/:network/retest       re-run the connection test, no resubmit
+GET|POST /connect                    sign-in prompt, or the network list + status
+POST /connect/:network/form          guided credential form for one network
+GET  /connect/:network               same form, Authorization-header callers only
+POST /connect/:network               store the credential, then connection-test it
+GET|POST /connect/:network/retest    re-run the connection test, no resubmit
 ```
 
 "Four hosted-eligible networks" is the workstream's shorthand, not a claim
@@ -404,22 +405,54 @@ in the root workspace), entered by paste exactly like the other three
 networks' credentials. So this flow is "guided paste-once" for all four, not
 an OAuth redirect for any of them.
 
-### Session gating on plain HTML pages
+### Session gating on plain HTML pages: token in header or POST body, never a URL
 
 Every route above requires the same valid session `requireSession`
 (`src/routes/guard.ts`) checks for the H3 vault routes, verified with the
 identical primitive, `resolveValidSession` (`src/token.ts`). What differs is
 transport, not trust: these are pages a browser navigates to directly, so a
 custom `Authorization` header is not available without client-side
-JavaScript, which this flow deliberately avoids. `resolveBrowserSession`
-(`src/routes/connect.ts`) accepts the session token from the `Authorization`
-header (parity with every API route) OR a `token` query parameter / hidden
-form field, threaded from link to link across the flow. An unauthenticated
-visitor sees a sign-in prompt page — an explanation, a link to the front-end
-sign-in origin (`SITE_ORIGIN`), and a plain `<form method="get">` to paste in
-a session token obtained from the H2 callback page — rather than
-`requireSession`'s JSON 401, which would be meaningless to a human in a
-browser tab.
+JavaScript, which this flow deliberately avoids.
+
+The hosted session token is a 30-day full-account bearer credential — it can
+call the vault reveal route and `DELETE /account` — so it must never appear
+in a URL (RFC 6750 section 2.3): request URLs land verbatim in Cloudflare
+request logs (`wrangler tail`, Logpush), browser history, and bookmarks, and
+URLs leak outbound via the Referer header. `resolveBrowserSession`
+(`src/routes/connect.ts`) therefore accepts the token from exactly two
+places: the `Authorization: Bearer` header (parity with every API route) or
+a hidden `token` field in a POST body. There is deliberately no
+query-parameter fallback, and `test/connect-routes.test.ts` asserts that a
+valid token in a query string is rejected on every connect route.
+
+Because a plain HTML page cannot attach a header to a link without
+JavaScript, every navigation between these pages — back-links,
+connect/manage, retest — is rendered as a small inline POST form carrying
+the hidden token field, never a GET link with the token in it, and no form
+`action` URL ever carries the token. As defence in depth, every page in this
+flow is served with `Referrer-Policy: no-referrer` on top of the Worker-wide
+`cache-control: no-store`, so even this flow's token-free URLs leak nothing
+outbound through the external documentation links these pages contain. The
+GET variants of the list/form/retest routes exist only for callers that can
+send an Authorization header; a browser without one simply sees the sign-in
+prompt.
+
+An unauthenticated visitor sees a sign-in prompt page — an explanation, a
+link to the front-end sign-in origin (`SITE_ORIGIN`), and a plain
+`<form method="post">` to paste in a session token obtained from the H2
+callback page — rather than `requireSession`'s JSON 401, which would be
+meaningless to a human in a browser tab.
+
+A cookie-based alternative (`Secure`/`HttpOnly`/`SameSite=Strict`, set once
+after a single POST of the token) was considered and not chosen for this
+slice: it would add a second session-transport mechanism to reason about
+(cookie attributes, CSRF posture for the credential-submitting POST, and a
+divergence from H2's deliberate no-cookie decision, "Callback delivery: page
+vs cookie" above) for no reduction in the number of times the user pastes
+the token. The hidden-field POST flow keeps exactly one bearer semantics
+across the whole Worker. If the connect surface grows beyond this flow, a
+cookie session is the right upgrade path and should be its own reviewed
+change.
 
 ### Sequential store per user (the H3 data-key race, enforced by construction)
 
@@ -588,12 +621,15 @@ or production deploy offers these networks to real users.
   deletion, master-key rotation, no-plaintext-in-logs, route auth, and
   list-never-returns-values (H3, `test/vault.test.ts` and
   `test/vault-routes.test.ts`), and the H5 connect flow's sign-in gating,
-  per-network form rendering, store-then-test success and failure paths, that
-  no batch/multi-network endpoint exists, that no HTML response ever carries
-  an unmasked credential value, and that every connect response carries
-  `cache-control: no-store` (`test/connect-routes.test.ts`). Resend and every
-  per-network connection test are mocked via a spy on `fetch`; KV is an
-  in-memory fake. No live network calls.
+  the rejection of a session token in any URL query parameter, POST-body
+  navigation, per-network form rendering, store-then-test success and
+  failure paths, that no batch/multi-network endpoint exists, that no HTML
+  response ever carries an unmasked credential value, that no URL in any
+  rendered page carries the session token, and that every connect response
+  carries `cache-control: no-store` and `referrer-policy: no-referrer`
+  (`test/connect-routes.test.ts`). Resend and every per-network connection
+  test are mocked via a spy on `fetch`; KV is an in-memory fake. No live
+  network calls.
 - `npm run typecheck`.
 
 ## What this slice deliberately does not do

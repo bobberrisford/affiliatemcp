@@ -54,11 +54,15 @@
  *
  * H5 (`docs/product/hosted-mvp-workstream.md`, `src/routes/connect.ts`) adds
  * the guided connect flow — server-rendered HTML, session-gated, no client
- * framework:
- *   GET  /connect                       list the four networks + status
- *   GET  /connect/:network              guided credential form for one network
- *   POST /connect/:network              store, then connection-test, one network
- *   GET  /connect/:network/retest       re-run the connection test, no resubmit
+ * framework. The session token travels in the Authorization header or a POST
+ * body field, never in a URL (RFC 6750 §2.3; see the connect.ts file header),
+ * so in-flow navigation is POST forms, and each page also has a
+ * header-authenticated GET variant:
+ *   GET|POST /connect                    list the four networks + status
+ *   POST /connect/:network/form          guided credential form (POST-nav)
+ *   GET  /connect/:network               same form, Authorization header only
+ *   POST /connect/:network               store, then connection-test, one network
+ *   GET|POST /connect/:network/retest    re-run the connection test, no resubmit
  *
  * Resend note: the rescinded waitlist-Resend decision
  * (`docs/decisions/2026-07-12-waitlist-email-resend.md`) was specifically
@@ -399,15 +403,21 @@ export default {
     }
 
     // ── H5: guided connect flow (src/routes/connect.ts) ────────────────────
-    // Server-rendered HTML, session-gated via a browser-flavoured check (see
-    // the file-header comment in src/routes/connect.ts for why this differs
-    // from requireSession's bearer-only check). Route order matters: the
-    // `/retest` suffix must be matched before the bare `/:network` GET.
-    if (url.pathname === '/connect' && request.method === 'GET') {
+    // Server-rendered HTML, session-gated via a browser-flavoured check: the
+    // session token arrives in the Authorization header or a POST body field,
+    // NEVER a URL — see the file-header comment in src/routes/connect.ts for
+    // the RFC 6750 §2.3 reasoning, and why in-flow navigation is POST forms.
+    // Route order matters: the `/form` and `/retest` suffixes must be matched
+    // before the bare `/:network` routes.
+    if (url.pathname === '/connect' && (request.method === 'GET' || request.method === 'POST')) {
       return handleConnectList(request, env);
     }
+    const connectFormMatch = url.pathname.match(/^\/connect\/([^/]+)\/form$/);
+    if (connectFormMatch && request.method === 'POST') {
+      return handleConnectForm(request, env, decodeURIComponent(connectFormMatch[1] as string));
+    }
     const connectRetestMatch = url.pathname.match(/^\/connect\/([^/]+)\/retest$/);
-    if (connectRetestMatch && request.method === 'GET') {
+    if (connectRetestMatch && (request.method === 'GET' || request.method === 'POST')) {
       return handleConnectRetest(request, env, decodeURIComponent(connectRetestMatch[1] as string));
     }
     const connectNetworkMatch = url.pathname.match(/^\/connect\/([^/]+)$/);
