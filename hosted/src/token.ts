@@ -144,3 +144,19 @@ export async function verifySession(
   }
   return payload;
 }
+
+/**
+ * `verifySession` plus the expiry check every real caller needs — the exact
+ * pair `POST /auth/session/verify` (`src/index.ts`) and every H3 vault route
+ * (`src/routes/*`) perform before trusting a bearer token. Centralised so
+ * "valid session" means the same thing everywhere it is checked.
+ */
+export async function resolveValidSession(
+  token: string,
+  privateKeyPkcs8DerB64: string,
+): Promise<SessionPayload | null> {
+  const payload = await verifySession(token, privateKeyPkcs8DerB64);
+  if (!payload) return null;
+  if (payload.exp <= Math.floor(Date.now() / 1000)) return null;
+  return payload;
+}

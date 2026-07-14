@@ -22,6 +22,20 @@ binding = "HOSTED_USERS"
 id = "REPLACE_WITH_KV_ID"
 preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
 
+# ── KV: encrypted credential vault (H3) ──────────────────────────────────────
+# A SEPARATE namespace from HOSTED_USERS on purpose — see hosted/src/env.ts.
+# Stores (see hosted/src/vault.ts and hosted/README.md for the exact shapes):
+#   vault:key:<userId>            -> wrapped per-user data key
+#   vault:cred:<userId>:<network> -> encrypted per-network credential
+# Create a FRESH namespace before first deploy:
+#   npx wrangler kv namespace create HOSTED_VAULT
+#   npx wrangler kv namespace create HOSTED_VAULT --preview
+# then paste the returned ids below.
+[[kv_namespaces]]
+binding = "HOSTED_VAULT"
+id = "REPLACE_WITH_VAULT_KV_ID"
+preview_id = "REPLACE_WITH_VAULT_PREVIEW_KV_ID"
+
 # ── Non-secret vars (override per-env or in the dashboard) ─────────────────
 [vars]
 # The Worker's OWN public base URL, used to build the callback URL in sign-in
@@ -32,6 +46,9 @@ preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
 PUBLIC_BASE_URL = "REPLACE_WITH_PUBLIC_BASE_URL"
 # Origin allowed to call /auth/request-link and /auth/session/verify via CORS.
 SITE_ORIGIN = "https://agenticaffiliate.ai"
+# Current key version of the VAULT_MASTER_KEY secret below. Bump this (and
+# rotate the secret) per the rotation procedure in hosted/README.md.
+VAULT_MASTER_KEY_VERSION = "1"
 
 # ── Secrets — set via `wrangler secret put <NAME>` (NEVER commit) ──────────
 #   RESEND_API_KEY        re_…    (Resend API key, from https://resend.com/api-keys;
@@ -42,3 +59,9 @@ SITE_ORIGIN = "https://agenticaffiliate.ai"
 #                                  this Worker derives the public verification
 #                                  key from it at call time; see `npm run gen-keypair`
 #                                  and src/token.ts)
+#   VAULT_MASTER_KEY       base64 of 32 random bytes (AES-256 key-wrap key for
+#                                  the credential vault; see `npm run gen-vault-key`,
+#                                  src/vault.ts, and the "Vault threat model"
+#                                  section of hosted/README.md before deploying
+#                                  this — Rob's master-key decision gates this
+#                                  slice's merge, not just this secret's value)

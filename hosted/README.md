@@ -1,19 +1,26 @@
 # affiliate-mcp hosted
 
-A Cloudflare Worker that scaffolds the hosted service and its user auth
-(workstream slice H2: `docs/product/hosted-mvp-workstream.md`). It holds
-**no affiliate credentials and no affiliate data**. It knows a user id and an
-email-hash lookup, and nothing else: the encrypted credential vault is H3, a
-separate slice gated on its own KMS decision
-(`docs/decisions/2026-07-12-hosted-credential-custody.md` §H3), not built
-here. Nothing in this Worker stores, decrypts, or forwards a network API key.
+A Cloudflare Worker for the hosted service: user auth (workstream slice H2)
+and the encrypted credential vault (workstream slice H3), per
+`docs/product/hosted-mvp-workstream.md`.
+
+Two KV namespaces, kept deliberately separate:
+
+- `HOSTED_USERS` (H2) holds **no affiliate credentials and no affiliate
+  data**. It knows a user id and an email-hash lookup, and nothing else.
+- `HOSTED_VAULT` (H3) holds the encrypted credential vault: one wrapped data
+  key per user and one encrypted blob per connected network. See "Vault
+  (H3)" below for the design, and "Vault threat model" for the honest
+  read on what the current master-key design does and does not protect
+  against — **this section ends with an explicit decision this slice's PR
+  leaves for Rob before merge.**
 
 See the decision records: `docs/decisions/2026-07-12-hosted-credential-custody.md`
 (the custody contract this whole workstream operates under) and
 `docs/decisions/2026-07-13-build-hosted-without-presell.md` (why this ships
 directly, and why the waitlist Worker's Resend pattern is reused here).
 
-## Model
+## Model (H2: auth)
 
 1. **`POST /auth/request-link`** `{ email }` → creates a single-use, 15-minute
    sign-in token, stores only its SHA-256 hash in KV, and emails the magic
@@ -111,15 +118,17 @@ rotation, rather than after: a dedicated pepper secret, rotated independently
 of the signing key, is the straightforward fix if this trade-off proves
 wrong in practice.
 
-## KV storage shapes
+## KV storage shapes (H2: `HOSTED_USERS`)
 
-One namespace (`HOSTED_USERS`), three key shapes, no affiliate data in any of
-them:
+One namespace, four key shapes, no affiliate data in any of them:
 
-- **`user:<userId>`** → `JSON { id, createdAt }`. `userId` is an opaque
-  `hosted_usr_<uuid>` string; nothing PII-bearing is embedded in it. No raw
-  email address is stored in this record, or anywhere else in this Worker
-  (see the trade-off above for what that costs on key rotation).
+- **`user:<userId>`** → `JSON { id, createdAt, emailHash }`. `userId` is an
+  opaque `hosted_usr_<uuid>` string; nothing PII-bearing is embedded in it. No
+  raw email address is stored in this record, or anywhere else in this Worker
+  (see the trade-off above for what that costs on key rotation). `emailHash`
+  is the `email-hash:<hmacHex>` key that resolves to this user — carried on
+  the record so `DELETE /account` (H3, below) can remove that reverse-lookup
+  entry too, rather than stranding it pointed at a deleted user.
 - **`email-hash:<hmacHex>`** → `<userId>`. The only path from an email
   address to a user id; see "Email-key hashing trade-off" above.
 - **`pending-link:<sha256Hex>`** → `JSON { emailHash, expiresAt }`. Written
@@ -178,50 +187,211 @@ workstream):
   this record exists precisely so that trade-off is visible before it is
   paid.
 
+## Vault (H3): encrypted credential storage
+
+`src/vault.ts` implements per-user envelope encryption for network
+credentials, in a separate KV namespace (`HOSTED_VAULT`) from H2's identity
+store. Routes: `src/routes/vault.ts` (`POST`/`GET`/`DELETE /vault/credentials`)
+and `src/routes/account.ts` (`DELETE /account`), all requiring the same
+session token H2 issues (`src/routes/guard.ts`).
+
+### Design
+
+- **Per-user data key.** The first time a user connects any network, the
+  vault generates one random AES-256 key for them (`getOrCreateRawDataKey`).
+  Every network they subsequently connect reuses that same data key — one key
+  per user, not one per credential.
+- **Envelope encryption.** Each credential record is AES-256-GCM-encrypted
+  under that data key, with a fresh random IV per record. The data key itself
+  is never stored raw: it is wrapped by a `MasterKeyProvider` before being
+  written to KV.
+- **The `MasterKeyProvider` seam.** `src/vault.ts` defines the interface
+  (`wrapDataKey` / `unwrapDataKey`) and ships exactly one v1 implementation,
+  `workerSecretMasterKey`: AES-256-GCM key-wrap using a Worker secret,
+  `VAULT_MASTER_KEY` (32 random bytes, base64; generate with
+  `npm run gen-vault-key`). Every wrapped blob is tagged with
+  `{ provider, keyVersion }`, so a future KMS-backed provider (for example,
+  one that calls an external KMS's wrap/unwrap API over `fetch` instead of
+  holding key material in the Worker) implements the same three-method
+  interface and drops in without touching any stored data shape, and without
+  needing to re-encrypt a single credential blob. See "Vault threat model"
+  below for why this seam exists and what decision it is waiting on.
+- **Decrypt only at call time.** `getCredentials` decrypts on every call; the
+  vault never caches plaintext. Nothing in this slice holds a decrypted
+  credential in memory longer than the one operation that needed it.
+
+### API (`src/vault.ts`)
+
+```
+putCredentials(kv, provider, userId, network, record)  → void
+getCredentials(kv, provider, userId, network)          → CredentialRecord | null
+listNetworks(kv, userId)                               → string[]
+deleteCredential(kv, userId, network)                  → void
+deleteUser(kv, userId)                                 → void   (complete deletion)
+rotateMasterKey(kv, oldProvider, newProvider)           → { rotated, skipped }
+```
+
+`kv` and `provider` are explicit parameters rather than implicit globals, so
+the module stays testable without a real Worker environment and so a caller
+can point different calls at different providers during a rotation.
+
+### KV storage shapes (H3: `HOSTED_VAULT`)
+
+- **`vault:key:<userId>`** → `StoredWrappedKey`:
+  `{ v: 1, provider, keyVersion, algorithm: "AES-256-GCM", iv, ciphertext, createdAt, rotatedAt? }`.
+  One per user, created on their first `putCredentials` call, re-wrapped
+  (never re-created) by `rotateMasterKey`.
+- **`vault:cred:<userId>:<network>`** → `StoredCredentialBlob`:
+  `{ v: 1, network, algorithm: "AES-256-GCM", iv, ciphertext, createdAt, updatedAt }`.
+  One per connected network. `network` is validated against a
+  `[a-z0-9-]{1,64}` slug pattern before it is ever used to build a KV key, so
+  a caller cannot smuggle a colon or path segment out of their own
+  `vault:cred:<userId>:` prefix.
+
+### Rotation procedure
+
+1. `npm run gen-vault-key` to generate a fresh 32-byte key.
+2. `npx wrangler secret put VAULT_MASTER_KEY` with the new value — Wrangler
+   secrets are single-slot, so capture the OLD value first if a same-process
+   rotation script will need it (or keep the old provider constructed from a
+   value you still hold; do not rely on reading the live secret back out).
+3. Bump `VAULT_MASTER_KEY_VERSION` in `wrangler.toml` (the key version tag
+   is what lets rotation detect "already migrated" vs "still on the old
+   key" — see the caveat in `workerSecretMasterKey`'s doc comment: reusing
+   the same version for a different secret is invisible to this check).
+4. Run `rotateMasterKey(kv, oldProvider, newProvider)` once, from an
+   operational script or a one-off Worker route restricted to Rob, with
+   `oldProvider = workerSecretMasterKey(oldSecret, oldVersion)` and
+   `newProvider = workerSecretMasterKey(newSecret, newVersion)`. It re-wraps
+   every user's data key and returns `{ rotated, skipped }`; it is safe to
+   re-run (already-rotated keys are skipped, not re-rotated).
+5. Confirm `{ skipped: 0 }` on a re-run before removing the old secret value
+   from wherever it was held during the rotation window. Credential blobs are
+   never touched by this procedure — only the wrapped data keys.
+
+### Deletion
+
+- **`DELETE /vault/credentials/:network`** removes one network's credential.
+  Idempotent.
+- **`DELETE /account`** is complete deletion (`src/routes/account.ts`):
+  every `vault:key:<userId>` and `vault:cred:<userId>:*` entry in
+  `HOSTED_VAULT`, plus `user:<userId>` and its `email-hash:<hmacHex>` entry in
+  `HOSTED_USERS`. What it deliberately does not touch, and why, is documented
+  in the file-header comment of `src/routes/account.ts`: already-issued
+  session tokens are stateless and are not revoked (they simply stop being
+  useful, since there is nothing left for them to reach), and the TTL'd
+  `pending-link:`/`rl:*` entries are self-expiring and not user-scoped.
+
+### Vault threat model
+
+An honest read of the v1 (`workerSecretMasterKey`) design, by what an
+attacker gains from each compromise:
+
+- **(a) `HOSTED_VAULT` KV compromise alone: nothing.** Every credential blob
+  is AES-256-GCM ciphertext under a per-user data key, and every data key is
+  itself AES-256-GCM ciphertext under the master key. A dump of this
+  namespace, on its own, yields two layers of ciphertext and no key material
+  to open either one. This is the property envelope encryption is for, and
+  it holds regardless of which `MasterKeyProvider` is in use.
+- **(b) Worker runtime compromise: everything in flight, and the master key
+  itself.** `VAULT_MASTER_KEY` is a plain Worker secret, available to
+  application code (this repo's own `src/vault.ts`) at the moment it wraps or
+  unwraps a data key. Code running inside the compromised Worker can read
+  that secret directly, and can decrypt any data key (and, by extension, any
+  credential blob) it can reach in `HOSTED_VAULT`. This is the load-bearing
+  fact of this design: the master key is not held outside the process that
+  uses it.
+- **(c) Cloudflare account compromise: everything.** An attacker with access
+  to the Cloudflare account can read the Worker secret directly (or redeploy
+  the Worker with code that exfiltrates it), then decrypt the entire vault at
+  leisure. Managed-infrastructure custody does not change this: whoever
+  controls the account controls every secret the account holds.
+
+**This is envelope encryption on managed infrastructure, not KMS-backed
+custody in the usual sense** — the defining property of a KMS-backed design
+is that the master key never enters the calling process at all; wrap/unwrap
+happens inside the KMS, reached over an authenticated API call, and a
+compromise of the calling application's runtime (case (b) above) does not, by
+itself, expose the key. The alternative this slice names but does not build:
+an external KMS provider (for example, AWS KMS) implementing the same
+`MasterKeyProvider` interface, calling KMS's `Encrypt`/`Decrypt` (or
+`GenerateDataKey`) over HTTP for every wrap/unwrap instead of holding
+`VAULT_MASTER_KEY` in the Worker at all. The cost: one network round-trip per
+wrap/unwrap (data keys are wrapped once per user and unwrapped once per
+`getCredentials` call, not once per byte of credential data, so this is a
+small, bounded number of extra calls, not a per-request tax on every
+credential read) and a second cloud dependency (an AWS account, IAM policy,
+and KMS key, alongside Cloudflare) that the current v1 design has none of.
+
+**Decision required from Rob before this slice merges: accept the
+Worker-secret design for MVP, or require the KMS provider first. The
+`MasterKeyProvider` seam makes migration possible either way.**
+
 ## Deploy checklist (all human-supplied — the Worker is inert without these; Rob-only)
 
 1. `npm install`.
 2. Create a fresh KV namespace and paste the ids into `wrangler.toml`:
    `npx wrangler kv namespace create HOSTED_USERS` (and `--preview`).
-3. In Resend: verify the sending domain used in `src/index.ts`
+3. Create a SECOND, separate KV namespace for the vault:
+   `npx wrangler kv namespace create HOSTED_VAULT` (and `--preview`), and
+   paste those ids in too. Do not reuse `HOSTED_USERS` for this — see the
+   file-header note in `src/env.ts` for why they are kept apart.
+4. In Resend: verify the sending domain used in `src/index.ts`
    (`sign-in@agenticaffiliate.ai`) so transactional sends are not rejected or
    spam-folder-routed. This is a different Resend use than the waitlist
    Worker's audience-contact capture; see
    `docs/decisions/2026-07-13-build-hosted-without-presell.md` for why reusing
    Resend here is in scope even though the waitlist-marketing decision that
    originally chose Resend was rescinded.
-4. `npx wrangler secret put RESEND_API_KEY` — a Resend API key (`re_…`) from
+5. `npx wrangler secret put RESEND_API_KEY` — a Resend API key (`re_…`) from
    https://resend.com/api-keys.
-5. `npm run gen-keypair` → set the printed PRIVATE key as the Worker secret:
+6. `npm run gen-keypair` → set the printed PRIVATE key as the Worker secret:
    `npx wrangler secret put SESSION_SIGNING_KEY`. Unlike the issuer Worker,
    there is no public key to distribute anywhere else; this Worker derives
    its own verification key from the private one at call time (see
    `src/token.ts`).
-6. Set `PUBLIC_BASE_URL` in `wrangler.toml` to the Worker's own deployed
+7. **Before this step, read "Vault threat model" above and get Rob's explicit
+   master-key decision — this is not a step to run ahead of that.**
+   `npm run gen-vault-key` → set the printed key as the Worker secret:
+   `npx wrangler secret put VAULT_MASTER_KEY`.
+8. Set `PUBLIC_BASE_URL` in `wrangler.toml` to the Worker's own deployed
    origin (the `workers.dev` URL or the custom domain). Sign-in emails embed
    this origin in the magic link; the Worker refuses to mint links (500)
    while it is unset or invalid.
-7. Confirm `SITE_ORIGIN` in `wrangler.toml` matches the live hosted-product
-   front-end origin.
-8. `npm run deploy`.
+9. Confirm `SITE_ORIGIN` and `VAULT_MASTER_KEY_VERSION` in `wrangler.toml`
+   match the live hosted-product front-end origin and the master key version
+   just set.
+10. `npm run deploy`.
 
 ## Local checks
 
 - `npm test` — request-link neutrality (including the identical over-limit
   response), the configured-origin magic link (a poisoned request Host never
   reaches the email), single-use token consumption, expiry, session
-  sign/verify roundtrip, tamper rejection, health, CORS, and that no log
-  line ever contains an email address. Resend is mocked via a spy on
-  `fetch`; KV is an in-memory fake. No live network calls.
+  sign/verify roundtrip, tamper rejection, health, CORS, that no log line
+  ever contains an email address (H2), and the vault's round-trip
+  encrypt/decrypt, wrong-master-key failure, per-user isolation, complete
+  deletion, master-key rotation, no-plaintext-in-logs, route auth, and
+  list-never-returns-values (H3, `test/vault.test.ts` and
+  `test/vault-routes.test.ts`). Resend is mocked via a spy on `fetch`; KV is
+  an in-memory fake. No live network calls.
 - `npm run typecheck`.
 
 ## What this slice deliberately does not do
 
-- No credential vault, no network API keys, no affiliate data of any kind
-  (H3, gated on the KMS decision named in the custody record).
 - No remote MCP transport, no adapter wiring, no rate limiting or audit log
-  (H4).
+  (H4). `getCredentials` (`src/vault.ts`) is the primitive H4 will call at
+  call time to run an adapter under a caller's own identity; nothing wires
+  it to an adapter yet.
 - No guided connect flow, no billing/entitlement enforcement (H5, H6).
+- No session revocation. Session tokens are stateless (see `src/token.ts`);
+  `DELETE /account` removes everything a token could reach but does not
+  invalidate the token itself before its natural expiry. See the file-header
+  comment in `src/routes/account.ts`.
+- No KMS-backed master key. The v1 `MasterKeyProvider`
+  (`workerSecretMasterKey`) wraps data keys with a Worker secret; see "Vault
+  threat model" above for what that does and does not protect against, and
+  the decision this slice's PR leaves open for Rob.
 
 `src/shared/request-context.ts` (H1) is the seam H4 will use to run adapter
 calls under a per-tenant identity; this slice does not touch it or wire any

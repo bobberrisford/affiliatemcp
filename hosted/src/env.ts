@@ -1,22 +1,39 @@
 /**
  * Worker environment bindings. Secrets are injected by Wrangler at runtime;
- * vars come from wrangler.toml `[vars]` or the dashboard. The KV namespace is
- * the only durable store this slice (H2) uses, and it holds NO affiliate
- * credentials and NO affiliate data — only account identity (user records and
- * an email-hash lookup) and short-lived pending sign-in tokens. See
- * `hosted/README.md` for the exact key shapes.
+ * vars come from wrangler.toml `[vars]` or the dashboard.
+ *
+ * Two KV namespaces, deliberately separate:
+ *   - `HOSTED_USERS` (H2) holds NO affiliate credentials and NO affiliate
+ *     data — only account identity (user records and an email-hash lookup)
+ *     and short-lived pending sign-in tokens.
+ *   - `HOSTED_VAULT` (H3) holds the encrypted credential vault: wrapped
+ *     per-user data keys and encrypted per-network credential blobs. Nothing
+ *     is ever written there in plaintext.
+ * Keeping them apart means every "no affiliate data in HOSTED_USERS" claim in
+ * `hosted/README.md` and `src/index.ts` stays true by construction, not by
+ * convention. See `hosted/README.md` for the exact key shapes of both.
  */
+
+import type { MasterKeyProvider } from './vault.js';
+import { workerSecretMasterKey } from './vault.js';
 
 export interface Env {
   /**
    * KV namespace holding hosted-account identity, keyed as:
-   *   user:<userId>              -> JSON { id, createdAt }
+   *   user:<userId>              -> JSON { id, createdAt, emailHash }
    *   email-hash:<hmacHex>       -> <userId>   (HMAC-keyed lookup; see README)
    *   pending-link:<sha256Hex>   -> JSON { emailHash, expiresAt } (TTL'd, single-use)
    *   rl:email-hash:<hmacHex>    -> counter    (request-link rate limit, TTL'd)
    *   rl:ip:<sha256Hex>          -> counter    (request-link rate limit, TTL'd)
    */
   HOSTED_USERS: KVNamespace;
+  /**
+   * KV namespace holding the encrypted credential vault (H3), keyed as:
+   *   vault:key:<userId>              -> StoredWrappedKey (wrapped per-user data key)
+   *   vault:cred:<userId>:<network>   -> StoredCredentialBlob (one per connected network)
+   * See `src/vault.ts` for the exact shapes and the envelope-encryption design.
+   */
+  HOSTED_VAULT: KVNamespace;
 
   // ── Secrets (wrangler secret put) ──────────────────────────────────────
   /** Resend API key (re_…), used to send the magic-link sign-in email. */
@@ -29,6 +46,14 @@ export interface Env {
    * the process. See `src/token.ts`.
    */
   SESSION_SIGNING_KEY: string;
+  /**
+   * The master key that wraps every user's vault data key (`src/vault.ts`,
+   * `workerSecretMasterKey`): base64 of 32 random bytes, used as an AES-256-GCM
+   * key-encryption key. See `hosted/README.md` "Vault threat model" for what
+   * this design does and does not protect against, and `npm run gen-vault-key`
+   * to generate one.
+   */
+  VAULT_MASTER_KEY: string;
 
   // ── Vars ───────────────────────────────────────────────────────────────
   /**
@@ -46,6 +71,13 @@ export interface Env {
    * production site if unset, matching the waitlist Worker's convention.
    */
   SITE_ORIGIN?: string;
+  /**
+   * The current key version of `VAULT_MASTER_KEY`, as a string integer.
+   * Defaults to `"1"`. Bump this (and rotate the secret) per the rotation
+   * procedure in `hosted/README.md`; `rotateMasterKey` uses it to find every
+   * data key still wrapped under the previous version.
+   */
+  VAULT_MASTER_KEY_VERSION?: string;
 }
 
 /**
@@ -70,4 +102,15 @@ export function publicBaseUrl(env: Env): string {
     throw new Error('PUBLIC_BASE_URL must be an http(s) URL');
   }
   return parsed.origin;
+}
+
+/**
+ * Build this deploy's `MasterKeyProvider` from the configured secret and
+ * version. The one call site every vault route uses — swapping in a
+ * KMS-backed provider later means changing this one function, not the vault
+ * or the routes that call it.
+ */
+export function vaultMasterKeyProvider(env: Env): MasterKeyProvider {
+  const keyVersion = env.VAULT_MASTER_KEY_VERSION ? Number(env.VAULT_MASTER_KEY_VERSION) : 1;
+  return workerSecretMasterKey(env.VAULT_MASTER_KEY, keyVersion);
 }
