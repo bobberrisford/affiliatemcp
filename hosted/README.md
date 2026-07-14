@@ -1,8 +1,8 @@
 # affiliate-mcp hosted
 
-A Cloudflare Worker for the hosted service: user auth (workstream slice H2)
-and the encrypted credential vault (workstream slice H3), per
-`docs/product/hosted-mvp-workstream.md`.
+A Cloudflare Worker for the hosted service: user auth (workstream slice H2),
+the encrypted credential vault (workstream slice H3), and the guided connect
+flow (workstream slice H5), per `docs/product/hosted-mvp-workstream.md`.
 
 Two KV namespaces, kept deliberately separate:
 
@@ -377,6 +377,203 @@ elevated or cross-user read access exists anywhere in this design. See
 `src/hosted-transport/http-server.ts` in the root workspace for the transport
 itself, and `docs/product/hosted-mvp-workstream.md` for the full H4 slice.
 
+## H5: guided connect flow
+
+`src/routes/connect.ts` implements the workstream's guided onboarding for the
+four hosted-eligible networks (Awin, CJ, Impact, Rakuten): server-rendered
+HTML pages, no client framework, no external resources — matching the minimal
+style of the H2 callback page. Routes, all session-gated:
+
+```
+GET|POST /connect                    sign-in prompt, or the network list + status
+POST /connect/:network/form          guided credential form for one network
+GET  /connect/:network               same form, Authorization-header callers only
+POST /connect/:network               store the credential, then connection-test it
+GET|POST /connect/:network/retest    re-run the connection test, no resubmit
+```
+
+"Four hosted-eligible networks" is the workstream's shorthand, not a claim
+that all four carry `claim_status: "production"` in their own `network.json`
+— only Awin does; CJ, Impact, and Rakuten are `"partial"` (see each
+`network.json` and `REPORT.md`). The connect list page shows each network's
+`claimStatus` next to its name rather than smoothing that distinction over.
+
+None of the four adapters implements an interactive browser-redirect OAuth
+flow. Rakuten's `auth_model: "oauth2"` is client-credentials (a client id and
+secret pair exchanged for a token server-side, `src/networks/rakuten/auth.ts`
+in the root workspace), entered by paste exactly like the other three
+networks' credentials. So this flow is "guided paste-once" for all four, not
+an OAuth redirect for any of them.
+
+### Session gating on plain HTML pages: token in header or POST body, never a URL
+
+Every route above requires the same valid session `requireSession`
+(`src/routes/guard.ts`) checks for the H3 vault routes, verified with the
+identical primitive, `resolveValidSession` (`src/token.ts`). What differs is
+transport, not trust: these are pages a browser navigates to directly, so a
+custom `Authorization` header is not available without client-side
+JavaScript, which this flow deliberately avoids.
+
+The hosted session token is a 30-day full-account bearer credential — it can
+call the vault reveal route and `DELETE /account` — so it must never appear
+in a URL (RFC 6750 section 2.3): request URLs land verbatim in Cloudflare
+request logs (`wrangler tail`, Logpush), browser history, and bookmarks, and
+URLs leak outbound via the Referer header. `resolveBrowserSession`
+(`src/routes/connect.ts`) therefore accepts the token from exactly two
+places: the `Authorization: Bearer` header (parity with every API route) or
+a hidden `token` field in a POST body. There is deliberately no
+query-parameter fallback, and `test/connect-routes.test.ts` asserts that a
+valid token in a query string is rejected on every connect route.
+
+Because a plain HTML page cannot attach a header to a link without
+JavaScript, every navigation between these pages — back-links,
+connect/manage, retest — is rendered as a small inline POST form carrying
+the hidden token field, never a GET link with the token in it, and no form
+`action` URL ever carries the token. As defence in depth, every page in this
+flow is served with `Referrer-Policy: no-referrer` on top of the Worker-wide
+`cache-control: no-store`, so even this flow's token-free URLs leak nothing
+outbound through the external documentation links these pages contain. The
+GET variants of the list/form/retest routes exist only for callers that can
+send an Authorization header; a browser without one simply sees the sign-in
+prompt.
+
+An unauthenticated visitor sees a sign-in prompt page — an explanation, a
+link to the front-end sign-in origin (`SITE_ORIGIN`), and a plain
+`<form method="post">` to paste in a session token obtained from the H2
+callback page — rather than `requireSession`'s JSON 401, which would be
+meaningless to a human in a browser tab.
+
+A cookie-based alternative (`Secure`/`HttpOnly`/`SameSite=Strict`, set once
+after a single POST of the token) was considered and not chosen for this
+slice: it would add a second session-transport mechanism to reason about
+(cookie attributes, CSRF posture for the credential-submitting POST, and a
+divergence from H2's deliberate no-cookie decision, "Callback delivery: page
+vs cookie" above) for no reduction in the number of times the user pastes
+the token. The hidden-field POST flow keeps exactly one bearer semantics
+across the whole Worker. If the connect surface grows beyond this flow, a
+cookie session is the right upgrade path and should be its own reviewed
+change.
+
+### Sequential store per user (the H3 data-key race, enforced by construction)
+
+`hosted/README.md`'s own "KV storage shapes (H3)" note above records that two
+concurrent first-ever `putCredentials` calls for the same user can race the
+single `vault:key:<userId>` write and silently orphan the loser's credential
+blob, and that the compensating control is: **H5's connect flow must store
+credentials sequentially per user, one network at a time.** This is not a
+convention this flow merely follows — there is no route that accepts more
+than one network's credentials in a single request. `POST /connect/:network`
+takes exactly one network in its path and builds a credential record from
+only that network's declared fields (`src/networks.ts`); the connect list
+page never offers a combined "connect all" submission. A user connecting all
+four networks makes four separate page loads and four separate POSTs.
+
+### Connection test on save
+
+After `putCredentials` stores the submitted credential, `handleConnectSubmit`
+runs one cheap, read-only API call per network (`src/connect-test.ts`) using
+the plaintext just submitted, replicating the exact request each network's
+LOCAL adapter's own `verifyAuth()` already sends (`src/networks/<slug>/auth.ts`
+in the root workspace) — not a new probe invented for this Worker. This
+Worker cannot import the adapters directly (same reason as H4: they are
+Node-only code; see "H4: remote MCP transport lives in the root workspace,
+not here" above), so the request is replicated with a plain `fetch`, endpoint
+and auth shape stated per network:
+
+| Network | Request replicated | Source of truth |
+| --- | --- | --- |
+| Awin | `GET https://api.awin.com/accounts?type=publisher`, `Authorization: Bearer <AWIN_API_TOKEN>` | `src/networks/awin/auth.ts` `verifyAuth()` |
+| CJ | `POST https://commissions.api.cj.com/query`, `Authorization: Bearer <CJ_API_TOKEN>`, the same minimal `{ me { ... } }` GraphQL query | `src/networks/cj/auth.ts` `verifyAuth()` |
+| Impact | `GET https://api.impact.com/Mediapartners/{SID}/Campaigns?PageSize=1`, HTTP Basic `base64(SID:AUTH_TOKEN)` | `src/networks/impact/auth.ts` `verifyAuth()` |
+| Rakuten | `POST https://api.linksynergy.com/token`, HTTP Basic `base64(CLIENT_ID:CLIENT_SECRET)`, form body `scope=<SID>` (the OAuth2 token exchange itself) | `src/networks/rakuten/auth.ts` `exchangeForToken()` / `verifyAuth()` |
+
+On failure, the credential stays stored — the task's requirement is "keep it
+stored, show the verbatim upstream status honestly, offer a retry", never
+"invent success" and never "silently drop what the user just entered". The
+result page shows the upstream HTTP status and a bounded snippet of the
+upstream body (the network's own error response, not the user's secret) and
+links to `GET /connect/:network/retest`, which re-runs the same test against
+the already-stored credential without asking the user to retype it.
+
+Known gap: the local CLI setup doc (`docs/networks/rakuten.md`) documents a
+`RAKUTEN_TOKEN_URL` override for tenants provisioned against
+`api.rakutenmarketing.com` instead of the default `api.linksynergy.com`. This
+connect flow does not yet expose that override; a tenant on the alternate
+host will see the connection test fail with a 404 even when the credentials
+themselves are valid. Recorded here as a known limitation, not silently
+unsupported — the fix is a fifth optional field on the Rakuten form, not
+implemented in this slice.
+
+### Least privilege
+
+Per the custody record's clause 3 ("Where a network offers scoped or
+read-only API keys, the connect flow instructs the user to create one"),
+every network's form shows a least-privilege note (`src/networks.ts`,
+`leastPrivilegeNote`). None of the four setup docs
+(`docs/networks/{awin,cj,impact,rakuten}.md`) describes a scoped or
+read-only key option for these networks today — each documents a single
+long-lived credential (or, for Rakuten, one client id/secret pair) with the
+same access the dashboard login itself has. The note says exactly that,
+rather than assuming a scoped option exists where the docs are silent, or
+assuming one does not exist on the network's own side — only that this repo
+has not recorded one.
+
+### No credential value ever rendered
+
+Every HTML response after a store shows, at most, the stored credential's
+**last four characters** (`maskLastFour` in `src/routes/connect.ts`) on one
+designated field per network (the primary secret — `AWIN_API_TOKEN`,
+`CJ_API_TOKEN`, `IMPACT_AUTH_TOKEN`, `RAKUTEN_CLIENT_SECRET`), never the full
+value, and never any other field. `test/connect-routes.test.ts` asserts the
+full submitted marker string never appears in any response body, on the
+success path, the failure path, or the retest path.
+
+### First-value pointer, honestly bounded
+
+On a passing connection test, the result page shows the copyable session
+token (the same one the H2 callback page issues) and a transport URL
+**placeholder** — H4's remote MCP transport (`src/hosted-transport/` in the
+root workspace) has not been deployed anywhere yet, so there is no real URL
+to give. The page states this plainly rather than fabricating one, and
+suggests a first prompt to try once a real MCP client is actually connected.
+A full automatic first-value report (running that prompt end to end and
+showing the result on this page) needs the Node H4 transport runtime, which
+is out of this Worker's scope — stated on the page and here, rather than
+faked.
+
+## Hosted eligibility: ToS check
+
+The custody record's implementation follow-ups
+(`docs/decisions/2026-07-12-hosted-credential-custody.md`) require a
+per-network terms-of-service check for third-party/hosted credential use
+before a network is offered hosted in production. This repo's own docs
+record only general statements that *some* networks prohibit third-party
+credential holders (`docs/product/website-copy.md`,
+`docs/product/solo-50k-revenue-plan.md`,
+`docs/product/solo-50k-technical-roadmap.md`) — none of them name Awin, CJ,
+Impact, or Rakuten specifically, and no per-network ToS review exists
+anywhere in this repo today. Recording that absence honestly, per network,
+rather than inferring a conclusion from the general statement:
+
+- **Awin** — unverified. Rob must confirm against Awin's current API terms
+  before this network is offered hosted in production.
+- **CJ Affiliate** — unverified. Rob must confirm against CJ's current API
+  terms before this network is offered hosted in production.
+- **Impact** — unverified. Rob must confirm against Impact's current API
+  terms before this network is offered hosted in production.
+- **Rakuten Advertising** — unverified. Rob must confirm against Rakuten's
+  current API terms before this network is offered hosted in production,
+  including whether its API-access approval process (Publisher Solutions
+  sign-off, `docs/networks/rakuten.md`) itself constrains third-party or
+  hosted use of the resulting credentials.
+
+This connect flow being buildable and testable is not the same thing as any
+network being cleared to run hosted in production — the acceptance proof the
+workstream brief sets for H5 ("an end-to-end connect against a staging
+deploy for each of the four networks, with each ToS check recorded") still
+needs this table replaced with an actual per-network review before a staging
+or production deploy offers these networks to real users.
+
 ## Deploy checklist (all human-supplied — the Worker is inert without these; Rob-only)
 
 1. `npm install`.
@@ -423,8 +620,16 @@ itself, and `docs/product/hosted-mvp-workstream.md` for the full H4 slice.
   encrypt/decrypt, wrong-master-key failure, per-user isolation, complete
   deletion, master-key rotation, no-plaintext-in-logs, route auth, and
   list-never-returns-values (H3, `test/vault.test.ts` and
-  `test/vault-routes.test.ts`). Resend is mocked via a spy on `fetch`; KV is
-  an in-memory fake. No live network calls.
+  `test/vault-routes.test.ts`), and the H5 connect flow's sign-in gating,
+  the rejection of a session token in any URL query parameter, POST-body
+  navigation, per-network form rendering, store-then-test success and
+  failure paths, that no batch/multi-network endpoint exists, that no HTML
+  response ever carries an unmasked credential value, that no URL in any
+  rendered page carries the session token, and that every connect response
+  carries `cache-control: no-store` and `referrer-policy: no-referrer`
+  (`test/connect-routes.test.ts`). Resend and every per-network connection
+  test are mocked via a spy on `fetch`; KV is an in-memory fake. No live
+  network calls.
 - `npm run typecheck`.
 
 ## What this slice deliberately does not do
@@ -435,7 +640,15 @@ itself, and `docs/product/hosted-mvp-workstream.md` for the full H4 slice.
   lives in the root workspace, not here" above. This Worker's only H4-facing
   addition is the `GET /vault/credentials/:network/reveal` route that Node
   service calls, over HTTP, with the caller's own session token.
-- No guided connect flow, no billing/entitlement enforcement (H5, H6).
+- No billing/entitlement enforcement (H6) — H5's connect flow (above) has now
+  shipped.
+- No OAuth browser-redirect flow for any network — see "H5: guided connect
+  flow" above for why all four are guided-paste.
+- No automatic first-value report generated by this Worker. The H5 success
+  page states this and points at the H4 Node transport instead of faking a
+  report; see "First-value pointer, honestly bounded" above.
+- No per-network ToS clearance recorded yet — see "Hosted eligibility: ToS
+  check" above; every one of the four is unverified pending Rob's review.
 - No session revocation. Session tokens are stateless (see `src/token.ts`);
   `DELETE /account` removes everything a token could reach but does not
   invalidate the token itself before its natural expiry. See the file-header

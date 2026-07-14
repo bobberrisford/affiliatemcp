@@ -1,5 +1,5 @@
 /**
- * affiliate-mcp hosted Worker (workstream slices H2 and H3:
+ * affiliate-mcp hosted Worker (workstream slices H2, H3, and H5:
  * `docs/product/hosted-mvp-workstream.md`).
  *
  * H2 (auth) holds NO affiliate credentials and NO affiliate data in
@@ -52,6 +52,18 @@
  *                              comment in `src/routes/vault.ts`)
  *   DELETE /account                    complete account deletion
  *
+ * H5 (`docs/product/hosted-mvp-workstream.md`, `src/routes/connect.ts`) adds
+ * the guided connect flow — server-rendered HTML, session-gated, no client
+ * framework. The session token travels in the Authorization header or a POST
+ * body field, never in a URL (RFC 6750 §2.3; see the connect.ts file header),
+ * so in-flow navigation is POST forms, and each page also has a
+ * header-authenticated GET variant:
+ *   GET|POST /connect                    list the four networks + status
+ *   POST /connect/:network/form          guided credential form (POST-nav)
+ *   GET  /connect/:network               same form, Authorization header only
+ *   POST /connect/:network               store, then connection-test, one network
+ *   GET|POST /connect/:network/retest    re-run the connection test, no resubmit
+ *
  * Resend note: the rescinded waitlist-Resend decision
  * (`docs/decisions/2026-07-12-waitlist-email-resend.md`) was specifically
  * about marketing capture, and was rescinded only because the pre-sell gate
@@ -76,6 +88,12 @@ import {
   normaliseEmail,
 } from './identity.js';
 import { handleDeleteAccount } from './routes/account.js';
+import {
+  handleConnectForm,
+  handleConnectList,
+  handleConnectRetest,
+  handleConnectSubmit,
+} from './routes/connect.js';
 import {
   handleDeleteCredential,
   handleListCredentials,
@@ -382,6 +400,32 @@ export default {
     }
     if (url.pathname === '/account' && request.method === 'DELETE') {
       return handleDeleteAccount(request, env, cors);
+    }
+
+    // ── H5: guided connect flow (src/routes/connect.ts) ────────────────────
+    // Server-rendered HTML, session-gated via a browser-flavoured check: the
+    // session token arrives in the Authorization header or a POST body field,
+    // NEVER a URL — see the file-header comment in src/routes/connect.ts for
+    // the RFC 6750 §2.3 reasoning, and why in-flow navigation is POST forms.
+    // Route order matters: the `/form` and `/retest` suffixes must be matched
+    // before the bare `/:network` routes.
+    if (url.pathname === '/connect' && (request.method === 'GET' || request.method === 'POST')) {
+      return handleConnectList(request, env);
+    }
+    const connectFormMatch = url.pathname.match(/^\/connect\/([^/]+)\/form$/);
+    if (connectFormMatch && request.method === 'POST') {
+      return handleConnectForm(request, env, decodeURIComponent(connectFormMatch[1] as string));
+    }
+    const connectRetestMatch = url.pathname.match(/^\/connect\/([^/]+)\/retest$/);
+    if (connectRetestMatch && (request.method === 'GET' || request.method === 'POST')) {
+      return handleConnectRetest(request, env, decodeURIComponent(connectRetestMatch[1] as string));
+    }
+    const connectNetworkMatch = url.pathname.match(/^\/connect\/([^/]+)$/);
+    if (connectNetworkMatch && request.method === 'GET') {
+      return handleConnectForm(request, env, decodeURIComponent(connectNetworkMatch[1] as string));
+    }
+    if (connectNetworkMatch && request.method === 'POST') {
+      return handleConnectSubmit(request, env, decodeURIComponent(connectNetworkMatch[1] as string));
     }
 
     if ((url.pathname === '/' || url.pathname === '/health') && request.method === 'GET') {
