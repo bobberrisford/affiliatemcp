@@ -62,6 +62,7 @@ async function makeTestEnv(): Promise<TestEnv> {
   const env: Env = {
     HOSTED_USERS: usersKv,
     HOSTED_VAULT: vaultKv,
+    HOSTED_BILLING: fakeKV(),
     RESEND_API_KEY: 're_test_x',
     SESSION_SIGNING_KEY: signingKey,
     VAULT_MASTER_KEY: await randomMasterKeyB64(),
