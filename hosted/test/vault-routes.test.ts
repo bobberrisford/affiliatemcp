@@ -262,6 +262,9 @@ describe('GET /vault/credentials/:network/reveal — H4 decrypt-and-serve', () =
 
     const res = await worker.fetch(authed('/vault/credentials/cj/reveal', 'GET', token), env);
     expect(res.status).toBe(200);
+    // The only HTTP body in the system carrying decrypted credentials must
+    // never be cacheable by any fronting layer.
+    expect(res.headers.get('cache-control')).toBe('no-store');
     expect(await res.json()).toEqual({
       network: 'cj',
       credentials: { CJ_API_TOKEN: 'reveal-me-token', CJ_COMPANY_ID: '1234567' },

@@ -9,15 +9,33 @@ import type { Env } from './env.js';
 
 const DEFAULT_SITE_ORIGIN = 'https://agenticaffiliate.ai';
 
+// Every response this Worker serves is per-user and credential- or
+// token-adjacent (the vault reveal body carries decrypted credentials, the
+// auth callback page carries a session token), so nothing may ever be
+// cached by a fronting proxy or a zone-level cache rule. no-store on every
+// response is the structural guarantee, not a per-route opt-in.
+const NO_STORE = 'no-store';
+
 export function json(body: unknown, init: ResponseInit = {}, cors: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     ...init,
-    headers: { 'content-type': 'application/json', ...cors, ...(init.headers ?? {}) },
+    headers: {
+      'content-type': 'application/json',
+      'cache-control': NO_STORE,
+      ...cors,
+      ...(init.headers ?? {}),
+    },
   });
 }
 
 export function html(body: string, status = 200): Response {
-  return new Response(body, { status, headers: { 'content-type': 'text/html; charset=utf-8' } });
+  return new Response(body, {
+    status,
+    headers: {
+      'content-type': 'text/html; charset=utf-8',
+      'cache-control': NO_STORE,
+    },
+  });
 }
 
 /**
