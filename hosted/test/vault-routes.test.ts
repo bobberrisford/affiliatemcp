@@ -247,6 +247,68 @@ describe('DELETE /vault/credentials/:network', () => {
   });
 });
 
+describe('GET /vault/credentials/:network/reveal — H4 decrypt-and-serve', () => {
+  it('returns the decrypted credential for the authenticated owner', async () => {
+    const { env, signingKey } = await makeTestEnv();
+    const token = await issueSessionToken(signingKey, generateUserId());
+
+    await worker.fetch(
+      authed('/vault/credentials', 'POST', token, {
+        network: 'cj',
+        credentials: { CJ_API_TOKEN: 'reveal-me-token', CJ_COMPANY_ID: '1234567' },
+      }),
+      env,
+    );
+
+    const res = await worker.fetch(authed('/vault/credentials/cj/reveal', 'GET', token), env);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      network: 'cj',
+      credentials: { CJ_API_TOKEN: 'reveal-me-token', CJ_COMPANY_ID: '1234567' },
+    });
+  });
+
+  it('returns 404, never a fabricated value, when the network was never connected', async () => {
+    const { env, signingKey } = await makeTestEnv();
+    const token = await issueSessionToken(signingKey, generateUserId());
+    const res = await worker.fetch(authed('/vault/credentials/never-connected/reveal', 'GET', token), env);
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: 'not_found' });
+  });
+
+  it('is a 401 without a valid session', async () => {
+    const { env } = await makeTestEnv();
+    const res = await worker.fetch(
+      new Request('https://hosted.test/vault/credentials/cj/reveal', {
+        headers: { authorization: 'Bearer amcps_forged.forged' },
+      }),
+      env,
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("never reveals another user's credential, even for the same network slug", async () => {
+    const { env, signingKey } = await makeTestEnv();
+    const tokenA = await issueSessionToken(signingKey, generateUserId());
+    const tokenB = await issueSessionToken(signingKey, generateUserId());
+
+    await worker.fetch(
+      authed('/vault/credentials', 'POST', tokenA, { network: 'cj', credentials: { CJ_API_TOKEN: 'user-a-token' } }),
+      env,
+    );
+
+    const res = await worker.fetch(authed('/vault/credentials/cj/reveal', 'GET', tokenB), env);
+    expect(res.status).toBe(404);
+  });
+
+  it('rejects an invalid network slug with a 400', async () => {
+    const { env, signingKey } = await makeTestEnv();
+    const token = await issueSessionToken(signingKey, generateUserId());
+    const res = await worker.fetch(authed('/vault/credentials/UPPER_CASE/reveal', 'GET', token), env);
+    expect(res.status).toBe(400);
+  });
+});
+
 describe('DELETE /account — complete deletion', () => {
   it('removes the vault, the user record, and the email-hash lookup, covering both KV namespaces', async () => {
     const { env, usersKv, vaultKv } = await makeTestEnv();

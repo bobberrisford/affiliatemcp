@@ -44,9 +44,12 @@
  * encrypted credential vault and its routes (`src/routes/vault.ts`,
  * `src/routes/account.ts`), every one of them requiring the same session
  * token this file issues:
- *   POST   /vault/credentials          store one network's credential
- *   GET    /vault/credentials          list connected networks, never values
- *   DELETE /vault/credentials/:network remove one network's credential
+ *   POST   /vault/credentials                 store one network's credential
+ *   GET    /vault/credentials                 list connected networks, never values
+ *   DELETE /vault/credentials/:network        remove one network's credential
+ *   GET    /vault/credentials/:network/reveal decrypt and return one network's
+ *                              credential (H4 only — see the file-header
+ *                              comment in `src/routes/vault.ts`)
  *   DELETE /account                    complete account deletion
  *
  * Resend note: the rescinded waitlist-Resend decision
@@ -73,7 +76,12 @@ import {
   normaliseEmail,
 } from './identity.js';
 import { handleDeleteAccount } from './routes/account.js';
-import { handleDeleteCredential, handleListCredentials, handlePutCredentials } from './routes/vault.js';
+import {
+  handleDeleteCredential,
+  handleListCredentials,
+  handlePutCredentials,
+  handleRevealCredentials,
+} from './routes/vault.js';
 import { buildSessionPayload, generateUserId, signSession, verifySession } from './token.js';
 
 const RESEND_API_BASE = 'https://api.resend.com';
@@ -367,6 +375,10 @@ export default {
     const vaultCredentialMatch = url.pathname.match(/^\/vault\/credentials\/([^/]+)$/);
     if (vaultCredentialMatch && request.method === 'DELETE') {
       return handleDeleteCredential(request, env, decodeURIComponent(vaultCredentialMatch[1] as string), cors);
+    }
+    const vaultRevealMatch = url.pathname.match(/^\/vault\/credentials\/([^/]+)\/reveal$/);
+    if (vaultRevealMatch && request.method === 'GET') {
+      return handleRevealCredentials(request, env, decodeURIComponent(vaultRevealMatch[1] as string), cors);
     }
     if (url.pathname === '/account' && request.method === 'DELETE') {
       return handleDeleteAccount(request, env, cors);

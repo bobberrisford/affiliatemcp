@@ -47,8 +47,14 @@ authorisation per the standing delivery window or explicit approval.
 4. **H4: remote MCP transport.** Streamable HTTP MCP endpoint with per-user
    token auth, per-tier rate limits, and a per-user audit log (network,
    operation, timestamp; never payloads). Adapters untouched; requests run
-   through the H1 seam against H3 credentials. Acceptance proof: an MCP
-   client end-to-end test against a staging deploy with a test credential.
+   through the H1 seam against H3 credentials. Runs as a Node service in the
+   root workspace (`src/hosted-transport/`), not inside the `hosted/` Worker —
+   see `hosted/README.md` ("H4: remote MCP transport lives in the root
+   workspace, not here") for why. Acceptance proof for this slice's PR: an
+   in-process MCP client end-to-end test (real streamable-HTTP transport, real
+   `node:http` server, mocked hosted auth/vault HTTP calls), runnable in CI.
+   An MCP client end-to-end test against a real staging deploy with a test
+   credential remains a Rob-only follow-up once a deploy exists.
 5. **H5: guided connect flow.** Browser onboarding for the four production
    networks: OAuth where supported, guided paste-once otherwise, connection
    test on save, automatic first-value report. Terms-of-service check per
