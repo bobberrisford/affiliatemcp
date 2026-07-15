@@ -16,6 +16,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 
 import {
+  ENTITLEMENT_PUBLIC_KEY_SPKI_B64,
   entitlementStatus,
   refreshEntitlement,
   signOutEntitlement,
@@ -82,6 +83,31 @@ describe('verifyEntitlementToken', () => {
 
   it('rejects a non-entitlement token', async () => {
     expect(await verifyEntitlementToken('amcp_not_entitlement.x')).toBeNull();
+  });
+
+  it('rejects a token signed by a different key than the one verified against', async () => {
+    const token = await signToken(2_000_000_000);
+    // Verifying against the embedded production key must fail: the token was
+    // signed with this run's ephemeral pair.
+    expect(await verifyEntitlementToken(token, ENTITLEMENT_PUBLIC_KEY_SPKI_B64)).toBeNull();
+  });
+
+  it('embeds a structurally valid Ed25519 SPKI public key (guard for the production constant)', async () => {
+    // The private half is an issuer Worker secret, so no test can sign with
+    // it — but a corrupted or truncated constant should fail HERE, not at
+    // first verify in a shipped app.
+    const bin = atob(ENTITLEMENT_PUBLIC_KEY_SPKI_B64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    expect(bytes.length).toBe(44); // SEQUENCE + Ed25519 OID + 32-byte key
+    const imported = await crypto.subtle.importKey(
+      'spki',
+      bytes.buffer as ArrayBuffer,
+      { name: 'Ed25519' },
+      false,
+      ['verify'],
+    );
+    expect(imported).toBeDefined();
   });
 });
 
