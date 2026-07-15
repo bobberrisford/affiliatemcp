@@ -414,8 +414,11 @@ describe('POST /auth/session/verify', () => {
     const token = await signSession(buildSessionPayload({ sub: 'hosted_usr_ok', iss, exp }), signingKey);
     const res = await worker.fetch(post('/auth/session/verify', { token }), env);
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { userId: string; exp: number };
+    const body = (await res.json()) as { userId: string; exp: number; iss: number };
     expect(body.userId).toBe('hosted_usr_ok');
     expect(body.exp).toBe(exp);
+    // `iss` is surfaced so the transport can compute lifetime (exp - iss) and
+    // reject long-lived pasted bearers during the staged migration.
+    expect(body.iss).toBe(iss);
   });
 });

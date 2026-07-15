@@ -41,7 +41,11 @@
  *                              no longer the primary MCP-client credential.
  *   POST /auth/session/verify { token } → the primitive H4's transport calls:
  *                              validates a session token and returns
- *                              { userId, exp, scope }.
+ *                              { userId, exp, iss, scope }. `iss` lets the
+ *                              transport compute token lifetime (exp - iss) and
+ *                              tell a short-lived OAuth access token apart from
+ *                              a long-lived pasted bearer during the staged
+ *                              migration.
  *   GET  /health               → liveness.
  *
  * OAuth 2.1 authorization server (slice 1,
@@ -381,7 +385,18 @@ async function handleSessionVerify(
   // transport reads this to REFUSE digest-scoped tokens
   // (`src/hosted-transport/session-auth.ts`, root workspace) — a digest
   // token authorises two vault reads, not interactive tool calls.
-  return json({ userId: payload.sub, exp: payload.exp, scope: sessionScope(payload) }, { status: 200 }, cors);
+  // `iss` (issued-at) is surfaced alongside `exp` so the transport can compute
+  // a token's lifetime (`exp - iss`) and enforce a maximum: a short-lived OAuth
+  // access token and a long-lived pasted bearer are the same wire format and
+  // differ only in lifetime, so lifetime is what tells them apart during the
+  // staged migration (`src/hosted-transport/session-auth.ts`,
+  // `docs/decisions/2026-07-15-hosted-connector-oauth.md`). Additive and
+  // backward-compatible: older transport builds ignore the extra field.
+  return json(
+    { userId: payload.sub, exp: payload.exp, iss: payload.iss, scope: sessionScope(payload) },
+    { status: 200 },
+    cors,
+  );
 }
 
 // ── Router ──────────────────────────────────────────────────────────────────
