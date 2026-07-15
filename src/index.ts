@@ -42,7 +42,7 @@ function printFirstRunBanner(): void {
 }
 
 function printHelp(): void {
-  write('affiliate-networks-mcp — MCP server for affiliate networks (Awin, CJ, Impact, Rakuten)');
+  write('affiliate-networks-mcp — MCP server for affiliate networks (Awin, CJ, Impact, Partnerize, and many more)');
   write('');
   write('Usage:');
   write('  affiliate-networks-mcp                 Start the MCP server on stdio');
