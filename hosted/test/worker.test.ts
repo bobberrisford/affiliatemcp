@@ -279,6 +279,15 @@ describe('POST /auth/request-link abuse limit', () => {
 });
 
 describe('GET /auth/callback', () => {
+  /** Pull the `hosted_session` value out of a callback's `Set-Cookie` header —
+   * the browser session is now delivered as an HttpOnly cookie, not a page. */
+  function sessionTokenFromSetCookie(res: Response): string {
+    const setCookie = res.headers.get('set-cookie');
+    const match = setCookie?.match(/hosted_session=([^;]+)/);
+    if (!match) throw new Error('no hosted_session cookie on the callback response');
+    return match[1] as string;
+  }
+
   async function requestLinkAndExtractToken(env: Env): Promise<string> {
     const fetchSpy = mockResendSuccess();
     await worker.fetch(post('/auth/request-link', { email: 'person@example.com' }), env);
@@ -303,18 +312,26 @@ describe('GET /auth/callback', () => {
     expect(res.status).toBe(400);
   });
 
-  it('consumes a valid token and returns a page carrying a working session token', async () => {
+  it('consumes a valid token, sets an HttpOnly session cookie, and 303-redirects to the dashboard', async () => {
     const kv = fakeKV();
     const env = makeEnv(kv, await generatePrivateKeyB64());
     const rawToken = await requestLinkAndExtractToken(env);
 
     const res = await worker.fetch(new Request(`https://hosted.test/auth/callback?token=${rawToken}`), env);
-    expect(res.status).toBe(200);
-    const body = await res.text();
-    const tokenMatch = body.match(/>(amcps_[^<]+)</);
-    expect(tokenMatch).not.toBeNull();
-    const sessionToken = tokenMatch![1] as string;
+    // Since OAuth slice 3: no token page. The browser session is an HttpOnly
+    // cookie, and the callback redirects to the dashboard.
+    expect(res.status).toBe(303);
+    expect(res.headers.get('location')).toBe('/connect');
+    expect(res.headers.get('cache-control')).toBe('no-store');
+    const setCookie = res.headers.get('set-cookie') ?? '';
+    expect(setCookie).toMatch(/^hosted_session=amcps_[^;]+;/);
+    expect(setCookie).toContain('HttpOnly');
+    expect(setCookie).toContain('Secure');
+    expect(setCookie).toContain('SameSite=Strict');
+    // The token is never in the response body.
+    expect(await res.text()).toBe('');
 
+    const sessionToken = sessionTokenFromSetCookie(res);
     const verifyRes = await worker.fetch(post('/auth/session/verify', { token: sessionToken }), env);
     expect(verifyRes.status).toBe(200);
     const verified = (await verifyRes.json()) as { userId: string; exp: number };
@@ -328,7 +345,7 @@ describe('GET /auth/callback', () => {
     const rawToken = await requestLinkAndExtractToken(env);
 
     const first = await worker.fetch(new Request(`https://hosted.test/auth/callback?token=${rawToken}`), env);
-    expect(first.status).toBe(200);
+    expect(first.status).toBe(303);
 
     const second = await worker.fetch(new Request(`https://hosted.test/auth/callback?token=${rawToken}`), env);
     expect(second.status).toBe(400);
@@ -344,7 +361,7 @@ describe('GET /auth/callback', () => {
         new Request(`https://hosted.test/auth/callback?token=${rawToken}`),
         env,
       );
-      const sessionToken = ((await callbackRes.text()).match(/>(amcps_[^<]+)</) as RegExpMatchArray)[1];
+      const sessionToken = sessionTokenFromSetCookie(callbackRes);
       const verifyRes = await worker.fetch(post('/auth/session/verify', { token: sessionToken }), env);
       return ((await verifyRes.json()) as { userId: string }).userId;
     }

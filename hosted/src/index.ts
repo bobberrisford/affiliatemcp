@@ -34,11 +34,15 @@
  *                              the pending-link record carries an
  *                              `authRequestId` — renders the consent page,
  *                              `renderConsentPage`, `src/routes/oauth.ts`) OR,
- *                              for a plain sign-in, returns a minimal HTML page
- *                              carrying a 30-day session token for the browser
- *                              connect/manage dashboard. See the file-header
- *                              note in `renderSessionPage` for why that page is
- *                              no longer the primary MCP-client credential.
+ *                              for a plain sign-in, sets an HttpOnly session
+ *                              cookie (`setSessionCookieHeader`, `src/http.ts`)
+ *                              and 303-redirects to the browser connect/manage
+ *                              dashboard (`/connect`). No token is shown for the
+ *                              user to copy: MCP clients authenticate via OAuth
+ *                              (`Add custom connector`), and the dashboard reads
+ *                              its session from the cookie
+ *                              (`docs/decisions/2026-07-15-hosted-connector-oauth.md`,
+ *                              slice 3).
  *   POST /auth/session/verify { token } → the primitive H4's transport calls:
  *                              validates a session token and returns
  *                              { userId, exp, iss, scope }. `iss` lets the
@@ -73,11 +77,15 @@
  *
  * H5 (`docs/product/hosted-mvp-workstream.md`, `src/routes/connect.ts`) adds
  * the guided connect flow — server-rendered HTML, session-gated, no client
- * framework. The session token travels in the Authorization header or a POST
- * body field, never in a URL (RFC 6750 §2.3; see the connect.ts file header),
- * so in-flow navigation is POST forms, and each page also has a
- * header-authenticated GET variant:
+ * framework. The browser authenticates via the HttpOnly `hosted_session`
+ * cookie set at the plain sign-in callback (slice 3,
+ * `docs/decisions/2026-07-15-hosted-connector-oauth.md`; see the connect.ts
+ * file header). In-flow navigation is same-site POST forms the cookie
+ * accompanies, and each page also has a header-authenticated GET variant for
+ * non-browser callers:
  *   GET|POST /connect                    list the four networks + status
+ *   POST /connect/signin                 send a magic link to sign into the
+ *                              dashboard (sets the cookie on the callback)
  *   POST /connect/:network/form          guided credential form (POST-nav)
  *   GET  /connect/:network               same form, Authorization header only
  *   POST /connect/:network               store, then connection-test, one network
@@ -135,7 +143,7 @@
  */
 
 import type { Env } from './env.js';
-import { corsHeaders, html, json, nowSeconds } from './http.js';
+import { corsHeaders, html, json, nowSeconds, setSessionCookieHeader } from './http.js';
 import { hashLinkToken, isValidEmail, normaliseEmail } from './identity.js';
 import {
   dispatchMagicLink,
@@ -159,6 +167,7 @@ import {
   handleConnectForm,
   handleConnectList,
   handleConnectRetest,
+  handleConnectSignin,
   handleConnectSubmit,
 } from './routes/connect.js';
 import {
@@ -291,65 +300,27 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
     return renderConsentPage(env, pending.authRequestId, userId);
   }
 
+  // Plain sign-in (no OAuth authorization in flight): establish the BROWSER
+  // dashboard session as an HttpOnly cookie and redirect to the dashboard.
+  // Since the accepted decision
+  // (`docs/decisions/2026-07-15-hosted-connector-oauth.md`), no token is ever
+  // shown for the user to copy: MCP clients connect via OAuth ("Add custom
+  // connector"), and the connect/manage dashboard (H5, `src/routes/connect.ts`)
+  // reads the session from this cookie. The token therefore never appears in
+  // the response body — only in a `Set-Cookie` the browser stores and the page
+  // scripts cannot read.
   const iss = nowSeconds();
   const exp = iss + SESSION_TOKEN_TTL_SECONDS;
   const token = await signSession(buildSessionPayload({ sub: userId, iss, exp }), env.SESSION_SIGNING_KEY);
 
-  return renderSessionPage(token, exp);
-}
-
-/**
- * The plain sign-in landing page, shown when a magic link was NOT started from
- * an OAuth authorization request (`handleCallback` above resumes those into
- * the consent page instead).
- *
- * Since the accepted decision
- * (`docs/decisions/2026-07-15-hosted-connector-oauth.md`), this page is NO
- * LONGER the primary "here is a token, paste it into your MCP client" surface.
- * MCP clients now connect via OAuth ("Add custom connector"), where the client
- * performs the code exchange and the user pastes nothing. The token is still
- * rendered here because the browser-based connect/manage flow (H5,
- * `src/routes/connect.ts`) reads and writes credentials with it via the
- * hidden-field POST pattern, and that flow's own rewrite to a client-native
- * affordance is a later slice (slice 3; see `hosted/README.md`, "OAuth
- * (slice 1)"). So the wording now frames this token as the key to the browser
- * connect/manage dashboard, not as the way an MCP client authenticates.
- *
- * Delivery is a copyable HTML page rather than a `Set-Cookie`: it sidesteps
- * `Set-Cookie` attribute decisions (Domain, Secure, SameSite, partitioning)
- * for no benefit here, since nothing in this flow relies on a browser
- * automatically re-presenting a cookie, and it stays trivial to unit-test
- * (assert the body contains the token, no cookie-jar parsing).
- */
-function renderSessionPage(token: string, exp: number): Response {
-  const expIso = new Date(exp * 1000).toISOString();
-  return html(`<!doctype html><html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>signed in</title>
-<style>
-  body { font-family:'JetBrains Mono',ui-monospace,Menlo,monospace; background:#fff; color:#0a0a0a;
-         margin:0; padding:40px 20px; display:flex; justify-content:center; }
-  .card { width:100%; max-width:640px; border:2px solid #0a0a0a; padding:28px; box-shadow:6px 6px 0 #0a0a0a; }
-  h1 { font-size:22px; font-weight:700; margin:0 0 4px; text-transform:lowercase; }
-  p { font-size:14px; line-height:1.55; }
-  .muted { color:#555; font-size:12px; }
-  .note { border:1px dashed #0a0a0a; padding:10px; font-size:12px; margin:14px 0; }
-  textarea { width:100%; box-sizing:border-box; font-family:inherit; font-size:12px; padding:10px;
-             border:1px solid #0a0a0a; margin:12px 0; }
-  button { font-family:inherit; font-size:13px; padding:8px 14px; border:2px solid #0a0a0a; background:#fff;
-           cursor:pointer; }
-</style></head>
-<body><div class="card">
-  <h1>you're signed in</h1>
-  <div class="note">Connecting an MCP client (Claude, ChatGPT)? You do not need
-  this token. Add affiliate-mcp as a custom connector in your client and it
-  will sign you in through your browser automatically &mdash; nothing to copy.</div>
-  <p>This token unlocks the browser dashboard for connecting and managing your
-  networks. Paste it there if the dashboard asks for it.</p>
-  <textarea id="hosted-session-token" readonly rows="4">${token}</textarea>
-  <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('hosted-session-token').value)">copy token</button>
-  <p class="muted">Expires ${expIso}. Do not share this token; anyone holding it can act as your account.</p>
-</div></body></html>`);
+  return new Response(null, {
+    status: 303,
+    headers: {
+      location: '/connect',
+      'set-cookie': setSessionCookieHeader(token, SESSION_TOKEN_TTL_SECONDS),
+      'cache-control': 'no-store',
+    },
+  });
 }
 
 function renderErrorPage(message: string): Response {
@@ -470,13 +441,22 @@ export default {
 
     // ── H5: guided connect flow (src/routes/connect.ts) ────────────────────
     // Server-rendered HTML, session-gated via a browser-flavoured check: the
-    // session token arrives in the Authorization header or a POST body field,
-    // NEVER a URL — see the file-header comment in src/routes/connect.ts for
-    // the RFC 6750 §2.3 reasoning, and why in-flow navigation is POST forms.
-    // Route order matters: the `/form` and `/retest` suffixes must be matched
+    // session arrives in the HttpOnly `hosted_session` cookie (or, for
+    // non-browser callers, the Authorization header), NEVER a URL — see the
+    // file-header comment in src/routes/connect.ts for the cookie/CSRF model,
+    // and why in-flow navigation is same-site POST forms.
+    // Route order matters: `/signin`, `/form`, and `/retest` must be matched
     // before the bare `/:network` routes.
     if (url.pathname === '/connect' && (request.method === 'GET' || request.method === 'POST')) {
       return handleConnectList(request, env);
+    }
+    // Dashboard email sign-in: sends the same magic link as the plain
+    // /auth/request-link flow (no authRequestId), so the returning cookie
+    // callback lands the user back on the dashboard. Matched BEFORE the
+    // generic /connect/:network POST so "signin" is not treated as a network
+    // slug, exactly like the /connect/billing special-casing below.
+    if (url.pathname === '/connect/signin' && request.method === 'POST') {
+      return handleConnectSignin(request, env);
     }
     // Billing/account page: an exact-path match, checked BEFORE the generic
     // /connect/:network patterns below, since "billing" is not one of the
