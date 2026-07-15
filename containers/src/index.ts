@@ -111,6 +111,47 @@ const TRANSPORT_SINGLETON_NAME = 'mcp-transport-singleton';
 const DIGEST_SINGLETON_NAME = 'digest-compose-singleton';
 
 /**
+ * The container port only accepts plain-HTTP request URLs — the runtime
+ * rejects `https:` URLs with "Connecting to a container using HTTPS is not
+ * currently supported" (observed at first deploy, 2026-07-15). The hop is
+ * Worker-to-container inside Cloudflare's network, so TLS on this leg adds
+ * nothing; rewrite the scheme before proxying.
+ */
+function toContainerRequest(request: Request): Request {
+  const url = new URL(request.url);
+  url.protocol = 'http:';
+  return new Request(url, request);
+}
+
+/**
+ * `container.start()` returns before the Node process inside is listening,
+ * and `getTcpPort().fetch()` throws "The container is not listening in the
+ * TCP address …" until it is (observed at first deploy, 2026-07-15: every
+ * cold-start request failed, which broke the digest cron's single,
+ * deliberately-unretried compose call). Retry only that startup error, with
+ * a bounded deadline; every other error propagates immediately. The request
+ * is cloned per attempt because a consumed body cannot be resent.
+ */
+async function fetchWhenListening(
+  container: NonNullable<DurableObjectState['container']>,
+  port: number,
+  request: Request,
+): Promise<Response> {
+  const base = toContainerRequest(request);
+  const deadline = Date.now() + 60_000;
+  for (;;) {
+    try {
+      // Cast: Request's Cf generics don't unify with Fetcher's RequestInfo.
+      return await container.getTcpPort(port).fetch(base.clone() as unknown as RequestInfo);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (!/not listening/i.test(message) || Date.now() >= deadline) throw err;
+      await new Promise((resolve) => setTimeout(resolve, 1_000));
+    }
+  }
+}
+
+/**
  * Starts the container's process if it is not already running, passing the
  * env vars that service's own `env.ts` reads from `process.env`
  * (`src/hosted-transport/env.ts` or `src/hosted-digest/env.ts`).
@@ -139,7 +180,7 @@ export class McpTransportContainer extends DurableObject<Env> {
       HOSTED_VAULT_URL: this.env.HOSTED_WORKER_ORIGIN,
       HOSTED_TRANSPORT_PORT: String(TRANSPORT_PORT),
     });
-    return container.getTcpPort(TRANSPORT_PORT).fetch(request);
+    return fetchWhenListening(container, TRANSPORT_PORT, request);
   }
 }
 
@@ -156,7 +197,7 @@ export class DigestComposeContainer extends DurableObject<Env> {
       DIGEST_SERVICE_PORT: String(DIGEST_PORT),
       ...(this.env.DIGEST_COMPOSE_SECRET ? { DIGEST_COMPOSE_SECRET: this.env.DIGEST_COMPOSE_SECRET } : {}),
     });
-    return container.getTcpPort(DIGEST_PORT).fetch(request);
+    return fetchWhenListening(container, DIGEST_PORT, request);
   }
 }
 

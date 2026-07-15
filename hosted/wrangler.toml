@@ -91,6 +91,11 @@ BILLING_PORTAL_RETURN_URL = "REPLACE_WITH_PUBLIC_BASE_URL/connect/billing"
 # Base URL of the Node digest-compose service (src/hosted-digest/ in the root
 # workspace). Leave unset until that service is deployed — the cron trigger
 # above no-ops safely while this is empty (see hosted/src/digest.ts).
+# When the service is fronted by the containers Worker in the same Cloudflare
+# account, this MUST be a custom domain attached to that Worker, not its
+# workers.dev URL: a Worker cannot fetch another Worker's workers.dev origin
+# in the same account (Cloudflare serves a 404, observed 2026-07-15; see
+# containers/wrangler.toml, "Deploy gotchas").
 # DIGEST_SERVICE_URL = "https://REPLACE_WITH_DIGEST_SERVICE_ORIGIN"
 
 # ── Secrets — set via `wrangler secret put <NAME>` (NEVER commit) ──────────

@@ -102,11 +102,29 @@ HOSTED_WORKER_ORIGIN = "REPLACE_WITH_HOSTED_WORKER_ORIGIN"
 #                          hosted/README.md, "Digest orchestration and token
 #                          scopes" for why leaking it grants no data access.
 
+# ── Deploy gotchas (observed at the first real deploy, 2026-07-15) ──────────
+# - `wrangler deploy` for a Worker with [[containers]] validates the scopes of
+#   a CACHED OAuth session (`~/Library/Preferences/.wrangler/config/default.toml`
+#   on macOS) even when CLOUDFLARE_API_TOKEN is set, and fails if that stale
+#   session lacks container scopes. Workaround: move that file aside for the
+#   duration of the deploy so wrangler authenticates with the token alone.
+# - The API token needs BOTH `Account → Containers → Edit` AND
+#   `Account → Cloudchamber → Edit`. Containers alone is not enough; the
+#   image push path still authorises against the Cloudchamber scope.
+# - A Worker cannot fetch another Worker's workers.dev URL in the SAME
+#   account: Cloudflare serves a 404 rather than routing it. Any URL another
+#   Worker in this account calls on this Worker (hosted/wrangler.toml's
+#   DIGEST_SERVICE_URL in particular) must use a custom domain attached to
+#   this Worker, not its workers.dev origin. mcp.agenticaffiliate.ai is the
+#   custom domain currently attached for exactly this reason.
+
 # ── Once deployed ────────────────────────────────────────────────────────────
 # - Point MCP clients at this Worker's own origin + /mcp (see
 #   containers/src/index.ts for the exact route).
 # - Set hosted/wrangler.toml's DIGEST_SERVICE_URL to
 #   "https://<this-worker's-origin>/digest" (hosted/src/digest.ts appends
-#   "/compose" itself).
+#   "/compose" itself). That origin must be a custom domain attached to this
+#   Worker, not its workers.dev URL; see the same-account workers.dev gotcha
+#   above.
 # - See hosted/README.md, "Deploy on Cloudflare (all-in-one)" for the
 #   complete step list.
