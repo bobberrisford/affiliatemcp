@@ -30,16 +30,16 @@ const ENTITLEMENT_PRODUCT = 'desktop-premium';
 
 /**
  * Ed25519 PUBLIC key (SPKI DER, base64) that entitlement tokens are verified
- * against. This is a DEV key. Before first public release, regenerate the
- * production keypair (issuer `npm run gen-keypair`), set the PRIVATE half as the
- * issuer secret `LICENCE_SIGNING_KEY`, and swap this constant for the PUBLIC
- * half. Rotating after ship invalidates every issued entitlement.
+ * against. This is the PRODUCTION key (generated 2026-07-15; the PRIVATE half
+ * lives only as the deployed issuer Worker's `LICENCE_SIGNING_KEY` secret and
+ * is embedded nowhere in this repo). Rotating it invalidates every issued
+ * entitlement, so rotation needs a coordinated issuer + desktop release.
  */
 export const ENTITLEMENT_PUBLIC_KEY_SPKI_B64 =
-  'MCowBQYDK2VwAyEAlMzj1LfEHTkHYFzDzKz/MlAFaVsIF5OkvY5WHQqwizc=';
+  'MCowBQYDK2VwAyEAsJAOQEksis05sznKwqSX+PqKk50QlOYdFL4UK71F240=';
 
 /** Default issuer origin; overridable via AFFILIATE_MCP_ISSUER_URL. */
-const DEFAULT_ISSUER_URL = 'https://affiliate-mcp-issuer.robertberrisford.workers.dev';
+const DEFAULT_ISSUER_URL = 'https://billing.agenticaffiliate.ai';
 
 function issuerUrl(): string {
   const override = process.env['AFFILIATE_MCP_ISSUER_URL'];
@@ -167,11 +167,16 @@ export interface EntitlementStatus {
  * cached token has lapsed (offline too long, or subscription ended). `inactive`
  * when there is an account key but no usable token.
  */
-export async function entitlementStatus(now: number = Math.floor(Date.now() / 1000)): Promise<EntitlementStatus> {
+export async function entitlementStatus(
+  now: number = Math.floor(Date.now() / 1000),
+  // Injectable for tests only: the production private key is a Worker secret,
+  // so tests sign with an ephemeral pair and verify against its public half.
+  publicKeySpkiDerB64: string = ENTITLEMENT_PUBLIC_KEY_SPKI_B64,
+): Promise<EntitlementStatus> {
   const stored = readStored();
   if (!stored.accountKey) return { entitled: false, state: 'none', hasAccount: false };
   if (!stored.token) return { entitled: false, state: 'inactive', hasAccount: true };
-  const payload = await verifyEntitlementToken(stored.token);
+  const payload = await verifyEntitlementToken(stored.token, publicKeySpkiDerB64);
   if (!payload) return { entitled: false, state: 'inactive', hasAccount: true };
   if (now < payload.exp) return { entitled: true, state: 'active', exp: payload.exp, hasAccount: true };
   return { entitled: false, state: 'expired', exp: payload.exp, hasAccount: true };
