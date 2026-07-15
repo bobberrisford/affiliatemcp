@@ -6,6 +6,7 @@
  */
 
 import type { Env } from './env.js';
+import { publicBaseUrl } from './env.js';
 
 const DEFAULT_SITE_ORIGIN = 'https://agenticaffiliate.ai';
 
@@ -67,4 +68,77 @@ export function bearerToken(request: Request): string | null {
   if (!header || !header.startsWith('Bearer ')) return null;
   const token = header.slice('Bearer '.length).trim();
   return token.length > 0 ? token : null;
+}
+
+// ── Browser dashboard session cookie (OAuth slice 3) ────────────────────────
+// The connect/manage dashboard (`src/routes/connect.ts`,
+// `src/routes/billing-page.ts`) authenticates the BROWSER via an HttpOnly
+// cookie, set once at the magic-link callback and re-presented automatically
+// by the browser on every same-site dashboard navigation. This is deliberately
+// distinct from the API routes (`/vault/*`, `/account`, `/billing/*`, and
+// `/auth/session/verify`), which keep their `Authorization: Bearer` auth
+// (`src/routes/guard.ts`) because a non-browser MCP client and the transport
+// present the token in a header, never a cookie. See
+// `docs/decisions/2026-07-15-hosted-connector-oauth.md`.
+export const SESSION_COOKIE_NAME = 'hosted_session';
+
+/**
+ * Build the `Set-Cookie` value that establishes the browser dashboard session.
+ * `HttpOnly` keeps the token out of page scripts, `Secure` keeps it off plain
+ * HTTP, and `SameSite=Strict` is correct here: the magic-link arrival is a
+ * top-level navigation that SETS the cookie, and every subsequent dashboard
+ * action is a same-site POST form that a Strict cookie still accompanies.
+ */
+export function setSessionCookieHeader(token: string, maxAgeSeconds: number): string {
+  return `${SESSION_COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${maxAgeSeconds}`;
+}
+
+/** Build the `Set-Cookie` value that clears the browser dashboard session
+ * (sign-out): the same attributes as `setSessionCookieHeader` with `Max-Age=0`,
+ * so a browser drops it immediately. */
+export function clearSessionCookieHeader(): string {
+  return `${SESSION_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`;
+}
+
+/** Read the `hosted_session` cookie value from the request's `Cookie` header,
+ * or `null`. Parses defensively: splits on `;`, trims each pair, and matches
+ * the exact cookie name, ignoring any other cookies present. */
+export function cookieToken(request: Request): string | null {
+  const header = request.headers.get('cookie');
+  if (!header) return null;
+  for (const part of header.split(';')) {
+    const trimmed = part.trim();
+    const eq = trimmed.indexOf('=');
+    if (eq === -1) continue;
+    if (trimmed.slice(0, eq).trim() !== SESSION_COOKIE_NAME) continue;
+    const value = trimmed.slice(eq + 1).trim();
+    return value.length > 0 ? value : null;
+  }
+  return null;
+}
+
+/**
+ * Same-origin check for a state-changing dashboard POST (CSRF defence in depth
+ * on top of `SameSite=Strict`). Returns true only when the request's `Origin`
+ * header (or, when `Origin` is absent, the `Referer`) has the same origin as
+ * the Worker's configured `PUBLIC_BASE_URL`. Fails closed: if both headers are
+ * absent, or `PUBLIC_BASE_URL` is unusable, or `Referer` will not parse, it
+ * returns false rather than assume the request is trustworthy.
+ */
+export function sameOriginPost(request: Request, env: Env): boolean {
+  let expected: string;
+  try {
+    expected = publicBaseUrl(env);
+  } catch {
+    return false;
+  }
+  const origin = request.headers.get('origin');
+  if (origin) return origin === expected;
+  const referer = request.headers.get('referer');
+  if (!referer) return false;
+  try {
+    return new URL(referer).origin === expected;
+  } catch {
+    return false;
+  }
 }

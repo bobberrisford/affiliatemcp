@@ -49,9 +49,12 @@ directly, and why the waitlist Worker's Resend pattern is reused here).
    every caller and every address, so it carries no enumeration signal.
 2. **`GET /auth/callback?token=…`** → verifies and consumes the sign-in token
    (its KV record is deleted before anything else happens, enforcing
-   single-use), creates the user record on first sign-in, and returns a
-   minimal HTML page containing a freshly-issued 30-day session token. See
-   "Callback delivery: page vs cookie" below.
+   single-use), creates the user record on first sign-in, and — for a plain
+   sign-in — sets a freshly-issued session token as an HttpOnly cookie and
+   303-redirects to the browser dashboard (`/connect`). No token is shown for
+   the user to copy. (When the sign-in was started from an OAuth authorization,
+   it resumes into the consent page instead; see "OAuth (slice 1)" below.) See
+   "Callback delivery: HttpOnly cookie" below.
 3. **`POST /auth/session/verify`** `{ token }` → `{ userId, exp }` on success,
    `401 { error }` otherwise. This is the primitive H4's remote MCP transport
    will call to authenticate a request.
@@ -89,23 +92,37 @@ address and burning Resend quota, not the product's rate-limiting story.
 H4's transport-level per-user rate limits supersede this backstop for
 everything behind a session.
 
-### Callback delivery: page vs cookie
+### Callback delivery: HttpOnly cookie
 
-The workstream brief allowed either a copyable HTML page or a `Set-Cookie`
-for handing back the session token, whichever was simpler and more testable.
-This Worker uses a copyable page:
+The plain sign-in callback establishes the browser dashboard session as an
+HttpOnly cookie and 303-redirects to `/connect`. It does not render a token for
+the user to copy. This is the slice-3 model
+(`docs/decisions/2026-07-15-hosted-connector-oauth.md`): MCP clients no longer
+authenticate with a pasted token — they use OAuth ("Add custom connector"),
+where the client performs the code exchange — so the only remaining consumer of
+this session is the browser dashboard itself, and a cookie is the right shape
+for a browser.
 
-- The session token is a bearer credential for H4's remote MCP transport — an
-  MCP client (not this browser tab) presents it on every call — so a value
-  the user can copy into that client's settings is directly useful. A cookie
-  scoped to this Worker's origin would never reach a non-browser MCP client,
-  so the user would still need a "now copy this" step regardless.
-- It avoids `Set-Cookie` attribute decisions (`Domain`, `Secure`, `SameSite`,
-  partitioning) that matter for a real browser-session deploy but add
-  surface-area risk for no benefit here, since nothing in this flow relies on
-  a browser automatically re-presenting the cookie.
-- It is trivial to unit-test: assert the response body contains the token,
-  with no cookie-jar or attribute parsing involved.
+- The cookie is `hosted_session=<token>; HttpOnly; Secure; SameSite=Strict;
+  Path=/; Max-Age=<30 days>` (`setSessionCookieHeader`, `src/http.ts`).
+  `HttpOnly` keeps it out of page scripts, `Secure` keeps it off plain HTTP,
+  and `SameSite=Strict` is correct here: the magic-link arrival is a top-level
+  navigation that SETS the cookie, and every subsequent dashboard action is a
+  same-site POST form that a Strict cookie still accompanies.
+- CSRF: `SameSite=Strict` already blocks a cross-site page from attaching the
+  cookie to a forged navigation. As defence in depth, the state-changing POSTs
+  (the connect credential store and the two billing actions) additionally
+  require a same-origin `Origin`/`Referer` (`sameOriginPost`, `src/http.ts`)
+  and return a 403 page otherwise. Idempotent navigation POSTs (the list, the
+  form, retest) do not carry the check.
+- The token is never rendered into a page, a URL, or a form body — the browser
+  holds it in the cookie and re-presents it automatically. `src/index.ts`'s
+  earlier `renderSessionPage` (a copyable token box) is removed.
+- Distinct from the API-route auth, which is unchanged: `/vault/*`, `/account`,
+  `/billing/*`, and `/auth/session/verify` keep their `Authorization: Bearer`
+  auth (`requireSession`/`requireFullSession`, `src/routes/guard.ts`), because a
+  non-browser MCP client and the transport present the token in a header, never
+  a cookie.
 
 ### Email-key hashing trade-off
 
@@ -239,13 +256,13 @@ in `HOSTED_USERS`, never credentials.
 ### Staged migration (this is a live surface)
 
 Tokens are already in the wild, so the swap is staged, not a hard cutover.
-**This slice (slice 1) does only the authorization-server half:** it adds the
-endpoints above and makes the OAuth flow the primary path, and the plain
-sign-in callback page (`renderSessionPage`, `src/index.ts`) is reworded so it
-is no longer the primary "paste this into your MCP client" surface. Bearer
-**acceptance is intentionally unchanged** in this slice — existing `amcps_`
-bearers keep working, and the browser connect/manage flow still uses a pasted
-session token — so nothing already connected breaks.
+**Slice 1 did only the authorization-server half:** it added the endpoints
+above and made the OAuth flow the primary path, and reworded the plain sign-in
+callback page so it was no longer the primary "paste this into your MCP client"
+surface. Bearer **acceptance was intentionally unchanged** in that slice —
+existing `amcps_` bearers kept working, and the browser connect/manage flow
+still used a pasted session token — so nothing already connected broke. (Slice 3
+below then removed the pasted-token surface entirely; see its bullet.)
 
 Slice progress:
 
@@ -270,10 +287,16 @@ Slice progress:
   Digest-scope refusal is preserved, and a token whose lifetime cannot be
   computed (no numeric `iss`) fails closed once the cap is set. Short-lived
   access tokens plus refresh are issued by slice 1's `/token` endpoint above.
-- **Slice 3 — connect-page rewrite.** The connect terminal step becomes a
-  client-native "add connector" affordance, and the pasted-token affordance on
-  `renderSessionPage` and the H5 connect pages is removed once those pages no
-  longer need a pasted session token.
+- **Slice 3 — connect-page rewrite (implemented).** The pasted-token affordance
+  is gone: `renderSessionPage` is removed, the plain sign-in callback sets an
+  HttpOnly `hosted_session` cookie and redirects to the dashboard, and the
+  browser connect/manage pages (`src/routes/connect.ts`,
+  `src/routes/billing-page.ts`) authenticate from that cookie rather than a
+  hidden-field POST token. The connect terminal step is now a client-native
+  "add connector" affordance (OAuth, nothing to paste). State-changing POSTs
+  carry a same-origin CSRF check on top of `SameSite=Strict`. See "Callback
+  delivery: HttpOnly cookie" and "Session gating on plain HTML pages" above.
+  The API routes' bearer auth and the OAuth ceremony are unchanged.
 
 ## KV storage shapes (H2: `HOSTED_USERS`)
 
@@ -563,54 +586,55 @@ in the root workspace), entered by paste exactly like the other three
 networks' credentials. So this flow is "guided paste-once" for all four, not
 an OAuth redirect for any of them.
 
-### Session gating on plain HTML pages: token in header or POST body, never a URL
+### Session gating on plain HTML pages: HttpOnly cookie, never a URL, body, or page
 
-Every route above requires the same valid session `requireSession`
-(`src/routes/guard.ts`) checks for the H3 vault routes, verified with the
+Every route above requires the same valid, full-scope session the H3 vault
+routes require (`requireFullSession`, `src/routes/guard.ts`), verified with the
 identical primitive, `resolveValidSession` (`src/token.ts`). What differs is
-transport, not trust: these are pages a browser navigates to directly, so a
-custom `Authorization` header is not available without client-side
-JavaScript, which this flow deliberately avoids.
+transport, not trust: these are pages a browser navigates to directly.
 
-The hosted session token is a 30-day full-account bearer credential — it can
-call the vault reveal route and `DELETE /account` — so it must never appear
-in a URL (RFC 6750 section 2.3): request URLs land verbatim in Cloudflare
-request logs (`wrangler tail`, Logpush), browser history, and bookmarks, and
-URLs leak outbound via the Referer header. `resolveBrowserSession`
-(`src/routes/connect.ts`) therefore accepts the token from exactly two
-places: the `Authorization: Bearer` header (parity with every API route) or
-a hidden `token` field in a POST body. There is deliberately no
-query-parameter fallback, and `test/connect-routes.test.ts` asserts that a
-valid token in a query string is rejected on every connect route.
+The browser dashboard authenticates via the HttpOnly `hosted_session` cookie
+set at the plain sign-in callback (slice 3,
+`docs/decisions/2026-07-15-hosted-connector-oauth.md`; "Callback delivery:
+HttpOnly cookie" above). `resolveBrowserSession` (`src/routes/connect.ts`) reads
+the token from the cookie first, then falls back to an `Authorization: Bearer`
+header for the header-authenticated GET variants and any non-browser caller.
+The token is never rendered into a page, a URL, or a form body — the browser
+re-presents the cookie automatically on every same-site navigation. There is
+deliberately no query-parameter fallback (RFC 6750 §2.3: request URLs land
+verbatim in Cloudflare request logs, browser history, and bookmarks, and leak
+outbound via the Referer header), and `test/connect-routes.test.ts` asserts
+that a valid token in a query string is rejected on every connect route, and
+that neither the token nor the cookie value ever appears in a rendered page.
 
-Because a plain HTML page cannot attach a header to a link without
-JavaScript, every navigation between these pages — back-links,
-connect/manage, retest — is rendered as a small inline POST form carrying
-the hidden token field, never a GET link with the token in it, and no form
-`action` URL ever carries the token. As defence in depth, every page in this
-flow is served with `Referrer-Policy: no-referrer` on top of the Worker-wide
-`cache-control: no-store`, so even this flow's token-free URLs leak nothing
-outbound through the external documentation links these pages contain. The
-GET variants of the list/form/retest routes exist only for callers that can
-send an Authorization header; a browser without one simply sees the sign-in
-prompt.
+Navigation between these pages is a small inline POST form the cookie
+accompanies (`SameSite=Strict` attaches it on same-site navigations only). As
+defence in depth, every page is served `Referrer-Policy: no-referrer` on top of
+the Worker-wide `cache-control: no-store`, so its token-free URLs leak nothing
+outbound through the external documentation links these pages contain. The GET
+variants of the list/form/retest routes exist only for callers that can send an
+Authorization header; a browser without a cookie simply sees the sign-in prompt.
 
-An unauthenticated visitor sees a sign-in prompt page — an explanation, a
-link to the front-end sign-in origin (`SITE_ORIGIN`), and a plain
-`<form method="post">` to paste in a session token obtained from the H2
-callback page — rather than `requireSession`'s JSON 401, which would be
-meaningless to a human in a browser tab.
+CSRF: `SameSite=Strict` already blocks a cross-site page from attaching the
+cookie to a forged navigation. The state-changing POSTs — `POST /connect/:network`
+(stores a credential) and the two billing action POSTs
+(`src/routes/billing-page.ts`) — additionally require a same-origin
+`Origin`/`Referer` (`sameOriginPost`, `src/http.ts`) and return a 403 page
+otherwise. Idempotent navigation POSTs (the list, the credential form, retest)
+do not carry the check. `test/connect-routes.test.ts` and
+`test/billing-page.test.ts` assert a cross-site `Origin` is rejected with a 403.
 
-A cookie-based alternative (`Secure`/`HttpOnly`/`SameSite=Strict`, set once
-after a single POST of the token) was considered and not chosen for this
-slice: it would add a second session-transport mechanism to reason about
-(cookie attributes, CSRF posture for the credential-submitting POST, and a
-divergence from H2's deliberate no-cookie decision, "Callback delivery: page
-vs cookie" above) for no reduction in the number of times the user pastes
-the token. The hidden-field POST flow keeps exactly one bearer semantics
-across the whole Worker. If the connect surface grows beyond this flow, a
-cookie session is the right upgrade path and should be its own reviewed
-change.
+An unauthenticated visitor sees a sign-in prompt page — an explanation and a
+single email field that requests a magic sign-in link (`POST /connect/signin`) —
+rather than `requireSession`'s JSON 401, which would be meaningless to a human
+in a browser tab. Following the emailed link sets the cookie and lands them back
+on the dashboard; there is nothing to paste. This replaces the earlier
+hidden-field POST design, which the connect flow itself flagged as the reviewed
+interim to a cookie session; slice 3 is that upgrade. Distinct from the API-route
+auth, which is unchanged: `/vault/*`, `/account`, `/billing/*`, and
+`/auth/session/verify` keep their `Authorization: Bearer` auth, because a
+non-browser MCP client and the transport present the token in a header, never a
+cookie.
 
 ### Sequential store per user (the H3 data-key race, enforced by construction)
 
@@ -893,11 +917,13 @@ The page reads the caller's tier and status from the existing
 - **Tier Pro:** a "Manage subscription" button only (nothing higher to
   subscribe to).
 
-Each button is a small inline POST form carrying the hidden session token,
-identical in shape to every other navigation form in this connect flow (see
-"Session gating on plain HTML pages" above); the subscribe/upgrade buttons
-also carry a hidden `tier` field. Two further POST-only routes do the actual
-work:
+Each button is a small inline POST form the browser session cookie
+accompanies, identical in shape to every other navigation form in this connect
+flow (see "Session gating on plain HTML pages" above); the subscribe/upgrade
+buttons also carry a hidden `tier` field. The two state-changing routes below
+additionally require a same-origin request (`sameOriginPost`, `src/http.ts`)
+as a CSRF check on top of the cookie's `SameSite=Strict`, returning a 403 page
+otherwise. Two further POST-only routes do the actual work:
 
 - **`POST /connect/billing/checkout`** resolves the browser's session, then
   calls `handleBillingCheckout` (`src/routes/billing.ts`) directly, in
@@ -922,16 +948,16 @@ work:
 `wrangler.toml`) should all point back at this Worker's own billing page:
 `${PUBLIC_BASE_URL}/connect/billing`, with `?checkout=success` or
 `?checkout=cancelled` on the Checkout redirects (a plain, non-sensitive
-status flag, never a token). Stripe's redirect is a plain browser GET with no
-mechanism to carry our bearer session token, and it must never be asked to
-try. That landing hit therefore always arrives signed out. The billing page
-does not invent a session, silently poll Stripe, or fabricate a "you're
-subscribed" result on that hit: with no valid session it shows the ordinary
-sign-in prompt, with one added, honest line describing what the `checkout`
-flag claims happened ("Stripe reports checkout is complete. Sign back in
-above..." or "Checkout was cancelled. Nothing was charged."). Once the caller
-pastes their session token back in, `GET /billing/entitlement` (read
-in-process on the billing page too) is the only source of truth for what
+status flag, never a token). Stripe's redirect is a cross-site top-level
+navigation, and the `SameSite=Strict` session cookie is deliberately not sent
+on one, so that landing hit arrives signed out. The billing page does not
+invent a session, silently poll Stripe, or fabricate a "you're subscribed"
+result on that hit: with no valid session it shows the ordinary sign-in prompt,
+with one added, honest line describing what the `checkout` flag claims happened
+("Stripe reports checkout is complete. Sign back in above..." or "Checkout was
+cancelled. Nothing was charged."). Once the caller is back on the dashboard (a
+later same-site navigation re-presents the cookie), `GET /billing/entitlement`
+(read in-process on the billing page too) is the only source of truth for what
 actually happened, never the redirect itself.
 
 **Dashboard prerequisites** (Rob-only, one-time, per the deploy checklist

@@ -1,16 +1,18 @@
 /**
  * Route tests for the billing/account page (Stripe-wiring follow-up to H6:
  * `src/routes/billing-page.ts`), exercised through the same `worker.fetch`
- * entry point as `test/connect-routes.test.ts`. Covers: session gating
- * (sign-in prompt when signed out), the tier-none subscribe buttons, the
- * Solo upgrade-and-manage buttons, the Pro manage-only button, the
- * checkout/portal hand-off calling the existing `/billing/checkout` and
- * `/billing/portal` routes in-process with the right tier (Stripe mocked via
- * a spy on `fetch`), that no URL on the billing page ever carries the
- * session token (reusing the same assertion style as
- * `test/connect-routes.test.ts`), and the Stripe-return landing hit (no
- * session presented) showing the sign-in prompt with an honest status line,
- * never a fabricated result. KV is an in-memory fake; no live network calls.
+ * entry point as `test/connect-routes.test.ts`. Since OAuth slice 3 the browser
+ * authenticates via the HttpOnly `hosted_session` cookie, so these drive auth
+ * via a `Cookie` header, and the two state-changing POSTs (checkout, portal)
+ * carry the same-origin CSRF check. Covers: session gating (sign-in prompt when
+ * signed out), the tier-none subscribe buttons, the Solo upgrade-and-manage
+ * buttons, the Pro manage-only button, the checkout/portal hand-off calling the
+ * existing `/billing/checkout` and `/billing/portal` routes in-process with the
+ * right tier (Stripe mocked via a spy on `fetch`), the cross-site CSRF
+ * rejection, that no URL or page body ever carries the session token or the
+ * cookie value, and the Stripe-return landing hit (no session presented)
+ * showing the sign-in prompt with an honest status line, never a fabricated
+ * result. KV is an in-memory fake; no live network calls.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -81,33 +83,58 @@ async function makeTestEnv(): Promise<TestEnv> {
   return { env, billingKv, signingKey };
 }
 
+// The Worker's own origin — a same-origin POST for the CSRF check.
+const SAME_ORIGIN = 'https://hosted.test';
+
 async function issueSessionToken(signingKey: string, userId: string): Promise<string> {
   const iss = Math.floor(Date.now() / 1000);
   const exp = iss + 60 * 60 * 24 * 30;
   return signSession(buildSessionPayload({ sub: userId, iss, exp }), signingKey);
 }
 
+/** An unauthenticated GET (no cookie). */
 function get(path: string): Request {
   return new Request(`https://hosted.test${path}`);
 }
 
+/** An unauthenticated POST form (no cookie). */
 function postForm(path: string, fields: Record<string, string>): Request {
-  const body = new URLSearchParams(fields).toString();
   return new Request(`https://hosted.test${path}`, {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body,
+    body: new URLSearchParams(fields).toString(),
   });
 }
 
-/** Same load-bearing URL-hygiene assertion as `test/connect-routes.test.ts`
- * (RFC 6750 §2.3): no URL anywhere in the rendered HTML may carry the
- * session token, and no `token=` query string may appear anywhere. */
-function expectNoTokenInAnyUrl(body: string, token: string): void {
+/** A GET carrying the browser session cookie. */
+function authedGet(path: string, token: string): Request {
+  return new Request(`https://hosted.test${path}`, { headers: { cookie: `hosted_session=${token}` } });
+}
+
+/** A POST form carrying the browser session cookie; `origin` drives the CSRF
+ * same-origin check on the state-changing billing POSTs. */
+function authedPost(path: string, fields: Record<string, string>, token: string, origin?: string): Request {
+  const headers: Record<string, string> = {
+    'content-type': 'application/x-www-form-urlencoded',
+    cookie: `hosted_session=${token}`,
+  };
+  if (origin !== undefined) headers.origin = origin;
+  return new Request(`https://hosted.test${path}`, {
+    method: 'POST',
+    headers,
+    body: new URLSearchParams(fields).toString(),
+  });
+}
+
+/** Since slice 3 the session token lives in an HttpOnly cookie and is never
+ * rendered: it must not appear in any URL, any `token=` query string, anywhere
+ * in the page body, and the cookie name must not leak into the HTML. */
+function expectNoTokenLeak(body: string, token: string): void {
   expect(body).not.toMatch(/href="[^"]*amcps_[^"]*"/);
   expect(body).not.toMatch(/action="[^"]*amcps_[^"]*"/);
   expect(body).not.toContain('?token=');
-  expect(body).not.toContain(`token=${token}`);
+  expect(body).not.toContain(token);
+  expect(body).not.toContain('hosted_session');
 }
 
 afterEach(() => {
@@ -131,13 +158,13 @@ describe('GET|POST /connect/billing: session gating', () => {
     expect(body).not.toContain('network not found');
   });
 
-  it('a valid token via the POST body is accepted and renders the billing page', async () => {
+  it('a valid token via the cookie is accepted and renders the billing page', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
-    const res = await worker.fetch(postForm('/connect/billing', { token }), env);
+    const res = await worker.fetch(authedGet('/connect/billing', token), env);
     const body = await res.text();
     expect(body).toContain('<h1>billing</h1>');
-    expectNoTokenInAnyUrl(body, token);
+    expectNoTokenLeak(body, token);
   });
 
   it('a valid token via the Authorization header is accepted on the GET variant', async () => {
@@ -153,7 +180,7 @@ describe('GET|POST /connect/billing: session gating', () => {
   it('carries cache-control: no-store and referrer-policy: no-referrer', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
-    const res = await worker.fetch(postForm('/connect/billing', { token }), env);
+    const res = await worker.fetch(authedGet('/connect/billing', token), env);
     expect(res.headers.get('cache-control')).toBe('no-store');
     expect(res.headers.get('referrer-policy')).toBe('no-referrer');
   });
@@ -164,13 +191,13 @@ describe('billing page: tier-dependent actions', () => {
   it('tier none renders both Subscribe Solo and Subscribe Pro buttons, and no manage button', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
-    const res = await worker.fetch(postForm('/connect/billing', { token }), env);
+    const res = await worker.fetch(authedGet('/connect/billing', token), env);
     const body = await res.text();
     expect(body).toContain('Subscribe Solo');
     expect(body).toContain('Subscribe Pro');
     expect(body).not.toContain('Manage subscription');
     expect(body).toContain('Current plan: <strong>none</strong>');
-    expectNoTokenInAnyUrl(body, token);
+    expectNoTokenLeak(body, token);
   });
 
   it('tier solo renders an Upgrade to Pro button and a Manage subscription button, no Subscribe buttons', async () => {
@@ -183,14 +210,14 @@ describe('billing page: tier-dependent actions', () => {
       updatedAt: 0,
     });
     const token = await issueSessionToken(signingKey, userId);
-    const res = await worker.fetch(postForm('/connect/billing', { token }), env);
+    const res = await worker.fetch(authedGet('/connect/billing', token), env);
     const body = await res.text();
     expect(body).toContain('Upgrade to Pro');
     expect(body).toContain('Manage subscription');
     expect(body).not.toContain('Subscribe Solo');
     expect(body).not.toContain('Subscribe Pro');
     expect(body).toContain('Current plan: <strong>Solo</strong>');
-    expectNoTokenInAnyUrl(body, token);
+    expectNoTokenLeak(body, token);
   });
 
   it('tier pro renders only a Manage subscription button', async () => {
@@ -203,14 +230,14 @@ describe('billing page: tier-dependent actions', () => {
       updatedAt: 0,
     });
     const token = await issueSessionToken(signingKey, userId);
-    const res = await worker.fetch(postForm('/connect/billing', { token }), env);
+    const res = await worker.fetch(authedGet('/connect/billing', token), env);
     const body = await res.text();
     expect(body).toContain('Manage subscription');
     expect(body).not.toContain('Subscribe Solo');
     expect(body).not.toContain('Subscribe Pro');
     expect(body).not.toContain('Upgrade to Pro');
     expect(body).toContain('Current plan: <strong>Pro</strong>');
-    expectNoTokenInAnyUrl(body, token);
+    expectNoTokenLeak(body, token);
   });
 });
 
@@ -224,6 +251,19 @@ describe('POST /connect/billing/checkout', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  it('rejects a cross-site Origin with a 403, calling Stripe nothing', async () => {
+    const { env, signingKey } = await makeTestEnv();
+    const token = await issueSessionToken(signingKey, generateUserId());
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const res = await worker.fetch(
+      authedPost('/connect/billing/checkout', { tier: 'pro' }, token, 'https://evil.example'),
+      env,
+    );
+    expect(res.status).toBe(403);
+    expect(await res.text()).toContain('could not be verified');
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
   it('calls the existing /billing/checkout logic with the submitted tier and redirects to the Stripe url', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
@@ -231,7 +271,10 @@ describe('POST /connect/billing/checkout', () => {
       new Response(JSON.stringify({ id: 'cs_1', url: 'https://checkout.stripe.com/pay/cs_1' }), { status: 200 }),
     );
 
-    const res = await worker.fetch(postForm('/connect/billing/checkout', { token, tier: 'pro' }), env);
+    const res = await worker.fetch(
+      authedPost('/connect/billing/checkout', { tier: 'pro' }, token, SAME_ORIGIN),
+      env,
+    );
 
     expect(res.status).toBe(303);
     expect(res.headers.get('location')).toBe('https://checkout.stripe.com/pay/cs_1');
@@ -248,11 +291,14 @@ describe('POST /connect/billing/checkout', () => {
     const badEnv: Env = { ...env, STRIPE_SECRET_KEY: undefined };
     const token = await issueSessionToken(signingKey, generateUserId());
 
-    const res = await worker.fetch(postForm('/connect/billing/checkout', { token, tier: 'solo' }), badEnv);
+    const res = await worker.fetch(
+      authedPost('/connect/billing/checkout', { tier: 'solo' }, token, SAME_ORIGIN),
+      badEnv,
+    );
     expect(res.status).toBe(200);
     const body = await res.text();
     expect(body).toContain('Could not start checkout with Stripe');
-    expectNoTokenInAnyUrl(body, token);
+    expectNoTokenLeak(body, token);
   });
 
   it('rejects a missing/invalid tier without contacting Stripe', async () => {
@@ -260,7 +306,10 @@ describe('POST /connect/billing/checkout', () => {
     const token = await issueSessionToken(signingKey, generateUserId());
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
-    const res = await worker.fetch(postForm('/connect/billing/checkout', { token, tier: 'ultra' }), env);
+    const res = await worker.fetch(
+      authedPost('/connect/billing/checkout', { tier: 'ultra' }, token, SAME_ORIGIN),
+      env,
+    );
     expect(await res.text()).toContain('Choose Solo or Pro');
     expect(fetchSpy).not.toHaveBeenCalled();
   });
@@ -273,6 +322,26 @@ describe('POST /connect/billing/portal', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
     const res = await worker.fetch(postForm('/connect/billing/portal', {}), env);
     expect(await res.text()).toContain('sign in required');
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('rejects a cross-site Origin with a 403, calling Stripe nothing', async () => {
+    const { env, billingKv, signingKey } = await makeTestEnv();
+    const userId = generateUserId();
+    await putSubscriptionRecord(billingKv, userId, {
+      tier: 'solo',
+      status: 'active',
+      customerId: 'cus_mine',
+      updatedAt: 0,
+    });
+    const token = await issueSessionToken(signingKey, userId);
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const res = await worker.fetch(
+      authedPost('/connect/billing/portal', {}, token, 'https://evil.example'),
+      env,
+    );
+    expect(res.status).toBe(403);
+    expect(await res.text()).toContain('could not be verified');
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -294,7 +363,7 @@ describe('POST /connect/billing/portal', () => {
         }),
       );
 
-    const res = await worker.fetch(postForm('/connect/billing/portal', { token }), env);
+    const res = await worker.fetch(authedPost('/connect/billing/portal', {}, token, SAME_ORIGIN), env);
 
     expect(res.status).toBe(303);
     expect(res.headers.get('location')).toBe('https://billing.stripe.com/session/bps_1');
@@ -307,11 +376,11 @@ describe('POST /connect/billing/portal', () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
 
-    const res = await worker.fetch(postForm('/connect/billing/portal', { token }), env);
+    const res = await worker.fetch(authedPost('/connect/billing/portal', {}, token, SAME_ORIGIN), env);
     expect(res.status).toBe(200);
     const body = await res.text();
     expect(body).toContain('Could not open the Stripe billing portal');
-    expectNoTokenInAnyUrl(body, token);
+    expectNoTokenLeak(body, token);
   });
 });
 

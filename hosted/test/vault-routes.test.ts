@@ -335,7 +335,11 @@ describe('DELETE /account — complete deletion', () => {
     const emailBody = JSON.parse(init.body as string) as { text: string };
     const rawToken = (emailBody.text.match(/token=([^\s]+)/) as RegExpMatchArray)[1] as string;
     const callbackRes = await worker.fetch(new Request(`https://hosted.test/auth/callback?token=${rawToken}`), env);
-    const sessionToken = ((await callbackRes.text()).match(/>(amcps_[^<]+)</) as RegExpMatchArray)[1] as string;
+    // Since OAuth slice 3 the plain sign-in callback delivers the session as an
+    // HttpOnly cookie and 303-redirects, rather than rendering the token.
+    const sessionToken = ((callbackRes.headers.get('set-cookie') ?? '').match(
+      /hosted_session=([^;]+)/,
+    ) as RegExpMatchArray)[1] as string;
     const verifyRes = await worker.fetch(
       new Request('https://hosted.test/auth/session/verify', {
         method: 'POST',

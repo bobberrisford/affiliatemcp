@@ -1,46 +1,55 @@
 /**
  * H5 guided connect flow (`docs/product/hosted-mvp-workstream.md`, slice H5):
- * server-rendered HTML pages, no client framework, no external resources,
- * matching the minimal style of the H2 callback page
- * (`renderSessionPage` in `../index.ts`).
+ * server-rendered HTML pages, no client framework, no external resources.
  *
- *   GET  /connect                          sign-in prompt, or (with an
- *                                          Authorization header) the network list
+ *   GET  /connect                          sign-in prompt, or (authenticated)
+ *                                          the network list
  *   POST /connect                          network list + connection status
+ *   POST /connect/signin                   email a magic sign-in link for the
+ *                                          dashboard (no token to paste)
  *   POST /connect/:network/form            guided credential form for one network
  *   GET  /connect/:network                 same form, Authorization-header callers only
  *   POST /connect/:network                 store the credential, then connection-test it
  *   POST /connect/:network/retest          re-run the connection test on the stored credential
  *   GET  /connect/:network/retest          same, Authorization-header callers only
  *
- * Session gating: every route above requires a valid hosted session, exactly
- * like every H3 vault route (`requireSession`, `../guard.js`), verified with
- * the identical primitive, `resolveValidSession` from `../token.js`. Nothing
- * about "what counts as a valid session" changes; only how the token arrives
- * does. An unauthenticated visitor sees a sign-in prompt page rather than
- * `requireSession`'s JSON 401, since a human browsing this page needs an
- * explanation and a way forward, not a JSON body.
+ * Session gating: every route above requires a valid, full-scope hosted
+ * session, exactly like every H3 vault route (`requireFullSession`,
+ * `../guard.js`), verified with the identical primitive, `resolveValidSession`
+ * from `../token.js`. Nothing about "what counts as a valid session" changes;
+ * only how the session arrives does. An unauthenticated visitor sees a sign-in
+ * prompt page rather than `requireSession`'s JSON 401, since a human browsing
+ * this page needs an explanation and a way forward, not a JSON body.
  *
- * Token transport — header or POST body only, NEVER URLs (RFC 6750 §2.3):
- * the hosted session token is a 30-day full-account bearer credential (it
- * can call the vault reveal route and `DELETE /account`), so it must never
- * appear in a URL: request URLs land verbatim in Cloudflare request logs
- * (`wrangler tail`, Logpush), browser history, and bookmarks, and URLs leak
- * outbound via the Referer header. `resolveBrowserSession` therefore accepts
- * the token from exactly two places: the `Authorization: Bearer` header
- * (parity with every API route, and with any non-browser caller) or a hidden
- * `token` field in a POST body. There is deliberately NO query-parameter
- * fallback. Because a plain HTML page cannot attach a header to a link
- * without JavaScript (which this flow deliberately avoids), every navigation
- * between these pages — back-links, connect/manage, retest — is rendered as
- * a small inline POST form carrying the hidden token field, never a GET link
- * with the token in it, and no form `action` URL ever carries the token
- * either. As defence in depth, every page in this flow is served with
- * `Referrer-Policy: no-referrer` (see `page()` below), so even this flow's
- * token-free URLs leak nothing to the external documentation links these
- * pages contain. The GET variants of the list/form/retest routes exist only
- * for callers that CAN send an Authorization header; a browser without one
- * simply sees the sign-in prompt.
+ * Session transport — HttpOnly cookie, never a URL, body, or page (slice 3,
+ * `docs/decisions/2026-07-15-hosted-connector-oauth.md`): the browser dashboard
+ * authenticates via the `hosted_session` cookie, set `HttpOnly; Secure;
+ * SameSite=Strict; Path=/` at the plain sign-in callback (`../index.ts`,
+ * `setSessionCookieHeader` in `../http.js`). The token itself is never rendered
+ * into any page, never placed in a URL, and never carried in a form body — the
+ * browser re-presents the cookie automatically on every same-site navigation,
+ * so no in-page token handling remains. This replaces the earlier "token in a
+ * hidden POST field" design, which was the reviewed interim the connect flow
+ * flagged as a cookie-upgrade candidate; slice 3 is that upgrade.
+ * `resolveBrowserSession` reads the cookie first, then falls back to an
+ * `Authorization: Bearer` header for the header-authenticated GET variants and
+ * any non-browser caller. There is deliberately NO query-parameter fallback
+ * (RFC 6750 §2.3: bearer tokens in URLs land in Cloudflare request logs,
+ * history, bookmarks, and Referer).
+ *
+ * CSRF: `SameSite=Strict` already stops a cross-site page from attaching the
+ * cookie to a forged navigation. As defence in depth, the state-changing POSTs
+ * — `POST /connect/:network` (stores a credential) and the two billing action
+ * POSTs (`../billing-page.js`) — additionally require a same-origin `Origin`
+ * (or `Referer`) via `sameOriginPost` (`../http.js`) and return a 403 page
+ * otherwise. Pure-navigation and idempotent POSTs (`/connect` list,
+ * `/connect/:network/form`, `/retest`) do not need the check. Every page in
+ * this flow is served `Referrer-Policy: no-referrer` on top of the Worker-wide
+ * `cache-control: no-store`, so its token-free URLs leak nothing outbound
+ * through the external documentation links these pages contain. The GET
+ * variants of the list/form/retest routes exist only for callers that CAN send
+ * an Authorization header; a browser without a cookie simply sees the sign-in
+ * prompt.
  *
  * Sequential-store requirement (the H3 data-key race): `hosted/README.md`'s
  * "KV storage shapes (H3)" section records that two concurrent first-ever
@@ -60,17 +69,19 @@
 
 import type { Env } from '../env.js';
 import { vaultMasterKeyProvider } from '../env.js';
-import { bearerToken, html } from '../http.js';
+import { bearerToken, cookieToken, html, sameOriginPost } from '../http.js';
+import { dispatchMagicLink, MagicLinkConfigError } from '../auth-link.js';
+import { isValidEmail, normaliseEmail } from '../identity.js';
 import { testConnection, type ConnectionTestResult } from '../connect-test.js';
 import { CONNECT_NETWORKS, findConnectNetwork, type ConnectNetwork } from '../networks.js';
 import { getCredentials, isValidCredentialRecord, listNetworks, putCredentials } from '../vault.js';
 import { resolveValidSession, sessionScope } from '../token.js';
 
 // ── Shared page chrome ──────────────────────────────────────────────────────
-// Same monospace, boxed-card look as the H2 callback page
-// (`renderSessionPage` in `../index.ts`) — deliberately not factored into a
-// shared constant across files, matching that file's own note that this is a
-// minimal, disposable style, not a design system.
+// Same monospace, boxed-card look as the OAuth ceremony pages
+// (`src/routes/oauth.ts`) and the H2 error page (`../index.ts`) — deliberately
+// not factored into a shared constant across files, a minimal, disposable
+// style, not a design system.
 const PAGE_STYLE = `
   body { font-family:'JetBrains Mono',ui-monospace,Menlo,monospace; background:#fff; color:#0a0a0a;
          margin:0; padding:40px 20px; display:flex; justify-content:center; }
@@ -81,7 +92,7 @@ const PAGE_STYLE = `
   .muted { color:#555; font-size:12px; }
   label { display:block; font-size:13px; font-weight:700; margin:14px 0 4px; }
   .field-help { font-size:12px; color:#555; margin:2px 0 6px; }
-  input[type="text"], input[type="password"] {
+  input[type="text"], input[type="password"], input[type="email"] {
     width:100%; box-sizing:border-box; font-family:inherit; font-size:13px; padding:8px;
     border:1px solid #0a0a0a;
   }
@@ -112,18 +123,22 @@ export function escapeHtml(value: string): string {
 /**
  * Every connect page carries `Referrer-Policy: no-referrer` on top of the
  * Worker-wide `cache-control: no-store` inherited from `html()` (`../http.js`).
- * Pages in this flow embed the session token in hidden form fields and (on
- * the success page) a copyable textarea; the token never appears in any URL
- * (see the file header), and suppressing the Referer entirely means even the
- * token-free URLs here leak nothing outbound through the external
- * documentation links these pages contain.
+ * No page in this flow renders the session token anywhere — the browser holds
+ * it in the HttpOnly `hosted_session` cookie (see the file header) — so no URL
+ * or form body here carries it, and suppressing the Referer entirely means even
+ * these token-free URLs leak nothing outbound through the external
+ * documentation links these pages contain. `status` defaults to 200; pass 403
+ * for the CSRF-rejection page and 500 for a sign-in configuration error.
  */
-export function page(title: string, bodyHtml: string): Response {
-  const res = html(`<!doctype html><html lang="en"><head>
+export function page(title: string, bodyHtml: string, status = 200): Response {
+  const res = html(
+    `<!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHtml(title)}</title>
 <style>${PAGE_STYLE}</style></head>
-<body><div class="card">${bodyHtml}</div></body></html>`);
+<body><div class="card">${bodyHtml}</div></body></html>`,
+    status,
+  );
   res.headers.set('referrer-policy', 'no-referrer');
   return res;
 }
@@ -132,8 +147,10 @@ export function page(title: string, bodyHtml: string): Response {
 
 export interface BrowserSession {
   userId: string;
-  /** The exact token string that authenticated this request, threaded through
-   * so hidden form fields can carry it forward. Never placed in a URL. */
+  /** The exact token string that authenticated this request (from the cookie
+   * or an Authorization header). Returned for callers that need it in-process
+   * — e.g. the billing page's synthetic API request (`../billing-page.js`) —
+   * but NEVER rendered into a page or a URL. */
   token: string;
 }
 
@@ -152,10 +169,13 @@ export async function maybeFormData(request: Request): Promise<FormData | null> 
 }
 
 /**
- * Resolve the session from the `Authorization: Bearer` header or a `token`
- * field in the POST body — NEVER from the URL. See the file header for why a
- * query-parameter fallback is deliberately absent (RFC 6750 §2.3: bearer
- * tokens in URLs end up in request logs, history, and Referer headers).
+ * Resolve the session from the HttpOnly `hosted_session` cookie, falling back
+ * to an `Authorization: Bearer` header — NEVER from the URL or a form body.
+ * The cookie is what a browser presents automatically; the header fallback
+ * serves the header-authenticated GET variants and any non-browser caller. See
+ * the file header for why a query-parameter fallback is deliberately absent
+ * (RFC 6750 §2.3: bearer tokens in URLs end up in request logs, history, and
+ * Referer headers).
  *
  * FULL sessions only (H6): a digest-scoped token (`sessionScope`,
  * `../token.js`) is refused exactly like an invalid one — the connect pages
@@ -167,11 +187,8 @@ export async function maybeFormData(request: Request): Promise<FormData | null> 
 export async function resolveBrowserSession(
   request: Request,
   env: Env,
-  form: FormData | null,
 ): Promise<BrowserSession | null> {
-  const formToken = form?.get('token');
-  const token =
-    bearerToken(request) ?? (typeof formToken === 'string' && formToken.length > 0 ? formToken : null);
+  const token = cookieToken(request) ?? bearerToken(request);
   if (!token) return null;
   const payload = await resolveValidSession(token, env.SESSION_SIGNING_KEY);
   if (!payload) return null;
@@ -187,7 +204,11 @@ export async function resolveBrowserSession(
  * with page-specific context to add (for example, the billing page's
  * Stripe-return landing: see that file for why a `checkout` status can only
  * ever be shown here, never on a fabricated "subscribed" page, since
- * Stripe's redirect cannot carry a session token).
+ * Stripe's redirect cannot carry a session cookie to a fresh browser).
+ *
+ * There is nothing to paste. The prompt is a single email field that requests
+ * a magic sign-in link (`POST /connect/signin`); following the emailed link
+ * sets the HttpOnly session cookie and lands the user back on the dashboard.
  */
 export function signInPromptPage(env: Env, extraNote?: string): Response {
   const front = env.SITE_ORIGIN || 'https://agenticaffiliate.ai';
@@ -197,40 +218,84 @@ export function signInPromptPage(env: Env, extraNote?: string): Response {
     `
     <h1>sign in required</h1>
     ${extraHtml}
-    <p>This page needs a signed-in hosted session.</p>
-    <p>Sign in at <a href="${escapeHtml(front)}">${escapeHtml(front)}</a> to request a magic
-    sign-in link by email, then open the link. It leads to a page with a
-    session token box and a copy button (the same one your MCP client uses to
-    connect) &mdash; paste that token below to continue here.</p>
-    <form method="post" action="/connect">
-      <label for="token">Session token</label>
-      <input type="password" id="token" name="token" placeholder="amcps_..." required>
-      <button type="submit">continue</button>
+    <p>This dashboard needs a signed-in hosted session. Enter your email and we
+    will send you a one-time sign-in link. Following it in this browser signs
+    you into the dashboard &mdash; there is nothing to copy or paste.</p>
+    <form method="post" action="/connect/signin">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" placeholder="you@example.com" required>
+      <button type="submit">send sign-in link</button>
     </form>
-    <p class="muted">If you do not have a hosted account yet, sign-in is the same
-    step that creates one: request a link for the email address you want to
-    use, then follow it. The token is submitted in the request body, never in
-    the page URL.</p>
+    <p class="muted">Signing in by email creates a hosted account if you do not
+    already have one. The link expires in 15 minutes and works once. Connecting
+    an MCP client instead? Add affiliate-mcp as a custom connector there &mdash;
+    you do not need this dashboard to authenticate a client. More at
+    <a href="${escapeHtml(front)}">${escapeHtml(front)}</a>.</p>
+  `,
+  );
+}
+
+// ── POST /connect/signin (dashboard email sign-in) ──────────────────────────
+/**
+ * Dashboard email sign-in: sends the same magic link as the plain
+ * `POST /auth/request-link` flow (no `authRequestId`, so `/auth/callback` sets
+ * the session cookie and redirects to the dashboard rather than resuming an
+ * OAuth consent). Neutral by construction — `dispatchMagicLink` never reveals
+ * whether an account exists — so the "check your email" confirmation is
+ * identical for every address. An invalid email re-renders the sign-in prompt
+ * with an inline error; a `MagicLinkConfigError` is a 500 identical for every
+ * caller, carrying no enumeration signal.
+ */
+export async function handleConnectSignin(request: Request, env: Env): Promise<Response> {
+  const form = await maybeFormData(request);
+  const emailRaw = form?.get('email');
+  if (!isValidEmail(emailRaw)) {
+    return signInPromptPage(env, 'Enter a valid email address.');
+  }
+  const email = normaliseEmail(emailRaw);
+
+  try {
+    await dispatchMagicLink(request, env, email);
+  } catch (err) {
+    if (err instanceof MagicLinkConfigError) {
+      console.error(`[connect] sign-in configuration error: ${err.message}`);
+      return page(
+        'sign-in unavailable',
+        `<h1>sign-in unavailable</h1>
+        <p>The sign-in service is temporarily misconfigured. Try again shortly.</p>`,
+        500,
+      );
+    }
+    throw err;
+  }
+
+  return page(
+    'check your email',
+    `
+    <h1>check your email</h1>
+    <p>If that address can sign in, a one-time link is on its way. Open it in
+    this browser to sign into the dashboard.</p>
+    <p class="muted">The link expires in 15 minutes and works once. You can
+    close this tab after following the link.</p>
   `,
   );
 }
 
 /**
- * A navigation action rendered as a minimal inline POST form: the session
- * token travels in a hidden body field, never in the URL. This is the only
- * way to move between these pages in a browser without JavaScript while
- * keeping the token out of request URLs (and therefore out of Cloudflare
- * request logs, history, bookmarks, and Referer).
+ * A navigation action rendered as a minimal inline POST form. The session no
+ * longer travels in the form at all — the browser attaches the HttpOnly
+ * `hosted_session` cookie automatically (`SameSite=Strict`, so only on
+ * same-site navigations) — so these forms carry no token and no `action` URL
+ * ever carries one either.
  *
- * `extraFields` lets a caller carry additional hidden fields alongside the
- * token (for example, the billing page's tier choice on its subscribe and
- * upgrade buttons, `./billing-page.ts`) without inventing a second
- * navigation-form shape: one hidden-field POST form remains the only way
- * this connect family moves the browser anywhere.
+ * `extraFields` lets a caller carry additional hidden fields (for example, the
+ * billing page's tier choice on its subscribe and upgrade buttons,
+ * `./billing-page.ts`) without inventing a second navigation-form shape: one
+ * POST form remains the only way this connect family moves the browser
+ * anywhere.
  */
 export function navForm(
   action: string,
-  token: string,
   label: string,
   extraFields: Record<string, string> = {},
 ): string {
@@ -238,25 +303,39 @@ export function navForm(
     .map(([name, value]) => `<input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(value)}">`)
     .join('');
   return `<form class="nav" method="post" action="${escapeHtml(action)}">
-    <input type="hidden" name="token" value="${escapeHtml(token)}">
     ${extraHtml}
     <button type="submit">${escapeHtml(label)}</button>
   </form>`;
 }
 
-function notFoundPage(token: string): Response {
+/**
+ * The 403 page returned when a state-changing POST fails the same-origin CSRF
+ * check (`sameOriginPost`, `../http.js`). `SameSite=Strict` already blocks a
+ * cross-site page from attaching the cookie; this is the defence-in-depth
+ * response for the credential-storing and billing-action POSTs.
+ */
+export function csrfErrorPage(): Response {
+  return page(
+    'request not verified',
+    `<h1>request not verified</h1>
+    <p>This request could not be verified. Return to the dashboard and try again.</p>
+    <p>${navForm('/connect', 'back to all networks')}</p>`,
+    403,
+  );
+}
+
+function notFoundPage(): Response {
   return page(
     'network not found',
     `<h1>network not found</h1>
     <p>This is not one of the four hosted-eligible networks.</p>
-    <p>${navForm('/connect', token, 'back to all networks')}</p>`,
+    <p>${navForm('/connect', 'back to all networks')}</p>`,
   );
 }
 
 // ── GET|POST /connect ────────────────────────────────────────────────────────
 export async function handleConnectList(request: Request, env: Env): Promise<Response> {
-  const form = await maybeFormData(request);
-  const session = await resolveBrowserSession(request, env, form);
+  const session = await resolveBrowserSession(request, env);
   if (!session) return signInPromptPage(env);
 
   const connected = new Set(await listNetworks(env.HOSTED_VAULT, session.userId));
@@ -267,7 +346,7 @@ export async function handleConnectList(request: Request, env: Env): Promise<Res
       ? '<span class="status-connected">connected</span>'
       : '<span class="status-not-connected">not connected</span>';
     return `<li><span>${escapeHtml(n.name)} <span class="muted">(${escapeHtml(n.claimStatus)})</span></span>
-      <span>${statusHtml} ${navForm(`/connect/${n.slug}/form`, session.token, isConnected ? 'manage' : 'connect')}</span></li>`;
+      <span>${statusHtml} ${navForm(`/connect/${n.slug}/form`, isConnected ? 'manage' : 'connect')}</span></li>`;
   }).join('\n');
 
   return page(
@@ -280,7 +359,7 @@ export async function handleConnectList(request: Request, env: Env): Promise<Res
     this repo has and has not verified about each network's terms for
     third-party credential use.</p>
     <ul class="network-list">${rows}</ul>
-    <p>${navForm('/connect/billing', session.token, 'billing')}</p>
+    <p>${navForm('/connect/billing', 'billing')}</p>
     <p class="muted">Networks are connected one at a time by design: there is
     no combined "connect all" submission. This keeps each stored credential's
     one-time data-key setup (see <code>hosted/README.md</code>, "KV storage
@@ -291,22 +370,20 @@ export async function handleConnectList(request: Request, env: Env): Promise<Res
 
 // ── POST /connect/:network/form and GET /connect/:network ───────────────────
 export async function handleConnectForm(request: Request, env: Env, slug: string): Promise<Response> {
-  const form = await maybeFormData(request);
-  const session = await resolveBrowserSession(request, env, form);
+  const session = await resolveBrowserSession(request, env);
   if (!session) return signInPromptPage(env);
 
   const network = findConnectNetwork(slug);
-  if (!network) return notFoundPage(session.token);
+  if (!network) return notFoundPage();
 
   const alreadyConnected =
     (await getCredentials(env.HOSTED_VAULT, vaultMasterKeyProvider(env), session.userId, network.slug)) !== null;
 
-  return page(`connect ${network.name}`, renderConnectFormBody(network, session.token, alreadyConnected));
+  return page(`connect ${network.name}`, renderConnectFormBody(network, alreadyConnected));
 }
 
 function renderConnectFormBody(
   network: ConnectNetwork,
-  token: string,
   alreadyConnected: boolean,
   errorMessage?: string,
 ): string {
@@ -325,17 +402,16 @@ function renderConnectFormBody(
   const connectedHtml = alreadyConnected
     ? `<div class="note">Already connected. Submitting again overwrites the stored
        credential and re-runs the connection test.
-       ${navForm(`/connect/${network.slug}/retest`, token, 'run the connection test again')}</div>`
+       ${navForm(`/connect/${network.slug}/retest`, 'run the connection test again')}</div>`
     : '';
 
   return `
     <h1>connect ${escapeHtml(network.name)}</h1>
-    <p>${navForm('/connect', token, 'back to all networks')}</p>
+    <p>${navForm('/connect', 'back to all networks')}</p>
     <div class="note">${escapeHtml(network.leastPrivilegeNote)}</div>
     ${connectedHtml}
     ${errorHtml}
     <form method="post" action="/connect/${network.slug}">
-      <input type="hidden" name="token" value="${escapeHtml(token)}">
       ${fieldsHtml}
       <button type="submit">save and test connection</button>
     </form>
@@ -347,23 +423,27 @@ function renderConnectFormBody(
 // ── POST /connect/:network ───────────────────────────────────────────────────
 export async function handleConnectSubmit(request: Request, env: Env, slug: string): Promise<Response> {
   const form = await maybeFormData(request);
-  const session = await resolveBrowserSession(request, env, form);
+  const session = await resolveBrowserSession(request, env);
   if (!session) return signInPromptPage(env);
+  // CSRF defence in depth for this credential-storing POST: SameSite=Strict
+  // already blocks a cross-site page from attaching the cookie, but a
+  // same-origin check on Origin/Referer is a cheap second gate. Pure-navigation
+  // POSTs (the list, the form, retest) do not carry this check.
+  if (!sameOriginPost(request, env)) return csrfErrorPage();
 
   const network = findConnectNetwork(slug);
-  if (!network) return notFoundPage(session.token);
+  if (!network) return notFoundPage();
   if (!form) {
     return page(
       `connect ${network.name}`,
-      renderConnectFormBody(network, session.token, false, 'Could not read the submitted form. Nothing was stored.'),
+      renderConnectFormBody(network, false, 'Could not read the submitted form. Nothing was stored.'),
     );
   }
 
-  // Build the credential record from exactly this network's declared fields
-  // — nothing else in the submitted form (e.g. the `token` field itself) ever
-  // reaches the vault. One network, one call: this is the SEQUENTIAL store
-  // the file header describes; there is no path that stores more than one
-  // network's credential per request.
+  // Build the credential record from exactly this network's declared fields —
+  // nothing else in the submitted form reaches the vault. One network, one
+  // call: this is the SEQUENTIAL store the file header describes; there is no
+  // path that stores more than one network's credential per request.
   const record: Record<string, string> = {};
   for (const field of network.fields) {
     const value = form.get(field.key);
@@ -375,7 +455,7 @@ export async function handleConnectSubmit(request: Request, env: Env, slug: stri
   if (!isValidCredentialRecord(record) || Object.keys(record).length !== network.fields.length) {
     return page(
       `connect ${network.name}`,
-      renderConnectFormBody(network, session.token, false, 'All fields are required. Nothing was stored.'),
+      renderConnectFormBody(network, false, 'All fields are required. Nothing was stored.'),
     );
   }
 
@@ -387,7 +467,7 @@ export async function handleConnectSubmit(request: Request, env: Env, slug: stri
     console.error(`[connect] store failed userId=${session.userId} network=${network.slug} err=${(err as Error).message}`);
     return page(
       `connect ${network.name}`,
-      renderConnectFormBody(network, session.token, false, 'Could not store the credential. Nothing was tested. Try again.'),
+      renderConnectFormBody(network, false, 'Could not store the credential. Nothing was tested. Try again.'),
     );
   }
 
@@ -398,17 +478,16 @@ export async function handleConnectSubmit(request: Request, env: Env, slug: stri
   // task's "keep the credential stored" requirement.
   const result = await testConnection(network.slug, record);
   const maskedTail = maskLastFour(record[network.maskedConfirmationField] ?? '');
-  return page(`connect ${network.name}`, renderConnectResultBody(network, session.token, result, maskedTail));
+  return page(`connect ${network.name}`, renderConnectResultBody(network, result, maskedTail));
 }
 
 // ── POST|GET /connect/:network/retest ────────────────────────────────────────
 export async function handleConnectRetest(request: Request, env: Env, slug: string): Promise<Response> {
-  const form = await maybeFormData(request);
-  const session = await resolveBrowserSession(request, env, form);
+  const session = await resolveBrowserSession(request, env);
   if (!session) return signInPromptPage(env);
 
   const network = findConnectNetwork(slug);
-  if (!network) return notFoundPage(session.token);
+  if (!network) return notFoundPage();
 
   const provider = vaultMasterKeyProvider(env);
   const stored = await getCredentials(env.HOSTED_VAULT, provider, session.userId, network.slug);
@@ -416,18 +495,17 @@ export async function handleConnectRetest(request: Request, env: Env, slug: stri
     return page(
       `connect ${network.name}`,
       `<h1>not connected</h1><p>${escapeHtml(network.name)} has not been connected yet.</p>
-       <p>${navForm(`/connect/${network.slug}/form`, session.token, 'connect it now')}</p>`,
+       <p>${navForm(`/connect/${network.slug}/form`, 'connect it now')}</p>`,
     );
   }
 
   const result = await testConnection(network.slug, stored);
   const maskedTail = maskLastFour(stored[network.maskedConfirmationField] ?? '');
-  return page(`connect ${network.name}`, renderConnectResultBody(network, session.token, result, maskedTail));
+  return page(`connect ${network.name}`, renderConnectResultBody(network, result, maskedTail));
 }
 
 function renderConnectResultBody(
   network: ConnectNetwork,
-  token: string,
   result: ConnectionTestResult,
   maskedTail: string,
 ): string {
@@ -440,23 +518,24 @@ function renderConnectResultBody(
       <h1>${escapeHtml(network.name)} connected</h1>
       <p class="status-connected">Connection test passed.</p>
       ${maskedLine}
-      <h2>connect your MCP client</h2>
-      <p>Copy your hosted session token into your MCP client's connection
-      settings, alongside the transport URL below (the H4 remote MCP
-      transport &mdash; see <code>src/hosted-transport/</code> in the root
-      workspace).</p>
-      <textarea readonly rows="4">${escapeHtml(token)}</textarea>
-      <p class="muted">Transport URL: <code>https://&lt;your-hosted-transport-deployment&gt;/mcp</code>
-      &mdash; a placeholder until a staging or production deployment exists
-      (H4 has not been deployed yet; see
-      <code>docs/product/hosted-mvp-workstream.md</code>, slice H4).</p>
+      <h2>use this from your MCP client</h2>
+      <p>To use your connected networks from an MCP client (Claude, ChatGPT, and
+      similar), add affiliate-mcp as a custom connector. Your client signs you
+      in through your browser with OAuth &mdash; there is no token to copy or
+      paste.</p>
+      <p class="muted">Connector URL:
+      <code>https://&lt;your-hosted-transport-deployment&gt;/mcp</code> &mdash; a
+      placeholder until a staging or production deployment exists (H4 has not
+      been deployed yet; see
+      <code>docs/product/hosted-mvp-workstream.md</code>, slice H4). Add it via
+      your client's "Add custom connector" flow.</p>
       <p>Suggested first prompt once connected: "Show my unpaid commissions on
       ${escapeHtml(network.name)} from the last 30 days."</p>
       <div class="note">This page cannot run that prompt for you: a full
       automatic first-value report needs the Node H4 transport runtime, which
       is out of this Worker's scope. State this honestly rather than fake a
       report &mdash; run the prompt yourself once your MCP client is connected.</div>
-      <p>${navForm('/connect', token, 'back to all networks')}</p>
+      <p>${navForm('/connect', 'back to all networks')}</p>
     `;
   }
 
@@ -470,8 +549,8 @@ function renderConnectResultBody(
     test failure did not remove it. Fix the value in ${escapeHtml(
       network.name,
     )}'s own dashboard if needed, then retry.</p>
-    <p>${navForm(`/connect/${network.slug}/retest`, token, 'retry the connection test')}
-    ${navForm(`/connect/${network.slug}/form`, token, 'edit the credential')}</p>
+    <p>${navForm(`/connect/${network.slug}/retest`, 'retry the connection test')}
+    ${navForm(`/connect/${network.slug}/form`, 'edit the credential')}</p>
   `;
 }
 

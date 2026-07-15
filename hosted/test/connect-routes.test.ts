@@ -1,14 +1,17 @@
 /**
  * H5 connect-flow route tests, exercised through the same `worker.fetch`
  * entry point as `test/worker.test.ts` and `test/vault-routes.test.ts`.
- * Covers: sign-in gating for an unauthenticated visitor, the hard rejection
- * of a session token in a URL query parameter (RFC 6750 §2.3 — bearer tokens
- * never travel in URLs in this flow), POST-body navigation, form rendering
- * per network, store + mocked connection-test success and failure, that no
- * batch/multi-network endpoint exists, that a stored credential value never
- * appears unmasked in any HTML response, that no URL inside any rendered
- * page ever carries the session token, and that every connect response
- * carries `cache-control: no-store` and `referrer-policy: no-referrer`.
+ * Since OAuth slice 3 the browser authenticates via the HttpOnly
+ * `hosted_session` cookie (not a pasted token), so these drive auth via a
+ * `Cookie` header. Covers: sign-in gating for an unauthenticated visitor, the
+ * hard rejection of a session token in a URL query parameter (RFC 6750 §2.3),
+ * cookie-based navigation, the same-origin CSRF check on the credential POST,
+ * form rendering per network, store + mocked connection-test success and
+ * failure, that no batch/multi-network endpoint exists, that a stored
+ * credential value never appears unmasked in any HTML response, that the
+ * session token and the cookie value never appear anywhere in a rendered page
+ * (the cookie is HttpOnly), and that every connect response carries
+ * `cache-control: no-store` and `referrer-policy: no-referrer`.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -72,37 +75,64 @@ async function makeTestEnv(): Promise<TestEnv> {
   return { env, vaultKv, signingKey };
 }
 
+// The Worker's own origin — a same-origin POST for the CSRF check.
+const SAME_ORIGIN = 'https://hosted.test';
+
 async function issueSessionToken(signingKey: string, userId: string): Promise<string> {
   const iss = Math.floor(Date.now() / 1000);
   const exp = iss + 60 * 60 * 24 * 30;
   return signSession(buildSessionPayload({ sub: userId, iss, exp }), signingKey);
 }
 
+/** An unauthenticated GET (no cookie). */
 function get(path: string): Request {
   return new Request(`https://hosted.test${path}`);
 }
 
+/** An unauthenticated POST form (no cookie). */
 function postForm(path: string, fields: Record<string, string>): Request {
-  const body = new URLSearchParams(fields).toString();
   return new Request(`https://hosted.test${path}`, {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body,
+    body: new URLSearchParams(fields).toString(),
+  });
+}
+
+/** A GET carrying the browser session cookie. */
+function authedGet(path: string, token: string): Request {
+  return new Request(`https://hosted.test${path}`, { headers: { cookie: `hosted_session=${token}` } });
+}
+
+/**
+ * A POST form carrying the browser session cookie. `origin` sets the `Origin`
+ * header for the CSRF same-origin check; omit it for pure-navigation POSTs
+ * that carry no such check.
+ */
+function authedPost(path: string, fields: Record<string, string>, token: string, origin?: string): Request {
+  const headers: Record<string, string> = {
+    'content-type': 'application/x-www-form-urlencoded',
+    cookie: `hosted_session=${token}`,
+  };
+  if (origin !== undefined) headers.origin = origin;
+  return new Request(`https://hosted.test${path}`, {
+    method: 'POST',
+    headers,
+    body: new URLSearchParams(fields).toString(),
   });
 }
 
 /**
- * The load-bearing URL-hygiene assertion (RFC 6750 §2.3): no URL anywhere in
- * the rendered HTML — href, action, or otherwise — may carry the session
- * token, and no `token=` query string may appear anywhere in the page. The
- * token is allowed ONLY as a hidden form field's value and inside the
- * success page's copyable <textarea>.
+ * The load-bearing hygiene assertion. Since slice 3 the session token lives in
+ * an HttpOnly cookie and is NEVER rendered: it must not appear in any URL
+ * (href/action), in any `token=` query string, or anywhere else in the page
+ * body, and the cookie name must not leak into the HTML either.
  */
-function expectNoTokenInAnyUrl(body: string, token: string): void {
+function expectNoTokenLeak(body: string, token: string): void {
   expect(body).not.toMatch(/href="[^"]*amcps_[^"]*"/);
   expect(body).not.toMatch(/action="[^"]*amcps_[^"]*"/);
   expect(body).not.toContain('?token=');
-  expect(body).not.toContain(`token=${token}`);
+  expect(body).not.toContain(token);
+  expect(body).not.toContain('hosted_session');
 }
 
 afterEach(() => {
@@ -121,11 +151,14 @@ describe('sign-in gating', () => {
     expect(body).not.toContain('"error"');
   });
 
-  it('the sign-in prompt form submits the token via POST body, never GET', async () => {
+  it('the sign-in prompt is an email magic-link form posting to /connect/signin, never GET', async () => {
     const { env } = await makeTestEnv();
     const body = await (await worker.fetch(get('/connect'), env)).text();
-    expect(body).toContain('<form method="post" action="/connect">');
+    expect(body).toContain('<form method="post" action="/connect/signin">');
+    expect(body).toContain('type="email"');
     expect(body).not.toContain('method="get"');
+    // No paste box: the old design offered a session-token field.
+    expect(body).not.toContain('name="token"');
   });
 
   it('GET /connect/:network without a session shows the sign-in prompt', async () => {
@@ -141,7 +174,7 @@ describe('sign-in gating', () => {
     expect(await res.text()).toContain('sign in required');
   });
 
-  it('POST /connect/:network without a session token stores nothing and shows the sign-in prompt', async () => {
+  it('POST /connect/:network without a session stores nothing and shows the sign-in prompt', async () => {
     const { env, vaultKv } = await makeTestEnv();
     const res = await worker.fetch(
       postForm('/connect/awin', { AWIN_API_TOKEN: 'should-not-be-stored', AWIN_PUBLISHER_ID: '123' }),
@@ -151,9 +184,9 @@ describe('sign-in gating', () => {
     expect(vaultKv.store.size).toBe(0);
   });
 
-  it('an invalid/tampered token in the POST body also falls back to the sign-in prompt', async () => {
+  it('an invalid/tampered token in the cookie falls back to the sign-in prompt', async () => {
     const { env } = await makeTestEnv();
-    const res = await worker.fetch(postForm('/connect', { token: 'amcps_not.real' }), env);
+    const res = await worker.fetch(authedGet('/connect', 'amcps_not.real'), env);
     expect(await res.text()).toContain('sign in required');
   });
 
@@ -182,20 +215,20 @@ describe('sign-in gating', () => {
     expect(await res.text()).toContain('connect a network');
   });
 
-  it('a valid token via the POST body is accepted', async () => {
+  it('a valid token via the cookie is accepted', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
-    const res = await worker.fetch(postForm('/connect', { token }), env);
+    const res = await worker.fetch(authedGet('/connect', token), env);
     expect(await res.text()).toContain('connect a network');
   });
 });
 
-// ── GET|POST /connect (list) ─────────────────────────────────────────────────
-describe('POST /connect (list)', () => {
+// ── /connect (list) ──────────────────────────────────────────────────────────
+describe('/connect (list)', () => {
   it('lists all four networks as not connected for a fresh account, with POST-form navigation only', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
-    const res = await worker.fetch(postForm('/connect', { token }), env);
+    const res = await worker.fetch(authedGet('/connect', token), env);
     const body = await res.text();
     for (const name of ['Awin', 'CJ Affiliate', 'Impact', 'Rakuten Advertising']) {
       expect(body).toContain(name);
@@ -205,7 +238,7 @@ describe('POST /connect (list)', () => {
     // Navigation to each network's form is a POST form, not a GET link.
     expect(body).toContain('action="/connect/awin/form"');
     expect(body).toContain('action="/connect/rakuten/form"');
-    expectNoTokenInAnyUrl(body, token);
+    expectNoTokenLeak(body, token);
   });
 });
 
@@ -222,7 +255,8 @@ describe('POST /connect/:network/form', () => {
       { slug: 'rakuten', fields: ['RAKUTEN_CLIENT_ID', 'RAKUTEN_CLIENT_SECRET', 'RAKUTEN_SID'] },
     ];
     for (const { slug, fields } of cases) {
-      const res = await worker.fetch(postForm(`/connect/${slug}/form`, { token }), env);
+      // /form is pure navigation (no CSRF check), so no Origin header needed.
+      const res = await worker.fetch(authedPost(`/connect/${slug}/form`, {}, token), env);
       expect(res.status).toBe(200);
       const body = await res.text();
       for (const field of fields) {
@@ -230,7 +264,9 @@ describe('POST /connect/:network/form', () => {
       }
       expect(body.toLowerCase()).toContain('lesser-privileged alternative documented here today');
       expect(body).toContain(`action="/connect/${slug}"`);
-      expectNoTokenInAnyUrl(body, token);
+      // No hidden session-token field remains on the credential form.
+      expect(body).not.toContain('name="token"');
+      expectNoTokenLeak(body, token);
     }
   });
 
@@ -247,14 +283,56 @@ describe('POST /connect/:network/form', () => {
   it('returns a plain not-found page for a network outside the four hosted-eligible ones', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
-    const res = await worker.fetch(postForm('/connect/some-other-network/form', { token }), env);
+    const res = await worker.fetch(authedPost('/connect/some-other-network/form', {}, token), env);
     expect(await res.text()).toContain('network not found');
+  });
+});
+
+// ── CSRF: same-origin check on the credential POST ──────────────────────────
+describe('CSRF on POST /connect/:network', () => {
+  it('rejects a cross-site Origin with a 403, storing nothing and calling no network', async () => {
+    const { env, vaultKv, signingKey } = await makeTestEnv();
+    const token = await issueSessionToken(signingKey, generateUserId());
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const res = await worker.fetch(
+      authedPost('/connect/awin', { AWIN_API_TOKEN: 'x', AWIN_PUBLISHER_ID: '1' }, token, 'https://evil.example'),
+      env,
+    );
+    expect(res.status).toBe(403);
+    const body = await res.text();
+    expect(body).toContain('could not be verified');
+    expect(vaultKv.store.size).toBe(0);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expectNoTokenLeak(body, token);
+  });
+
+  it('rejects a POST with no Origin or Referer (fail closed) with a 403', async () => {
+    const { env, vaultKv, signingKey } = await makeTestEnv();
+    const token = await issueSessionToken(signingKey, generateUserId());
+    const res = await worker.fetch(
+      authedPost('/connect/awin', { AWIN_API_TOKEN: 'x', AWIN_PUBLISHER_ID: '1' }, token),
+      env,
+    );
+    expect(res.status).toBe(403);
+    expect(vaultKv.store.size).toBe(0);
+  });
+
+  it('proceeds when the Origin is same-origin', async () => {
+    const { env, signingKey } = await makeTestEnv();
+    const token = await issueSessionToken(signingKey, generateUserId());
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('[]', { status: 200 }));
+    const res = await worker.fetch(
+      authedPost('/connect/awin', { AWIN_API_TOKEN: 'a', AWIN_PUBLISHER_ID: '1' }, token, SAME_ORIGIN),
+      env,
+    );
+    expect(res.status).toBe(200);
+    expect(await res.text()).toContain('Connection test passed');
   });
 });
 
 // ── POST /connect/:network (store + connection test) ────────────────────────
 describe('POST /connect/:network — store then connection test', () => {
-  it('stores the credential and shows success on a passing connection test', async () => {
+  it('stores the credential and shows the add-connector affordance on a passing test', async () => {
     const { env, vaultKv, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -262,11 +340,12 @@ describe('POST /connect/:network — store then connection test', () => {
     );
 
     const res = await worker.fetch(
-      postForm('/connect/awin', {
+      authedPost(
+        '/connect/awin',
+        { AWIN_API_TOKEN: 'super-secret-marker-1234', AWIN_PUBLISHER_ID: '555' },
         token,
-        AWIN_API_TOKEN: 'super-secret-marker-1234',
-        AWIN_PUBLISHER_ID: '555',
-      }),
+        SAME_ORIGIN,
+      ),
       env,
     );
     expect(res.status).toBe(200);
@@ -275,23 +354,26 @@ describe('POST /connect/:network — store then connection test', () => {
     expect(body).toContain('Connection test passed');
     expect(body).toContain('1234'); // masked last-4 only
     expect(body).not.toContain('super-secret-marker-1234');
-    expectNoTokenInAnyUrl(body, token);
-    // A stored credential blob now exists for this user/network.
+    // Terminal step is a client-native add-connector affordance, not a token box.
+    expect(body).toContain('custom connector');
+    expect(body).not.toContain('<textarea');
+    expectNoTokenLeak(body, token);
     const hasCredKey = Array.from(vaultKv.store.keys()).some((k) => k.includes('awin'));
     expect(hasCredKey).toBe(true);
   });
 
-  it('keeps the credential stored and shows the verbatim upstream status on a failing connection test', async () => {
+  it('keeps the credential stored and shows the verbatim upstream status on a failing test', async () => {
     const { env, vaultKv, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Unauthorized: bad token', { status: 401 }));
 
     const res = await worker.fetch(
-      postForm('/connect/awin', {
+      authedPost(
+        '/connect/awin',
+        { AWIN_API_TOKEN: 'wrong-token-marker-5678', AWIN_PUBLISHER_ID: '555' },
         token,
-        AWIN_API_TOKEN: 'wrong-token-marker-5678',
-        AWIN_PUBLISHER_ID: '555',
-      }),
+        SAME_ORIGIN,
+      ),
       env,
     );
     expect(res.status).toBe(200);
@@ -301,8 +383,7 @@ describe('POST /connect/:network — store then connection test', () => {
     expect(body).toContain('Unauthorized: bad token');
     expect(body).toContain('retry the connection test');
     expect(body).not.toContain('wrong-token-marker-5678');
-    expectNoTokenInAnyUrl(body, token);
-    // The credential is still stored despite the failing test — never un-stored.
+    expectNoTokenLeak(body, token);
     const hasCredKey = Array.from(vaultKv.store.keys()).some((k) => k.includes('awin'));
     expect(hasCredKey).toBe(true);
   });
@@ -313,7 +394,7 @@ describe('POST /connect/:network — store then connection test', () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('network unreachable'));
 
     const res = await worker.fetch(
-      postForm('/connect/cj', { token, CJ_API_TOKEN: 'x', CJ_COMPANY_ID: '1' }),
+      authedPost('/connect/cj', { CJ_API_TOKEN: 'x', CJ_COMPANY_ID: '1' }, token, SAME_ORIGIN),
       env,
     );
     const body = await res.text();
@@ -326,7 +407,10 @@ describe('POST /connect/:network — store then connection test', () => {
     const token = await issueSessionToken(signingKey, generateUserId());
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
-    const res = await worker.fetch(postForm('/connect/awin', { token, AWIN_API_TOKEN: 'only-one-field' }), env);
+    const res = await worker.fetch(
+      authedPost('/connect/awin', { AWIN_API_TOKEN: 'only-one-field' }, token, SAME_ORIGIN),
+      env,
+    );
     const body = await res.text();
     expect(body).toContain('All fields are required');
     expect(vaultKv.store.size).toBe(0);
@@ -340,7 +424,10 @@ describe('POST /connect/:network — store then connection test', () => {
       .spyOn(globalThis, 'fetch')
       .mockResolvedValue(new Response(JSON.stringify({ data: { me: { id: '1', companyId: '999' } } }), { status: 200 }));
 
-    await worker.fetch(postForm('/connect/cj', { token, CJ_API_TOKEN: 'cj-token-marker', CJ_COMPANY_ID: '999' }), env);
+    await worker.fetch(
+      authedPost('/connect/cj', { CJ_API_TOKEN: 'cj-token-marker', CJ_COMPANY_ID: '999' }, token, SAME_ORIGIN),
+      env,
+    );
 
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     const [calledUrl, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
@@ -356,7 +443,7 @@ describe('POST /connect/:network — store then connection test', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{"Campaigns":[]}', { status: 200 }));
 
     await worker.fetch(
-      postForm('/connect/impact', { token, IMPACT_ACCOUNT_SID: 'SID123', IMPACT_AUTH_TOKEN: 'tok-marker' }),
+      authedPost('/connect/impact', { IMPACT_ACCOUNT_SID: 'SID123', IMPACT_AUTH_TOKEN: 'tok-marker' }, token, SAME_ORIGIN),
       env,
     );
 
@@ -375,12 +462,12 @@ describe('POST /connect/:network — store then connection test', () => {
       .mockResolvedValue(new Response(JSON.stringify({ access_token: 'tok', expires_in: 3600 }), { status: 200 }));
 
     await worker.fetch(
-      postForm('/connect/rakuten', {
+      authedPost(
+        '/connect/rakuten',
+        { RAKUTEN_CLIENT_ID: 'cid', RAKUTEN_CLIENT_SECRET: 'csecret', RAKUTEN_SID: '42' },
         token,
-        RAKUTEN_CLIENT_ID: 'cid',
-        RAKUTEN_CLIENT_SECRET: 'csecret',
-        RAKUTEN_SID: '42',
-      }),
+        SAME_ORIGIN,
+      ),
       env,
     );
 
@@ -399,22 +486,26 @@ describe('POST /connect/:network/retest', () => {
     const token = await issueSessionToken(signingKey, generateUserId());
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response('server error', { status: 500 }));
-    await worker.fetch(postForm('/connect/awin', { token, AWIN_API_TOKEN: 'retest-marker-9999', AWIN_PUBLISHER_ID: '1' }), env);
+    await worker.fetch(
+      authedPost('/connect/awin', { AWIN_API_TOKEN: 'retest-marker-9999', AWIN_PUBLISHER_ID: '1' }, token, SAME_ORIGIN),
+      env,
+    );
 
+    // Retest is idempotent navigation, so it carries no CSRF check — cookie only.
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(new Response('[]', { status: 200 }));
-    const res = await worker.fetch(postForm('/connect/awin/retest', { token }), env);
+    const res = await worker.fetch(authedPost('/connect/awin/retest', {}, token), env);
     const body = await res.text();
     expect(body).toContain('Connection test passed');
     expect(body).toContain('9999');
     expect(body).not.toContain('retest-marker-9999');
-    expectNoTokenInAnyUrl(body, token);
+    expectNoTokenLeak(body, token);
   });
 
   it('returns a not-connected page, never a fabricated test result, when nothing was stored', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
-    const res = await worker.fetch(postForm('/connect/cj/retest', { token }), env);
+    const res = await worker.fetch(authedPost('/connect/cj/retest', {}, token), env);
     const body = await res.text();
     expect(body).toContain('not connected');
     expect(fetchSpy).not.toHaveBeenCalled();
@@ -428,11 +519,7 @@ describe('no batch connect endpoint exists', () => {
     const token = await issueSessionToken(signingKey, generateUserId());
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
     const res = await worker.fetch(
-      postForm('/connect', {
-        token,
-        AWIN_API_TOKEN: 'batch-smuggle-a',
-        CJ_API_TOKEN: 'batch-smuggle-b',
-      }),
+      authedPost('/connect', { AWIN_API_TOKEN: 'batch-smuggle-a', CJ_API_TOKEN: 'batch-smuggle-b' }, token),
       env,
     );
     expect(await res.text()).toContain('connect a network');
@@ -446,20 +533,17 @@ describe('no batch connect endpoint exists', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('[]', { status: 200 }));
 
     await worker.fetch(
-      postForm('/connect/awin', {
+      authedPost(
+        '/connect/awin',
+        { AWIN_API_TOKEN: 'a', AWIN_PUBLISHER_ID: '1', CJ_API_TOKEN: 'sneaked-in-cj-token' },
         token,
-        AWIN_API_TOKEN: 'a',
-        AWIN_PUBLISHER_ID: '1',
-        CJ_API_TOKEN: 'sneaked-in-cj-token',
-      }),
+        SAME_ORIGIN,
+      ),
       env,
     );
 
     const stored = Array.from(vaultKv.store.entries()).find(([k]) => k.includes('awin'));
     expect(stored).toBeDefined();
-    // The stored blob is ciphertext, but the plaintext CJ marker must never have
-    // been part of what was encrypted for the awin record — verified indirectly
-    // by confirming no separate cj credential key was ever created either.
     const hasCjKey = Array.from(vaultKv.store.keys()).some((k) => k.includes(':cj'));
     expect(hasCjKey).toBe(false);
   });
@@ -467,10 +551,10 @@ describe('no batch connect endpoint exists', () => {
 
 // ── no-store and no-referrer on every connect response ──────────────────────
 describe('security headers on every connect response', () => {
-  it('POST /connect carries cache-control: no-store and referrer-policy: no-referrer', async () => {
+  it('a signed-in /connect response carries cache-control: no-store and referrer-policy: no-referrer', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
-    const res = await worker.fetch(postForm('/connect', { token }), env);
+    const res = await worker.fetch(authedGet('/connect', token), env);
     expect(res.headers.get('cache-control')).toBe('no-store');
     expect(res.headers.get('referrer-policy')).toBe('no-referrer');
   });
@@ -486,8 +570,43 @@ describe('security headers on every connect response', () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('[]', { status: 200 }));
-    const res = await worker.fetch(postForm('/connect/awin', { token, AWIN_API_TOKEN: 'a', AWIN_PUBLISHER_ID: '1' }), env);
+    const res = await worker.fetch(
+      authedPost('/connect/awin', { AWIN_API_TOKEN: 'a', AWIN_PUBLISHER_ID: '1' }, token, SAME_ORIGIN),
+      env,
+    );
     expect(res.headers.get('cache-control')).toBe('no-store');
     expect(res.headers.get('referrer-policy')).toBe('no-referrer');
+  });
+});
+
+// ── POST /connect/signin (dashboard email sign-in) ──────────────────────────
+describe('POST /connect/signin', () => {
+  it('sends a magic link (no authRequestId) and shows a neutral check-your-email page', async () => {
+    const { env } = await makeTestEnv();
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(new Response(JSON.stringify({ id: 'em_1' }), { status: 200 }));
+    const res = await worker.fetch(postForm('/connect/signin', { email: 'person@example.com' }), env);
+    expect(res.status).toBe(200);
+    const body = await res.text();
+    expect(body).toContain('check your email');
+    // A magic link was sent via Resend, to the submitted address.
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const [calledUrl, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
+    expect(calledUrl).toBe('https://api.resend.com/emails');
+    const payload = JSON.parse(init.body as string) as { to: string; text: string };
+    expect(payload.to).toBe('person@example.com');
+    expect(payload.text).toContain('/auth/callback?token=');
+  });
+
+  it('re-renders the sign-in prompt with an inline error for an invalid email, sending nothing', async () => {
+    const { env } = await makeTestEnv();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const res = await worker.fetch(postForm('/connect/signin', { email: 'not-an-email' }), env);
+    expect(res.status).toBe(200);
+    const body = await res.text();
+    expect(body).toContain('sign in required');
+    expect(body).toContain('Enter a valid email address');
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });

@@ -3,15 +3,17 @@
  * `docs/product/hosted-mvp-workstream.md`): a server-rendered, session-gated
  * page showing the caller's current tier and status, with buttons to
  * subscribe, upgrade, or manage a subscription. Same minimal style, same
- * no-client-framework constraint, and the SAME reviewed token-transport rule
- * as the rest of the H5 connect flow: the hosted session token travels in the
- * `Authorization` header or a hidden POST-body field, never in a URL (RFC
- * 6750 §2.3). This file does not re-implement that rule; it reuses
- * `resolveBrowserSession`, `maybeFormData`, `page`, `navForm`, `escapeHtml`,
- * and `signInPromptPage` from `./connect.ts` verbatim, so "what counts as
- * signed in" and "how a navigation form is built" cannot drift between the
- * two files. See `./connect.ts`'s file header for the full RFC 6750
- * reasoning this page inherits unchanged.
+ * no-client-framework constraint, and the SAME session model as the rest of
+ * the H5 connect flow (slice 3): the browser authenticates via the HttpOnly
+ * `hosted_session` cookie, never a token in a URL, body, or page. This file
+ * does not re-implement that; it reuses `resolveBrowserSession`,
+ * `maybeFormData`, `page`, `navForm`, `escapeHtml`, `csrfErrorPage`, and
+ * `signInPromptPage` from `./connect.ts` verbatim, so "what counts as signed
+ * in", "how a navigation form is built", and the CSRF posture cannot drift
+ * between the two files. See `./connect.ts`'s file header for the full
+ * cookie/CSRF reasoning this page inherits unchanged. The two state-changing
+ * POSTs here (checkout and portal) carry the same `sameOriginPost` CSRF check
+ * as the connect credential POST.
  *
  *   GET|POST /connect/billing            current tier/status + action buttons
  *   POST     /connect/billing/checkout   { tier } -> Stripe Checkout redirect
@@ -47,16 +49,18 @@
  * silently poll Stripe, or fabricate a "you're subscribed" result: with no
  * valid session it shows the ordinary sign-in prompt, with one added,
  * honest line describing what the `checkout` flag claims happened. Once the
- * caller pastes their token back in, `GET /billing/entitlement` (read
- * in-process here too, via `resolveEntitlement`) is the only source of
- * truth for what actually happened.
+ * caller signs back in, `GET /billing/entitlement` (read in-process here too,
+ * via `resolveEntitlement`) is the only source of truth for what actually
+ * happened.
  */
 
 import type { Env } from '../env.js';
+import { sameOriginPost } from '../http.js';
 import type { Entitlement, HostedTier } from '../billing.js';
 import { resolveEntitlement } from '../billing.js';
 import { handleBillingCheckout, handleBillingPortal } from './billing.js';
 import {
+  csrfErrorPage,
   escapeHtml,
   maybeFormData,
   navForm,
@@ -106,11 +110,11 @@ function tierLabel(tier: HostedTier): string {
   return 'none';
 }
 
-function renderBillingActions(entitlement: Entitlement, token: string): string {
+function renderBillingActions(entitlement: Entitlement): string {
   if (entitlement.tier === 'none') {
     return `
-      ${navForm('/connect/billing/checkout', token, 'Subscribe Solo: £34/month', { tier: 'solo' })}
-      ${navForm('/connect/billing/checkout', token, 'Subscribe Pro: £99/month', { tier: 'pro' })}
+      ${navForm('/connect/billing/checkout', 'Subscribe Solo: £34/month', { tier: 'solo' })}
+      ${navForm('/connect/billing/checkout', 'Subscribe Pro: £99/month', { tier: 'pro' })}
     `;
   }
   if (entitlement.tier === 'solo') {
@@ -124,12 +128,12 @@ function renderBillingActions(entitlement: Entitlement, token: string): string {
     // is offered here regardless, in case the dashboard is not set up that
     // way yet.
     return `
-      ${navForm('/connect/billing/checkout', token, 'Upgrade to Pro: £99/month', { tier: 'pro' })}
-      ${navForm('/connect/billing/portal', token, 'Manage subscription')}
+      ${navForm('/connect/billing/checkout', 'Upgrade to Pro: £99/month', { tier: 'pro' })}
+      ${navForm('/connect/billing/portal', 'Manage subscription')}
     `;
   }
   // pro: nothing higher to subscribe to. Manage (the portal) is the only action.
-  return navForm('/connect/billing/portal', token, 'Manage subscription');
+  return navForm('/connect/billing/portal', 'Manage subscription');
 }
 
 async function renderBillingPage(env: Env, session: BrowserSession, noteMessage?: string): Promise<Response> {
@@ -140,11 +144,11 @@ async function renderBillingPage(env: Env, session: BrowserSession, noteMessage?
     'billing',
     `
     <h1>billing</h1>
-    <p>${navForm('/connect', session.token, 'back to all networks')}</p>
+    <p>${navForm('/connect', 'back to all networks')}</p>
     ${noteHtml}
     <p>Current plan: <strong>${escapeHtml(tierLabel(entitlement.tier))}</strong>
     <span class="muted">(status: ${escapeHtml(entitlement.status)})</span></p>
-    ${renderBillingActions(entitlement, session.token)}
+    ${renderBillingActions(entitlement)}
     <p class="muted">Solo is £34/month; Pro is £99/month
     (<code>docs/decisions/2026-07-12-pricing-billing-and-licence.md</code>).
     Subscribing and managing both hand off to Stripe's own Checkout and
@@ -175,8 +179,7 @@ function checkoutStatusNote(checkoutStatus: string | null): string | undefined {
 
 // ── GET|POST /connect/billing ────────────────────────────────────────────
 export async function handleBillingPage(request: Request, env: Env): Promise<Response> {
-  const form = await maybeFormData(request);
-  const session = await resolveBrowserSession(request, env, form);
+  const session = await resolveBrowserSession(request, env);
   if (!session) {
     const checkoutStatus = new URL(request.url).searchParams.get('checkout');
     return signInPromptPage(env, checkoutStatusNote(checkoutStatus));
@@ -187,8 +190,12 @@ export async function handleBillingPage(request: Request, env: Env): Promise<Res
 // ── POST /connect/billing/checkout ───────────────────────────────────────
 export async function handleBillingPageCheckout(request: Request, env: Env): Promise<Response> {
   const form = await maybeFormData(request);
-  const session = await resolveBrowserSession(request, env, form);
+  const session = await resolveBrowserSession(request, env);
   if (!session) return signInPromptPage(env);
+  // CSRF defence in depth (same posture as the connect credential POST): a
+  // billing action is state-changing, so it requires a same-origin request on
+  // top of the cookie's SameSite=Strict protection.
+  if (!sameOriginPost(request, env)) return csrfErrorPage();
 
   const tier = form?.get('tier');
   if (tier !== 'solo' && tier !== 'pro') {
@@ -206,9 +213,9 @@ export async function handleBillingPageCheckout(request: Request, env: Env): Pro
 
 // ── POST /connect/billing/portal ─────────────────────────────────────────
 export async function handleBillingPagePortal(request: Request, env: Env): Promise<Response> {
-  const form = await maybeFormData(request);
-  const session = await resolveBrowserSession(request, env, form);
+  const session = await resolveBrowserSession(request, env);
   if (!session) return signInPromptPage(env);
+  if (!sameOriginPost(request, env)) return csrfErrorPage();
 
   const apiRequest = syntheticApiRequest('/billing/portal', session.token, {});
   const apiResponse = await handleBillingPortal(apiRequest, env, {});
