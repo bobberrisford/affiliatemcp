@@ -247,14 +247,29 @@ is no longer the primary "paste this into your MCP client" surface. Bearer
 bearers keep working, and the browser connect/manage flow still uses a pasted
 session token — so nothing already connected breaks.
 
-Still to come, each its own `active-risk` PR:
+Slice progress:
 
-- **Slice 2 — transport dual-accept then bearer removal.** The transport
-  (`src/hosted-transport/session-auth.ts`) accepts both the existing bearer
-  and OAuth access tokens during a deprecation window, then drops bearer
-  acceptance; short TTL plus refresh is enforced there, digest-scope refusal
-  preserved. A documented revocation path for outstanding bearers lands before
-  the window closes.
+- **Slice 2 — transport dual-accept then bearer removal (transport side
+  landed).** An OAuth access token and a legacy pasted bearer are the same
+  `amcps_` wire format and differ only in lifetime, so the transport
+  (`src/hosted-transport/session-auth.ts`) already accepts OAuth access tokens
+  with no change. To tell the two apart, `POST /auth/session/verify` now
+  returns `iss` (issued-at) alongside `exp`, and the transport can enforce a
+  maximum token lifetime (`exp - iss`). The lever is the
+  `HOSTED_MAX_TOKEN_LIFETIME_SECONDS` env var read by the transport
+  (`src/hosted-transport/env.ts`):
+  - **unset (default)** — the dual-accept window: both OAuth access tokens and
+    the legacy long-lived bearers are accepted, so nothing already connected
+    breaks;
+  - **set** (recommended ~7200, comfortably above the one-hour OAuth
+    access-token TTL and far below the 30-day bearer) — long-lived bearers are
+    rejected while short-lived OAuth access tokens keep working. Flipping it on
+    is therefore both the cutover and the documented revocation path for every
+    outstanding pasted bearer at once.
+
+  Digest-scope refusal is preserved, and a token whose lifetime cannot be
+  computed (no numeric `iss`) fails closed once the cap is set. Short-lived
+  access tokens plus refresh are issued by slice 1's `/token` endpoint above.
 - **Slice 3 — connect-page rewrite.** The connect terminal step becomes a
   client-native "add connector" affordance, and the pasted-token affordance on
   `renderSessionPage` and the H5 connect pages is removed once those pages no

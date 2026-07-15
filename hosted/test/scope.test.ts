@@ -54,6 +54,7 @@ interface TestContext {
   env: Env;
   signingKey: string;
   userId: string;
+  iss: number;
   digestToken: string;
   fullToken: string;
 }
@@ -84,7 +85,7 @@ async function makeContext(): Promise<TestContext> {
     signingKey,
   );
   const fullToken = await signSession(buildSessionPayload({ sub: userId, iss, exp: iss + 3600 }), signingKey);
-  return { env, signingKey, userId, digestToken, fullToken };
+  return { env, signingKey, userId, iss, digestToken, fullToken };
 }
 
 function authed(path: string, method: string, token: string, body?: unknown): Request {
@@ -131,7 +132,7 @@ describe('token scope claim', () => {
 
 describe('POST /auth/session/verify reports scope', () => {
   it('returns scope "digest" for a digest token and "full" for a sign-in session', async () => {
-    const { env, digestToken, fullToken } = await makeContext();
+    const { env, iss, digestToken, fullToken } = await makeContext();
     const verify = (token: string) =>
       worker.fetch(
         new Request('https://hosted.test/auth/session/verify', {
@@ -142,13 +143,15 @@ describe('POST /auth/session/verify reports scope', () => {
         env,
       );
 
+    // The body also carries `iss` (and `exp`) so the transport can compute
+    // token lifetime during the staged bearer migration.
     const digestRes = await verify(digestToken);
     expect(digestRes.status).toBe(200);
-    expect(await digestRes.json()).toMatchObject({ scope: 'digest' });
+    expect(await digestRes.json()).toMatchObject({ scope: 'digest', iss, exp: iss + 900 });
 
     const fullRes = await verify(fullToken);
     expect(fullRes.status).toBe(200);
-    expect(await fullRes.json()).toMatchObject({ scope: 'full' });
+    expect(await fullRes.json()).toMatchObject({ scope: 'full', iss, exp: iss + 3600 });
   });
 });
 

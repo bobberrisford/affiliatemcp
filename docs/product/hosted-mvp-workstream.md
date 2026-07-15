@@ -52,9 +52,10 @@ authorisation per the standing delivery window or explicit approval.
    (`docs/decisions/2026-07-15-hosted-connector-oauth.md`): the authorization
    server (`/authorize`, `/token`, `/register`) lives in the `hosted/` Worker,
    and the transport accepts the resulting short-lived access tokens (the swap
-   is staged — bearer acceptance is dropped only after a dual-accept window;
-   see that decision's Migration section and `hosted/README.md`, "OAuth
-   (slice 1)"). Adapters untouched; requests run through the H1 seam against
+   is staged — the transport enforces an optional maximum token lifetime
+   (`HOSTED_MAX_TOKEN_LIFETIME_SECONDS`), so long-lived pasted bearers are
+   dropped only when that cap is set, after a dual-accept window; see that
+   decision's Migration section and `hosted/README.md`, "OAuth (slice 1)"). Adapters untouched; requests run through the H1 seam against
    H3 credentials. Runs as a Node service in the
    root workspace (`src/hosted-transport/`), not inside the `hosted/` Worker —
    see `hosted/README.md` ("H4: remote MCP transport lives in the root

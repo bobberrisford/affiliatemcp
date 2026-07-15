@@ -127,7 +127,9 @@ export async function startHostedHttpServer(config: HostedTransportConfig): Prom
 
     let verified;
     try {
-      verified = await verifySessionRemote(token, config.authUrl);
+      verified = await verifySessionRemote(token, config.authUrl, {
+        maxLifetimeSeconds: config.maxTokenLifetimeSeconds,
+      });
     } catch (err) {
       if (err instanceof HostedAuthUnavailableError) {
         log.error({ message: err.message }, 'hosted auth verify unavailable');

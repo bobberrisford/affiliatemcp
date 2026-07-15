@@ -36,6 +36,21 @@ export interface HostedTransportConfig {
   rateLimitCapacitySolo?: number;
   /** Solo-tier refill-rate override. Falls back to `rateLimitRefillPerSecond` when unset. */
   rateLimitRefillPerSecondSolo?: number;
+  /**
+   * Maximum permitted session-token lifetime in seconds, for the staged OAuth
+   * bearer migration (`docs/decisions/2026-07-15-hosted-connector-oauth.md`).
+   *
+   * UNSET (the default) is the dual-accept window: no cap is applied, so the
+   * transport accepts BOTH short-lived OAuth access tokens and the legacy
+   * long-lived pasted `amcps_` bearers. Setting it drops long-lived bearer
+   * acceptance: any session whose lifetime (`exp - iss`) exceeds this is
+   * rejected, so a value comfortably above the one-hour OAuth access-token TTL
+   * and far below the 30-day bearer (recommended ~7200) keeps OAuth access
+   * tokens working while rejecting every pasted bearer. Flipping it on is thus
+   * both the cutover and the documented revocation path for all outstanding
+   * bearers at once. Optional so callers that construct this config directly
+   * (tests) are not forced to set it. */
+  maxTokenLifetimeSeconds?: number;
 }
 
 function readUrl(name: string): string {
@@ -66,6 +81,20 @@ function readPositiveInt(name: string, fallback: number): number {
   return n;
 }
 
+/** Like `readPositiveInt` but with no default: returns `undefined` when the
+ * env var is unset or empty, and throws on a set-but-invalid value (same
+ * validation tone). Used for the optional token-lifetime cap, whose absence is
+ * a meaningful state (the dual-accept window), not a value to substitute. */
+function readOptionalPositiveInt(name: string): number | undefined {
+  const raw = process.env[name];
+  if (!raw || raw.trim().length === 0) return undefined;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) {
+    throw new Error(`${name} must be a positive number when set; got "${raw}".`);
+  }
+  return n;
+}
+
 /** Read and validate the hosted transport's configuration from `process.env`. */
 export function loadHostedTransportConfig(): HostedTransportConfig {
   const rateLimitCapacity = readPositiveInt('HOSTED_RATE_LIMIT_CAPACITY', DEFAULT_RATE_LIMIT_CAPACITY);
@@ -85,5 +114,8 @@ export function loadHostedTransportConfig(): HostedTransportConfig {
       'HOSTED_RATE_LIMIT_REFILL_PER_SECOND_SOLO',
       rateLimitRefillPerSecond,
     ),
+    // Unset = dual-accept window (accept both legacy bearers and OAuth access
+    // tokens); set it to drop long-lived bearer acceptance (staged migration).
+    maxTokenLifetimeSeconds: readOptionalPositiveInt('HOSTED_MAX_TOKEN_LIFETIME_SECONDS'),
   };
 }
