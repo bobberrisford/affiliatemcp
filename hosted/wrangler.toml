@@ -13,14 +13,18 @@ compatibility_date = "2026-03-25"
 [triggers]
 crons = ["0 6 * * 1"]
 
-# ── KV: hosted-account identity ─────────────────────────────────────────────
+# ── KV: hosted-account identity + OAuth auth artefacts ──────────────────────
 # Stores (NO affiliate credentials, NO affiliate data — see hosted/README.md
 # for the exact key shapes):
-#   user:<userId>            -> JSON { id, createdAt }
+#   user:<userId>            -> JSON { id, createdAt, emailHash }
 #   email-hash:<hmacHex>     -> <userId>
-#   pending-link:<sha256Hex> -> JSON { emailHash, expiresAt }  (TTL'd, single-use)
+#   pending-link:<sha256Hex> -> JSON { emailHash, expiresAt, authRequestId? }  (TTL'd, single-use)
 #   rl:email-hash:<hmacHex>  -> counter  (request-link rate limit, TTL'd)
 #   rl:ip:<sha256Hex>        -> counter  (request-link rate limit, TTL'd)
+#   oauth:client:<clientId>    -> registered OAuth client (slice 1)
+#   oauth:req:<reqId>          -> pending authorization request (TTL'd)
+#   oauth:code:<sha256Hex>     -> authorization code (TTL'd, single-use)
+#   oauth:refresh:<sha256Hex>  -> refresh token (TTL'd, rotated on use)
 # Create a FRESH namespace before first deploy:
 #   npx wrangler kv namespace create HOSTED_USERS
 #   npx wrangler kv namespace create HOSTED_USERS --preview

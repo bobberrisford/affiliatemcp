@@ -45,9 +45,17 @@ authorisation per the standing delivery window or explicit approval.
    rotation and hard delete; the threat-model note resolving the KMS
    question.
 4. **H4: remote MCP transport.** Streamable HTTP MCP endpoint with per-user
-   token auth, per-tier rate limits, and a per-user audit log (network,
-   operation, timestamp; never payloads). Adapters untouched; requests run
-   through the H1 seam against H3 credentials. Runs as a Node service in the
+   client authentication, per-tier rate limits, and a per-user audit log
+   (network, operation, timestamp; never payloads). Client authentication is
+   moving from the original pasted per-user bearer to an OAuth 2.1
+   authorization-code + PKCE flow per the MCP authorization framework
+   (`docs/decisions/2026-07-15-hosted-connector-oauth.md`): the authorization
+   server (`/authorize`, `/token`, `/register`) lives in the `hosted/` Worker,
+   and the transport accepts the resulting short-lived access tokens (the swap
+   is staged — bearer acceptance is dropped only after a dual-accept window;
+   see that decision's Migration section and `hosted/README.md`, "OAuth
+   (slice 1)"). Adapters untouched; requests run through the H1 seam against
+   H3 credentials. Runs as a Node service in the
    root workspace (`src/hosted-transport/`), not inside the `hosted/` Worker —
    see `hosted/README.md` ("H4: remote MCP transport lives in the root
    workspace, not here") for why. Acceptance proof for this slice's PR: an
@@ -57,7 +65,12 @@ authorisation per the standing delivery window or explicit approval.
    credential remains a Rob-only follow-up once a deploy exists.
 5. **H5: guided connect flow.** Browser onboarding for the four production
    networks: OAuth where supported, guided paste-once otherwise, connection
-   test on save, automatic first-value report. Terms-of-service check per
+   test on save, automatic first-value report. ("OAuth where supported" here
+   means a **network's** own OAuth for collecting that network's credentials,
+   e.g. Rakuten's client-credentials exchange — distinct from, and not to be
+   conflated with, the client-to-transport OAuth in
+   `docs/decisions/2026-07-15-hosted-connector-oauth.md`.) Terms-of-service
+   check per
    network recorded before it is offered hosted, and the flow instructs
    users to create scoped or read-only API keys where the network offers
    them, per the custody record's least-privilege clause. Acceptance proof:

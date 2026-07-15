@@ -23,12 +23,21 @@ import { workerSecretMasterKey } from './vault.js';
 
 export interface Env {
   /**
-   * KV namespace holding hosted-account identity, keyed as:
+   * KV namespace holding hosted-account identity and OAuth auth artefacts —
+   * NO affiliate credentials and NO affiliate data. Keyed as:
    *   user:<userId>              -> JSON { id, createdAt, emailHash }
    *   email-hash:<hmacHex>       -> <userId>   (HMAC-keyed lookup; see README)
-   *   pending-link:<sha256Hex>   -> JSON { emailHash, expiresAt } (TTL'd, single-use)
+   *   pending-link:<sha256Hex>   -> JSON { emailHash, expiresAt, authRequestId? } (TTL'd, single-use)
    *   rl:email-hash:<hmacHex>    -> counter    (request-link rate limit, TTL'd)
    *   rl:ip:<sha256Hex>          -> counter    (request-link rate limit, TTL'd)
+   *   oauth:client:<clientId>    -> JSON ClientRecord        (registered OAuth client)
+   *   oauth:req:<reqId>          -> JSON PendingAuthRequest   (TTL'd, single-use)
+   *   oauth:code:<sha256Hex>     -> JSON AuthCodeRecord       (TTL'd, single-use)
+   *   oauth:refresh:<sha256Hex>  -> JSON RefreshRecord        (TTL'd, rotated on use)
+   * The `oauth:*` shapes are the client-to-transport OAuth flow (slice 1,
+   * `src/oauth.ts`, `docs/decisions/2026-07-15-hosted-connector-oauth.md`);
+   * they are auth tokens, never affiliate credentials, so the store's no-PII,
+   * no-affiliate-data invariant is unchanged.
    */
   HOSTED_USERS: KVNamespace;
   /**

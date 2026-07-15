@@ -129,9 +129,141 @@ rotation, rather than after: a dedicated pepper secret, rotated independently
 of the signing key, is the straightforward fix if this trade-off proves
 wrong in practice.
 
+## OAuth (slice 1): connector authentication
+
+Governed by `docs/decisions/2026-07-15-hosted-connector-oauth.md` (Accepted
+2026-07-15). This is client-to-transport authentication per the MCP
+authorization framework: an OAuth 2.1 authorization-code flow with PKCE, so an
+MCP client (Claude, ChatGPT, and similar) performs the code exchange and
+stores the tokens itself, and the user pastes nothing. It replaces the old
+"copy this 30-day bearer into your MCP client's connection settings" step,
+which was both the funnel's worst UX moment and a leak-prone credential shape.
+
+This is deliberately distinct from two other things and must not be conflated
+with either: it is not H5's network-credential collection (Awin/CJ/Impact/
+Rakuten keys stored in the vault), and it is not H5's "OAuth where supported"
+wording, which refers to a **network's** OAuth (e.g. Rakuten's
+client-credentials exchange). This governs only how the MCP **client** proves
+who the user is to the hosted transport.
+
+### Endpoints (`src/routes/oauth.ts`, storage in `src/oauth.ts`)
+
+```
+GET  /.well-known/oauth-authorization-server  RFC 8414 discovery document
+POST /register                                RFC 7591 dynamic client registration
+GET  /authorize                               validate the request + render the sign-in page
+POST /authorize/email                         send the magic link for this authorization
+POST /authorize/consent                       approve/deny → issue code, redirect to the client
+POST /token                                   authorization_code and refresh_token grants
+```
+
+### The flow
+
+1. The client reads the metadata document, (dynamically) registers to get a
+   `client_id`, and opens the user's browser at `GET /authorize?...` with a
+   PKCE `code_challenge` (S256), `redirect_uri`, and `state`.
+2. `/authorize` validates the request and renders a sign-in page: one email
+   field. This **reuses the existing magic-link identity** — there is no
+   second account system and no password. Submitting the email
+   (`POST /authorize/email`) sends the *same* magic link the ordinary sign-in
+   uses (`dispatchMagicLink`, `src/auth-link.ts`, shared code so the
+   account-enumeration neutrality, per-address/per-IP abuse limit, and
+   "link origin is `PUBLIC_BASE_URL`, never the request Host" guarantees are
+   identical), carrying the pending authorization request id in the
+   pending-link record — never in the emailed URL.
+3. The user clicks the link. `GET /auth/callback` consumes it, establishes
+   identity exactly as before, and — because the pending record carries an
+   `authRequestId` — renders the **consent page** instead of the session
+   page. Consent identity is proved by a short-lived full session token in a
+   hidden form field, the same header-or-hidden-field, never-a-URL discipline
+   the H5 connect flow uses (`src/routes/connect.ts`).
+4. Approving mints a single-use authorization code bound to the PKCE
+   challenge and 302-redirects the browser back to the client's
+   `redirect_uri` with `code` and `state`. Denying redirects with
+   `error=access_denied`.
+5. The client exchanges the code at `POST /token` with its `code_verifier`
+   (PKCE S256), receiving a short-lived access token and a refresh token, and
+   stores both. The user never sees or handles a token.
+
+### Token model
+
+- **Access token** is a short-lived (`OAUTH_ACCESS_TOKEN_TTL_SECONDS`, one
+  hour), **full-scope** `amcps_` hosted session token — the exact wire format
+  the sign-in flow already mints (`src/token.ts`), so `POST /auth/session/verify`
+  and therefore the transport that already calls it
+  (`src/hosted-transport/session-auth.ts`) verify it with no change. That is
+  what keeps bearer acceptance working through the staged migration below.
+  OAuth never mints a digest-scoped token (those stay internal to the
+  scheduled digest, `src/digest.ts`), so the full-vs-digest distinction the
+  decision requires be preserved holds by construction.
+- **Refresh token** is an opaque, server-side, rotated-on-use `amcpr_`
+  credential, stored only as its SHA-256 hash. Deliberately a different shape
+  from the access token so it can never be presented to the transport as a
+  bearer and accepted. Rotated on every use (old hash deleted, new one
+  written), so a leaked-then-used refresh token surfaces as a reuse of a
+  now-unknown token.
+
+### PKCE and client registration
+
+- **PKCE is mandatory and S256-only.** `plain` is refused (RFC 7636 §4.2
+  permits this and the MCP framework mandates S256 for public clients). A
+  request without a valid `code_challenge` is refused at `/authorize`.
+- **Public clients only.** Every client is `token_endpoint_auth_method:
+  "none"`; there is no `client_secret` anywhere in this design. A registration
+  asking for a confidential auth method is refused rather than silently
+  downgraded.
+- **Dynamic client registration** (`POST /register`, RFC 7591) is supported
+  for clients that use it (Claude and ChatGPT both do). `redirect_uris` must
+  each be an absolute `https` URL or an `http` **loopback** URL
+  (`127.0.0.1`/`localhost`/`[::1]`, RFC 8252 §7.3 for native apps); anything
+  else is refused, and `/authorize` requires an exact-string match against a
+  registered URI, so the endpoint can never be turned into an open redirector.
+- **Static registration path** for a client that does not implement DCR:
+  pre-provision a client record directly in KV (run from `hosted/`), then hand
+  the client the printed `client_id`:
+
+  ```sh
+  npx wrangler kv key put --binding HOSTED_USERS "oauth:client:oauth_client_<id>" \
+    '{"clientId":"oauth_client_<id>","redirectUris":["https://client.example/callback"],"clientName":"My Client","createdAt":1752580800}'
+  ```
+
+### Custody contract unchanged
+
+This slice is about client identity auth, not credential storage. The accepted
+custody contract (`docs/decisions/2026-07-12-hosted-credential-custody.md`:
+bring-your-own-key, read-only, decrypt at call time, serve only the key's
+owner, self-serve export and hard delete) is untouched. Nothing here holds or
+does anything new with affiliate data; the `oauth:*` records are auth tokens
+in `HOSTED_USERS`, never credentials.
+
+### Staged migration (this is a live surface)
+
+Tokens are already in the wild, so the swap is staged, not a hard cutover.
+**This slice (slice 1) does only the authorization-server half:** it adds the
+endpoints above and makes the OAuth flow the primary path, and the plain
+sign-in callback page (`renderSessionPage`, `src/index.ts`) is reworded so it
+is no longer the primary "paste this into your MCP client" surface. Bearer
+**acceptance is intentionally unchanged** in this slice — existing `amcps_`
+bearers keep working, and the browser connect/manage flow still uses a pasted
+session token — so nothing already connected breaks.
+
+Still to come, each its own `active-risk` PR:
+
+- **Slice 2 — transport dual-accept then bearer removal.** The transport
+  (`src/hosted-transport/session-auth.ts`) accepts both the existing bearer
+  and OAuth access tokens during a deprecation window, then drops bearer
+  acceptance; short TTL plus refresh is enforced there, digest-scope refusal
+  preserved. A documented revocation path for outstanding bearers lands before
+  the window closes.
+- **Slice 3 — connect-page rewrite.** The connect terminal step becomes a
+  client-native "add connector" affordance, and the pasted-token affordance on
+  `renderSessionPage` and the H5 connect pages is removed once those pages no
+  longer need a pasted session token.
+
 ## KV storage shapes (H2: `HOSTED_USERS`)
 
-One namespace, four key shapes, no affiliate data in any of them:
+One namespace, four base key shapes plus the OAuth records above, no affiliate
+data in any of them:
 
 - **`user:<userId>`** → `JSON { id, createdAt, emailHash }`. `userId` is an
   opaque `hosted_usr_<uuid>` string; nothing PII-bearing is embedded in it. No
