@@ -1,7 +1,7 @@
 # Hosted connector authentication: OAuth instead of a pasted bearer token
 
 - **Date:** 2026-07-15
-- **Status:** Proposed (decision pending Rob's acceptance)
+- **Status:** Accepted (2026-07-15, Rob)
 - **Affects:** the live hosted connect flow (`hosted/src/index.ts`
   `renderSessionPage` and `handleSessionCallback`, `hosted/src/routes/connect.ts`,
   `hosted/src/token.ts`) and the transport-side verification
