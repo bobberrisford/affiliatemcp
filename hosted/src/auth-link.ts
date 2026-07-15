@@ -79,13 +79,20 @@ export class MagicLinkConfigError extends Error {
  * for the current window; false (without incrementing further) once the limit
  * is reached. KV get/put is not atomic, so concurrent requests can slightly
  * overshoot, and each increment refreshes the window TTL — both acceptable for
- * a cheap abuse backstop H4's transport-level limits supersede.
+ * a cheap abuse backstop H4's transport-level limits supersede. Exported so
+ * other unauthenticated write endpoints (e.g. OAuth `/register`) can reuse the
+ * same primitive rather than re-implementing it.
  */
-async function bumpRateLimit(env: Env, key: string, max: number): Promise<boolean> {
+export async function bumpRateLimit(
+  env: Env,
+  key: string,
+  max: number,
+  windowSeconds: number = RATE_LIMIT_WINDOW_SECONDS,
+): Promise<boolean> {
   const raw = await env.HOSTED_USERS.get(key);
   const count = raw ? Number(raw) : 0;
   if (count >= max) return false;
-  await env.HOSTED_USERS.put(key, String(count + 1), { expirationTtl: RATE_LIMIT_WINDOW_SECONDS });
+  await env.HOSTED_USERS.put(key, String(count + 1), { expirationTtl: windowSeconds });
   return true;
 }
 

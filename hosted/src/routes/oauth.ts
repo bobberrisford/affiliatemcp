@@ -44,14 +44,14 @@
 import type { Env } from '../env.js';
 import { publicBaseUrl } from '../env.js';
 import { html, json, nowSeconds } from '../http.js';
-import { isValidEmail, normaliseEmail } from '../identity.js';
+import { ipRateLimitHash, isValidEmail, normaliseEmail } from '../identity.js';
 import {
   buildSessionPayload,
   resolveValidSession,
   sessionScope,
   signSession,
 } from '../token.js';
-import { dispatchMagicLink, MagicLinkConfigError } from '../auth-link.js';
+import { bumpRateLimit, dispatchMagicLink, MagicLinkConfigError } from '../auth-link.js';
 import {
   authorizationServerMetadata,
   consumeAuthCode,
@@ -151,7 +151,7 @@ function oauthPage(title: string, bodyHtml: string, status = 200): Response {
 }
 
 function errorPage(message: string, status = 400): Response {
-  return oauthPage('authorization error', `<h1>authorization error</h1><p>${escapeHtml(message)}</p>`, status);
+  return oauthPage('authorisation error', `<h1>authorisation error</h1><p>${escapeHtml(message)}</p>`, status);
 }
 
 // ── Token minting ──────────────────────────────────────────────────────────
@@ -206,7 +206,25 @@ export function handleOAuthMetadata(env: Env): Response {
 
 // ── POST /register (RFC 7591 dynamic client registration) ──────────────────
 
+/** IP cap on the unauthenticated `/register` endpoint: it writes a permanent
+ * `oauth:client:` KV record per call, so, unlike the magic-link send, it is a
+ * standing-storage write with no natural expiry. A per-IP hourly ceiling is a
+ * cheap backstop against a loop that inflates KV with junk clients; it is not
+ * a correctness gate (a real client registers once). Keyed by the same one-way
+ * IP hash the request-link limiter uses, so no raw IP is stored. */
+const REGISTER_MAX_PER_IP = 20;
+
 export async function handleRegister(request: Request, env: Env): Promise<Response> {
+  const clientIp = request.headers.get('cf-connecting-ip') ?? 'unknown';
+  const ipHash = await ipRateLimitHash(clientIp);
+  if (!(await bumpRateLimit(env, `rl:reg:${ipHash}`, REGISTER_MAX_PER_IP))) {
+    return json(
+      { error: 'temporarily_unavailable', error_description: 'Too many registrations from this address. Try again later.' },
+      { status: 429 },
+      oauthCors(),
+    );
+  }
+
   let body: { redirect_uris?: unknown; client_name?: unknown; token_endpoint_auth_method?: unknown };
   try {
     body = (await request.json()) as typeof body;
@@ -330,9 +348,9 @@ function renderSignInPage(reqId: string, clientName: string | undefined, errorMe
   const who = clientName ? escapeHtml(clientName) : 'An application';
   const errorHtml = errorMessage ? `<div class="note">${escapeHtml(errorMessage)}</div>` : '';
   return oauthPage(
-    'authorize access',
+    'authorise access',
     `
-    <h1>authorize access</h1>
+    <h1>authorise access</h1>
     <p>${who} wants to connect to your affiliate-mcp hosted account.</p>
     ${errorHtml}
     <p>Sign in with your email to continue. We will send you a one-time link;
@@ -362,12 +380,12 @@ export async function handleAuthorizeEmail(request: Request, env: Env): Promise<
   const reqId = form.get('auth_req');
   const emailRaw = form.get('email');
   if (typeof reqId !== 'string' || reqId.length === 0) {
-    return errorPage('Missing authorization request. Restart the connection from your client.');
+    return errorPage('Missing authorisation request. Restart the connection from your client.');
   }
 
   const pending = await getPendingRequest(env.HOSTED_USERS, reqId);
   if (!pending || pending.expiresAt <= nowSeconds()) {
-    return errorPage('This authorization request has expired. Restart the connection from your client.');
+    return errorPage('This authorisation request has expired. Restart the connection from your client.');
   }
 
   const client = await getClient(env.HOSTED_USERS, pending.clientId);
@@ -414,7 +432,7 @@ export async function handleAuthorizeEmail(request: Request, env: Env): Promise<
 export async function renderConsentPage(env: Env, reqId: string, userId: string): Promise<Response> {
   const pending = await getPendingRequest(env.HOSTED_USERS, reqId);
   if (!pending || pending.expiresAt <= nowSeconds()) {
-    return errorPage('This authorization request has expired. Restart the connection from your client.');
+    return errorPage('This authorisation request has expired. Restart the connection from your client.');
   }
   const client = await getClient(env.HOSTED_USERS, pending.clientId);
   const who = client?.clientName ? escapeHtml(client.clientName) : 'An application';
@@ -427,10 +445,12 @@ export async function renderConsentPage(env: Env, reqId: string, userId: string)
     `
     <h1>approve connection</h1>
     <p>You are signed in. ${who} is requesting access to your affiliate-mcp
-    hosted account so it can read your connected networks on your behalf.</p>
-    <div class="note">Approving lets this client make affiliate-mcp requests as
-    you. It cannot change your account settings or delete your account. You can
-    revoke access at any time (see <code>hosted/README.md</code>).</div>
+    hosted account.</p>
+    <div class="note">Approving lets this client act on affiliate-mcp with the
+    same access as signing in yourself: it can read your connected networks and
+    their data, add or remove connections, and manage your account. Only approve
+    a client you trust. You can revoke access at any time (see
+    <code>hosted/README.md</code>).</div>
     <form class="inline" method="post" action="/authorize/consent">
       <input type="hidden" name="auth_req" value="${escapeHtml(reqId)}">
       <input type="hidden" name="token" value="${escapeHtml(token)}">
@@ -460,12 +480,12 @@ export async function handleConsent(request: Request, env: Env): Promise<Respons
   const token = form.get('token');
   const decision = form.get('decision');
   if (typeof reqId !== 'string' || reqId.length === 0) {
-    return errorPage('Missing authorization request.');
+    return errorPage('Missing authorisation request.');
   }
 
   const pending = await getPendingRequest(env.HOSTED_USERS, reqId);
   if (!pending || pending.expiresAt <= nowSeconds()) {
-    return errorPage('This authorization request has expired. Restart the connection from your client.');
+    return errorPage('This authorisation request has expired. Restart the connection from your client.');
   }
 
   // Identity proof: the short-lived full session token minted on the consent

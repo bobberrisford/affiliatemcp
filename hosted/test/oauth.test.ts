@@ -225,6 +225,23 @@ describe('POST /register', () => {
     expect(res.status).toBe(400);
     expect(((await res.json()) as { error: string }).error).toBe('invalid_client_metadata');
   });
+
+  it('rate-limits registrations per IP (backstop against KV-inflating loops)', async () => {
+    const env = await makeEnv();
+    const fromIp = () =>
+      new Request(`${BASE}/register`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'cf-connecting-ip': '198.51.100.7' },
+        body: JSON.stringify({ redirect_uris: [REDIRECT_URI] }),
+      });
+    for (let i = 0; i < 20; i++) {
+      const res = await worker.fetch(fromIp(), env);
+      expect(res.status).toBe(201);
+    }
+    const overLimit = await worker.fetch(fromIp(), env);
+    expect(overLimit.status).toBe(429);
+    expect(((await overLimit.json()) as { error: string }).error).toBe('temporarily_unavailable');
+  });
 });
 
 // ── /authorize validation ─────────────────────────────────────────────────
