@@ -101,6 +101,13 @@ BILLING_PORTAL_RETURN_URL = "REPLACE_WITH_PUBLIC_BASE_URL/connect/billing"
 # in the same account (Cloudflare serves a 404, observed 2026-07-15; see
 # containers/wrangler.toml, "Deploy gotchas").
 # DIGEST_SERVICE_URL = "https://REPLACE_WITH_DIGEST_SERVICE_ORIGIN"
+# Public URL of the hosted MCP transport (slice 2b) — a DIFFERENT origin from
+# this Worker (this Worker is the OAuth authorization server; the transport is
+# the resource server a client connects to). When set, the connect success page
+# shows this as the connector URL to add; when unset it shows an honest
+# placeholder. Public server URL only, never a token. Uncomment and set to the
+# deployed transport origin once one exists.
+# HOSTED_CONNECTOR_URL = "https://REPLACE_WITH_TRANSPORT_ORIGIN/mcp"
 
 # ── Secrets — set via `wrangler secret put <NAME>` (NEVER commit) ──────────
 #   RESEND_API_KEY        re_…    (Resend API key, from https://resend.com/api-keys;

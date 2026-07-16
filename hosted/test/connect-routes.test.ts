@@ -549,6 +549,46 @@ describe('no batch connect endpoint exists', () => {
   });
 });
 
+// ── connector URL on the success page (slice 2b) ────────────────────────────
+describe('connector URL on the connection-test success page', () => {
+  it('shows the real connector URL when HOSTED_CONNECTOR_URL is set', async () => {
+    const { env, signingKey } = await makeTestEnv();
+    env.HOSTED_CONNECTOR_URL = 'https://mcp.agenticaffiliate.ai/mcp';
+    const token = await issueSessionToken(signingKey, generateUserId());
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify([{ accountId: 1, accountName: 'X' }]), { status: 200 }),
+    );
+    const res = await worker.fetch(
+      authedPost('/connect/awin', { AWIN_API_TOKEN: 'a', AWIN_PUBLISHER_ID: '1' }, token, SAME_ORIGIN),
+      env,
+    );
+    const body = await res.text();
+    expect(body).toContain('Connection test passed');
+    expect(body).toContain('https://mcp.agenticaffiliate.ai/mcp');
+    // Still the OAuth, nothing-to-paste framing, and no placeholder wording.
+    expect(body).toContain('custom connector');
+    expect(body).not.toContain('your-hosted-transport-deployment');
+    expectNoTokenLeak(body, token);
+  });
+
+  it('shows the honest placeholder when HOSTED_CONNECTOR_URL is unset', async () => {
+    const { env, signingKey } = await makeTestEnv();
+    const token = await issueSessionToken(signingKey, generateUserId());
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify([{ accountId: 1, accountName: 'X' }]), { status: 200 }),
+    );
+    const res = await worker.fetch(
+      authedPost('/connect/awin', { AWIN_API_TOKEN: 'a', AWIN_PUBLISHER_ID: '1' }, token, SAME_ORIGIN),
+      env,
+    );
+    const body = await res.text();
+    expect(body).toContain('Connection test passed');
+    expect(body).toContain('your-hosted-transport-deployment');
+    expect(body).toContain('custom connector');
+    expectNoTokenLeak(body, token);
+  });
+});
+
 // ── no-store and no-referrer on every connect response ──────────────────────
 describe('security headers on every connect response', () => {
   it('a signed-in /connect response carries cache-control: no-store and referrer-policy: no-referrer', async () => {
