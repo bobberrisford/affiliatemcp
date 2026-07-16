@@ -76,6 +76,7 @@ import { testConnection, type ConnectionTestResult } from '../connect-test.js';
 import { CONNECT_NETWORKS, findConnectNetwork, type ConnectNetwork } from '../networks.js';
 import { getCredentials, isValidCredentialRecord, listNetworks, putCredentials } from '../vault.js';
 import { resolveValidSession, sessionScope } from '../token.js';
+import { resolveEntitlement, type HostedTier } from '../billing.js';
 
 // ── Shared page chrome ──────────────────────────────────────────────────────
 // Same monospace, boxed-card look as the OAuth ceremony pages
@@ -478,7 +479,8 @@ export async function handleConnectSubmit(request: Request, env: Env, slug: stri
   // task's "keep the credential stored" requirement.
   const result = await testConnection(network.slug, record);
   const maskedTail = maskLastFour(record[network.maskedConfirmationField] ?? '');
-  return page(`connect ${network.name}`, renderConnectResultBody(network, result, maskedTail, env));
+  const entitlement = await resolveEntitlement(env.HOSTED_BILLING, session.userId);
+  return page(`connect ${network.name}`, renderConnectResultBody(network, result, maskedTail, env, entitlement.tier));
 }
 
 // ── POST|GET /connect/:network/retest ────────────────────────────────────────
@@ -501,7 +503,8 @@ export async function handleConnectRetest(request: Request, env: Env, slug: stri
 
   const result = await testConnection(network.slug, stored);
   const maskedTail = maskLastFour(stored[network.maskedConfirmationField] ?? '');
-  return page(`connect ${network.name}`, renderConnectResultBody(network, result, maskedTail, env));
+  const entitlement = await resolveEntitlement(env.HOSTED_BILLING, session.userId);
+  return page(`connect ${network.name}`, renderConnectResultBody(network, result, maskedTail, env, entitlement.tier));
 }
 
 function renderConnectResultBody(
@@ -509,6 +512,7 @@ function renderConnectResultBody(
   result: ConnectionTestResult,
   maskedTail: string,
   env: Env,
+  tier: HostedTier,
 ): string {
   const maskedLine = maskedTail
     ? `<p class="muted">Stored credential ending in &bull;&bull;&bull;&bull;${escapeHtml(maskedTail)}.</p>`
@@ -516,19 +520,42 @@ function renderConnectResultBody(
 
   if (result.ok) {
     // The connector URL a user adds in their MCP client. When the deployer has
-    // set HOSTED_CONNECTOR_URL (slice 2b) show the real transport origin;
-    // otherwise keep the honest placeholder — the H4 transport has not been
-    // deployed anywhere yet. This is only the public server URL, never a token.
+    // set HOSTED_CONNECTOR_URL show the real transport origin; otherwise show a
+    // neutral placeholder until this deployment configures it. Only ever the
+    // public server URL, never a token.
     const connectorUrlHtml = env.HOSTED_CONNECTOR_URL
       ? `<p class="muted">Connector URL:
       <code>${escapeHtml(env.HOSTED_CONNECTOR_URL)}</code>. Add it via your
       client's "Add custom connector" flow.</p>`
       : `<p class="muted">Connector URL:
-      <code>https://&lt;your-hosted-transport-deployment&gt;/mcp</code> &mdash; a
-      placeholder until a staging or production deployment exists (H4 has not
-      been deployed yet; see
-      <code>docs/product/hosted-mvp-workstream.md</code>, slice H4). Add it via
-      your client's "Add custom connector" flow.</p>`;
+      <code>https://&lt;your-hosted-transport-deployment&gt;/mcp</code> &mdash;
+      the exact address appears here once this deployment's
+      <code>HOSTED_CONNECTOR_URL</code> is configured. Add it via your client's
+      "Add custom connector" flow.</p>`;
+
+    // The hosted MCP transport refuses tool calls without an active
+    // subscription (the entitlement gate in `../billing.ts`, consulted at the
+    // transport boundary). So a user who is not yet subscribed must subscribe
+    // BEFORE adding the connector, or their first prompt fails at that boundary.
+    // Sequence the guidance to match entitlement: `none` -> billing first;
+    // `solo`/`pro` -> the full add-connector + first-prompt copy.
+    if (tier === 'none') {
+      return `
+      <h1>${escapeHtml(network.name)} connected</h1>
+      <p class="status-connected">Connection test passed.</p>
+      ${maskedLine}
+      <h2>next: subscribe, then add to Claude</h2>
+      <p>Your ${escapeHtml(network.name)} credentials are stored and working.
+      Running reports from an MCP client needs an active hosted subscription, so
+      choose a plan first &mdash; then add affiliate-mcp as a custom connector,
+      where your client signs you in through your browser with OAuth (there is
+      no token to copy or paste).</p>
+      <p>${navForm('/connect/billing', 'choose a plan')}</p>
+      ${connectorUrlHtml}
+      <p>${navForm('/connect', 'back to all networks')}</p>
+    `;
+    }
+
     return `
       <h1>${escapeHtml(network.name)} connected</h1>
       <p class="status-connected">Connection test passed.</p>
@@ -542,8 +569,8 @@ function renderConnectResultBody(
       <p>Suggested first prompt once connected: "Show my unpaid commissions on
       ${escapeHtml(network.name)} from the last 30 days."</p>
       <div class="note">This page cannot run that prompt for you: a full
-      automatic first-value report needs the Node H4 transport runtime, which
-      is out of this Worker's scope. State this honestly rather than fake a
+      automatic first-value report needs the separate hosted transport runtime,
+      which is out of this Worker's scope. State this honestly rather than fake a
       report &mdash; run the prompt yourself once your MCP client is connected.</div>
       <p>${navForm('/connect', 'back to all networks')}</p>
     `;
