@@ -205,7 +205,16 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
-    if (url.pathname === '/mcp' || url.pathname === '/health') {
+    if (
+      url.pathname === '/mcp' ||
+      url.pathname === '/health' ||
+      // The transport serves its own RFC 9728 protected-resource metadata
+      // (slice 2b, src/hosted-transport/http-server.ts). It MUST be forwarded
+      // to the container: the /mcp 401 challenge points a client here, so a
+      // 404 at this path breaks OAuth discovery even though the challenge is
+      // correct.
+      url.pathname === '/.well-known/oauth-protected-resource'
+    ) {
       const stub = env.MCP_TRANSPORT_CONTAINER.getByName(TRANSPORT_SINGLETON_NAME);
       return stub.fetch(request);
     }
