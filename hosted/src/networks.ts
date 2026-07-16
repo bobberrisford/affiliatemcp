@@ -96,11 +96,10 @@ export const CONNECT_NETWORKS: readonly ConnectNetwork[] = [
       },
     ],
     leastPrivilegeNote:
-      "This repo's docs do not record a scoped or read-only token option for Awin: " +
-      'the API credentials screen issues one long-lived token with the same access ' +
-      'your dashboard login has. There is no lesser-privileged alternative documented ' +
-      'here today. Generate a token specifically for this connection so it can be ' +
-      'revoked on its own without affecting anything else using your account.',
+      'Awin issues one API token, and it has the same access as your dashboard ' +
+      'login. There is no read-only option today, so generate a fresh token just ' +
+      'for this connection. That way you can revoke it on its own later, without ' +
+      'affecting anything else on your account.',
     maskedConfirmationField: 'AWIN_API_TOKEN',
   },
   {
@@ -130,11 +129,9 @@ export const CONNECT_NETWORKS: readonly ConnectNetwork[] = [
       },
     ],
     leastPrivilegeNote:
-      "This repo's docs do not record a scoped or read-only Personal Access Token " +
-      'option for CJ: the token issued from Account -> Personal Access Tokens carries ' +
-      'the same access your dashboard login has. There is no lesser-privileged ' +
-      'alternative documented here today. Create a token specifically for this ' +
-      'connection so it can be revoked on its own.',
+      "CJ's Personal Access Token has the same access as your dashboard login. " +
+      'There is no read-only option today, so create a fresh token just for this ' +
+      'connection. That way you can revoke it on its own later.',
     maskedConfirmationField: 'CJ_API_TOKEN',
   },
   {
@@ -161,12 +158,10 @@ export const CONNECT_NETWORKS: readonly ConnectNetwork[] = [
       },
     ],
     leastPrivilegeNote:
-      "This repo's docs do not record a scoped or read-only Auth Token option for " +
-      'Impact: the Settings -> API screen shows one Account SID and Auth Token pair ' +
-      'with the same access your dashboard login has. There is no lesser-privileged ' +
-      'alternative documented here today. If your Impact plan supports additional ' +
-      'API users with restricted roles, prefer one of those over your own primary ' +
-      'login credentials; this repo has not verified whether your account tier offers it.',
+      'Impact shows one Account SID and Auth Token pair, and it has the same ' +
+      'access as your dashboard login. If your Impact plan lets you add an API ' +
+      'user with a restricted role, prefer that over your own login. Otherwise ' +
+      'use this pair just for this connection so you can rotate it on its own later.',
     maskedConfirmationField: 'IMPACT_AUTH_TOKEN',
   },
   {
@@ -206,12 +201,10 @@ export const CONNECT_NETWORKS: readonly ConnectNetwork[] = [
       },
     ],
     leastPrivilegeNote:
-      "This repo's docs do not record a scoped or read-only credential option for " +
-      'Rakuten: the API Credentials screen issues one client ID and secret pair with ' +
-      'the same access your dashboard login has. There is no lesser-privileged ' +
-      'alternative documented here today. Regenerating the pair invalidates the ' +
-      'previous secret, so create a fresh pair for this connection rather than reusing ' +
-      'one shared with another integration.',
+      'Rakuten issues one Client ID and Secret pair, and it has the same access ' +
+      'as your dashboard login. Regenerating the pair invalidates the old secret, ' +
+      'so create a fresh pair just for this connection rather than reusing one you ' +
+      'share with another integration.',
     maskedConfirmationField: 'RAKUTEN_CLIENT_SECRET',
   },
 ];

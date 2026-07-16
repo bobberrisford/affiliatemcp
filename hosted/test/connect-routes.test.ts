@@ -263,7 +263,7 @@ describe('POST /connect/:network/form', () => {
       for (const field of fields) {
         expect(body).toContain(`name="${field}"`);
       }
-      expect(body.toLowerCase()).toContain('lesser-privileged alternative documented here today');
+      expect(body.toLowerCase()).toContain('just for this connection');
       expect(body).toContain(`action="/connect/${slug}"`);
       // No hidden session-token field remains on the credential form.
       expect(body).not.toContain('name="token"');

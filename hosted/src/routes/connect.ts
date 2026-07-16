@@ -329,9 +329,29 @@ function notFoundPage(): Response {
   return page(
     'network not found',
     `<h1>network not found</h1>
-    <p>This is not one of the four hosted-eligible networks.</p>
+    <p>That is not one of the networks you can connect here.</p>
     <p>${navForm('/connect', 'back to all networks')}</p>`,
   );
+}
+
+/**
+ * Plain-English label for a network's `claim_status`, for the connect list.
+ * The raw values ("production", "partial") are contributor vocabulary; a
+ * person connecting an account should see what it means for them, not the
+ * internal term. Honest, not smoothed over: "partial" says some reports are
+ * still limited rather than pretending everything works.
+ */
+function supportLabel(claimStatus: ConnectNetwork['claimStatus']): string {
+  switch (claimStatus) {
+    case 'production':
+      return 'fully supported';
+    case 'partial':
+      return 'core reports supported';
+    case 'experimental':
+      return 'early access';
+    default:
+      return 'not yet available';
+  }
 }
 
 // ── GET|POST /connect ────────────────────────────────────────────────────────
@@ -346,7 +366,7 @@ export async function handleConnectList(request: Request, env: Env): Promise<Res
     const statusHtml = isConnected
       ? '<span class="status-connected">connected</span>'
       : '<span class="status-not-connected">not connected</span>';
-    return `<li><span>${escapeHtml(n.name)} <span class="muted">(${escapeHtml(n.claimStatus)})</span></span>
+    return `<li><span>${escapeHtml(n.name)} <span class="muted">(${escapeHtml(supportLabel(n.claimStatus))})</span></span>
       <span>${statusHtml} ${navForm(`/connect/${n.slug}/form`, isConnected ? 'manage' : 'connect')}</span></li>`;
   }).join('\n');
 
@@ -354,17 +374,15 @@ export async function handleConnectList(request: Request, env: Env): Promise<Res
     'connect a network',
     `
     <h1>connect a network</h1>
-    <p>Connect one of the four hosted-eligible networks below. Each connection
-    is stored separately and tested on save &mdash; see
-    <code>hosted/README.md</code>, "Hosted eligibility: ToS check", for what
-    this repo has and has not verified about each network's terms for
-    third-party credential use.</p>
+    <p>Pick one of the networks below to connect. You will paste in an API key
+    from that network's own dashboard, and we test it straight away so you know
+    the connection works. Your keys are encrypted and only ever used to fetch
+    your data on your behalf.</p>
     <ul class="network-list">${rows}</ul>
-    <p>${navForm('/connect/billing', 'billing')}</p>
-    <p class="muted">Networks are connected one at a time by design: there is
-    no combined "connect all" submission. This keeps each stored credential's
-    one-time data-key setup (see <code>hosted/README.md</code>, "KV storage
-    shapes (H3)") free of concurrent writes for the same account.</p>
+    <p>${navForm('/connect/billing', 'billing &amp; plan')}</p>
+    <p class="muted">Connect your networks one at a time. There is no
+    "connect all" button. It only takes a moment each, and you can come back to
+    add more whenever you like.</p>
   `,
   );
 }
@@ -416,8 +434,8 @@ function renderConnectFormBody(
       ${fieldsHtml}
       <button type="submit">save and test connection</button>
     </form>
-    <p class="muted">Docs: <a href="${escapeHtml(network.docsUrl)}">${escapeHtml(network.docsUrl)}</a>
-    &middot; full setup walkthrough: <code>${escapeHtml(network.setupDocPath)}</code></p>
+    <p class="muted">Stuck finding these details? ${escapeHtml(network.name)}'s own
+    help pages are here: <a href="${escapeHtml(network.docsUrl)}">${escapeHtml(network.docsUrl)}</a>.</p>
   `;
 }
 
@@ -522,16 +540,16 @@ function renderConnectResultBody(
     // The connector URL a user adds in their MCP client. When the deployer has
     // set HOSTED_CONNECTOR_URL show the real transport origin; otherwise show a
     // neutral placeholder until this deployment configures it. Only ever the
-    // public server URL, never a token.
+    // public server URL, never a token. Kept free of internal config vocabulary:
+    // the reader needs the address to paste, not the env var behind it.
     const connectorUrlHtml = env.HOSTED_CONNECTOR_URL
-      ? `<p class="muted">Connector URL:
-      <code>${escapeHtml(env.HOSTED_CONNECTOR_URL)}</code>. Add it via your
-      client's "Add custom connector" flow.</p>`
-      : `<p class="muted">Connector URL:
-      <code>https://&lt;your-hosted-transport-deployment&gt;/mcp</code> &mdash;
-      the exact address appears here once this deployment's
-      <code>HOSTED_CONNECTOR_URL</code> is configured. Add it via your client's
-      "Add custom connector" flow.</p>`;
+      ? `<p>Your connector URL is
+      <code>${escapeHtml(env.HOSTED_CONNECTOR_URL)}</code>. You will paste this
+      into your client's "add custom connector" step below.</p>`
+      : `<p>Your connector URL will look like
+      <code>https://&lt;your-hosted-transport-deployment&gt;/mcp</code>. The exact
+      address will appear here once setup is finished, ready to paste into your
+      client's "add custom connector" step.</p>`;
 
     // The hosted MCP transport refuses tool calls without an active
     // subscription (the entitlement gate in `../billing.ts`, consulted at the
@@ -539,19 +557,29 @@ function renderConnectResultBody(
     // BEFORE adding the connector, or their first prompt fails at that boundary.
     // Sequence the guidance to match entitlement: `none` -> billing first;
     // `solo`/`pro` -> the full add-connector + first-prompt copy.
+    const front = env.SITE_ORIGIN || 'https://agenticaffiliate.ai';
+
     if (tier === 'none') {
       return `
       <h1>${escapeHtml(network.name)} connected</h1>
       <p class="status-connected">Connection test passed.</p>
       ${maskedLine}
-      <h2>next: subscribe, then add to Claude</h2>
-      <p>Your ${escapeHtml(network.name)} credentials are stored and working.
-      Running reports from an MCP client needs an active hosted subscription, so
-      choose a plan first &mdash; then add affiliate-mcp as a custom connector,
-      where your client signs you in through your browser with OAuth (there is
-      no token to copy or paste).</p>
+      <h2>you're nearly there</h2>
+      <p>Your ${escapeHtml(network.name)} account is connected and working. Two
+      quick steps left before you can pull reports in Claude:</p>
+      <ol>
+        <li><strong>Choose a plan.</strong> Running reports needs an active plan.
+        You can subscribe in a minute below.</li>
+        <li><strong>Add affiliate-mcp to Claude.</strong> Once you're on a plan,
+        add it as a custom connector (steps below) and sign in through your
+        browser. There is no token to copy or paste.</li>
+      </ol>
       <p>${navForm('/connect/billing', 'choose a plan')}</p>
       ${connectorUrlHtml}
+      <p class="muted">After you subscribe: in Claude, open
+      <strong>Settings &rarr; Connectors &rarr; Add custom connector</strong>,
+      paste the connector URL above, and approve the browser sign-in. Full
+      walkthrough: <a href="${escapeHtml(front)}/get-started.html">${escapeHtml(front)}/get-started.html</a>.</p>
       <p>${navForm('/connect', 'back to all networks')}</p>
     `;
     }
@@ -561,17 +589,29 @@ function renderConnectResultBody(
       <p class="status-connected">Connection test passed.</p>
       ${maskedLine}
       <h2>use this from your MCP client</h2>
-      <p>To use your connected networks from an MCP client (Claude, ChatGPT, and
-      similar), add affiliate-mcp as a custom connector. Your client signs you
-      in through your browser with OAuth &mdash; there is no token to copy or
-      paste.</p>
+      <p>Your ${escapeHtml(network.name)} account is connected and your plan is
+      active. Add affiliate-mcp to Claude (or another MCP client, like ChatGPT)
+      once, and after that you just ask questions in plain language.</p>
       ${connectorUrlHtml}
-      <p>Suggested first prompt once connected: "Show my unpaid commissions on
-      ${escapeHtml(network.name)} from the last 30 days."</p>
-      <div class="note">This page cannot run that prompt for you: a full
-      automatic first-value report needs the separate hosted transport runtime,
-      which is out of this Worker's scope. State this honestly rather than fake a
-      report &mdash; run the prompt yourself once your MCP client is connected.</div>
+      <h2>add it to Claude</h2>
+      <ol>
+        <li>Open Claude and go to <strong>Settings &rarr; Connectors</strong>.</li>
+        <li>Click <strong>Add custom connector</strong> and paste the connector
+        URL above.</li>
+        <li>Claude opens a browser sign-in. Approve it. There is no token to
+        copy or paste.</li>
+      </ol>
+      <p class="muted">Using a different MCP client? Each one has an equivalent
+      "add custom connector" step. Full walkthrough:
+      <a href="${escapeHtml(front)}/get-started.html">${escapeHtml(front)}/get-started.html</a>.</p>
+      <h2>then just ask</h2>
+      <p>There is nothing else to install: no plugin or skill to set up.
+      Once connected, ask in plain language. Suggested first prompt: "Show my
+      unpaid commissions on ${escapeHtml(network.name)} from the last 30 days."
+      For more ideas, see
+      <a href="${escapeHtml(front)}/what-you-can-ask.html">${escapeHtml(front)}/what-you-can-ask.html</a>.</p>
+      <div class="note">We can't run that prompt for you from this page. Try it
+      in your MCP client once it's connected.</div>
       <p>${navForm('/connect', 'back to all networks')}</p>
     `;
   }
