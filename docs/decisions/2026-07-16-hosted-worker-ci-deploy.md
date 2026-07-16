@@ -1,4 +1,4 @@
-# Hosted Worker deploy: gated `workflow_dispatch`, not push-triggered
+# Hosted Worker deploy: on push to main (regular pipeline) + manual dispatch
 
 - **Date:** 2026-07-16
 - **Status:** Proposed (awaiting Rob)
@@ -19,21 +19,24 @@ a maintainer's machine. That is easy to forget after a merge (it just happened:
 PR #380 merged to `main` but did not deploy), and it ties deploys to one
 machine's local `wrangler.toml` and login.
 
-We want a repeatable, auditable deploy that any maintainer can run — without
-turning the production **billing and entitlement** surface into something that
-ships automatically on every merge.
+We want the hosted Worker deployed the same way the site is — as part of the
+regular pipeline, on merge to `main`, so no one has to remember a manual step
+(Rob's call: it should be in the regular deployment pipeline). The billing and
+entitlement surface still deserves guard rails, so the automation is
+path-scoped and test-gated rather than unconditional.
 
 ## Decision
 
-Add a **`workflow_dispatch`-only** workflow, `deploy-hosted.yml`:
+Add `deploy-hosted.yml`, part of the regular pipeline:
 
-- Manual trigger only. It is **not** run on push/merge. A deploy of the money
-  path is a deliberate human action.
-- Requires a typed `confirm: deploy` input (a second, explicit gate against an
-  accidental click).
-- Gates on `npm --prefix hosted test` before deploying.
-- Fails fast if `hosted/wrangler.toml` still contains `REPLACE_WITH_*`
-  placeholders, so a template config can never reach production.
+- **Runs on push to `main`** when `hosted/**` (or the workflow itself) changes,
+  mirroring `deploy-pages.yml`. Also runnable manually via `workflow_dispatch`.
+- The manual path requires a typed `confirm: deploy` input; the push path does
+  not (there is no input to type on an automatic run).
+- Gates on `npm --prefix hosted test` before deploying — a failing hosted test
+  blocks the deploy.
+- Injects config from Actions variables and fails fast if any placeholder
+  survives, so a template config can never reach production.
 - Authenticates with repo secrets `CLOUDFLARE_API_TOKEN` and
   `CLOUDFLARE_ACCOUNT_ID`, and runs the hosted package's own `deploy` script
   (`wrangler deploy`).
@@ -57,10 +60,12 @@ public repo and no secret ever reaches CI:
 
 ## Rejected alternatives
 
-- **Auto-deploy on push to `main`.** Simplest, but CI would then push to the
-  live billing/entitlement Worker unattended on every hosted change. For a
-  payment surface the blast radius of a bad auto-deploy is too high; a manual
-  gate is worth the friction.
+- **Manual-only (`workflow_dispatch`, no push trigger).** The first draft of
+  this record. Rejected in favour of the regular pipeline: it still relies on
+  someone remembering to run the deploy after a merge (exactly how #380 shipped
+  to `main` without going live). The push trigger is scoped to `hosted/**` and
+  gated on the hosted tests, and `wrangler rollback` is the undo, so the
+  residual risk of auto-deploying the billing surface is accepted.
 - **Keep it fully manual (local `wrangler deploy`).** The status quo. Rejected:
   not repeatable, tied to one machine's login and local config, and easy to
   forget after a merge.

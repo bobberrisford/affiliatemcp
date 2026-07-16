@@ -3,10 +3,14 @@ name: Deploy hosted Worker
 # Manual, gated deploy of the hosted connect/auth/billing/digest Worker
 # (affiliate-mcp-hosted, https://hosted.agenticaffiliate.ai) to Cloudflare.
 #
-# Deliberately NOT triggered on push. The hosted Worker is the production
-# billing and entitlement surface, so a deploy is a human-triggered action,
-# not a side effect of merging to main. See
+# Part of the regular deployment pipeline: runs on push to main whenever the
+# hosted Worker (or this workflow) changes, mirroring how deploy-pages.yml
+# ships the site. Also runnable manually via workflow_dispatch. See
 # docs/decisions/2026-07-16-hosted-worker-ci-deploy.md.
+#
+# The hosted Worker is the production billing/entitlement surface, so the
+# deploy is gated on the hosted test suite and a substitution guard; the
+# manual path additionally requires a typed confirmation.
 #
 # Config split:
 #   - Public values (URLs, connector URL, digest URL) live inline in
@@ -23,6 +27,11 @@ name: Deploy hosted Worker
 # and CLOUDFLARE_ACCOUNT_ID.
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'hosted/**'
+      - '.github/workflows/deploy-hosted.yml'
   workflow_dispatch:
     inputs:
       confirm:
@@ -41,8 +50,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Require explicit confirmation
-        if: ${{ inputs.confirm != 'deploy' }}
+      - name: Require explicit confirmation (manual runs only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.confirm != 'deploy' }}
         run: |
           echo "::error::Set the 'confirm' input to 'deploy' to proceed with a production deploy."
           exit 1
