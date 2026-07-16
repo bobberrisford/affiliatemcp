@@ -77,13 +77,15 @@ is already returning `iss` first.
 5. Confirm the H4 transport is deployed to a real, reachable URL. The connect
    success page and `hosted/README.md` note it had not been deployed anywhere
    yet; ship needs a live transport origin.
-6. Build and deploy the transport OAuth discovery (slice 2b, above): a
-   `WWW-Authenticate` challenge on the transport's `401`, and a
-   `/.well-known/oauth-protected-resource` document pointing at the Worker's
-   authorization-server issuer. Without it, a client cannot auto-discover the
-   OAuth server.
-7. Replace the placeholder transport/connector URL shown on the connect success
-   page with the real transport origin.
+6. Transport OAuth discovery is now **implemented** (slice 2b, PR #375): the
+   transport's `401`s carry a `WWW-Authenticate` challenge and it serves
+   `/.well-known/oauth-protected-resource` pointing at the Worker's issuer,
+   both gated on the `HOSTED_TRANSPORT_PUBLIC_URL` env var (unset = discovery
+   off, backward-compatible). Set `HOSTED_TRANSPORT_PUBLIC_URL` (the transport's
+   own public origin) to enable client auto-discovery.
+7. Set `HOSTED_CONNECTOR_URL` (Worker var) to the transport's connector URL so
+   the connect success page shows the real value instead of the placeholder
+   (implemented in slice 2b).
 8. End-to-end test against a real MCP client (the H4 acceptance proof that was
    always a Rob-only follow-up): add affiliate-mcp as a custom connector in
    Claude, complete the browser OAuth + consent, and confirm a tool call runs
