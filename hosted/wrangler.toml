@@ -31,8 +31,7 @@ crons = ["0 6 * * 1"]
 # then paste the returned ids below.
 [[kv_namespaces]]
 binding = "HOSTED_USERS"
-id = "REPLACE_WITH_KV_ID"
-preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
+id = "__KV_ID_HOSTED_USERS__"  # injected at deploy from Actions variable HOSTED_USERS_KV_ID (see .github/workflows/deploy-hosted.yml)
 
 # ── KV: encrypted credential vault (H3) ──────────────────────────────────────
 # A SEPARATE namespace from HOSTED_USERS on purpose — see hosted/src/env.ts.
@@ -45,8 +44,7 @@ preview_id = "REPLACE_WITH_PREVIEW_KV_ID"
 # then paste the returned ids below.
 [[kv_namespaces]]
 binding = "HOSTED_VAULT"
-id = "REPLACE_WITH_VAULT_KV_ID"
-preview_id = "REPLACE_WITH_VAULT_PREVIEW_KV_ID"
+id = "__KV_ID_HOSTED_VAULT__"  # injected at deploy from Actions variable HOSTED_VAULT_KV_ID
 
 # ── KV: Stripe subscription state (H6) ───────────────────────────────────────
 # A THIRD, separate namespace — see hosted/src/env.ts and hosted/src/billing.ts.
@@ -60,8 +58,7 @@ preview_id = "REPLACE_WITH_VAULT_PREVIEW_KV_ID"
 # then paste the returned ids below.
 [[kv_namespaces]]
 binding = "HOSTED_BILLING"
-id = "REPLACE_WITH_BILLING_KV_ID"
-preview_id = "REPLACE_WITH_BILLING_PREVIEW_KV_ID"
+id = "__KV_ID_HOSTED_BILLING__"  # injected at deploy from Actions variable HOSTED_BILLING_KV_ID
 
 # ── Non-secret vars (override per-env or in the dashboard) ─────────────────
 [vars]
@@ -70,7 +67,7 @@ preview_id = "REPLACE_WITH_BILLING_PREVIEW_KV_ID"
 # fronting proxy can never poison the emailed link. Set it to the deployed
 # Worker origin, e.g. "https://affiliate-mcp-hosted.robertberrisford.workers.dev"
 # or the custom domain once one exists.
-PUBLIC_BASE_URL = "REPLACE_WITH_PUBLIC_BASE_URL"
+PUBLIC_BASE_URL = "https://hosted.agenticaffiliate.ai"
 # Origin allowed to call /auth/request-link and /auth/session/verify via CORS.
 SITE_ORIGIN = "https://agenticaffiliate.ai"
 # Current key version of the VAULT_MASTER_KEY secret below. Bump this (and
@@ -79,8 +76,8 @@ VAULT_MASTER_KEY_VERSION = "1"
 # Stripe recurring Price ids (price_…) for the two hosted tiers, per
 # docs/decisions/2026-07-12-pricing-billing-and-licence.md. Env placeholders
 # until Rob wires up the real Stripe account at deploy.
-STRIPE_PRICE_ID_SOLO = "REPLACE_WITH_SOLO_34GBP_MONTHLY_PRICE_ID"
-STRIPE_PRICE_ID_PRO = "REPLACE_WITH_PRO_99GBP_MONTHLY_PRICE_ID"
+STRIPE_PRICE_ID_SOLO = "__STRIPE_PRICE_ID_SOLO__"  # injected at deploy from Actions variable STRIPE_PRICE_ID_SOLO
+STRIPE_PRICE_ID_PRO = "__STRIPE_PRICE_ID_PRO__"  # injected at deploy from Actions variable STRIPE_PRICE_ID_PRO
 # Point Checkout's success/cancel redirect and the Billing Portal's return
 # URL at this Worker's OWN billing page (src/routes/billing-page.ts), not an
 # external page: replace REPLACE_WITH_PUBLIC_BASE_URL above with the deployed
@@ -89,9 +86,9 @@ STRIPE_PRICE_ID_PRO = "REPLACE_WITH_PRO_99GBP_MONTHLY_PRICE_ID"
 # landing hit necessarily arrives signed out (Stripe's redirect cannot carry
 # our bearer session token) and how the page states that honestly rather than
 # working around it with a token in the URL.
-BILLING_SUCCESS_URL = "REPLACE_WITH_PUBLIC_BASE_URL/connect/billing?checkout=success"
-BILLING_CANCEL_URL = "REPLACE_WITH_PUBLIC_BASE_URL/connect/billing?checkout=cancelled"
-BILLING_PORTAL_RETURN_URL = "REPLACE_WITH_PUBLIC_BASE_URL/connect/billing"
+BILLING_SUCCESS_URL = "https://hosted.agenticaffiliate.ai/connect/billing?checkout=success"
+BILLING_CANCEL_URL = "https://hosted.agenticaffiliate.ai/connect/billing?checkout=cancelled"
+BILLING_PORTAL_RETURN_URL = "https://hosted.agenticaffiliate.ai/connect/billing"
 # Base URL of the Node digest-compose service (src/hosted-digest/ in the root
 # workspace). Leave unset until that service is deployed — the cron trigger
 # above no-ops safely while this is empty (see hosted/src/digest.ts).
@@ -100,14 +97,14 @@ BILLING_PORTAL_RETURN_URL = "REPLACE_WITH_PUBLIC_BASE_URL/connect/billing"
 # workers.dev URL: a Worker cannot fetch another Worker's workers.dev origin
 # in the same account (Cloudflare serves a 404, observed 2026-07-15; see
 # containers/wrangler.toml, "Deploy gotchas").
-# DIGEST_SERVICE_URL = "https://REPLACE_WITH_DIGEST_SERVICE_ORIGIN"
+DIGEST_SERVICE_URL = "https://mcp.agenticaffiliate.ai/digest"
 # Public URL of the hosted MCP transport (slice 2b) — a DIFFERENT origin from
 # this Worker (this Worker is the OAuth authorization server; the transport is
 # the resource server a client connects to). When set, the connect success page
 # shows this as the connector URL to add; when unset it shows an honest
 # placeholder. Public server URL only, never a token. Uncomment and set to the
 # deployed transport origin once one exists.
-# HOSTED_CONNECTOR_URL = "https://REPLACE_WITH_TRANSPORT_ORIGIN/mcp"
+HOSTED_CONNECTOR_URL = "https://mcp.agenticaffiliate.ai/mcp"
 
 # ── Secrets — set via `wrangler secret put <NAME>` (NEVER commit) ──────────
 #   RESEND_API_KEY        re_…    (Resend API key, from https://resend.com/api-keys;
