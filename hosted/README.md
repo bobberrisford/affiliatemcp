@@ -297,6 +297,26 @@ Slice progress:
   carry a same-origin CSRF check on top of `SameSite=Strict`. See "Callback
   delivery: HttpOnly cookie" and "Session gating on plain HTML pages" above.
   The API routes' bearer auth and the OAuth ceremony are unchanged.
+- **Slice 2b — transport OAuth discovery (implemented).** The pieces above make
+  the Worker a complete authorization server, but an MCP client discovers it by
+  the MCP authorization framework's handshake against the **resource server**
+  (the hosted transport, a different origin): it calls the transport, gets a
+  `401` carrying `WWW-Authenticate: Bearer resource_metadata="…"`, fetches that
+  protected-resource metadata (RFC 9728,
+  `GET /.well-known/oauth-protected-resource`), and follows its
+  `authorization_servers` to this Worker's issuer. The transport
+  (`src/hosted-transport/http-server.ts`) now serves that metadata document and
+  puts the `WWW-Authenticate` challenge on both `/mcp` 401 branches (adding
+  `error="invalid_token"`, RFC 6750 §3, on a rejected token). Both are gated on
+  the transport's own public origin, `HOSTED_TRANSPORT_PUBLIC_URL`
+  (`src/hosted-transport/env.ts`): **unset** disables discovery and preserves
+  the previous bare-401 behaviour (backward-compatible); **set** advertises the
+  auth server so a client pointed only at the transport can find the Worker. The
+  metadata endpoint is unauthenticated and carries no secret — only the
+  transport's public origin and the auth server's public issuer. On the Worker
+  side, the connect success page shows the real connector URL to add when
+  `HOSTED_CONNECTOR_URL` is set (`src/env.ts`), and the honest placeholder
+  otherwise.
 
 ## KV storage shapes (H2: `HOSTED_USERS`)
 

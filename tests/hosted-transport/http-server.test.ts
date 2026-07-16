@@ -490,3 +490,93 @@ describe('hosted MCP transport (H6) billing-tier gate', () => {
     await client.close();
   });
 });
+
+describe('hosted MCP transport (slice 2b) OAuth resource discovery', () => {
+  const RESOURCE_URL = 'https://transport.example.test';
+  const METADATA_PATH = '/.well-known/oauth-protected-resource';
+
+  /** Start a second transport instance with `resourceUrl` set, pointed at the
+   * same fake Worker's URL as `authUrl` (so `authorization_servers` is exactly
+   * `[fakeWorker.url]`). The `beforeEach` transport keeps `resourceUrl` UNSET,
+   * so the backward-compat assertions below run against it directly. */
+  async function startWithResourceUrl(): Promise<HostedHttpServerHandle> {
+    return startHostedHttpServer({
+      authUrl: fakeWorker.url,
+      vaultUrl: fakeWorker.url,
+      port: 0,
+      rateLimitCapacity: 1,
+      rateLimitRefillPerSecond: 0.0001,
+      resourceUrl: RESOURCE_URL,
+    });
+  }
+
+  it('serves RFC 9728 protected-resource metadata naming the auth server when resourceUrl is set', async () => {
+    const handle = await startWithResourceUrl();
+    try {
+      const res = await realFetch(`http://127.0.0.1:${handle.port}${METADATA_PATH}`);
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('application/json');
+      expect(res.headers.get('cache-control')).toBe('no-store');
+      const body = (await res.json()) as {
+        resource: string;
+        authorization_servers: string[];
+        bearer_methods_supported: string[];
+        scopes_supported: string[];
+      };
+      expect(body.resource).toBe(RESOURCE_URL);
+      expect(body.authorization_servers).toEqual([fakeWorker.url]);
+      expect(body.bearer_methods_supported).toEqual(['header']);
+      expect(body.scopes_supported).toEqual(['mcp']);
+    } finally {
+      await handle.close();
+    }
+  });
+
+  it('a no-token /mcp request carries a WWW-Authenticate challenge pointing at the metadata document', async () => {
+    const handle = await startWithResourceUrl();
+    try {
+      const res = await realFetch(`http://127.0.0.1:${handle.port}/mcp`, { method: 'POST' });
+      expect(res.status).toBe(401);
+      expect(res.headers.get('www-authenticate')).toBe(
+        `Bearer resource_metadata="${RESOURCE_URL}${METADATA_PATH}"`,
+      );
+    } finally {
+      await handle.close();
+    }
+  });
+
+  it('an invalid-token /mcp request additionally carries error="invalid_token" (RFC 6750 §3)', async () => {
+    const handle = await startWithResourceUrl();
+    try {
+      const res = await realFetch(`http://127.0.0.1:${handle.port}/mcp`, {
+        method: 'POST',
+        headers: { authorization: 'Bearer not-a-real-session' },
+      });
+      expect(res.status).toBe(401);
+      expect(res.headers.get('www-authenticate')).toBe(
+        `Bearer resource_metadata="${RESOURCE_URL}${METADATA_PATH}", error="invalid_token"`,
+      );
+    } finally {
+      await handle.close();
+    }
+  });
+
+  it('backward-compatible: with resourceUrl UNSET the metadata route is 404 and the 401s carry no WWW-Authenticate', async () => {
+    // `transportHandle` (from beforeEach) is started with no resourceUrl.
+    const base = `http://127.0.0.1:${transportHandle.port}`;
+
+    const metadata = await realFetch(`${base}${METADATA_PATH}`);
+    expect(metadata.status).toBe(404);
+
+    const noToken = await realFetch(`${base}/mcp`, { method: 'POST' });
+    expect(noToken.status).toBe(401);
+    expect(noToken.headers.get('www-authenticate')).toBeNull();
+
+    const badToken = await realFetch(`${base}/mcp`, {
+      method: 'POST',
+      headers: { authorization: 'Bearer not-a-real-session' },
+    });
+    expect(badToken.status).toBe(401);
+    expect(badToken.headers.get('www-authenticate')).toBeNull();
+  });
+});

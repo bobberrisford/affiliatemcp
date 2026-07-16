@@ -51,6 +51,29 @@ export interface HostedTransportConfig {
    * bearers at once. Optional so callers that construct this config directly
    * (tests) are not forced to set it. */
   maxTokenLifetimeSeconds?: number;
+  /**
+   * The transport's OWN public origin — the URL a user adds as an MCP custom
+   * connector (`HOSTED_TRANSPORT_PUBLIC_URL`, `env.ts`). It gates OAuth
+   * discovery (slice 2b, `docs/decisions/2026-07-15-hosted-connector-oauth.md`):
+   *
+   * UNSET (the default) — discovery is disabled and the transport keeps its
+   * current bare-401 behaviour: no `WWW-Authenticate` header, and
+   * `GET /.well-known/oauth-protected-resource` returns 404. Backward-compatible
+   * with every pre-2b deploy.
+   *
+   * SET — the transport advertises the authorization server for client OAuth
+   * discovery per the MCP authorization framework + RFC 9728: its `401`s carry a
+   * `WWW-Authenticate: Bearer resource_metadata="…"` challenge pointing at its
+   * own protected-resource metadata document, whose `authorization_servers`
+   * names `authUrl` (the Worker's OAuth issuer). This is what lets a client
+   * pointed only at the transport find the Worker, which is a different origin.
+   *
+   * Always the ORIGIN: `HOSTED_TRANSPORT_PUBLIC_URL` is normalised to its
+   * scheme+host+port (`readOptionalOrigin`), so setting it to a path-bearing
+   * value such as the `…/mcp` endpoint still yields a working metadata URL
+   * rather than a 404. Optional so callers that construct this config directly
+   * (tests) are not forced to set it. */
+  resourceUrl?: string;
 }
 
 function readUrl(name: string): string {
@@ -69,6 +92,29 @@ function readUrl(name: string): string {
     throw new Error(`${name} is not a valid absolute URL: "${raw}"`);
   }
   return raw.replace(/\/+$/, '');
+}
+
+/** Like `readUrl` but with no requirement: returns `undefined` when the env var
+ * is unset or empty, and applies the same absolute-URL validation and
+ * trailing-slash strip to a set value. Used for the optional transport
+ * public-URL that gates OAuth discovery (slice 2b), whose absence is a
+ * meaningful state (discovery disabled, bare-401 behaviour preserved), not a
+ * value to substitute or a reason to throw. */
+/** Read an optional absolute URL and return its ORIGIN (scheme + host + port),
+ * discarding any path/query/fragment. Returns `undefined` when unset/empty;
+ * throws only on a set-but-invalid value. Normalising to the origin means a
+ * deployer who sets a path-bearing value (for example the `…/mcp` endpoint
+ * rather than the bare origin) still gets a working
+ * `/.well-known/oauth-protected-resource` URL, rather than a silent 404 on the
+ * advertised metadata path. */
+function readOptionalOrigin(name: string): string | undefined {
+  const raw = process.env[name];
+  if (!raw || raw.trim().length === 0) return undefined;
+  try {
+    return new URL(raw).origin;
+  } catch {
+    throw new Error(`${name} is not a valid absolute URL: "${raw}"`);
+  }
 }
 
 function readPositiveInt(name: string, fallback: number): number {
@@ -117,5 +163,9 @@ export function loadHostedTransportConfig(): HostedTransportConfig {
     // Unset = dual-accept window (accept both legacy bearers and OAuth access
     // tokens); set it to drop long-lived bearer acceptance (staged migration).
     maxTokenLifetimeSeconds: readOptionalPositiveInt('HOSTED_MAX_TOKEN_LIFETIME_SECONDS'),
+    // Unset = OAuth discovery disabled (bare-401, no protected-resource
+    // metadata); set it to the transport's own public origin to advertise the
+    // auth server for client OAuth discovery (slice 2b).
+    resourceUrl: readOptionalOrigin('HOSTED_TRANSPORT_PUBLIC_URL'),
   };
 }
