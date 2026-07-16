@@ -8,14 +8,19 @@ name: Deploy hosted Worker
 # not a side effect of merging to main. See
 # docs/decisions/2026-07-16-hosted-worker-ci-deploy.md.
 #
-# Prerequisites (one-time, see the decision record):
-#   - repo secrets CLOUDFLARE_API_TOKEN (Edit Workers, scoped to the account)
-#     and CLOUDFLARE_ACCOUNT_ID
-#   - hosted/wrangler.toml filled with the real (non-secret) KV ids and [vars]
-#     — no REPLACE_WITH_* placeholders
-#   - the Worker's actual secrets (VAULT_MASTER_KEY, SESSION_SIGNING_KEY,
-#     RESEND_API_KEY, STRIPE_*) already set via `wrangler secret put`; they
-#     persist on the Worker and are NOT touched by a code deploy
+# Config split:
+#   - Public values (URLs, connector URL, digest URL) live inline in
+#     hosted/wrangler.toml.
+#   - Account-specific ids are NOT committed. They are injected at deploy time
+#     from repo-level Actions VARIABLES (non-secret): HOSTED_USERS_KV_ID,
+#     HOSTED_VAULT_KV_ID, HOSTED_BILLING_KV_ID, STRIPE_PRICE_ID_SOLO,
+#     STRIPE_PRICE_ID_PRO.
+#   - True secrets (VAULT_MASTER_KEY, SESSION_SIGNING_KEY, RESEND_API_KEY,
+#     STRIPE_*) are set once via `wrangler secret put`, persist on the Worker,
+#     and are never held in CI.
+#
+# Auth: repo SECRETS CLOUDFLARE_API_TOKEN (Edit Workers, scoped to the account)
+# and CLOUDFLARE_ACCOUNT_ID.
 
 on:
   workflow_dispatch:
@@ -55,10 +60,30 @@ jobs:
       # Gate on the Worker's own tests before shipping to the billing surface.
       - run: npm --prefix hosted test
 
-      - name: Guard against deploying the template wrangler.toml
+      - name: Inject account-specific ids from Actions variables
+        env:
+          HOSTED_USERS_KV_ID: ${{ vars.HOSTED_USERS_KV_ID }}
+          HOSTED_VAULT_KV_ID: ${{ vars.HOSTED_VAULT_KV_ID }}
+          HOSTED_BILLING_KV_ID: ${{ vars.HOSTED_BILLING_KV_ID }}
+          STRIPE_PRICE_ID_SOLO: ${{ vars.STRIPE_PRICE_ID_SOLO }}
+          STRIPE_PRICE_ID_PRO: ${{ vars.STRIPE_PRICE_ID_PRO }}
         run: |
-          if grep -q 'REPLACE_WITH' hosted/wrangler.toml; then
-            echo "::error::hosted/wrangler.toml still contains REPLACE_WITH_* placeholders. Fill in the real KV ids and [vars] before deploying."
+          set -euo pipefail
+          for name in HOSTED_USERS_KV_ID HOSTED_VAULT_KV_ID HOSTED_BILLING_KV_ID STRIPE_PRICE_ID_SOLO STRIPE_PRICE_ID_PRO; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Actions variable ${name} is not set (repo Settings -> Secrets and variables -> Actions -> Variables)."
+              exit 1
+            fi
+          done
+          sed -i \
+            -e "s|__KV_ID_HOSTED_USERS__|${HOSTED_USERS_KV_ID}|" \
+            -e "s|__KV_ID_HOSTED_VAULT__|${HOSTED_VAULT_KV_ID}|" \
+            -e "s|__KV_ID_HOSTED_BILLING__|${HOSTED_BILLING_KV_ID}|" \
+            -e "s|__STRIPE_PRICE_ID_SOLO__|${STRIPE_PRICE_ID_SOLO}|" \
+            -e "s|__STRIPE_PRICE_ID_PRO__|${STRIPE_PRICE_ID_PRO}|" \
+            hosted/wrangler.toml
+          if grep -nE '__[A-Z_]+__' hosted/wrangler.toml; then
+            echo "::error::An injectable placeholder was left unsubstituted in hosted/wrangler.toml."
             exit 1
           fi
 
