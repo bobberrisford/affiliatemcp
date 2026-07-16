@@ -84,20 +84,34 @@ export const SESSION_COOKIE_NAME = 'hosted_session';
 
 /**
  * Build the `Set-Cookie` value that establishes the browser dashboard session.
- * `HttpOnly` keeps the token out of page scripts, `Secure` keeps it off plain
- * HTTP, and `SameSite=Strict` is correct here: the magic-link arrival is a
- * top-level navigation that SETS the cookie, and every subsequent dashboard
- * action is a same-site POST form that a Strict cookie still accompanies.
+ * `HttpOnly` keeps the token out of page scripts and `Secure` keeps it off
+ * plain HTTP.
+ *
+ * `SameSite=Lax` (NOT Strict) is required for the magic-link flow to work. The
+ * link is opened from an email or webmail client, so the arrival at
+ * `/auth/callback` is a CROSS-SITE top-level navigation. The callback sets this
+ * cookie and 303-redirects to `/connect`; a `Strict` cookie is withheld on that
+ * redirected request because the navigation chain originated cross-site, so
+ * `/connect` sees no session and re-prompts. `Lax` IS sent on top-level GET
+ * navigations, so the redirected `/connect` load carries it.
+ *
+ * CSRF is still covered: `Lax` is not sent on cross-site POSTs or subresource
+ * requests, and every state-changing POST additionally enforces a same-origin
+ * `Origin`/`Referer` check (`sameOriginPost`). The OAuth authorize/consent flow
+ * reads no cookie at all (`src/routes/oauth.ts`), so this does not affect it.
+ * The one behaviour change: the Stripe-return landing (a cross-site top-level
+ * GET) now arrives signed IN rather than signed out; the billing page still
+ * treats `GET /billing/entitlement` as the source of truth, never the redirect.
  */
 export function setSessionCookieHeader(token: string, maxAgeSeconds: number): string {
-  return `${SESSION_COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${maxAgeSeconds}`;
+  return `${SESSION_COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${maxAgeSeconds}`;
 }
 
 /** Build the `Set-Cookie` value that clears the browser dashboard session
  * (sign-out): the same attributes as `setSessionCookieHeader` with `Max-Age=0`,
  * so a browser drops it immediately. */
 export function clearSessionCookieHeader(): string {
-  return `${SESSION_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`;
+  return `${SESSION_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
 }
 
 /** Read the `hosted_session` cookie value from the request's `Cookie` header,
@@ -119,7 +133,7 @@ export function cookieToken(request: Request): string | null {
 
 /**
  * Same-origin check for a state-changing dashboard POST (CSRF defence in depth
- * on top of `SameSite=Strict`). Returns true only when the request's `Origin`
+ * on top of `SameSite=Lax`). Returns true only when the request's `Origin`
  * header (or, when `Origin` is absent, the `Referer`) has the same origin as
  * the Worker's configured `PUBLIC_BASE_URL`. Fails closed: if both headers are
  * absent, or `PUBLIC_BASE_URL` is unusable, or `Referer` will not parse, it

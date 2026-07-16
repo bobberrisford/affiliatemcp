@@ -43,15 +43,15 @@
  * `BILLING_PORTAL_RETURN_URL` (`src/env.ts`) should point back at this page
  * (`GET /connect/billing`, optionally with a `?checkout=success` or
  * `?checkout=cancelled` status flag, a plain, non-sensitive marker, not a
- * token). Stripe's redirect is a plain browser GET with no mechanism to carry
- * our bearer session token, and it must never be asked to. That landing hit
- * therefore always arrives signed out. This page does not invent a session,
- * silently poll Stripe, or fabricate a "you're subscribed" result: with no
- * valid session it shows the ordinary sign-in prompt, with one added,
- * honest line describing what the `checkout` flag claims happened. Once the
- * caller signs back in, `GET /billing/entitlement` (read in-process here too,
- * via `resolveEntitlement`) is the only source of truth for what actually
- * happened.
+ * token). With the `SameSite=Lax` session cookie, Stripe's return is a
+ * top-level GET navigation that carries the session, so the caller normally
+ * lands back here signed in and sees their real plan. This page never trusts
+ * the redirect itself: it does not invent a session, silently poll Stripe, or
+ * fabricate a "you're subscribed" result from the `checkout` flag.
+ * `GET /billing/entitlement` (read in-process here via `resolveEntitlement`) is
+ * the only source of truth for what actually happened. If the session is
+ * genuinely absent, it falls back to the ordinary sign-in prompt with one
+ * honest line describing what the `checkout` flag claims.
  */
 
 import type { Env } from '../env.js';
@@ -160,16 +160,12 @@ async function renderBillingPage(env: Env, session: BrowserSession, noteMessage?
 }
 
 /** A `checkout` query-flag value is a plain, non-sensitive marker Stripe's
- * redirect carries (never a session token); see the file header for why
- * this landing hit always arrives signed out, and why that is stated here
- * rather than worked around. */
+ * redirect carries (never a session token). This note is shown only on the
+ * signed-out fallback (see the file header); a signed-in return renders the
+ * billing page directly. */
 function checkoutStatusNote(checkoutStatus: string | null): string | undefined {
   if (checkoutStatus === 'success') {
-    return (
-      'Stripe reports checkout is complete. Sign back in above to see your ' +
-      "updated plan: Stripe's redirect cannot carry your session token, so " +
-      'this page cannot show the result directly.'
-    );
+    return 'Stripe reports checkout is complete. Sign in above to see your updated plan.';
   }
   if (checkoutStatus === 'cancelled') {
     return 'Checkout was cancelled. Nothing was charged.';
@@ -194,7 +190,7 @@ export async function handleBillingPageCheckout(request: Request, env: Env): Pro
   if (!session) return signInPromptPage(env);
   // CSRF defence in depth (same posture as the connect credential POST): a
   // billing action is state-changing, so it requires a same-origin request on
-  // top of the cookie's SameSite=Strict protection.
+  // top of the cookie's SameSite=Lax protection.
   if (!sameOriginPost(request, env)) return csrfErrorPage();
 
   const tier = form?.get('tier');

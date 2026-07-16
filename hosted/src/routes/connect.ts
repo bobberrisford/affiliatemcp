@@ -24,7 +24,7 @@
  * Session transport — HttpOnly cookie, never a URL, body, or page (slice 3,
  * `docs/decisions/2026-07-15-hosted-connector-oauth.md`): the browser dashboard
  * authenticates via the `hosted_session` cookie, set `HttpOnly; Secure;
- * SameSite=Strict; Path=/` at the plain sign-in callback (`../index.ts`,
+ * SameSite=Lax; Path=/` at the plain sign-in callback (`../index.ts`,
  * `setSessionCookieHeader` in `../http.js`). The token itself is never rendered
  * into any page, never placed in a URL, and never carried in a form body — the
  * browser re-presents the cookie automatically on every same-site navigation,
@@ -37,8 +37,8 @@
  * (RFC 6750 §2.3: bearer tokens in URLs land in Cloudflare request logs,
  * history, bookmarks, and Referer).
  *
- * CSRF: `SameSite=Strict` already stops a cross-site page from attaching the
- * cookie to a forged navigation. As defence in depth, the state-changing POSTs
+ * CSRF: `SameSite=Lax` is not sent on cross-site POSTs, so it still stops a
+ * forged cross-site submission. As defence in depth, the state-changing POSTs
  * — `POST /connect/:network` (stores a credential) and the two billing action
  * POSTs (`../billing-page.js`) — additionally require a same-origin `Origin`
  * (or `Referer`) via `sameOriginPost` (`../http.js`) and return a 403 page
@@ -285,9 +285,9 @@ export async function handleConnectSignin(request: Request, env: Env): Promise<R
 /**
  * A navigation action rendered as a minimal inline POST form. The session no
  * longer travels in the form at all — the browser attaches the HttpOnly
- * `hosted_session` cookie automatically (`SameSite=Strict`, so only on
- * same-site navigations) — so these forms carry no token and no `action` URL
- * ever carries one either.
+ * `hosted_session` cookie automatically (`SameSite=Lax`: on same-site
+ * navigations and top-level GETs) — so these forms carry no token and no
+ * `action` URL ever carries one either.
  *
  * `extraFields` lets a caller carry additional hidden fields (for example, the
  * billing page's tier choice on its subscribe and upgrade buttons,
@@ -311,9 +311,9 @@ export function navForm(
 
 /**
  * The 403 page returned when a state-changing POST fails the same-origin CSRF
- * check (`sameOriginPost`, `../http.js`). `SameSite=Strict` already blocks a
- * cross-site page from attaching the cookie; this is the defence-in-depth
- * response for the credential-storing and billing-action POSTs.
+ * check (`sameOriginPost`, `../http.js`). `SameSite=Lax` already stops the
+ * cookie riding a cross-site POST; this is the defence-in-depth response for
+ * the credential-storing and billing-action POSTs.
  */
 export function csrfErrorPage(): Response {
   return page(
@@ -426,10 +426,10 @@ export async function handleConnectSubmit(request: Request, env: Env, slug: stri
   const form = await maybeFormData(request);
   const session = await resolveBrowserSession(request, env);
   if (!session) return signInPromptPage(env);
-  // CSRF defence in depth for this credential-storing POST: SameSite=Strict
-  // already blocks a cross-site page from attaching the cookie, but a
-  // same-origin check on Origin/Referer is a cheap second gate. Pure-navigation
-  // POSTs (the list, the form, retest) do not carry this check.
+  // CSRF defence in depth for this credential-storing POST: SameSite=Lax is
+  // not sent on cross-site POSTs, but a same-origin check on Origin/Referer is
+  // a cheap second gate. Pure-navigation POSTs (the list, the form, retest) do
+  // not carry this check.
   if (!sameOriginPost(request, env)) return csrfErrorPage();
 
   const network = findConnectNetwork(slug);
