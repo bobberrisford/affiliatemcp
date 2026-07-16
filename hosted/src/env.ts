@@ -151,6 +151,18 @@ export interface Env {
    * ahead of the compose service must not error-spam or half-run.
    */
   DIGEST_SERVICE_URL?: string;
+  /**
+   * The hosted MCP transport's public URL — the address a user adds as an MCP
+   * custom connector (slice 2b,
+   * `docs/decisions/2026-07-15-hosted-connector-oauth.md`). This is a DIFFERENT
+   * origin from this Worker: the Worker is the OAuth authorization server, the
+   * transport is the resource server a client actually connects to. When unset,
+   * the connect success page shows the honest placeholder (the H4 transport has
+   * not been deployed anywhere yet); when set, it shows this real URL so the
+   * user knows exactly what to add. Only ever the connector (server) URL, which
+   * is public — never a token.
+   */
+  HOSTED_CONNECTOR_URL?: string;
 }
 
 /**

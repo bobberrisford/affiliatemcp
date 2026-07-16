@@ -478,7 +478,7 @@ export async function handleConnectSubmit(request: Request, env: Env, slug: stri
   // task's "keep the credential stored" requirement.
   const result = await testConnection(network.slug, record);
   const maskedTail = maskLastFour(record[network.maskedConfirmationField] ?? '');
-  return page(`connect ${network.name}`, renderConnectResultBody(network, result, maskedTail));
+  return page(`connect ${network.name}`, renderConnectResultBody(network, result, maskedTail, env));
 }
 
 // ── POST|GET /connect/:network/retest ────────────────────────────────────────
@@ -501,19 +501,34 @@ export async function handleConnectRetest(request: Request, env: Env, slug: stri
 
   const result = await testConnection(network.slug, stored);
   const maskedTail = maskLastFour(stored[network.maskedConfirmationField] ?? '');
-  return page(`connect ${network.name}`, renderConnectResultBody(network, result, maskedTail));
+  return page(`connect ${network.name}`, renderConnectResultBody(network, result, maskedTail, env));
 }
 
 function renderConnectResultBody(
   network: ConnectNetwork,
   result: ConnectionTestResult,
   maskedTail: string,
+  env: Env,
 ): string {
   const maskedLine = maskedTail
     ? `<p class="muted">Stored credential ending in &bull;&bull;&bull;&bull;${escapeHtml(maskedTail)}.</p>`
     : '';
 
   if (result.ok) {
+    // The connector URL a user adds in their MCP client. When the deployer has
+    // set HOSTED_CONNECTOR_URL (slice 2b) show the real transport origin;
+    // otherwise keep the honest placeholder — the H4 transport has not been
+    // deployed anywhere yet. This is only the public server URL, never a token.
+    const connectorUrlHtml = env.HOSTED_CONNECTOR_URL
+      ? `<p class="muted">Connector URL:
+      <code>${escapeHtml(env.HOSTED_CONNECTOR_URL)}</code>. Add it via your
+      client's "Add custom connector" flow.</p>`
+      : `<p class="muted">Connector URL:
+      <code>https://&lt;your-hosted-transport-deployment&gt;/mcp</code> &mdash; a
+      placeholder until a staging or production deployment exists (H4 has not
+      been deployed yet; see
+      <code>docs/product/hosted-mvp-workstream.md</code>, slice H4). Add it via
+      your client's "Add custom connector" flow.</p>`;
     return `
       <h1>${escapeHtml(network.name)} connected</h1>
       <p class="status-connected">Connection test passed.</p>
@@ -523,12 +538,7 @@ function renderConnectResultBody(
       similar), add affiliate-mcp as a custom connector. Your client signs you
       in through your browser with OAuth &mdash; there is no token to copy or
       paste.</p>
-      <p class="muted">Connector URL:
-      <code>https://&lt;your-hosted-transport-deployment&gt;/mcp</code> &mdash; a
-      placeholder until a staging or production deployment exists (H4 has not
-      been deployed yet; see
-      <code>docs/product/hosted-mvp-workstream.md</code>, slice H4). Add it via
-      your client's "Add custom connector" flow.</p>
+      ${connectorUrlHtml}
       <p>Suggested first prompt once connected: "Show my unpaid commissions on
       ${escapeHtml(network.name)} from the last 30 days."</p>
       <div class="note">This page cannot run that prompt for you: a full

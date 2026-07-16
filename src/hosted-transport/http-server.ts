@@ -58,13 +58,33 @@ import { TokenBucketRateLimiter } from './rate-limiter.js';
 
 const log = createLogger('hosted-transport');
 
-function sendJson(res: ServerResponse, status: number, body: unknown): void {
+function sendJson(
+  res: ServerResponse,
+  status: number,
+  body: unknown,
+  extraHeaders?: Record<string, string>,
+): void {
   const text = JSON.stringify(body);
   res.writeHead(status, {
     'content-type': 'application/json',
     'content-length': Buffer.byteLength(text),
+    ...extraHeaders,
   });
   res.end(text);
+}
+
+/**
+ * The RFC 6750 §3 `WWW-Authenticate` challenge the transport puts on its `401`s
+ * once OAuth discovery is enabled (`config.resourceUrl` set, slice 2b). It
+ * points the client at this transport's own protected-resource metadata
+ * document (RFC 9728), which in turn names the authorization server — this is
+ * the first hop of the MCP authorization framework's discovery handshake.
+ * `invalidToken` adds `error="invalid_token"` (RFC 6750 §3.1) for a token that
+ * was presented but rejected, distinguishing it from a wholly missing one.
+ */
+function resourceMetadataChallenge(resourceUrl: string, invalidToken: boolean): string {
+  const base = `Bearer resource_metadata="${resourceUrl}/.well-known/oauth-protected-resource"`;
+  return invalidToken ? `${base}, error="invalid_token"` : base;
 }
 
 function bearerToken(req: IncomingMessage): string | null {
@@ -121,7 +141,14 @@ export async function startHostedHttpServer(config: HostedTransportConfig): Prom
   async function handleMcp(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const token = bearerToken(req);
     if (!token) {
-      sendJson(res, 401, { error: 'missing_session' });
+      sendJson(
+        res,
+        401,
+        { error: 'missing_session' },
+        config.resourceUrl
+          ? { 'www-authenticate': resourceMetadataChallenge(config.resourceUrl, false) }
+          : undefined,
+      );
       return;
     }
 
@@ -139,7 +166,14 @@ export async function startHostedHttpServer(config: HostedTransportConfig): Prom
       throw err;
     }
     if (!verified) {
-      sendJson(res, 401, { error: 'invalid_session' });
+      sendJson(
+        res,
+        401,
+        { error: 'invalid_session' },
+        config.resourceUrl
+          ? { 'www-authenticate': resourceMetadataChallenge(config.resourceUrl, true) }
+          : undefined,
+      );
       return;
     }
     const { userId } = verified;
@@ -209,6 +243,30 @@ export async function startHostedHttpServer(config: HostedTransportConfig): Prom
     const url = new URL(req.url ?? '/', 'http://localhost');
     if (url.pathname === '/health' && req.method === 'GET') {
       sendJson(res, 200, { ok: true });
+      return;
+    }
+    // RFC 9728 protected-resource metadata — unauthenticated public discovery
+    // (no secrets: it names this transport's public origin and the auth
+    // server's public issuer only). Served only when OAuth discovery is enabled
+    // (`config.resourceUrl` set, slice 2b); a 404 when unset is the honest
+    // "feature disabled" answer and preserves the pre-2b behaviour. A client
+    // reaches here after the `WWW-Authenticate` challenge on a `/mcp` 401.
+    if (url.pathname === '/.well-known/oauth-protected-resource' && req.method === 'GET') {
+      if (!config.resourceUrl) {
+        sendJson(res, 404, { error: 'not_found' });
+        return;
+      }
+      sendJson(
+        res,
+        200,
+        {
+          resource: config.resourceUrl,
+          authorization_servers: [config.authUrl],
+          bearer_methods_supported: ['header'],
+          scopes_supported: ['mcp'],
+        },
+        { 'cache-control': 'no-store' },
+      );
       return;
     }
     if (url.pathname === '/mcp') {
