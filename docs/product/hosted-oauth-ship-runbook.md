@@ -76,7 +76,10 @@ is already returning `iss` first.
 
 5. Confirm the H4 transport is deployed to a real, reachable URL. The connect
    success page and `hosted/README.md` note it had not been deployed anywhere
-   yet; ship needs a live transport origin.
+   yet; ship needs a live transport origin. Follow
+   `docs/product/hosted-transport-deploy-runbook.md` for the ordered,
+   copy-pasteable steps (build/push the image, custom domain, every env var
+   and how the origins must agree, and the post-deploy smoke).
 6. Transport OAuth discovery is now **implemented** (slice 2b, PR #375): the
    transport's `401`s carry a `WWW-Authenticate` challenge and it serves
    `/.well-known/oauth-protected-resource` pointing at the Worker's issuer,
