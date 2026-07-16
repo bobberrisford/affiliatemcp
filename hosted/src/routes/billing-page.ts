@@ -194,7 +194,7 @@ export async function handleBillingPageCheckout(request: Request, env: Env): Pro
   if (!session) return signInPromptPage(env);
   // CSRF defence in depth (same posture as the connect credential POST): a
   // billing action is state-changing, so it requires a same-origin request on
-  // top of the cookie's SameSite=Strict protection.
+  // top of the cookie's SameSite=Lax protection.
   if (!sameOriginPost(request, env)) return csrfErrorPage();
 
   const tier = form?.get('tier');

@@ -327,7 +327,10 @@ describe('GET /auth/callback', () => {
     expect(setCookie).toMatch(/^hosted_session=amcps_[^;]+;/);
     expect(setCookie).toContain('HttpOnly');
     expect(setCookie).toContain('Secure');
-    expect(setCookie).toContain('SameSite=Strict');
+    // Lax, not Strict: the magic link is opened cross-site, so a Strict cookie
+    // would be withheld on this callback's redirect to /connect and the
+    // dashboard would re-prompt. See setSessionCookieHeader in src/http.ts.
+    expect(setCookie).toContain('SameSite=Lax');
     // The token is never in the response body.
     expect(await res.text()).toBe('');
 

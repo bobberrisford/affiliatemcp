@@ -103,14 +103,17 @@ where the client performs the code exchange — so the only remaining consumer o
 this session is the browser dashboard itself, and a cookie is the right shape
 for a browser.
 
-- The cookie is `hosted_session=<token>; HttpOnly; Secure; SameSite=Strict;
+- The cookie is `hosted_session=<token>; HttpOnly; Secure; SameSite=Lax;
   Path=/; Max-Age=<30 days>` (`setSessionCookieHeader`, `src/http.ts`).
   `HttpOnly` keeps it out of page scripts, `Secure` keeps it off plain HTTP,
-  and `SameSite=Strict` is correct here: the magic-link arrival is a top-level
-  navigation that SETS the cookie, and every subsequent dashboard action is a
-  same-site POST form that a Strict cookie still accompanies.
-- CSRF: `SameSite=Strict` already blocks a cross-site page from attaching the
-  cookie to a forged navigation. As defence in depth, the state-changing POSTs
+  and `SameSite=Lax` is required here: the magic link is opened cross-site (from
+  an email client), so the callback's 303 to `/connect` is part of a cross-site
+  navigation chain — a `Strict` cookie would be withheld on it and the dashboard
+  would re-prompt. `Lax` is sent on top-level GET navigations, so `/connect`
+  loads signed in. (An earlier build shipped `Strict` and hit exactly that bug.)
+- CSRF: `SameSite=Lax` is not sent on cross-site POSTs or subresource requests,
+  so it still blocks a forged cross-site submission. As defence in depth, the
+  state-changing POSTs
   (the connect credential store and the two billing actions) additionally
   require a same-origin `Origin`/`Referer` (`sameOriginPost`, `src/http.ts`)
   and return a 403 page otherwise. Idempotent navigation POSTs (the list, the
@@ -294,7 +297,7 @@ Slice progress:
   `src/routes/billing-page.ts`) authenticate from that cookie rather than a
   hidden-field POST token. The connect terminal step is now a client-native
   "add connector" affordance (OAuth, nothing to paste). State-changing POSTs
-  carry a same-origin CSRF check on top of `SameSite=Strict`. See "Callback
+  carry a same-origin CSRF check on top of `SameSite=Lax`. See "Callback
   delivery: HttpOnly cookie" and "Session gating on plain HTML pages" above.
   The API routes' bearer auth and the OAuth ceremony are unchanged.
 - **Slice 2b — transport OAuth discovery (implemented).** The pieces above make
@@ -628,15 +631,16 @@ that a valid token in a query string is rejected on every connect route, and
 that neither the token nor the cookie value ever appears in a rendered page.
 
 Navigation between these pages is a small inline POST form the cookie
-accompanies (`SameSite=Strict` attaches it on same-site navigations only). As
+accompanies (`SameSite=Lax` attaches it on same-site navigations and top-level
+GET navigations). As
 defence in depth, every page is served `Referrer-Policy: no-referrer` on top of
 the Worker-wide `cache-control: no-store`, so its token-free URLs leak nothing
 outbound through the external documentation links these pages contain. The GET
 variants of the list/form/retest routes exist only for callers that can send an
 Authorization header; a browser without a cookie simply sees the sign-in prompt.
 
-CSRF: `SameSite=Strict` already blocks a cross-site page from attaching the
-cookie to a forged navigation. The state-changing POSTs — `POST /connect/:network`
+CSRF: `SameSite=Lax` is not sent on cross-site POSTs or subresource requests, so
+it still blocks a forged cross-site submission. The state-changing POSTs — `POST /connect/:network`
 (stores a credential) and the two billing action POSTs
 (`src/routes/billing-page.ts`) — additionally require a same-origin
 `Origin`/`Referer` (`sameOriginPost`, `src/http.ts`) and return a 403 page
@@ -942,7 +946,7 @@ accompanies, identical in shape to every other navigation form in this connect
 flow (see "Session gating on plain HTML pages" above); the subscribe/upgrade
 buttons also carry a hidden `tier` field. The two state-changing routes below
 additionally require a same-origin request (`sameOriginPost`, `src/http.ts`)
-as a CSRF check on top of the cookie's `SameSite=Strict`, returning a 403 page
+as a CSRF check on top of the cookie's `SameSite=Lax`, returning a 403 page
 otherwise. Two further POST-only routes do the actual work:
 
 - **`POST /connect/billing/checkout`** resolves the browser's session, then
@@ -969,16 +973,17 @@ otherwise. Two further POST-only routes do the actual work:
 `${PUBLIC_BASE_URL}/connect/billing`, with `?checkout=success` or
 `?checkout=cancelled` on the Checkout redirects (a plain, non-sensitive
 status flag, never a token). Stripe's redirect is a cross-site top-level
-navigation, and the `SameSite=Strict` session cookie is deliberately not sent
-on one, so that landing hit arrives signed out. The billing page does not
-invent a session, silently poll Stripe, or fabricate a "you're subscribed"
-result on that hit: with no valid session it shows the ordinary sign-in prompt,
-with one added, honest line describing what the `checkout` flag claims happened
+navigation; the `SameSite=Lax` session cookie IS sent on it, so the caller
+lands back on the billing page signed in. The page still never trusts the
+redirect itself: it does not invent a session, silently poll Stripe, or
+fabricate a "you're subscribed" result from the `checkout` flag.
+`GET /billing/entitlement` (read in-process on the billing page too) is the
+only source of truth for what actually happened, never the redirect itself; the
+`?checkout=success|cancelled` flag is only a non-sensitive status hint. If for
+any reason no valid session is present, the page falls back to the ordinary
+sign-in prompt with one honest line describing what the flag claims
 ("Stripe reports checkout is complete. Sign back in above..." or "Checkout was
-cancelled. Nothing was charged."). Once the caller is back on the dashboard (a
-later same-site navigation re-presents the cookie), `GET /billing/entitlement`
-(read in-process on the billing page too) is the only source of truth for what
-actually happened, never the redirect itself.
+cancelled. Nothing was charged.").
 
 **Dashboard prerequisites** (Rob-only, one-time, per the deploy checklist
 below): create the Solo and Pro recurring Prices, set the two price-id env
