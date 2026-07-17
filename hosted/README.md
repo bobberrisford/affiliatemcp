@@ -1167,20 +1167,28 @@ origin and leaves every byte of `hosted/src/*.ts` untouched. See
    var each role gets). Note: `ensureRunning` passes env only when an
    instance first starts, so changing a var (for example
    `HOSTED_WORKER_ORIGIN`) requires restarting the instance to take effect.
-4. If this Worker's `DIGEST_COMPOSE_SECRET` (step 14 above) is set, mirror it
+4. Set `containers/wrangler.toml`'s `TRANSPORT_PUBLIC_URL` var to this
+   container Worker's OWN custom-domain origin (for example
+   `https://mcp.agenticaffiliate.ai`), NOT the hosted Worker's origin. It is
+   forwarded to the transport as `HOSTED_TRANSPORT_PUBLIC_URL` and turns on
+   OAuth resource discovery (slice 2b); leaving the `REPLACE_WITH` placeholder
+   keeps the transport's bare-401 behaviour and no MCP client can complete
+   OAuth. This origin must equal the origin of the `/mcp` connector URL and of
+   the hosted Worker's `HOSTED_CONNECTOR_URL`.
+5. If this Worker's `DIGEST_COMPOSE_SECRET` (step 14 above) is set, mirror it
    here: `npx wrangler secret put DIGEST_COMPOSE_SECRET` in `containers/`,
    same value.
-5. `cd containers && npm run deploy` (`wrangler deploy`). This builds the
+6. `cd containers && npm run deploy` (`wrangler deploy`). This builds the
    Docker image from the repo-root `Dockerfile` and pushes it to Cloudflare's
    container registry as part of the deploy — a working Docker CLI/daemon on
    the machine running this command is required (see "Local build proof"
    below for why that could not be exercised in this PR's build
    environment).
-6. Back in this Worker's own `wrangler.toml`, set `DIGEST_SERVICE_URL` to
+7. Back in this Worker's own `wrangler.toml`, set `DIGEST_SERVICE_URL` to
    `https://<containers-worker-origin>/digest` (`src/digest.ts` appends
    `/compose` itself, matching `containers/src/index.ts`'s
    `/digest/compose` route) and redeploy this Worker.
-7. Point MCP clients at `https://<containers-worker-origin>/mcp` instead of a
+8. Point MCP clients at `https://<containers-worker-origin>/mcp` instead of a
    separately-hosted transport URL.
 
 ### Env vars per service (inside the container)
@@ -1190,6 +1198,7 @@ origin and leaves every byte of `hosted/src/*.ts` untouched. See
 | `HOSTED_AUTH_URL` | transport | `containers/wrangler.toml`'s `HOSTED_WORKER_ORIGIN`, forwarded by `McpTransportContainer` |
 | `HOSTED_VAULT_URL` | both | same |
 | `HOSTED_TRANSPORT_PORT` | transport | fixed at `8787` by `containers/src/index.ts` |
+| `HOSTED_TRANSPORT_PUBLIC_URL` | transport | `containers/wrangler.toml`'s `TRANSPORT_PUBLIC_URL` (this container Worker's own custom-domain origin), forwarded by `McpTransportContainer` only when set to a real origin — gates OAuth discovery (slice 2b) |
 | `DIGEST_SERVICE_PORT` | digest-compose | fixed at `8788` by `containers/src/index.ts` |
 | `DIGEST_COMPOSE_SECRET` | digest-compose | `containers/wrangler.toml` secret, forwarded if set |
 | `CONTAINER_SERVICE` | both | set by the Dockerfile default (`hosted-transport`) or overridden per container class by `containers/src/index.ts` |

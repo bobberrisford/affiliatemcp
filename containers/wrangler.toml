@@ -94,6 +94,19 @@ new_sqlite_classes = ["McpTransportContainer", "DigestComposeContainer"]
 # where each container's own env is assembled from it.
 HOSTED_WORKER_ORIGIN = "REPLACE_WITH_HOSTED_WORKER_ORIGIN"
 
+# This container Worker's OWN public origin — the custom domain attached to it
+# (for example "https://mcp.agenticaffiliate.ai"), NOT the hosted Worker's
+# origin above. Forwarded to the transport container as
+# HOSTED_TRANSPORT_PUBLIC_URL, which gates OAuth resource discovery (slice 2b,
+# src/hosted-transport/env.ts): while this stays the REPLACE_WITH placeholder,
+# the transport keeps its bare-401 behaviour and no MCP client can complete
+# OAuth (see containers/src/index.ts `transportPublicOrigin`). Set it to the
+# real custom-domain origin to turn discovery on — it must equal the origin of
+# the /mcp connector URL users add and of hosted/'s HOSTED_CONNECTOR_URL. The
+# connector URL is this origin + "/mcp". Changing it requires restarting the
+# transport container instance (env is applied only at container start).
+TRANSPORT_PUBLIC_URL = "REPLACE_WITH_TRANSPORT_PUBLIC_ORIGIN"
+
 # ── Secrets — set via `wrangler secret put <NAME>` (NEVER commit) ──────────
 #   DIGEST_COMPOSE_SECRET  optional doorbell shared with hosted/'s own
 #                          DIGEST_COMPOSE_SECRET secret (hosted/wrangler.toml).

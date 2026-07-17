@@ -92,6 +92,17 @@ export interface Env {
   DIGEST_COMPOSE_CONTAINER: DurableObjectNamespace<DigestComposeContainer>;
   /** The deployed hosted Worker's own origin — see wrangler.toml's `[vars]` comment. */
   HOSTED_WORKER_ORIGIN: string;
+  /**
+   * The transport's OWN public origin — this container Worker's custom domain
+   * (for example `https://mcp.agenticaffiliate.ai`), NOT the hosted Worker's
+   * origin. Forwarded to the transport container as `HOSTED_TRANSPORT_PUBLIC_URL`,
+   * which gates OAuth resource discovery (slice 2b,
+   * `src/hosted-transport/env.ts`): unset/placeholder keeps the transport's
+   * bare-401 behaviour, a real origin makes it advertise the auth server so an
+   * MCP client pointed only at `/mcp` can complete OAuth. Optional so a deploy
+   * that has not yet chosen its public origin still runs (discovery off) rather
+   * than crashing. See wrangler.toml's `[vars]` comment. */
+  TRANSPORT_PUBLIC_URL?: string;
   /** Optional doorbell shared with hosted/'s own `DIGEST_COMPOSE_SECRET` secret. */
   DIGEST_COMPOSE_SECRET?: string;
 }
@@ -152,6 +163,24 @@ async function fetchWhenListening(
 }
 
 /**
+ * The transport's public origin (`TRANSPORT_PUBLIC_URL`) is forwarded to the
+ * container only when it is a real absolute URL. The `[vars]` default is a
+ * `REPLACE_WITH_…` placeholder (and an unset value is empty), neither of which
+ * parses as a URL — returning `undefined` for those means the transport keeps
+ * its OAuth-discovery-off default (`src/hosted-transport/env.ts`) rather than
+ * booting with a bogus origin. A genuinely malformed but URL-shaped value is
+ * forwarded and rejected loudly by the transport's own `env.ts` validation.
+ */
+function transportPublicOrigin(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    return new URL(value).origin;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Starts the container's process if it is not already running, passing the
  * env vars that service's own `env.ts` reads from `process.env`
  * (`src/hosted-transport/env.ts` or `src/hosted-digest/env.ts`).
@@ -174,11 +203,16 @@ export class McpTransportContainer extends DurableObject<Env> {
     if (!container) {
       return new Response('container runtime unavailable', { status: 503 });
     }
+    const publicOrigin = transportPublicOrigin(this.env.TRANSPORT_PUBLIC_URL);
     ensureRunning(container, {
       CONTAINER_SERVICE: 'hosted-transport',
       HOSTED_AUTH_URL: this.env.HOSTED_WORKER_ORIGIN,
       HOSTED_VAULT_URL: this.env.HOSTED_WORKER_ORIGIN,
       HOSTED_TRANSPORT_PORT: String(TRANSPORT_PORT),
+      // Enables OAuth resource discovery (slice 2b) — see the field comment on
+      // `Env.TRANSPORT_PUBLIC_URL`. Omitted (discovery off) until a real origin
+      // is configured, so the placeholder default never boots a bogus value.
+      ...(publicOrigin ? { HOSTED_TRANSPORT_PUBLIC_URL: publicOrigin } : {}),
     });
     return fetchWhenListening(container, TRANSPORT_PORT, request);
   }
