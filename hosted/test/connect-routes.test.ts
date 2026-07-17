@@ -19,6 +19,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import worker from '../src/index.js';
 import type { Env } from '../src/env.js';
 import { buildSessionPayload, generateUserId, signSession } from '../src/token.js';
+import { putSubscriptionRecord } from '../src/billing.js';
 
 function fakeKV(): KVNamespace & { store: Map<string, string> } {
   const store = new Map<string, string>();
@@ -262,7 +263,7 @@ describe('POST /connect/:network/form', () => {
       for (const field of fields) {
         expect(body).toContain(`name="${field}"`);
       }
-      expect(body.toLowerCase()).toContain('lesser-privileged alternative documented here today');
+      expect(body.toLowerCase()).toContain('just for this connection');
       expect(body).toContain(`action="/connect/${slug}"`);
       // No hidden session-token field remains on the credential form.
       expect(body).not.toContain('name="token"');
@@ -586,6 +587,55 @@ describe('connector URL on the connection-test success page', () => {
     expect(body).toContain('your-hosted-transport-deployment');
     expect(body).toContain('custom connector');
     expectNoTokenLeak(body, token);
+  });
+});
+
+// ── subscription sequencing on the success page (#379) ──────────────────────
+// The hosted transport gates tool calls on an active subscription, so the
+// success page must send an unsubscribed user to billing BEFORE the
+// add-connector/first-prompt copy, or their first prompt fails at the boundary.
+describe('subscription sequencing on the connection-test success page', () => {
+  it('directs an unsubscribed user to subscribe before adding the connector', async () => {
+    const { env, signingKey } = await makeTestEnv();
+    const token = await issueSessionToken(signingKey, generateUserId());
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify([{ accountId: 1, accountName: 'X' }]), { status: 200 }),
+    );
+    const res = await worker.fetch(
+      authedPost('/connect/awin', { AWIN_API_TOKEN: 'a', AWIN_PUBLISHER_ID: '1' }, token, SAME_ORIGIN),
+      env,
+    );
+    const body = await res.text();
+    expect(body).toContain('Connection test passed');
+    // Sequenced to billing first.
+    expect(body).toContain('subscribe');
+    expect(body).toContain('/connect/billing');
+    // The "run a prompt now" affordance is withheld until subscribed.
+    expect(body).not.toContain('Suggested first prompt');
+  });
+
+  it('shows the add-connector and first-prompt copy for an entitled user', async () => {
+    const { env, signingKey } = await makeTestEnv();
+    const userId = generateUserId();
+    const token = await issueSessionToken(signingKey, userId);
+    await putSubscriptionRecord(env.HOSTED_BILLING, userId, {
+      tier: 'pro',
+      status: 'active',
+      updatedAt: 0,
+    });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify([{ accountId: 1, accountName: 'X' }]), { status: 200 }),
+    );
+    const res = await worker.fetch(
+      authedPost('/connect/awin', { AWIN_API_TOKEN: 'a', AWIN_PUBLISHER_ID: '1' }, token, SAME_ORIGIN),
+      env,
+    );
+    const body = await res.text();
+    expect(body).toContain('Connection test passed');
+    expect(body).toContain('use this from your MCP client');
+    expect(body).toContain('Suggested first prompt');
+    // No paywall nudge for someone who already pays.
+    expect(body).not.toContain('choose a plan');
   });
 });
 

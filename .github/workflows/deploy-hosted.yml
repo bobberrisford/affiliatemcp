@@ -1,0 +1,105 @@
+name: Deploy hosted Worker
+
+# Manual, gated deploy of the hosted connect/auth/billing/digest Worker
+# (affiliate-mcp-hosted, https://hosted.agenticaffiliate.ai) to Cloudflare.
+#
+# Part of the regular deployment pipeline: runs on push to main whenever the
+# hosted Worker (or this workflow) changes, mirroring how deploy-pages.yml
+# ships the site. Also runnable manually via workflow_dispatch. See
+# docs/decisions/2026-07-16-hosted-worker-ci-deploy.md.
+#
+# The hosted Worker is the production billing/entitlement surface, so the
+# deploy is gated on the hosted test suite and a substitution guard; the
+# manual path additionally requires a typed confirmation.
+#
+# Config split:
+#   - Public values (URLs, connector URL, digest URL) live inline in
+#     hosted/wrangler.toml.
+#   - Account-specific ids are NOT committed. They are injected at deploy time
+#     from repo-level Actions VARIABLES (non-secret): HOSTED_USERS_KV_ID,
+#     HOSTED_VAULT_KV_ID, HOSTED_BILLING_KV_ID, STRIPE_PRICE_ID_SOLO,
+#     STRIPE_PRICE_ID_PRO.
+#   - True secrets (VAULT_MASTER_KEY, SESSION_SIGNING_KEY, RESEND_API_KEY,
+#     STRIPE_*) are set once via `wrangler secret put`, persist on the Worker,
+#     and are never held in CI.
+#
+# Auth: repo SECRETS CLOUDFLARE_API_TOKEN (Edit Workers, scoped to the account)
+# and CLOUDFLARE_ACCOUNT_ID.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'hosted/**'
+      - '.github/workflows/deploy-hosted.yml'
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to confirm a production deploy of the hosted Worker'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-hosted
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require explicit confirmation (manual runs only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.confirm != 'deploy' }}
+        run: |
+          echo "::error::Set the 'confirm' input to 'deploy' to proceed with a production deploy."
+          exit 1
+
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: hosted/package-lock.json
+
+      - run: npm ci --prefix hosted
+
+      # Gate on the Worker's own tests before shipping to the billing surface.
+      - run: npm --prefix hosted test
+
+      - name: Inject account-specific ids from Actions variables
+        env:
+          HOSTED_USERS_KV_ID: ${{ vars.HOSTED_USERS_KV_ID }}
+          HOSTED_VAULT_KV_ID: ${{ vars.HOSTED_VAULT_KV_ID }}
+          HOSTED_BILLING_KV_ID: ${{ vars.HOSTED_BILLING_KV_ID }}
+          STRIPE_PRICE_ID_SOLO: ${{ vars.STRIPE_PRICE_ID_SOLO }}
+          STRIPE_PRICE_ID_PRO: ${{ vars.STRIPE_PRICE_ID_PRO }}
+        run: |
+          set -euo pipefail
+          for name in HOSTED_USERS_KV_ID HOSTED_VAULT_KV_ID HOSTED_BILLING_KV_ID STRIPE_PRICE_ID_SOLO STRIPE_PRICE_ID_PRO; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Actions variable ${name} is not set (repo Settings -> Secrets and variables -> Actions -> Variables)."
+              exit 1
+            fi
+          done
+          sed -i \
+            -e "s|__KV_ID_HOSTED_USERS__|${HOSTED_USERS_KV_ID}|" \
+            -e "s|__KV_ID_HOSTED_VAULT__|${HOSTED_VAULT_KV_ID}|" \
+            -e "s|__KV_ID_HOSTED_BILLING__|${HOSTED_BILLING_KV_ID}|" \
+            -e "s|__STRIPE_PRICE_ID_SOLO__|${STRIPE_PRICE_ID_SOLO}|" \
+            -e "s|__STRIPE_PRICE_ID_PRO__|${STRIPE_PRICE_ID_PRO}|" \
+            hosted/wrangler.toml
+          if grep -nE '__[A-Z_]+__' hosted/wrangler.toml; then
+            echo "::error::An injectable placeholder was left unsubstituted in hosted/wrangler.toml."
+            exit 1
+          fi
+
+      # `wrangler deploy` uploads code + [vars] + bindings. Secrets set via
+      # `wrangler secret put` persist on the Worker and are not affected.
+      - name: Deploy hosted Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npm --prefix hosted run deploy

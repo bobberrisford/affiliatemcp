@@ -25,15 +25,18 @@ function req(headers: Record<string, string>): Request {
 }
 
 describe('setSessionCookieHeader / clearSessionCookieHeader', () => {
-  it('emits the exact HttpOnly; Secure; SameSite=Strict cookie with Path and Max-Age', () => {
+  it('emits the exact HttpOnly; Secure; SameSite=Lax cookie with Path and Max-Age', () => {
+    // Lax, not Strict: the magic link is opened cross-site (from an email
+    // client), so a Strict cookie would be withheld on the callback's redirect
+    // to /connect and the dashboard would re-prompt. See setSessionCookieHeader.
     expect(setSessionCookieHeader('amcps_abc.def', 2592000)).toBe(
-      'hosted_session=amcps_abc.def; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=2592000',
+      'hosted_session=amcps_abc.def; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000',
     );
   });
 
   it('clears with Max-Age=0 and the same attributes', () => {
     expect(clearSessionCookieHeader()).toBe(
-      'hosted_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0',
+      'hosted_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0',
     );
   });
 
