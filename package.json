@@ -34,6 +34,8 @@
     "verify": "npm run typecheck && npm run lint && npm test && npm run build",
     "prepublishOnly": "npm run build",
     "dev": "tsx src/index.ts",
+    "dev:hosted-transport": "tsx src/index.ts hosted-transport",
+    "dev:hosted-digest": "tsx src/index.ts hosted-digest",
     "typecheck": "tsc -p tsconfig.dev.json",
     "lint": "eslint \"src/**/*.ts\" \"scripts/**/*.ts\" \"tests/**/*.ts\"",
     "lint:design": "npx --yes oxlint@latest -c design-system/adherence.oxlintrc.json desktop/renderer || true",
@@ -47,7 +49,8 @@
     "validate:network": "tsx scripts/validate-network-json.ts",
     "generate:readme": "tsx scripts/generate-readme-table.ts",
     "generate:report": "tsx scripts/generate-report.ts",
-    "generate:report-image": "tsx scripts/generate-report-image.ts"
+    "generate:report-image": "tsx scripts/generate-report-image.ts",
+    "generate:api-index": "tsx scripts/generate-api-index.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",

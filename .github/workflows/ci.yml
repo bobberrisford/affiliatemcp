@@ -96,3 +96,39 @@ jobs:
       - run: npm ci --prefix issuer
       - run: npm --prefix issuer run typecheck
       - run: npm --prefix issuer test
+      # wrangler dry-run: the only gate that validates wrangler.toml shape
+      - run: npm --prefix issuer run build
+
+  # The waitlist-capture Worker has its own workspace, so it needs its own
+  # gate — the root build never sees it.
+  waitlist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: waitlist/package-lock.json
+      - run: npm ci --prefix waitlist
+      - run: npm --prefix waitlist run typecheck
+      - run: npm --prefix waitlist test
+      # wrangler dry-run: the only gate that validates wrangler.toml shape
+      - run: npm --prefix waitlist run build
+
+  # The hosted-service scaffold + auth Worker (H2) has its own workspace, so
+  # it needs its own gate — the root build never sees it.
+  hosted:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: hosted/package-lock.json
+      - run: npm ci --prefix hosted
+      - run: npm --prefix hosted run typecheck
+      - run: npm --prefix hosted test
+      # wrangler dry-run: the only gate that validates wrangler.toml shape
+      - run: npm --prefix hosted run build

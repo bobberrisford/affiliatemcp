@@ -16,7 +16,7 @@
  * registry guard call into it.
  */
 
-import { resolveBrand } from './brands.js';
+import { getActiveBrandStore } from './brand-store.js';
 import { BrandNotRegistered } from './errors.js';
 import type { AdapterCallContext, NetworkAdapter, NetworkSlug } from './types.js';
 
@@ -34,7 +34,11 @@ export interface ResolvedBrand {
 /**
  * Resolve `(brand, network)` to a concrete `(credentialId, networkBrandId)`.
  * Throws `BrandNotRegistered` if the brand has not been bound to that network
- * in `brands.json`. Pure function — reads the file once via `resolveBrand`.
+ * in `brands.json`. Reads via `getActiveBrandStore()` (`src/shared/
+ * brand-store.ts`) rather than calling `resolveBrand` from `brands.ts`
+ * directly — this is the request-dispatch layer the hosted workstream (H1)
+ * routes through the request-scoped brand store; the local path resolves the
+ * same file every call, as before.
  */
 export function resolveBrandForNetwork(
   brand: string,
@@ -45,7 +49,7 @@ export function resolveBrandForNetwork(
     // future caller bypasses Zod validation.
     throw new BrandNotRegistered(String(brand ?? ''), network);
   }
-  const binding = resolveBrand(brand, network);
+  const binding = getActiveBrandStore().resolve(brand, network);
   if (!binding) {
     throw new BrandNotRegistered(brand, network);
   }

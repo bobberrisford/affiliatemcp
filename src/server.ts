@@ -12,6 +12,15 @@
  *     able to see what failed.
  *   - Unknown tool name → text content explaining the miss; never an opaque
  *     "an error occurred".
+ *
+ * Request-scoped identity seam (hosted workstream H1,
+ * `docs/product/hosted-mvp-workstream.md`): every `tools/call` dispatch runs
+ * `tool.handle(args)` inside `runInRequestContext(localDefaultContext(), ...)`
+ * (`src/shared/request-context.ts`). This is the seam's first real consumer —
+ * the local server now runs every tool call through the same request-context
+ * mechanism a hosted deployment will use, but `localDefaultContext()` carries
+ * a fixed identity and no overlays, so credential, OAuth-token, brand, and
+ * client-strategy resolution behave exactly as before this change.
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -39,6 +48,7 @@ import {
   toErrorEnvelope,
 } from './shared/errors.js';
 import { createLogger } from './shared/logging.js';
+import { localDefaultContext, runInRequestContext } from './shared/request-context.js';
 import { NotImplementedError, type NetworkErrorEnvelope } from './shared/types.js';
 import {
   flushTelemetry,
@@ -153,7 +163,7 @@ export async function startServer(): Promise<void> {
     }
 
     try {
-      const result = await tool.handle(args);
+      const result = await runInRequestContext(localDefaultContext(), () => tool.handle(args));
       const telemetry = classifyToolForTelemetry(name);
       recordTelemetry(telemetry.network, telemetry.operation, 'success');
       // Size guard (decision 2026-07-03): keep every response under the byte

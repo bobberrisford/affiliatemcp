@@ -1,0 +1,137 @@
+name = "affiliate-mcp-hosted"
+main = "src/index.ts"
+compatibility_date = "2026-03-25"
+# WebCrypto Ed25519 + fetch are native to the Workers runtime; no
+# nodejs_compat flag is needed (unlike issuer, which needs it for Stripe's
+# fetch client).
+
+# ── Cron Trigger: the scheduled digest (H6, src/digest.ts) ──────────────────
+# Weekly, Monday 06:00 UTC — the workstream's "weekly digest" cadence; Rob
+# adjusts at deploy if a different send time suits subscribers better. Safe
+# to deploy ahead of the Node compose service: the scheduled handler no-ops
+# with one log line while DIGEST_SERVICE_URL below is unset.
+[triggers]
+crons = ["0 6 * * 1"]
+
+# ── KV: hosted-account identity + OAuth auth artefacts ──────────────────────
+# Stores (NO affiliate credentials, NO affiliate data — see hosted/README.md
+# for the exact key shapes):
+#   user:<userId>            -> JSON { id, createdAt, emailHash }
+#   email-hash:<hmacHex>     -> <userId>
+#   pending-link:<sha256Hex> -> JSON { emailHash, expiresAt, authRequestId? }  (TTL'd, single-use)
+#   rl:email-hash:<hmacHex>  -> counter  (request-link rate limit, TTL'd)
+#   rl:ip:<sha256Hex>        -> counter  (request-link rate limit, TTL'd)
+#   oauth:client:<clientId>    -> registered OAuth client (slice 1)
+#   oauth:req:<reqId>          -> pending authorization request (TTL'd)
+#   oauth:code:<sha256Hex>     -> authorization code (TTL'd, single-use)
+#   oauth:refresh:<sha256Hex>  -> refresh token (TTL'd, rotated on use)
+# Create a FRESH namespace before first deploy:
+#   npx wrangler kv namespace create HOSTED_USERS
+#   npx wrangler kv namespace create HOSTED_USERS --preview
+# then paste the returned ids below.
+[[kv_namespaces]]
+binding = "HOSTED_USERS"
+id = "__KV_ID_HOSTED_USERS__"  # injected at deploy from Actions variable HOSTED_USERS_KV_ID (see .github/workflows/deploy-hosted.yml)
+
+# ── KV: encrypted credential vault (H3) ──────────────────────────────────────
+# A SEPARATE namespace from HOSTED_USERS on purpose — see hosted/src/env.ts.
+# Stores (see hosted/src/vault.ts and hosted/README.md for the exact shapes):
+#   vault:key:<userId>            -> wrapped per-user data key
+#   vault:cred:<userId>:<network> -> encrypted per-network credential
+# Create a FRESH namespace before first deploy:
+#   npx wrangler kv namespace create HOSTED_VAULT
+#   npx wrangler kv namespace create HOSTED_VAULT --preview
+# then paste the returned ids below.
+[[kv_namespaces]]
+binding = "HOSTED_VAULT"
+id = "__KV_ID_HOSTED_VAULT__"  # injected at deploy from Actions variable HOSTED_VAULT_KV_ID
+
+# ── KV: Stripe subscription state (H6) ───────────────────────────────────────
+# A THIRD, separate namespace — see hosted/src/env.ts and hosted/src/billing.ts.
+# Stores:
+#   sub:<userId>       -> JSON SubscriptionRecord { tier, status, email?, … }
+#   stripe-sub:<subId> -> <userId>  (reverse index for webhook events)
+#   evt:<eventId>      -> "1"       (idempotency marker, TTL'd)
+# Create a FRESH namespace before first deploy:
+#   npx wrangler kv namespace create HOSTED_BILLING
+#   npx wrangler kv namespace create HOSTED_BILLING --preview
+# then paste the returned ids below.
+[[kv_namespaces]]
+binding = "HOSTED_BILLING"
+id = "__KV_ID_HOSTED_BILLING__"  # injected at deploy from Actions variable HOSTED_BILLING_KV_ID
+
+# ── Non-secret vars (override per-env or in the dashboard) ─────────────────
+[vars]
+# The Worker's OWN public base URL, used to build the callback URL in sign-in
+# emails. Configured explicitly (never derived from the request's Host) so a
+# fronting proxy can never poison the emailed link. Set it to the deployed
+# Worker origin, e.g. "https://affiliate-mcp-hosted.robertberrisford.workers.dev"
+# or the custom domain once one exists.
+PUBLIC_BASE_URL = "https://hosted.agenticaffiliate.ai"
+# Origin allowed to call /auth/request-link and /auth/session/verify via CORS.
+SITE_ORIGIN = "https://agenticaffiliate.ai"
+# Current key version of the VAULT_MASTER_KEY secret below. Bump this (and
+# rotate the secret) per the rotation procedure in hosted/README.md.
+VAULT_MASTER_KEY_VERSION = "1"
+# Stripe recurring Price ids (price_…) for the two hosted tiers, per
+# docs/decisions/2026-07-12-pricing-billing-and-licence.md. Env placeholders
+# until Rob wires up the real Stripe account at deploy.
+STRIPE_PRICE_ID_SOLO = "__STRIPE_PRICE_ID_SOLO__"  # injected at deploy from Actions variable STRIPE_PRICE_ID_SOLO
+STRIPE_PRICE_ID_PRO = "__STRIPE_PRICE_ID_PRO__"  # injected at deploy from Actions variable STRIPE_PRICE_ID_PRO
+# Point Checkout's success/cancel redirect and the Billing Portal's return
+# URL at this Worker's OWN billing page (src/routes/billing-page.ts), not an
+# external page: replace REPLACE_WITH_PUBLIC_BASE_URL above with the deployed
+# origin and these three resolve automatically. See hosted/README.md,
+# "Billing (Stripe checkout, portal, and the billing page)", for why the
+# landing hit necessarily arrives signed out (Stripe's redirect cannot carry
+# our bearer session token) and how the page states that honestly rather than
+# working around it with a token in the URL.
+BILLING_SUCCESS_URL = "https://hosted.agenticaffiliate.ai/connect/billing?checkout=success"
+BILLING_CANCEL_URL = "https://hosted.agenticaffiliate.ai/connect/billing?checkout=cancelled"
+BILLING_PORTAL_RETURN_URL = "https://hosted.agenticaffiliate.ai/connect/billing"
+# Base URL of the Node digest-compose service (src/hosted-digest/ in the root
+# workspace). Leave unset until that service is deployed — the cron trigger
+# above no-ops safely while this is empty (see hosted/src/digest.ts).
+# When the service is fronted by the containers Worker in the same Cloudflare
+# account, this MUST be a custom domain attached to that Worker, not its
+# workers.dev URL: a Worker cannot fetch another Worker's workers.dev origin
+# in the same account (Cloudflare serves a 404, observed 2026-07-15; see
+# containers/wrangler.toml, "Deploy gotchas").
+DIGEST_SERVICE_URL = "https://mcp.agenticaffiliate.ai/digest"
+# Public URL of the hosted MCP transport (slice 2b) — a DIFFERENT origin from
+# this Worker (this Worker is the OAuth authorization server; the transport is
+# the resource server a client connects to). When set, the connect success page
+# shows this as the connector URL to add; when unset it shows an honest
+# placeholder. Public server URL only, never a token. Uncomment and set to the
+# deployed transport origin once one exists.
+HOSTED_CONNECTOR_URL = "https://mcp.agenticaffiliate.ai/mcp"
+
+# ── Secrets — set via `wrangler secret put <NAME>` (NEVER commit) ──────────
+#   RESEND_API_KEY        re_…    (Resend API key, from https://resend.com/api-keys;
+#                                  the sending domain used in src/index.ts,
+#                                  sign-in@agenticaffiliate.ai, must be verified
+#                                  in the Resend dashboard first; the H6 digest
+#                                  sends from digest@agenticaffiliate.ai on the
+#                                  same verified domain — see src/digest.ts)
+#   SESSION_SIGNING_KEY    Ed25519 PKCS8 DER, base64 (the PRIVATE key only —
+#                                  this Worker derives the public verification
+#                                  key from it at call time; see `npm run gen-keypair`
+#                                  and src/token.ts)
+#   VAULT_MASTER_KEY       base64 of 32 random bytes (AES-256 key-wrap key for
+#                                  the credential vault; see `npm run gen-vault-key`,
+#                                  src/vault.ts, and the "Vault threat model"
+#                                  section of hosted/README.md before deploying
+#                                  this — the Worker-secret design was
+#                                  accepted by Rob on 2026-07-14)
+#   STRIPE_SECRET_KEY      sk_live_… / sk_test_… (Stripe secret key for
+#                                  POST /billing/checkout; see src/stripe.ts)
+#   STRIPE_WEBHOOK_SECRET  whsec_…  (from the registered webhook endpoint for
+#                                  POST /billing/webhook)
+#   DIGEST_COMPOSE_SECRET  optional doorbell for the compose service: sent as
+#                                  x-compose-auth on every POST /compose call
+#                                  the scheduled digest makes. Leaking it
+#                                  grants no data access — every read is
+#                                  authorised by the per-user digest-scoped
+#                                  token, never this value. See
+#                                  hosted/README.md, "Digest orchestration
+#                                  and token scopes".

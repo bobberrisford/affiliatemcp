@@ -8,8 +8,11 @@ This file orients AI coding agents (Claude Code and equivalents) opening
 `affiliate-mcp` is a Model Context Protocol server with 86 publisher-side and
 advertiser-side adapters across 72 affiliate-network families. It serves
 MCP-capable clients including Claude Desktop, Claude Code, and Codex. The user
-brings their own API credentials; the server is local-only, with no hosted
-version. Optional
+brings their own API credentials; the server runs locally, and the local
+product is free and complete. A hosted tier is planned, pre-launch, governed
+by the accepted custody record
+`docs/decisions/2026-07-12-hosted-credential-custody.md`; do not build hosted
+surfaces beyond what that record and the technical roadmap authorise. Optional
 telemetry is opt-in, off by default, and aggregate-only; it conforms to
 `PRIVACY.md` and the decision record
 `docs/decisions/2026-06-13-privacy-first-telemetry.md`. UK English throughout,
@@ -434,10 +437,16 @@ CLI entry points (built or via `npm run dev`):
 
 ## What not to do
 
-- No hosted version. No OAuth proxy. The user's credentials and affiliate data
-  never leave their machine. Telemetry, where enabled, must stay opt-in (off by
-  default), aggregate-only, and conform exactly to `PRIVACY.md`: never
-  credentials, affiliate data, or account identifiers.
+- No hosted custody beyond the accepted contract. On the local path, the
+  user's credentials and affiliate data never leave their machine. Hosted work
+  is authorised only by
+  `docs/decisions/2026-07-12-hosted-credential-custody.md`: bring-your-own-key,
+  encrypted at rest, decrypted per request, serving only the key's owner,
+  opt-in, with local staying free and complete. No OAuth proxy and no other
+  hosted surface without its own accepted decision record. Telemetry, where
+  enabled, must stay opt-in (off by default), aggregate-only, and conform
+  exactly to `PRIVACY.md`: never credentials, affiliate data, or account
+  identifiers.
 - Do not modify files under `src/shared/` unless extending the contract is the
   only path forward. Open an issue first.
 - Do not modify another network's adapter. Each network owns its directory.

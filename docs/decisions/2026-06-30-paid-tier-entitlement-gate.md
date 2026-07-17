@@ -1,7 +1,8 @@
 # A paid tier for brand-data features, gated by a local entitlement check
 
 - **Date:** 2026-06-30
-- **Status:** Proposed (decision pending)
+- **Status:** Accepted (2026-07-12, Rob, via acceptance of the solo revenue
+  plan and its Phase 0 technical roadmap, which lands this gate)
 - **Affects:** the MCP server dispatch path (`src/server.ts`), a new
   `src/brand-data/entitlement.ts`, the three brand-data meta-tools defined in the
   companion record `2026-06-30-brand-data-layer.md`, and the project's
@@ -127,6 +128,17 @@ Keep all of these in draft until this record is accepted.
 - Doc sync: on acceptance, add a forward-pointer banner to
   `2026-06-09-desktop-app-free.md` noting this record introduces a paid tier on
   the brand-data surface, so the two never read as contradictory.
+
+## Amendment: entitled-by-default during beta (2026-07-12, Rob)
+
+The shipped gate defaults to entitled (dormant): every user has the three
+gated tools unless `AFFILIATE_MCP_ENTITLED` is explicitly set to an off
+value. That inverts the default this record originally described and was
+previously justified only by a code comment. Rob confirmed the shipped
+behaviour as the intended one on 2026-07-12: the gate stays dormant during
+the beta to build goodwill, and the default flips to locked in the same
+change that ships the real paid flow, so no beta user loses access silently
+before payment exists.
 
 ## Open questions for the maintainer
 

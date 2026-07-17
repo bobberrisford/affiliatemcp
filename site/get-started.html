@@ -71,7 +71,7 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
 
 <nav class="nav"><div class="wrap">
   <a class="brand" href="index.html"><svg viewBox="0 0 120 120"><rect width="120" height="120" rx="14" fill="#2B2BFF"></rect><polyline points="34,38 58,60 34,82" fill="none" stroke="#fff" stroke-width="13"></polyline><rect x="66" y="68" width="24" height="14" fill="#fff"></rect></svg><span class="wm">agentic <span class="mcp">affiliate</span></span></a>
-  <div class="links"><a href="index.html#how">how it works</a><a href="networks.html">networks</a><a href="adopt.html">adopt your adapter</a><a href="what-you-can-ask.html">what you can ask</a><a href="mission.html">mission</a></div>
+  <div class="links"><a href="index.html#how">how it works</a><a href="networks.html">networks</a><a href="adopt.html">adopt your adapter</a><a href="what-you-can-ask.html">what you can ask</a><a href="pricing.html">pricing</a><a href="mission.html">mission</a></div>
   <div class="right"><a class="btn d sm" href="https://github.com/bobberrisford/affiliatemcp">★ github</a><a class="btn p sm" href="get-started.html">get started ▸</a></div>
 </div></nav>
 
@@ -88,7 +88,7 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
       <h3>claude desktop <code>.mcpb</code></h3>
       <p>Install the host-native extension. Claude owns the runtime, configuration, and secure credential fields, so no Node.js, terminal, or separate setup app is required.</p>
       <p>Secure setup fields currently cover Awin, CJ, Impact, and Partnerize. Adding other networks uses the technical track until portable browser setup ships.</p>
-      <a class="btn d" href="https://github.com/bobberrisford/affiliatemcp/releases/latest/download/affiliate-networks-mcp.mcpb">download the Claude extension ▸</a>
+      <a class="btn d" href="#mcpb-track">follow the <code>.mcpb</code> track ▾</a>
     </div>
     <div class="card">
       <span class="chip">track 2 · technical</span>
@@ -97,7 +97,42 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
       <a class="btn ghost" href="#technical-track">follow the technical track ▾</a>
     </div>
   </div>
-  <p class="small muted" style="margin-top:16px">The standalone Electron/DMG setup app is a fixes-only compatibility fallback for existing macOS users, not a third primary track.</p>
+  <div class="card" style="margin-top:16px;box-shadow:4px 4px 0 var(--magenta)">
+    <span class="chip mag">good to know</span>
+    <h3 style="margin-top:8px">there is no token to paste</h3>
+    <p style="margin-bottom:0">On both these local tracks your affiliate credentials are API keys, entered once into Claude Desktop's secure fields or the setup wizard, and stored on your machine. You never copy a connection token into Claude's settings. The <a href="hosted.html" style="border-bottom:2px solid var(--blue)">hosted tier</a> works the same way — you connect Claude to it with a browser sign-in, not a pasted token — and it is a separate, optional product, not required to use affiliate-mcp locally.</p>
+  </div>
+  <p class="small muted" style="margin-top:16px">The standalone Electron/DMG setup app is a fixes-only compatibility fallback for existing macOS users, not a third primary track. <a href="download.html" style="border-bottom:2px solid var(--blue)">Existing desktop-app users →</a></p>
+</div></section>
+
+<section id="mcpb-track" style="padding:8px 0 40px"><div class="wrap">
+  <div class="step-block" style="border-top:0">
+    <div class="step-head"><span class="n">◆</span><h2>non-technical track: the claude desktop extension</h2></div>
+    <p>No terminal, no Node.js, no config files, and no connection token to paste. Claude Desktop installs the local server, stores your keys in its own secure fields, and wires everything up.</p>
+  </div>
+
+  <div class="step-block">
+    <div class="step-head"><span class="n">01</span><h2>download the extension</h2></div>
+    <p>One file, <code>.mcpb</code>. It contains the whole local server.</p>
+    <a class="btn d" href="https://github.com/bobberrisford/affiliatemcp/releases/latest/download/affiliate-networks-mcp.mcpb">download the Claude extension ▸</a>
+  </div>
+
+  <div class="step-block">
+    <div class="step-head"><span class="n">02</span><h2>install it in claude desktop</h2></div>
+    <p>Open Claude Desktop, then <b>Settings → Extensions → Advanced settings → Install Extension…</b> and pick the file you just downloaded. Claude owns installation, permissions, and secret storage from here.</p>
+  </div>
+
+  <div class="step-block">
+    <div class="step-head"><span class="n">03</span><h2>enter your network keys</h2></div>
+    <p>During install, Claude Desktop shows secure fields for your API credentials and stores them in your operating system's keychain. This is where your keys go: not into a chat box, and not as a pasted token.</p>
+    <p>Guided fields currently cover <b>Awin, CJ, Impact, and Partnerize</b>. For any other network, run the <a href="#technical-track" style="border-bottom:2px solid var(--blue)">technical track</a> once and point the extension at that config, until portable browser setup ships.</p>
+  </div>
+
+  <div class="step-block">
+    <div class="step-head"><span class="n">04</span><h2>restart, then ask</h2></div>
+    <p>Claude only loads new tools when it starts. Fully quit Claude Desktop, reopen it, start a fresh chat, and ask <i>"what affiliate networks do you have access to?"</i></p>
+    <a class="btn p" href="what-you-can-ask.html">see what you can ask ▸</a>
+  </div>
 </div></section>
 
 <section id="technical-track" style="padding:0 0 60px"><div class="wrap">

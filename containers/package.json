@@ -1,0 +1,19 @@
+{
+  "name": "affiliate-mcp-containers",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cloudflare Containers router Worker for affiliate-mcp's two hosted Node services (the H4 remote MCP transport and the H6 digest-compose service) — see hosted/README.md, \"Deploy on Cloudflare (all-in-one)\".",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "wrangler deploy --dry-run --outdir dist --containers-rollout=none",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20250101.0",
+    "typescript": "^5.6.0",
+    "wrangler": "^4.0.0"
+  }
+}

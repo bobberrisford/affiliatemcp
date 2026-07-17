@@ -19,6 +19,22 @@ planning. They are useful context, but accepted records under
 
 ## Active proposals and working drafts
 
+- [`solo-50k-revenue-plan.md`](./solo-50k-revenue-plan.md) is the working
+  commercial plan for reaching £50k/month solo, building on
+  [`hosted-version-scoping.md`](./hosted-version-scoping.md) and the accepted
+  paid-tier decisions. Direction, not authorisation.
+- [`solo-50k-technical-roadmap.md`](./solo-50k-technical-roadmap.md) is the
+  phased technical to-do list for that plan. Decision-gated items need
+  accepted records before implementation.
+- [`phase-0-go-live-checklist.md`](./phase-0-go-live-checklist.md) is the
+  maintainer-only operational checklist (Stripe, Worker deploy, key swap,
+  end-to-end proof) for taking the skill-pack tier live.
+- [`hosted-mvp-workstream.md`](./hosted-mvp-workstream.md) is the active
+  Phase 1 workstream brief (slices H1 to H6), started 2026-07-13 under the
+  build-hosted-without-presell decision.
+- [`hosted-version-scoping.md`](./hosted-version-scoping.md) is the original
+  discovery proposal for a hosted version; superseded by the accepted
+  custody decision and the active workstream brief.
 - [`chatgpt-scoping.md`](./chatgpt-scoping.md) is a pre-implementation proposal.
 - [`agency-account-manager-deliverables.md`](./agency-account-manager-deliverables.md)
   is the active, capability-aware backlog for agency deliverables and skills.
