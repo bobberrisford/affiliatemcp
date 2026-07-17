@@ -158,6 +158,77 @@ describe('Optimise Media.listProgrammes', () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// listProgrammes pagination (#316: lifted offset-paging exclusion)
+// ---------------------------------------------------------------------------
+
+describe('Optimise Media.listProgrammes pagination', () => {
+  it('pulls every /Campaigns page when no limit is given', async () => {
+    const spy = mockFetchQueue([
+      fakeResponse(loadFixture('campaigns-page1.json')),
+      fakeResponse(loadFixture('campaigns-page2.json')),
+    ]);
+    const programmes = await optimiseMediaAdapter.listProgrammes();
+    expect(programmes.length).toBe(5);
+    expect(programmes.map((p) => p.id)).toEqual(['2001', '2002', '2003', '2004', '2005']);
+    expect(spy.mock.calls.length).toBe(2);
+    const urls = spy.mock.calls.map((c) => String(c[0]));
+    expect(urls[0]).toContain('page=1');
+    expect(urls[1]).toContain('page=2');
+  });
+
+  it('stops as soon as a caller limit is satisfied (backward-compatible short-circuit)', async () => {
+    // Only one response is queued: a second request would exhaust the queue
+    // and fail, proving the loop short-circuits on limit.
+    const spy = mockFetchQueue([fakeResponse(loadFixture('campaigns-page1.json'))]);
+    const programmes = await optimiseMediaAdapter.listProgrammes({ limit: 2 });
+    expect(programmes.length).toBe(2);
+    expect(spy.mock.calls.length).toBe(1);
+  });
+
+  it('treats a page shorter than pageSize as the last page when no totalCount is present', async () => {
+    const spy = mockFetchQueue([
+      fakeResponse([
+        {
+          campaignId: 3001,
+          campaignName: 'Atolls Outdoors',
+          relationshipStatus: 'Joined',
+        },
+      ]),
+    ]);
+    const programmes = await optimiseMediaAdapter.listProgrammes();
+    expect(programmes.length).toBe(1);
+    expect(spy.mock.calls.length).toBe(1);
+  });
+
+  it('caps a runaway page loop at MAX_PAGES and warns rather than truncating silently', async () => {
+    // Every page advertises far more rows than it serves, so the loop never
+    // sees completion; the MAX_PAGES backstop must stop it and log a warning.
+    const runawayPage = {
+      data: [
+        {
+          campaignId: 9001,
+          campaignName: 'Atolls Runaway',
+          relationshipStatus: 'Joined',
+        },
+      ],
+      page: 1,
+      pageSize: 100,
+      totalCount: 100000,
+    };
+    const spy = mockFetchQueue(
+      Array.from({ length: 60 }, () => fakeResponse(runawayPage)),
+    );
+    const warnSpy = vi.spyOn(_internals.log, 'warn').mockImplementation(() => undefined);
+
+    const programmes = await optimiseMediaAdapter.listProgrammes();
+    expect(spy.mock.calls.length).toBe(50); // MAX_PAGES
+    expect(programmes.length).toBe(50);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    expect(String(warnSpy.mock.calls[0]?.[1])).toContain('MAX_PAGES');
+  });
+});
+
 describe('Optimise Media.getProgramme', () => {
   it('returns the matching campaign', async () => {
     mockFetchQueue([fakeResponse(loadFixture('campaigns.json'))]);

@@ -122,6 +122,9 @@ describe('Monetizze transformers (status normalisation, raw preservation)', () =
   it('parses the Monetizze "yyyy-mm-dd H:i:s" date format as UTC', () => {
     const ts = _internals.parseMonetizzeDate('2024-01-20 12:00:00');
     expect(ts).toBe(Date.parse('2024-01-20T12:00:00Z'));
+    expect(_internals.parseMonetizzeDate('2026-04-01T10:15:00-04:00')).toBe(
+      Date.parse('2026-04-01T10:15:00-04:00'),
+    );
     expect(_internals.parseMonetizzeDate(undefined)).toBeUndefined();
     expect(_internals.parseMonetizzeDate('not-a-date')).toBeUndefined();
   });

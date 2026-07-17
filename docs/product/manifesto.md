@@ -37,8 +37,9 @@ catalogue. It means:
   support, and that make clear when data came from an API or from a browser-driven
   session.
 - **Local control** so credentials stay on the user's machine by default.
-- **Portable context** so Claude, ChatGPT, Codex, Cursor, Cowork, and future MCP
-  clients can use the same affiliate data layer.
+- **Portable context** so Claude, Codex, Cowork, and compatible local MCP
+  clients can use the same affiliate data layer today, with ChatGPT requiring a
+  separate remote HTTPS MCP path.
 
 ## What this enables
 
@@ -81,7 +82,12 @@ dashboard session:
    such and keep them behind the same typed contract as API-backed operations.
 2. **Local-first by default.** Users bring their own credentials. Credentials
    stay on the user's machine unless a future remote option is designed with
-   explicit auth, consent, auditability, and security.
+   explicit auth, consent, auditability, and security. That future option is
+   now an accepted decision: see
+   [`2026-07-12-hosted-credential-custody.md`](../decisions/2026-07-12-hosted-credential-custody.md)
+   for the bring-your-own-key hosted custody contract. Local stays free,
+   complete, and the default; the hosted tier is additive, pre-launch, and
+   scoped to serving each key's own owner.
 3. **Safe typed tools.** Tools should expose affiliate operations with clear
    inputs and outputs. They should not ask the assistant to guess at raw API
    behaviour.

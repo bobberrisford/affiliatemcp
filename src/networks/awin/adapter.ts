@@ -108,13 +108,18 @@ const META: NetworkMeta = {
   authModel: 'bearer',
   docsUrl: 'https://help.awin.com/apidocs/introduction-1',
   adapterVersion: '0.1.0',
-  lastVerified: '2026-05-21',
-  // `partial` rather than `production`: listClicks is structurally unsupported
-  // by Awin and the adapter has not been validated against a real account at
-  // commit time. Bump to `production` after Chunk 8 acceptance testing.
-  claimStatus: 'partial',
+  lastVerified: '2026-06-29',
+  // `production` per the promotion gate (docs/decisions/2026-06-15-adapter-
+  // promotion-gates.md): every supported operation was verified live against a
+  // real account on 2026-06-29 (verifyAuth, listProgrammes, getProgramme,
+  // listTransactions, getEarningsSummary, generateTrackingLink). listClicks
+  // stays honestly declared unsupported, which does not block production. See
+  // the disclosure below: the test account had no commission activity, so
+  // live transaction status mapping is not yet evidenced.
+  claimStatus: 'production',
   knownLimitations: [
     'Click-level data is not exposed via the public Awin publisher API; listClicks is unsupported.',
+    'Earnings and transaction operations were verified against an account with no commission activity in the test window: request, response, and mapping paths are confirmed, but mapping of live commission statuses (pending, approved, reversed, and settled) is not yet evidenced against a high-activity account.',
   ],
   supportsBrandOps: false,
   setupTimeEstimateMinutes: 5,
@@ -198,6 +203,9 @@ interface AwinProgrammeRaw {
   sectors?: Array<{ name?: string }>;
   validDomains?: string[];
   relationship?: string; // joined | notjoined | pending — from query
+  // /programmedetails (single-fetch) does not echo `status` or `relationship`;
+  // it carries the publisher relationship as `membershipStatus` (e.g. "Joined").
+  membershipStatus?: string;
 }
 
 interface AwinTransactionRaw {
@@ -273,12 +281,19 @@ function mapTransactionStatus(raw: AwinTransactionRaw): TransactionStatus {
  *   paused / suspended     → 'suspended'
  *   anything else          → 'unknown'
  *
+ * Source fields differ by endpoint: programme listings carry `status` (or the
+ * queried `relationship`); the single `/programmedetails` fetch carries neither
+ * and instead reports the publisher relationship as `membershipStatus`. We read
+ * all three so a single-fetched joined programme maps to 'joined' rather than
+ * 'unknown'. (The list path overrides status from the queried relationship, so
+ * this fallback only matters to getProgramme.)
+ *
  * Why we don't try to be exhaustive: Awin adds new states from time to time
  * (e.g. 'inactive' appeared around 2023). 'unknown' keeps us honest rather
  * than miscategorising.
  */
 function mapProgrammeStatus(raw: AwinProgrammeRaw): ProgrammeStatus {
-  const s = (raw.status ?? raw.relationship ?? '').toLowerCase();
+  const s = (raw.status ?? raw.relationship ?? raw.membershipStatus ?? '').toLowerCase();
   if (s === 'joined' || s === 'active') return 'joined';
   if (s === 'pending') return 'pending';
   if (s === 'declined' || s === 'refused' || s === 'rejected') return 'declined';
@@ -609,7 +624,17 @@ export class AwinAdapter implements NetworkAdapter {
       resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
     });
 
-    let programmes = (Array.isArray(raw) ? raw : []).map(toProgramme);
+    // Awin filters by `relationship` server-side but does NOT echo it per row:
+    // every programme carries the advertiser's programme status ("Active") in
+    // `status`, never the publisher relationship. So the canonical relationship
+    // status comes from the relationship we queried, not from `raw.status` —
+    // otherwise every row maps to 'joined' and the status filter below deletes
+    // all not-joined/pending results (the entire joinable catalogue).
+    const relationshipStatus = relationshipToStatus(relationship);
+    let programmes = (Array.isArray(raw) ? raw : []).map((row) => ({
+      ...toProgramme(row),
+      status: relationshipStatus,
+    }));
 
     // Client-side filters: search substring, status set, categories.
     if (query?.search) {
@@ -1167,9 +1192,13 @@ function toTransactionStatusList(
 /**
  * Map our canonical ProgrammeStatus to Awin's `relationship` query param.
  *
- * Awin only exposes 'joined' / 'notjoined' / 'pending' on this endpoint. The
- * 'declined' and 'suspended' states are surfaced post-fetch from the response
- * body rather than as a server-side filter. We default to 'joined' because
+ * Awin's /programmes endpoint filters by `relationship`
+ * (joined | notjoined | pending | suspended | rejected) server-side, one
+ * relationship per request. We pick a SINGLE relationship from the requested
+ * status set by precedence and fetch only that one, so a request mixing
+ * statuses returns only the highest-precedence relationship's programmes (the
+ * others are not fetched; the client-side filter in listProgrammes can only
+ * narrow that single set, never broaden it). We default to 'joined' because
  * that's by far the most common user question.
  */
 function pickAwinRelationship(statuses?: ProgrammeStatus[]): string {
@@ -1177,7 +1206,35 @@ function pickAwinRelationship(statuses?: ProgrammeStatus[]): string {
   if (statuses.includes('joined')) return 'joined';
   if (statuses.includes('pending')) return 'pending';
   if (statuses.includes('available')) return 'notjoined';
+  if (statuses.includes('suspended')) return 'suspended';
+  if (statuses.includes('declined')) return 'rejected';
   return 'joined';
+}
+
+/**
+ * Map the Awin `relationship` we queried back to our canonical ProgrammeStatus.
+ *
+ * This is the source of truth for a listed programme's relationship status.
+ * Awin filters by relationship server-side but returns the ADVERTISER's
+ * programme status ("Active") in each row, not the publisher relationship, so
+ * the row body cannot distinguish joined vs notjoined vs pending — the
+ * relationship we asked for can. Verified live 2026-06-29: a `notjoined` query
+ * returns thousands of rows, every one with `status: "Active"`.
+ */
+function relationshipToStatus(relationship: string): ProgrammeStatus {
+  switch (relationship) {
+    case 'notjoined':
+      return 'available';
+    case 'pending':
+      return 'pending';
+    case 'suspended':
+      return 'suspended';
+    case 'rejected':
+      return 'declined';
+    case 'joined':
+    default:
+      return 'joined';
+  }
 }
 
 interface DateSlice {
@@ -1233,6 +1290,7 @@ export const _internals = {
   chunkDateRange,
   formatAwinDate,
   pickAwinRelationship,
+  relationshipToStatus,
   parseAwinTimestamp,
   zonedNaiveToUtcIso,
   deriveMerchantKey,

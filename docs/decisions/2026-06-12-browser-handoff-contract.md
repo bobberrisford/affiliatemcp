@@ -1,7 +1,7 @@
 # Browser-handoff contract: public shape, audit semantics, consumer boundary
 
 - **Date:** 2026-06-12
-- **Status:** Proposed
+- **Status:** Accepted (2026-06-20)
 - **Affects:** `src/shared/types.ts` (contract extension, implementation PR),
   `src/tools/generate.ts` (surfacing handoffs), the future consent/audit
   primitives, `REPORT.md` and `network.json` labelling of browser-driven
@@ -55,9 +55,9 @@ field-level improvements folded in where they are genuinely stronger:
 interface BrowserHandoff {
   /** Plain-English goal, e.g. "Apply to programme 12345 on Impact". */
   goal: string;
-  /** Where the consumer starts. https only; a page the user already owns access to. */
+  /** Reviewed network-owned https location; never a caller- or model-supplied arbitrary URL. */
   startingUrl: string;
-  /** Values the consumer fills in or the user copies. JSON-serialisable; schema is per-operation. */
+  /** Minimum non-secret values needed for the operation. JSON-serialisable; schema is per-operation. */
   inputs: Record<string, unknown>;
   /** Shared default floor plus per-action additions. See decision 4. */
   constraints: string[];
@@ -65,7 +65,7 @@ interface BrowserHandoff {
   mutates: boolean;
   /** How the outcome is confirmed: a URL to revisit and the state to expect there. */
   verify: { url?: string; expect: string };
-  /** Optional best-effort hints (stable selectors, known steps). Not contractual. */
+  /** Optional bounded hints (stable selectors, known steps). Never executable or open-ended instructions. */
   hints?: string[];
 }
 
@@ -158,6 +158,9 @@ is carried out by a human following the payload, or later by a consumer skill
 design). Consumers are explicitly outside this contract and arrive in their
 own PR; the `ApiGapResponse` shape is the only coupling point between emitter
 and consumer, which is what lets one general consumer serve every network.
+Accepting this record authorises neither an emitter implementation nor a
+consumer or general browser automation. Each follows the dependency order
+below and receives its own scoped review.
 
 ### 4. Safety-constraint floor: shared defaults every handoff inherits, plus per-action additions
 
@@ -183,6 +186,12 @@ a convention that drifts, and one missed constraint is a safety hole. The
 exact wording of the floor is settled in the implementation PR; its existence,
 its inheritance, and the five categories above are settled here.
 
+The handoff channel never weakens action authority. A browser handoff that
+represents a write inherits the same effect, default authority tier, consent
+floor, and audit obligations as the equivalent API write under the accepted
+action-capability map. Pure emission is not permission to execute the
+represented action.
+
 ### 5. Sequencing
 
 Dependency order, per the #23 closure:
@@ -207,14 +216,19 @@ Each dependent PR stays draft until its foundation merges.
   `mutates`-forces-confirmation rule are the contract-level mitigations it
   inherits.
 - The payload must never carry credentials, session tokens, or cookies;
-  `startingUrl` is https only and relies on the user's existing authenticated
-  session.
+  sensitive affiliate or account data is excluded as well. `startingUrl` is
+  selected by reviewed adapter code from a network-owned https origin and
+  bounded path; callers and models cannot supply an arbitrary navigation
+  target.
+- `goal`, `constraints`, and `hints` are bounded declarative data for the named
+  operation. They cannot carry scripts, executable content, or open-ended
+  instructions that let a caller override the shared safety floor.
 - Audit honesty is a security property: recording `succeeded` for an
   unobserved outcome would let the trail overstate what was done on a user's
   or client's behalf. `handoff_emitted` keeps the trail truthful.
 
 This decision touches shared/public contracts, write actions, consent, and
-audit behaviour, so it is a risk-based review item for `@offmann`.
+audit behaviour, so it is a risk-based review item for maintainer review.
 
 ## Rejected alternatives
 

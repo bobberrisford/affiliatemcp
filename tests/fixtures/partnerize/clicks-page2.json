@@ -1,0 +1,17 @@
+{
+  "clicks": {
+    "click": [
+      {
+        "click_id": "click_pg2_001",
+        "cookie_id": "cookie_pg2_ccc",
+        "campaign_id": "10l176",
+        "publisher_id": "1007802",
+        "set_time": "2026-04-06T09:30:00Z",
+        "last_used": "2026-04-06T09:30:00Z",
+        "referer": "https://www.myblog-example.com/acme-deals",
+        "publisher_name": "Test Publisher",
+        "status": "active"
+      }
+    ]
+  }
+}

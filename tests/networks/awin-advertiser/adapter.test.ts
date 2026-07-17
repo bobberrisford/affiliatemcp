@@ -92,10 +92,38 @@ describe('Awin advertiser transformers', () => {
     expect(_internals.mapPublisherStatus({ status: 'something-else' })).toBe('unknown');
   });
 
-  it('maps report-row aggregate counts to performance status', () => {
-    expect(_internals.mapReportRowStatus({ declinedNo: 1, pendingNo: 0 })).toBe('reversed');
-    expect(_internals.mapReportRowStatus({ declinedNo: 0, pendingNo: 5 })).toBe('pending');
-    expect(_internals.mapReportRowStatus({ declinedNo: 0, pendingNo: 0 })).toBe('approved');
+  it('splits a report row into one performance row per status tier', () => {
+    const rows = loadFixture('performance-report.json') as Array<Record<string, unknown>>;
+    const out = _internals.toPerformanceRows(rows[0] as never);
+    const pick = (s: string) => {
+      const r = out.find((row) => row.status === s);
+      if (!r) throw new Error(`expected a ${s} row`);
+      return r;
+    };
+
+    // pending / confirmed(approved) / declined(reversed) each surface with their
+    // own value and commission — the split is no longer collapsed (#282).
+    expect(pick('approved')).toMatchObject({ conversions: 18, grossSale: 1800, commission: 240 });
+    expect(pick('pending')).toMatchObject({ conversions: 5, grossSale: 500, commission: 50 });
+    expect(pick('reversed')).toMatchObject({ conversions: 1, grossSale: 100, commission: 10 });
+
+    // total tracked (pending + confirmed) ties out to the report's total columns.
+    expect(pick('pending').commission + pick('approved').commission).toBe(290);
+
+    // Clicks attach to the approved row only, so a per-publisher click sum is exact.
+    expect(pick('approved').clicks).toBe(1200);
+    expect(pick('pending').clicks).toBe(0);
+    expect(pick('reversed').clicks).toBe(0);
+    expect(out.reduce((n, r) => n + r.clicks, 0)).toBe(1200);
+  });
+
+  it('emits only the approved row when a publisher has no pending or declined activity', () => {
+    const rows = loadFixture('performance-report.json') as Array<Record<string, unknown>>;
+    const out = _internals.toPerformanceRows(rows[1] as never);
+    // Coupon Cabin has pending but no confirmed and no declined.
+    const statuses = out.map((r) => r.status).sort();
+    expect(statuses).toEqual(['approved', 'pending']);
+    expect(out.find((r) => r.status === 'approved')).toMatchObject({ grossSale: 0, commission: 0, clicks: 350 });
   });
 
   it('preserves raw network data on every domain transform', () => {
@@ -119,17 +147,16 @@ describe('Awin advertiser transformers', () => {
     expect(approved.reversalReason).toBeUndefined();
   });
 
-  it('round-trips a performance row with clicks/conversions/sale/commission', () => {
+  it('round-trips per-publisher identity and date onto every emitted row', () => {
     const rows = loadFixture('performance-report.json') as Array<Record<string, unknown>>;
-    const r = _internals.toPerformanceRow(rows[0] as never);
-    expect(r.date).toBe('2026-05-01');
-    expect(r.publisherId).toBe('555001');
-    expect(r.publisherName).toBe('BestDeals.com');
-    expect(r.clicks).toBe(1200);
-    expect(r.conversions).toBe(24);
-    expect(r.currency).toBe('GBP');
-    // One declined row → 'reversed' status surfaces.
-    expect(r.status).toBe('reversed');
+    const out = _internals.toPerformanceRows(rows[0] as never);
+    for (const r of out) {
+      expect(r.date).toBe('2026-05-01');
+      expect(r.publisherId).toBe('555001');
+      expect(r.publisherName).toBe('BestDeals.com');
+      expect(r.currency).toBe('GBP');
+      expect(r.rawNetworkData).toBe(rows[0]);
+    }
   });
 
   it('normalises Awin date strings (best-effort tz)', () => {
@@ -228,6 +255,15 @@ describe('Awin advertiser.listBrands', () => {
     mockFetchQueue([fakeResponse(wrapped)]);
     const brands = await awinAdvertiserAdapter.listBrands();
     expect(brands).toHaveLength(3);
+  });
+
+  it('discovers advertisers from the live `accountType` field, not just `type`', async () => {
+    // Live `GET /accounts` carries the kind on `accountType`; reading `type`
+    // alone returned zero advertisers (the no-advertiser-accounts bug).
+    mockFetchQueue([fakeResponse(loadFixture('accounts-accounttype.json'))]);
+    const brands = await awinAdvertiserAdapter.listBrands();
+    expect(brands.map((b) => b.networkBrandId).sort()).toEqual(['19011', '74386']);
+    expect(brands.every((b) => b.apiEnabled === true)).toBe(true);
   });
 });
 
@@ -358,24 +394,23 @@ describe('Awin advertiser.listMediaPartners', () => {
 // ---------------------------------------------------------------------------
 
 describe('Awin advertiser.getProgrammePerformance', () => {
-  it('returns one row per publisher with clicks/conversions/sale/commission', async () => {
+  it('returns per-status rows per publisher with an accurate commission split', async () => {
     mockFetchQueue([fakeResponse(loadFixture('performance-report.json'))]);
     const rows = await awinAdvertiserAdapter.getProgrammePerformance(
       { from: '2026-05-01', to: '2026-05-31' },
       { networkBrandId: '100001' },
     );
-    expect(rows).toHaveLength(2);
-    const byPub = new Map(rows.map((r) => [r.publisherId, r]));
-    const best = byPub.get('555001');
-    expect(best?.clicks).toBe(1200);
-    expect(best?.conversions).toBe(24);
-    expect(best?.currency).toBe('GBP');
-    // BestDeals had one declined row → status = 'reversed'.
-    expect(best?.status).toBe('reversed');
+    // BestDeals → 3 tiers (approved/pending/reversed); Coupon Cabin → 2 (approved/pending).
+    expect(rows).toHaveLength(5);
 
-    const coupon = byPub.get('555002');
-    // Coupon Cabin had only pending → status = 'pending'.
-    expect(coupon?.status).toBe('pending');
+    const best = rows.filter((r) => r.publisherId === '555001');
+    const bestByStatus = Object.fromEntries(best.map((r) => [r.status, r]));
+    expect(bestByStatus['approved']?.commission).toBe(240);
+    expect(bestByStatus['pending']?.commission).toBe(50);
+    expect(bestByStatus['reversed']?.commission).toBe(10);
+    // Clicks attributed once (approved row), so the per-publisher sum is exact.
+    expect(best.reduce((n, r) => n + r.clicks, 0)).toBe(1200);
+    expect(best.every((r) => r.currency === 'GBP')).toBe(true);
   });
 
   it('scopes to a single publisher when publisherId is provided', async () => {
@@ -384,8 +419,9 @@ describe('Awin advertiser.getProgrammePerformance', () => {
       { publisherId: '555002' },
       { networkBrandId: '100001' },
     );
-    expect(rows).toHaveLength(1);
-    expect(rows[0]?.publisherId).toBe('555002');
+    // Coupon Cabin has approved + pending tiers.
+    expect(rows).toHaveLength(2);
+    expect(rows.every((r) => r.publisherId === '555002')).toBe(true);
   });
 
   it('tolerates a wrapped {rows: [...]} response shape', async () => {
@@ -393,7 +429,7 @@ describe('Awin advertiser.getProgrammePerformance', () => {
     const rows = await awinAdvertiserAdapter.getProgrammePerformance(undefined, {
       networkBrandId: '100001',
     });
-    expect(rows).toHaveLength(2);
+    expect(rows).toHaveLength(5);
   });
 });
 

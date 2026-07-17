@@ -1,0 +1,29 @@
+{
+  "request": { "Target": "Affiliate_Offer", "Method": "findAll", "Version": "3", "Format": "json" },
+  "response": {
+    "status": 1,
+    "httpStatus": 200,
+    "errorMessage": null,
+    "errors": [],
+    "data": {
+      "page": 1,
+      "current": 1,
+      "count": 999999,
+      "pageCount": 9999,
+      "data": {
+        "3001": {
+          "Offer": {
+            "id": "3001",
+            "name": "Atolls Endless Offers",
+            "status": "active",
+            "approval_status": "approved",
+            "currency": "GBP",
+            "default_payout": "2.00",
+            "payout_type": "cpa_flat",
+            "preview_url": "https://www.atolls-endless.example.com"
+          }
+        }
+      }
+    }
+  }
+}

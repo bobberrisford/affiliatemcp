@@ -1,0 +1,19 @@
+{
+  "Actions": [
+    {
+      "Id": "ACT-12",
+      "CampaignId": "CAM-9002",
+      "CampaignName": "Acme Loyalty Programme",
+      "State": "PAID",
+      "EventDate": "2026-04-12T10:00:00Z",
+      "ClearedDate": "2026-05-12T10:00:00Z",
+      "IntendedAmount": "120.00",
+      "Payout": "12.00",
+      "Currency": "USD",
+      "MediaPartnerId": "MP-1",
+      "MediaPartnerName": "BestDeals.com"
+    }
+  ],
+  "@page": "2",
+  "@numpages": "2"
+}

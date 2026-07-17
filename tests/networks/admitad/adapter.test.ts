@@ -135,6 +135,8 @@ describe('Admitad transformers (status normalisation, raw preservation)', () => 
     expect(space).toBe(Date.parse('2024-01-20T12:00:00Z'));
     const iso = _internals.parseAdmitadDate('2026-04-01T10:15:00Z');
     expect(iso).toBe(Date.parse('2026-04-01T10:15:00Z'));
+    const offset = _internals.parseAdmitadDate('2026-04-01T10:15:00-04:00');
+    expect(offset).toBe(Date.parse('2026-04-01T10:15:00-04:00'));
     expect(_internals.parseAdmitadDate('not-a-date')).toBeUndefined();
   });
 
@@ -207,6 +209,68 @@ describe('AdmitadAdapter.listProgrammes', () => {
   it('emits a NetworkError when ADMITAD_CLIENT_ID is missing', async () => {
     delete process.env['ADMITAD_CLIENT_ID'];
     await expect(admitadAdapter.listProgrammes()).rejects.toBeInstanceOf(NetworkError);
+  });
+
+  it('pages /advcampaigns/ to completion when no limit is passed', async () => {
+    // _meta.count = 502 > one 500-row page, so the adapter must fetch page two
+    // (offset=500) before _meta.count says the pull is complete.
+    const spy = mockFetchQueue([
+      fakeResponse(loadFixture('token.json')),
+      fakeResponse(loadFixture('advcampaigns_page1.json')),
+      fakeResponse(loadFixture('advcampaigns_page2.json')),
+    ]);
+    const programmes = await admitadAdapter.listProgrammes();
+    expect(programmes.length).toBe(5);
+    expect(programmes.map((p) => p.id)).toEqual(['3001', '3002', '3003', '3501', '3502']);
+    // Token exchange + exactly two data pages; nothing left in the queue.
+    expect(spy).toHaveBeenCalledTimes(3);
+    const calls = spy.mock.calls as unknown as Array<[string]>;
+    expect(String(calls[1]?.[0])).toContain('offset=0');
+    expect(String(calls[2]?.[0])).toContain('offset=500');
+  });
+
+  it('stops at the MAX_CAMPAIGN_PAGES backstop and logs a warning (never silent)', async () => {
+    const { ACTIONS_PAGE_LIMIT, MAX_CAMPAIGN_PAGES } = _internals;
+    // Every page is full and _meta.count claims far more rows than the cap
+    // allows, so the loop can only stop at the backstop. The queue holds
+    // exactly MAX_CAMPAIGN_PAGES data responses: a 51st request would throw
+    // 'mock fetch queue exhausted'.
+    const fullPage = (pageIndex: number): unknown => ({
+      results: Array.from({ length: ACTIONS_PAGE_LIMIT }, (_, i) => ({
+        id: pageIndex * ACTIONS_PAGE_LIMIT + i,
+        name: `Synthetic campaign ${pageIndex * ACTIONS_PAGE_LIMIT + i}`,
+        connection_status: 'active',
+      })),
+      _meta: {
+        count: ACTIONS_PAGE_LIMIT * (MAX_CAMPAIGN_PAGES + 5),
+        limit: ACTIONS_PAGE_LIMIT,
+        offset: pageIndex * ACTIONS_PAGE_LIMIT,
+      },
+    });
+    const responses = [fakeResponse(loadFixture('token.json'))];
+    for (let p = 0; p < MAX_CAMPAIGN_PAGES; p += 1) {
+      responses.push(fakeResponse(fullPage(p)));
+    }
+    const spy = mockFetchQueue(responses);
+    const warnSpy = vi.spyOn(_internals.log, 'warn');
+
+    const programmes = await admitadAdapter.listProgrammes();
+    expect(programmes.length).toBe(ACTIONS_PAGE_LIMIT * MAX_CAMPAIGN_PAGES);
+    expect(spy).toHaveBeenCalledTimes(1 + MAX_CAMPAIGN_PAGES);
+    expect(warnSpy).toHaveBeenCalledTimes(1);
+    const warnArgs = warnSpy.mock.calls[0] as unknown[];
+    expect(JSON.stringify(warnArgs)).toContain('MAX_CAMPAIGN_PAGES');
+  });
+
+  it('keeps a single bounded request when the caller passes a limit', async () => {
+    const spy = mockWithToken(fakeResponse(loadFixture('advcampaigns.json')));
+    const programmes = await admitadAdapter.listProgrammes({ limit: 2 });
+    expect(programmes.length).toBe(2);
+    // Token exchange + one data call only: the limit short-circuits paging.
+    expect(spy).toHaveBeenCalledTimes(2);
+    const calls = spy.mock.calls as unknown as Array<[string]>;
+    expect(String(calls[1]?.[0])).toContain('limit=2');
+    expect(String(calls[1]?.[0])).toContain('offset=0');
   });
 });
 

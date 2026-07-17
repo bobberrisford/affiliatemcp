@@ -12,7 +12,8 @@
     "listClicks is not exposed via the public Skimlinks publisher Reporting API; the operation throws NotImplementedError.",
     "generateTrackingLink requires SKIMLINKS_DOMAIN_ID (the number after the X in your Site ID, found in Hub → Settings → Sites). The deeplink id parameter is {publisherId}X{domainId} — domainId is always distinct from publisherId.",
     "OAuth2 access tokens have a limited lifetime; the adapter caches the token in memory and re-fetches on expiry.",
-    "Maximum date window per commissions API call is not publicly documented; live account verification required."
+    "Maximum date window per commissions API call is not publicly documented; live account verification required.",
+    "listTransactions pages the commissions endpoint with an explicit limit=600 (the documented maximum) and offset; on absent limit the pull runs to completion against the response count total, capped at MAX_PAGES with a logged warning rather than a silent truncation."
   ],
   "claim_status": "experimental",
   "adapter_version": "0.1.0",

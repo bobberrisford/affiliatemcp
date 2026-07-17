@@ -166,11 +166,11 @@ and it muddies the "delete one file to remove everything" story. Defer.
 ## What breaks about the local-first stance
 
 **Nothing.** Credentials stay on-device in the same file. API calls
-still originate from the user's machine. No account, no telemetry, no
-hosted state. The app is a packaging-and-onboarding layer; the trust
-story in PRIVACY.md and the manifesto is untouched. (Auto-update pings a
-release server for a version check — disclose that one line, same as any
-app.)
+still originate from the user's machine. No account, no hosted state, and
+runtime telemetry remains opt-in and aggregate-only. The app is a
+packaging-and-onboarding layer; the trust story in PRIVACY.md and the
+manifesto is untouched. (Auto-update pings a release server for a version
+check — disclose that one line, same as any app.)
 
 ## Smallest credible MVP
 

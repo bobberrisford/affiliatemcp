@@ -14,10 +14,40 @@ contextBridge.exposeInMainWorld('affiliate', {
   validateField: (slug, field, value) => ipcRenderer.invoke('networks:validateField', { slug, field, value }),
   verifyAuth: (slug, values) => ipcRenderer.invoke('networks:verifyAuth', { slug, values }),
   discoverBrands: (slug) => ipcRenderer.invoke('networks:discoverBrands', slug),
+  // Skills: the bundled catalogue for the picker, and a local deploy into the
+  // detected client's skills dir.
+  listSkills: () => ipcRenderer.invoke('skills:list'),
+  installSkills: (slugs) => ipcRenderer.invoke('skills:install', { slugs }),
+  // Premium packs: catalogue + live entitlement flag; install is gated server-side.
+  listPremiumSkills: () => ipcRenderer.invoke('skills:listPremium'),
+  installPremiumSkills: (slugs) => ipcRenderer.invoke('skills:installPremium', { slugs }),
+  // Skill composer (build-your-own): archetype palette, per-network operations,
+  // preview a generated SKILL.md, and save it locally.
+  listSkillArchetypes: () => ipcRenderer.invoke('composer:archetypes'),
+  listNetworkOperations: (slug) => ipcRenderer.invoke('composer:operations', slug),
+  composeSkill: (input) => ipcRenderer.invoke('composer:compose', input),
+  saveComposedSkill: (slug, content) => ipcRenderer.invoke('composer:save', { slug, content }),
+  // Entitlement (paid tier). status/refresh are cheap; checkout/portal open the
+  // system browser. Free-tier users (no account) never trigger a network call.
+  entitlementStatus: () => ipcRenderer.invoke('entitlement:status'),
+  refreshEntitlement: () => ipcRenderer.invoke('entitlement:refresh'),
+  startCheckout: () => ipcRenderer.invoke('entitlement:checkout'),
+  openPortal: () => ipcRenderer.invoke('entitlement:portal'),
+  signOutEntitlement: () => ipcRenderer.invoke('entitlement:signout'),
   saveEnv: (entries) => ipcRenderer.invoke('config:saveEnv', entries),
   getTelemetryConsent: () => ipcRenderer.invoke('telemetry:getConsent'),
   setTelemetryConsent: (enabled) => ipcRenderer.invoke('telemetry:setConsent', enabled),
   saveBrands: (network, selections) => ipcRenderer.invoke('claude:saveBrands', { network, selections }),
+  // Daily cockpit summary (attention flags) computed locally from network reads.
+  cockpitSummary: () => ipcRenderer.invoke('cockpit:summary'),
+  // Data locker (read-only): configured networks to pick from, then pull rows.
+  lockerNetworks: () => ipcRenderer.invoke('locker:networks'),
+  lockerEarnings: (slug, query, brand) => ipcRenderer.invoke('locker:earnings', { slug, query, brand }),
+  lockerTransactions: (slug, query, brand) => ipcRenderer.invoke('locker:transactions', { slug, query, brand }),
+  // Save already-pulled rows to a user-chosen local file (main owns the dialog).
+  lockerExport: (suggestedName, content) => ipcRenderer.invoke('locker:export', { suggestedName, content }),
+  // Open Claude with a pre-written prompt (the main process builds the URL).
+  openClaudePrompt: (text) => ipcRenderer.invoke('claude:openPrompt', { text }),
   connectClaude: () => ipcRenderer.invoke('claude:connect'),
   restartClaude: () => ipcRenderer.invoke('claude:restart'),
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),

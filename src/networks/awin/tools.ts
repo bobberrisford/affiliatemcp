@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import type { ToolDefinition } from '../../tools/types.js';
 import { toJsonSchema } from '../../tools/schema.js';
+import { recordActionAudit } from '../../shared/audit.js';
+import { buildApplyToProgrammeHandoff, type ProgrammeApplicationInput } from './actions.js';
 import {
   downloadProductFeed,
   generateLinksBatch,
@@ -18,7 +20,7 @@ import {
   listTransactionQueries,
   submitProofOfPurchaseTransaction,
 } from './endpoints/index.js';
-import { configError } from './endpoints/shared.js';
+import { configError, requirePublisherId } from './endpoints/shared.js';
 
 const EmptySchema = z.object({}).strict();
 const IdSchema = z.union([z.string(), z.number()]);
@@ -142,6 +144,30 @@ const ProofOfPurchaseSchema = z
   })
   .strict();
 
+const ApplicationAdvertiserIdSchema = z.union([
+  z.string().trim().regex(/^\d+$/, 'advertiserId must be a numeric Awin advertiser id'),
+  z.number().int().positive(),
+]);
+
+const ProposeApplicationSchema = z
+  .object({
+    brand: z.string().trim().min(1),
+    advertiserId: ApplicationAdvertiserIdSchema,
+    programmeName: z.string().trim().min(1),
+    promotionMethodSummary: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
+const ReportApplicationResultSchema = z
+  .object({
+    brand: z.string().trim().min(1),
+    advertiserId: ApplicationAdvertiserIdSchema,
+    programmeName: z.string().trim().min(1),
+    verified: z.boolean(),
+    note: z.string().trim().min(1).optional(),
+  })
+  .strict();
+
 export function generateAwinTools(): ToolDefinition[] {
   return [
     tool(
@@ -248,6 +274,95 @@ export function generateAwinTools(): ToolDefinition[] {
       (args) =>
         Promise.resolve(submitProofOfPurchaseTransaction(ProofOfPurchaseSchema.parse(args ?? {}))),
     ),
+    tool(
+      'affiliate_awin_propose_application',
+      "Experimentally prepare a guided browser handoff to apply to a brand's programme on Awin as a " +
+        'publisher. Awin exposes no public publisher application endpoint, so this emits a typed handoff ' +
+        'for a human (or the authorised consumer skill) to carry out against their own Awin session; it ' +
+        'performs no network write itself. Requires brand (a display label, not a binding), advertiserId, ' +
+        'and programmeName; accepts an optional promotionMethodSummary. Uses the configured AWIN_PUBLISHER_ID ' +
+        'to build the handoff URLs and returns a config error if it is not set. Returns an ApiGapResponse carrying ' +
+        'the browser handoff (constraints, verify target, and inputs with no credentials). The consumer ' +
+        "is responsible for surfacing the programme's terms for informed acceptance before any submit.",
+      ProposeApplicationSchema,
+      async (args) => {
+        const input = ProposeApplicationSchema.parse(args ?? {});
+        const advertiserId = String(input.advertiserId);
+        // The operator's own publisher id scopes the handoff URLs. Read it from
+        // config (never the caller); a clean config_error is thrown, before any
+        // audit line, when it is missing.
+        const publisherId = requirePublisherId('propose_application');
+
+        const emitterInput: ProgrammeApplicationInput = {
+          publisherId,
+          advertiserId,
+          programmeName: input.programmeName,
+          brand: input.brand,
+          ...(input.promotionMethodSummary !== undefined
+            ? { promotionMethodSummary: input.promotionMethodSummary }
+            : {}),
+        };
+
+        const response = buildApplyToProgrammeHandoff(emitterInput);
+
+        // Record a handoff_emitted audit line. `intendedAfterState` is present so
+        // countMutatingHandoffsOn treats this mutating handoff as consuming the
+        // day's allowance; `occurredAt` attributes it to a calendar day. We never
+        // record `applied`/`succeeded` - closing the arc is the consumer's report.
+        recordActionAudit({
+          event: 'handoff_emitted',
+          action: 'awin.applyToProgramme',
+          network: 'awin',
+          brand: input.brand,
+          programmeId: advertiserId,
+          authorityTier: 3,
+          summary: `apply to programme ${input.programmeName} (advertiser ${advertiserId})`,
+          intendedAfterState: { advertiserId, action: 'apply' },
+          occurredAt: new Date().toISOString(),
+        });
+
+        // Return the ApiGapResponse (a normal value); never throw it.
+        return response;
+      },
+      { readOnlyHint: true },
+    ),
+    tool(
+      'affiliate_awin_report_application_result',
+      'Record the observed outcome of a previously emitted Awin programme-application handoff, closing ' +
+        'the audit arc. After a consumer carries out the handoff and revisits the verify target, call ' +
+        'this with verified=true when the programme relationship reads pending or joined, or ' +
+        'verified=false when it does not. It records a verified or verify_failed audit line and does ' +
+        'nothing else: no network call, no browser action, no state change. Requires brand, advertiserId, ' +
+        'programmeName, and verified; accepts an optional note. Never records applied/succeeded; success ' +
+        'is only ever an outcome the consumer actually observed.',
+      ReportApplicationResultSchema,
+      async (args) => {
+        const input = ReportApplicationResultSchema.parse(args ?? {});
+        const advertiserId = String(input.advertiserId);
+
+        recordActionAudit({
+          event: input.verified ? 'verified' : 'verify_failed',
+          action: 'awin.applyToProgramme',
+          network: 'awin',
+          brand: input.brand,
+          programmeId: advertiserId,
+          authorityTier: 3,
+          summary:
+            `apply to programme ${input.programmeName} (advertiser ${advertiserId}): ` +
+            `${input.verified ? 'verified at the verify target' : 'verify target did not show the expected state'}` +
+            `${input.note !== undefined ? ` (${input.note})` : ''}`,
+          occurredAt: new Date().toISOString(),
+        });
+
+        return {
+          recorded: input.verified ? 'verified' : 'verify_failed',
+          brand: input.brand,
+          advertiserId,
+          programmeName: input.programmeName,
+        };
+      },
+      { readOnlyHint: true },
+    ),
   ];
 }
 
@@ -256,11 +371,13 @@ function tool<T extends z.ZodTypeAny>(
   description: string,
   schema: T,
   handle: (args: unknown) => Promise<unknown>,
+  annotations?: ToolDefinition['annotations'],
 ): ToolDefinition {
   return {
     name,
     description,
     inputSchema: toJsonSchema(schema),
     handle,
+    annotations,
   };
 }

@@ -129,9 +129,12 @@ will lift this if CJ exposes a clean enumeration query.
 - **USD-only currency.** All amounts use CJ's USD-normalised fields
   (`saleAmountUsd`, `commissionAmountUsd`); the brand's settlement
   currency is not surfaced on `commissionDetails`.
-- **Pagination at 10,000 rows per page.** `commissionDetails` caps
-  page size at ~10k via `maxRows`. Wider windows should be split by
-  the caller; a future PR can add a cursor loop via `sinceCommissionId`.
+- **Pagination is cursor-based and capped.** `commissionDetails` caps
+  page size at ~10k via `maxRows`; when no `limit` is supplied the
+  adapter follows the `sinceCommissionId` cursor (guided by
+  `payloadComplete`) until the window is complete, stopping at 10
+  pages (100,000 rows) with a stderr warning rather than a silent
+  truncation.
 
 ## Common failures
 

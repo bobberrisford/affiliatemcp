@@ -1,0 +1,38 @@
+{
+  "data": {
+    "commissionDetails": {
+      "payloadComplete": true,
+      "count": 2,
+      "records": [
+        {
+          "commissionId": "C-A-2004",
+          "advertiserId": "1234567",
+          "advertiserName": "Acme Brand",
+          "publisherId": "PUB-2",
+          "publisherName": "Coupon Cabin",
+          "postingDate": "2026-05-02T12:00:00Z",
+          "eventDate": "2026-04-30T10:00:00Z",
+          "actionStatus": "CORRECTED",
+          "actionType": "advance",
+          "saleAmountUsd": "25.00",
+          "commissionAmountUsd": "2.50",
+          "items": []
+        },
+        {
+          "commissionId": "C-A-2005",
+          "advertiserId": "1234567",
+          "advertiserName": "Acme Brand",
+          "publisherId": "PUB-3",
+          "publisherName": "Niche Reviewer",
+          "postingDate": "2026-05-03T11:00:00Z",
+          "eventDate": "2026-05-01T09:00:00Z",
+          "actionStatus": "REVERSED",
+          "actionType": "advance",
+          "saleAmountUsd": "75.00",
+          "commissionAmountUsd": "7.50",
+          "items": []
+        }
+      ]
+    }
+  }
+}

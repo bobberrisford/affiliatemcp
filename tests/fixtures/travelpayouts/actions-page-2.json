@@ -1,0 +1,42 @@
+{
+  "actions": [
+    {
+      "action_id": 5300,
+      "campaign_id": 300,
+      "action_state": "paid",
+      "price": "150.00",
+      "profit": "7.50",
+      "description": "Sample Transfers airport transfer booking",
+      "booked_at": "2026-01-28T09:00:00Z",
+      "updated_at": "2026-02-28T09:00:00Z"
+    },
+    {
+      "action_id": 5301,
+      "campaign_id": 300,
+      "action_state": "processing",
+      "price": "90.00",
+      "profit": "4.50",
+      "description": "Sample Transfers airport transfer booking",
+      "booked_at": "2026-01-29T09:00:00Z",
+      "updated_at": "2026-01-30T09:00:00Z"
+    }
+  ],
+  "total_price": "81690.00",
+  "total_profit": "4084.50",
+  "available_campaigns": [
+    {
+      "campaign_id": 100,
+      "name": "Aviasales"
+    },
+    {
+      "campaign_id": 200,
+      "name": "Hotellook"
+    },
+    {
+      "campaign_id": 300,
+      "name": "Sample Transfers"
+    }
+  ],
+  "count": 302,
+  "currency": "usd"
+}

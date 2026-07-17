@@ -1,7 +1,7 @@
 {
   "name": "affiliate-mcp-desktop",
   "productName": "affiliate-mcp",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "description": "The local-first setup app for affiliate-mcp — get connected to Claude Desktop without a terminal.",
   "license": "MIT",
   "private": true,
@@ -54,6 +54,14 @@
       {
         "from": "../design-system",
         "to": "design-system"
+      },
+      {
+        "from": "../skills",
+        "to": "skills"
+      },
+      {
+        "from": "../premium-skills",
+        "to": "premium-skills"
       }
     ],
     "mac": {

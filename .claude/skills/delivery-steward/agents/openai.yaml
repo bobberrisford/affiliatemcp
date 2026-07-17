@@ -1,4 +1,4 @@
 interface:
-  display_name: "Delivery Steward"
-  short_description: "Triage, repair, review, and prepare PRs for human-approved merge"
-  default_prompt: "Triage the open PR queue, advance the highest-value PR, and keep a human approval gate before merge."
+  display_name: 'Delivery Steward'
+  short_description: 'Implement, validate, review, and advance focused repo changes'
+  default_prompt: 'Steward this affiliate-mcp change from one user outcome through implementation, validation, review readiness, and a clear human decision checkpoint.'

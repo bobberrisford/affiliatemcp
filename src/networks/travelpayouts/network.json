@@ -10,6 +10,7 @@
     "Experimental: implemented from public documentation and not yet validated against a live Travelpayouts account.",
     "Amounts (price, profit) are assumed to be whole units of the selected currency, matching the balance response (e.g. \"1794.34\"); not minor units.",
     "Programmes are synthesised from the connected travel brands (campaign ids) that appear in the balance-actions response; Travelpayouts exposes no publisher programme-catalogue endpoint, so commission rates and not-yet-joined programmes are unavailable.",
+    "Pagination is offset-based (max 300 rows per page); when no limit is given, listProgrammes and listTransactions page to completion, capped at MAX_PAGES with a warning rather than a silent truncation.",
     "Click-level data is not exposed per booking; the statistics API reports only aggregated click/redirect counts, so listClicks is unsupported.",
     "Tracking links are created in the dashboard with a partner marker; Travelpayouts publishes no deterministic deep-link URL formula, so generateTrackingLink is unsupported."
   ],

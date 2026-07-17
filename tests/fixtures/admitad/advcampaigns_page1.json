@@ -1,0 +1,39 @@
+{
+  "results": [
+    {
+      "id": 3001,
+      "name": "Example Books Ltd",
+      "status": "active",
+      "connection_status": "active",
+      "currency": "EUR",
+      "site_url": "https://www.examplebooks.test",
+      "max_payment": "8.00%",
+      "categories": [{ "name": "Books" }, { "name": "Media" }]
+    },
+    {
+      "id": 3002,
+      "name": "Test Electronics Co",
+      "status": "active",
+      "connection_status": "pending",
+      "currency": "EUR",
+      "site_url": "https://www.testelectronics.test",
+      "max_payment": "4.50%",
+      "categories": [{ "name": "Electronics" }]
+    },
+    {
+      "id": 3003,
+      "name": "Niche Coffee Roasters",
+      "status": "active",
+      "connection_status": "not_connected",
+      "currency": "EUR",
+      "site_url": "https://www.nichecoffee.test",
+      "max_payment": "10.00%",
+      "categories": [{ "name": "Food & Drink" }]
+    }
+  ],
+  "_meta": {
+    "count": 502,
+    "limit": 500,
+    "offset": 0
+  }
+}

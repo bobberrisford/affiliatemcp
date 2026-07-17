@@ -28,13 +28,57 @@ body.amcp {
 .titlebar .mark { width: 18px; height: 18px; border-radius: 3px; }
 .titlebar .t { font-family: var(--font-mono); font-weight: 700; font-size: .72rem; letter-spacing: .08em; color: var(--fg-invert-mut); }
 .titlebar .t b { color: var(--paper); }
+.titlebar .tb-spacer { flex: 1 1 auto; }
+/* Low-prominence manual re-check. Sits on the right, outside the drag region so
+   it stays clickable. The pill (below) is where update *news* lands; this is
+   only the "check now" trigger. */
+.titlebar .tb-check {
+  -webkit-app-region: no-drag;
+  font-family: var(--font-mono); font-weight: 700; font-size: .66rem;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--fg-invert-mut); background: transparent; border: 0;
+  padding: 4px 6px; cursor: pointer; border-radius: var(--r-xs);
+  transition: color .12s ease;
+}
+.titlebar .tb-check:hover { color: var(--paper); }
 
-/* ---- auto-update card (in-screen, on welcome + done) ------------------ */
-/* A centred status + click-to-update action, composed from design-system
-   .status / .btn — this is layout only (gap + spacing), not a re-style of
-   those components. Empty (no status, no button) collapses to nothing. */
-.update-card { display: flex; align-items: center; justify-content: center; gap: var(--s-3); flex-wrap: wrap; margin-top: var(--s-5); min-height: 34px; }
-.update-card:empty { display: none; margin-top: 0; }
+/* ---- auto-update pill (persistent, window-level, bottom-left) --------- */
+/* Composed from brand tokens: hard corners, riso offset shadow, the terminal-
+   prompt mark as the tile. Quiet by default; loud only when there's an action.
+   Hidden (via [hidden]) whenever there's nothing to say. */
+.update-pill {
+  position: fixed; left: 16px; bottom: 16px; z-index: 50;
+  display: flex; align-items: center; gap: 12px;
+  max-width: 300px; padding: 10px 12px;
+  background: var(--paper); color: var(--ink);
+  border: var(--rule) solid var(--ink); border-radius: var(--r-sm);
+  box-shadow: 4px 4px 0 0 var(--ink);
+  overflow: hidden;
+  animation: pill-in .16s ease-out;
+}
+.update-pill[hidden] { display: none; }
+@keyframes pill-in { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.update-pill .pill-tile { flex: 0 0 auto; width: 34px; height: 34px; display: grid; place-items: center; }
+.update-pill .pill-tile svg { width: 34px; height: 34px; border-radius: var(--r-xs); display: block; }
+.update-pill .pill-spin { width: 28px; height: 28px; border: 3px solid rgba(11,11,12,.15); border-top-color: var(--blue); border-radius: 999px; animation: pill-sp .8s linear infinite; }
+@keyframes pill-sp { to { transform: rotate(360deg); } }
+
+.update-pill .pill-txt { flex: 1 1 auto; min-width: 0; }
+.update-pill .pill-title { font-family: var(--font-display); font-weight: 700; text-transform: lowercase; font-size: 1rem; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.update-pill .pill-meta { font-family: var(--font-mono); font-size: var(--t-micro); letter-spacing: .05em; color: var(--smudge-dk); margin-top: 2px; display: flex; align-items: center; }
+.update-pill .pill-meta .dot { margin-right: 6px; }
+
+.update-pill .pill-go {
+  flex: 0 0 auto; width: 34px; height: 34px; border-radius: var(--r-xs);
+  border: var(--rule) solid var(--ink); background: var(--blue); color: #fff;
+  display: grid; place-items: center; cursor: pointer; font-size: 1.05rem; line-height: 1;
+  box-shadow: 2px 2px 0 0 var(--ink); transition: transform .08s ease, box-shadow .08s ease;
+}
+.update-pill .pill-go:hover { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 0 var(--ink); }
+.update-pill .pill-go.alert { background: var(--magenta); }
+
+.update-pill .pill-bar { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--blue); transition: width .3s ease; }
 
 /* ---- app stage: a centred paper "screen" on the ink desktop ---------- */
 .stage { height: calc(100% - 38px); display: flex; align-items: center; justify-content: center; padding: var(--s-6); box-sizing: border-box; }
@@ -113,12 +157,22 @@ h2.scr { font-family: var(--font-display); font-weight: 800; text-transform: low
 .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-3); }
 .net { border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: 14px; background: var(--paper); position: relative; cursor: pointer; transition: box-shadow .08s steps(2); }
 .net:hover { box-shadow: var(--shadow); }
-.net .nm { font-family: var(--font-mono); font-weight: 800; font-size: .95rem; }
+.net .nm { font-family: var(--font-mono); font-weight: 800; font-size: .95rem; padding-right: 26px; }
 .net .mt { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .04em; color: var(--fg-muted); text-transform: uppercase; margin-top: 6px; }
 .net.sel { background: var(--ink); color: var(--paper); box-shadow: var(--shadow-acid); }
 .net.sel .mt { color: var(--blue-bright); }
 .net .tick { position: absolute; top: 10px; right: 10px; width: 20px; height: 20px; background: var(--blue); color: #fff; display: none; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 800; font-size: 13px; border-radius: 3px; }
 .net.sel .tick { display: flex; }
+.net.greyed { opacity: .45; cursor: not-allowed; }
+.net.greyed:hover { box-shadow: none; }
+.net.greyed .mt { text-transform: none; letter-spacing: 0; color: var(--fg-muted); }
+.net.net-build { border-style: dashed; border-color: var(--line-strong); cursor: pointer; }
+.net.net-build .nm { color: var(--blue); }
+.preview { font-family: var(--font-mono); font-size: .78rem; line-height: 1.5; background: var(--ink); color: var(--paper); border-radius: var(--r-xs); padding: 16px; margin-top: 12px; max-height: 320px; overflow: auto; white-space: pre-wrap; }
+#premium-shelf { margin-top: 20px; border-top: var(--rule) dashed var(--line-strong); padding-top: 18px; }
+#premium-shelf .shelf-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+#premium-shelf .mut { color: var(--fg-muted); font-family: var(--font-mono); font-size: .78rem; margin: 0 0 10px; }
+#premium-shelf .grid { margin-top: 10px; }
 
 /* ---- credential fields ------------------------------------------------ */
 .field { margin-bottom: var(--s-5); }
@@ -153,6 +207,41 @@ h2.scr { font-family: var(--font-display); font-weight: 800; text-transform: low
 /* ---- example query rows (done) --------------------------------------- */
 .q { display: flex; align-items: center; gap: 12px; background: var(--ink); color: var(--paper); border-radius: var(--r-xs); padding: 13px 15px; margin-bottom: 10px; font-family: var(--font-mono); font-size: .88rem; }
 .q .p { color: var(--blue-bright); font-weight: 800; }
+
+/* ---- cockpit (daily dashboard) --------------------------------------- */
+.ck-top { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+.ck-top .scr { margin-bottom: var(--s-4); }
+
+.ck-headline { border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: var(--s-5); background: var(--ink); color: var(--paper); box-shadow: var(--shadow-acid); margin-bottom: var(--s-5); }
+.ck-total { font-family: var(--font-display); font-weight: 800; line-height: 1; font-size: var(--t-h1); }
+.ck-sub { font-family: var(--font-mono); font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; color: var(--blue-bright); margin-top: 10px; display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
+
+.ck-flags { display: flex; flex-direction: column; gap: 10px; }
+.ck-flag { display: flex; align-items: center; gap: 12px; border: var(--rule) solid var(--ink); border-radius: var(--r-xs); padding: 12px 14px; }
+.ck-flag-body { flex: 1; min-width: 0; }
+.ck-flag-title { font-family: var(--font-mono); font-weight: 800; font-size: .9rem; }
+.ck-flag-detail { font-size: .82rem; color: var(--fg-muted); margin-top: 4px; }
+.ck-flag-act { flex: none; }
+
+.ck-divider { font-family: var(--font-mono); font-weight: 700; font-size: var(--t-micro); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-muted); margin: var(--s-6) 0 var(--s-3); }
+.ck-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-3); }
+.ck-action { width: 100%; }
+.ck-foot { margin-top: var(--s-6); padding-top: var(--s-5); border-top: var(--rule) solid var(--ink); display: flex; justify-content: space-between; gap: var(--s-3); flex-wrap: wrap; }
+
+/* ---- data locker (read-only table) ----------------------------------- */
+/* Layout only; chips, buttons, status dots come from the design system. The
+   table is plain rows — the same columns a CSV export would carry. */
+.lk-nets { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-4); }
+.lk-range { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; margin-bottom: var(--s-5); }
+.lk-range label { font-family: var(--font-mono); font-weight: 700; font-size: .76rem; letter-spacing: .04em; text-transform: uppercase; color: var(--fg-muted); display: inline-flex; align-items: center; gap: 6px; }
+.lk-range input { font-family: var(--font-mono); font-size: .82rem; padding: 8px 10px; border: var(--rule) solid var(--ink); border-radius: 3px; outline: none; color: var(--ink); background: var(--paper); }
+.lk-count { font-family: var(--font-mono); font-weight: 700; font-size: var(--t-micro); letter-spacing: .12em; text-transform: uppercase; color: var(--fg-muted); margin-bottom: var(--s-3); }
+.lk-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: .82rem; }
+.lk-table th, .lk-table td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+.lk-table th { font-weight: 800; font-size: .7rem; letter-spacing: .06em; text-transform: uppercase; color: var(--fg-muted); border-bottom: var(--rule) solid var(--ink); }
+.lk-table td.num, .lk-table th.num { text-align: right; white-space: nowrap; }
+.lk-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-3); }
+.lk-status { min-height: 22px; margin-bottom: var(--s-4); font-family: var(--font-mono); font-size: .8rem; color: var(--fg-muted); word-break: break-all; }
 
 .fade { animation: fade .18s steps(3) both; }
 @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }

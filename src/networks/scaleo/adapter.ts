@@ -59,6 +59,9 @@
  *
  *   - Adapter built from public API documentation; not yet verified against a
  *     live Scaleo tenant. Response field names carry defensive fallbacks.
+ *   - listProgrammes walks the offers pagination (page / perPage) to
+ *     completion when the caller sets no limit, capped at MAX_PAGES with a
+ *     logged warning rather than a silent truncation.
  *   - The base API host is per-tenant (the network's tracking URL) and must be
  *     supplied via SCALEO_BASE_URL — there is no shared host.
  *   - Affiliate API access is enabled per user by the platform administrator,
@@ -124,6 +127,7 @@ const META: NetworkMeta = {
   knownLimitations: [
     'Adapter built from public API documentation; not yet verified against a live account.',
     'The base API host is per-tenant (the network\'s tracking URL) and must be supplied via SCALEO_BASE_URL; there is no shared host.',
+    'listProgrammes walks the offers pagination (page / perPage) to completion when no limit is set, capped at MAX_PAGES with a logged warning rather than a silent truncation.',
     'Monetary amounts are assumed to be major currency units in the reported currency; confirm against a live tenant.',
     'Affiliate API access is enabled per user by the platform administrator, not self-service.',
     'generateTrackingLink is not implemented: Scaleo click links require the affiliate id, which is not among the configured credentials.',
@@ -476,6 +480,14 @@ function toStatusList<T>(v?: T | T[]): T[] | undefined {
 // Wide windows are chunked into 90-day slices defensively.
 const REPORT_CHUNK_DAYS = 90;
 
+// Offers pagination (page / perPage): the page size for full pulls, and a hard
+// backstop on the page walk so a tenant that ignores the page parameter cannot
+// loop forever. Hitting the cap is logged, never silent — mirrors the
+// Tolt / Tapfiliate MAX_PAGES pattern. 50 pages × 100 offers = 5,000 offers,
+// plenty for the workflows this serves.
+const OFFERS_PAGE_SIZE = 100;
+const MAX_PAGES = 50;
+
 // ---------------------------------------------------------------------------
 // The adapter
 // ---------------------------------------------------------------------------
@@ -494,28 +506,67 @@ export class ScaleoAdapter implements NetworkAdapter {
    * List Scaleo offers visible to this affiliate.
    *
    * Endpoint: GET /affiliate/offers (page / perPage pagination).
+   *
+   * Pagination: when the caller sets no `limit`, the 1-based `page` parameter
+   * is walked to completion — continuing while `meta.total` says more rows
+   * exist or, when no total is returned, while pages come back full — capped
+   * at MAX_PAGES with a logged warning so a truncated pull is never silent.
+   * When `limit` is set, the walk stops as soon as enough rows are fetched.
+   *
    * Server-side `search` is supported; status / category filters are applied
    * client-side for consistency with the other adapters.
    */
   async listProgrammes(query?: ProgrammeQuery): Promise<Programme[]> {
     const baseUrl = requireBaseUrl('listProgrammes');
     const apiKey = requireApiKey('listProgrammes');
-    const perPage = Math.min(query?.limit ?? 100, 500);
+    const limit = query?.limit;
+    const perPage = typeof limit === 'number' ? Math.min(limit, 500) : OFFERS_PAGE_SIZE;
 
-    const envelope = await scaleoRequest<ScaleoEnvelope<ScaleoOfferRaw>>({
-      operation: 'listProgrammes',
-      path: '/offers',
-      baseUrl,
-      apiKey,
-      query: {
-        page: 1,
-        perPage,
-        search: query?.search,
-      },
-      resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
-    });
+    const rows: ScaleoOfferRaw[] = [];
+    let capped = true;
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const envelope = await scaleoRequest<ScaleoEnvelope<ScaleoOfferRaw>>({
+        operation: 'listProgrammes',
+        path: '/offers',
+        baseUrl,
+        apiKey,
+        query: {
+          page,
+          perPage,
+          search: query?.search,
+        },
+        resilience: RESILIENCE.listProgrammes ?? RESILIENCE.default,
+      });
 
-    let programmes = extractRows(envelope).map(toProgramme);
+      const batch = extractRows(envelope);
+      rows.push(...batch);
+
+      // Stop conditions, in order:
+      //   1. the caller's limit is satisfied (backward-compatible short-circuit);
+      //   2. an empty page — nothing further to fetch;
+      //   3. `meta.total` reported and reached (trusted even when the tenant
+      //      caps perPage below what we requested);
+      //   4. no total reported and the page came back short — defensive stop
+      //      so a tenant that ignores paging never re-fetches the same rows.
+      const total = Array.isArray(envelope) ? undefined : envelope.meta?.total;
+      if (
+        (typeof limit === 'number' && rows.length >= limit) ||
+        batch.length === 0 ||
+        (typeof total === 'number' && rows.length >= total) ||
+        (typeof total !== 'number' && batch.length < perPage)
+      ) {
+        capped = false;
+        break;
+      }
+    }
+    if (capped) {
+      log.warn(
+        { operation: 'listProgrammes', cap: MAX_PAGES, fetched: rows.length },
+        'scaleo pagination hit MAX_PAGES cap; result may be truncated',
+      );
+    }
+
+    let programmes = rows.map(toProgramme);
 
     if (query?.search) {
       const needle = query.search.toLowerCase();
@@ -940,7 +991,9 @@ export const _internals = {
   formatScaleoDate,
   extractRows,
   asNumber,
+  // Pagination internals, exposed so tests can pin the cap and observe the
+  // truncation warning without reaching into module state.
+  MAX_PAGES,
+  OFFERS_PAGE_SIZE,
+  log,
 };
-
-// Silence unused-import lint for the logger.
-void log;

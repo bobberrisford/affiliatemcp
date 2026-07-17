@@ -2,9 +2,13 @@
 /**
  * affiliate-mcp CLI entry point.
  *
- * - With no arguments: detect first-run (no `~/.affiliate-mcp/.env`). If
- *   first-run, print a friendly pointer to `affiliate-mcp setup` and exit.
- *   Otherwise start the MCP server on stdio.
+ * - With no arguments: start the MCP server on stdio. The one exception is an
+ *   interactive terminal on first run (no `~/.affiliate-mcp/.env`): there we
+ *   print a friendly pointer to `affiliate-mcp setup` and exit, since a human
+ *   did not ask for a stdio server. When launched by an MCP client (stdin is a
+ *   pipe, not a TTY) we always start, even unconfigured — exiting would read to
+ *   the client as "Server disconnected", and unconfigured networks surface as
+ *   per-tool `config_error` envelopes the client can show instead.
  * - Subcommands: `setup`, `test`, `doctor`, `validate <slug>`. At v0.1 most
  *   are stubs printing "implemented in chunk N" — the orchestrator wires the
  *   real behaviour in later chunks.
@@ -13,11 +17,15 @@
  * is the protocol channel). User-facing CLI text goes to stderr.
  */
 
-import { isFirstRun, loadConfig, CONFIG_ENV_FILE } from './shared/config.js';
+import { shouldShowFirstRunBanner } from './cli/first-run.js';
+import { isFirstRun, loadConfig, resolveConfigEnvFile } from './shared/config.js';
+import { createLogger } from './shared/logging.js';
 
 // Side-effect import: registers every network adapter with the shared registry.
 // Must precede any subcommand path (validate/setup/test/doctor) that consults it.
 import './networks/index.js';
+
+const log = createLogger('cli');
 
 function write(line: string): void {
   process.stderr.write(line.endsWith('\n') ? line : `${line}\n`);
@@ -27,14 +35,14 @@ function printFirstRunBanner(): void {
   write('');
   write('  affiliate-networks-mcp — first run detected');
   write('  -----------------------------------------');
-  write(`  No config file at ${CONFIG_ENV_FILE}.`);
+  write(`  No config file at ${resolveConfigEnvFile()}.`);
   write('  Run `affiliate-networks-mcp setup` to configure your networks.');
   write('  See https://github.com/atolls/affiliate-mcp for documentation.');
   write('');
 }
 
 function printHelp(): void {
-  write('affiliate-networks-mcp — MCP server for affiliate networks (Awin, CJ, Impact, Rakuten)');
+  write('affiliate-networks-mcp — MCP server for affiliate networks (Awin, CJ, Impact, Partnerize, and many more)');
   write('');
   write('Usage:');
   write('  affiliate-networks-mcp                 Start the MCP server on stdio');
@@ -46,7 +54,13 @@ function printHelp(): void {
   write('  affiliate-networks-mcp test            Friendly diagnostic against configured networks');
   write('  affiliate-networks-mcp doctor          Verbose diagnostic with raw responses');
   write('  affiliate-networks-mcp telemetry       View or change anonymous telemetry consent');
+  write('  affiliate-networks-mcp update          Apply an available update now');
+  write('  affiliate-networks-mcp update check    Report current vs latest without applying');
+  write('  affiliate-networks-mcp update enable   Turn on silent auto-apply on launch (opt-in)');
+  write('  affiliate-networks-mcp update disable  Turn off silent auto-apply');
   write('  affiliate-networks-mcp cowork-mirror   Create a private GitHub mirror for Claude Cowork');
+  write('  affiliate-networks-mcp hosted-transport  Start the hosted streamable-HTTP MCP transport (H4)');
+  write('  affiliate-networks-mcp hosted-digest     Start the hosted digest-compose service (H6)');
   write('  affiliate-networks-mcp validate <slug> Run the full validation suite against one network');
   write('  affiliate-networks-mcp cache clear     Delete every cached response');
   write('  affiliate-networks-mcp --help          Show this help');
@@ -168,9 +182,21 @@ async function main(argv: string[]): Promise<number> {
 
   switch (cmd) {
     case undefined: {
-      if (isFirstRun()) {
+      const firstRun = isFirstRun();
+      if (shouldShowFirstRunBanner({ firstRun, interactive: Boolean(process.stdin.isTTY) })) {
         printFirstRunBanner();
         return 0;
+      }
+      // Launched by an MCP client, or already configured: start the server.
+      // Starting unconfigured keeps the client connected — unconfigured networks
+      // return `config_error` envelopes per call instead of the process exiting
+      // and the client reporting "Server disconnected". Surface a stderr pointer
+      // to `setup`; it shows up in the client's MCP/developer log panel.
+      if (firstRun) {
+        log.warn(
+          { configFile: resolveConfigEnvFile() },
+          'starting unconfigured; run `affiliate-networks-mcp setup` to add credentials',
+        );
       }
       const { startServer } = await import('./server.js');
       await startServer();
@@ -250,6 +276,10 @@ async function main(argv: string[]): Promise<number> {
       const { runTelemetry } = await import('./cli/telemetry.js');
       return runTelemetry(rest[0]);
     }
+    case 'update': {
+      const { runUpdate } = await import('./cli/update.js');
+      return await runUpdate(rest[0]);
+    }
     case 'validate': {
       const slug = rest[0];
       if (!slug) {
@@ -264,6 +294,32 @@ async function main(argv: string[]): Promise<number> {
     case 'cache': {
       const { runCache } = await import('./cli/cache.js');
       return runCache({ subcommand: rest[0] });
+    }
+    case 'hosted-transport': {
+      // Workstream H4 (`docs/product/hosted-mvp-workstream.md`): the remote,
+      // multi-tenant streamable-HTTP MCP transport. Distinct from the no-arg
+      // path above — this is additive, not a replacement for local stdio.
+      // `startHostedHttpServer` never resolves until the caller stops it, so
+      // block the same way the stdio server does below.
+      const { loadHostedTransportConfig, startHostedHttpServer } = await import('./hosted-transport/index.js');
+      const config = loadHostedTransportConfig();
+      const handle = await startHostedHttpServer(config);
+      log.info({ port: handle.port }, 'hosted MCP transport started');
+      await new Promise<never>(() => {});
+      return 0; // unreachable
+    }
+    case 'hosted-digest': {
+      // Workstream H6 (`docs/product/hosted-mvp-workstream.md`): the
+      // digest-compose service. The SCHEDULE lives in the hosted Worker as
+      // a Cloudflare Cron Trigger; this service only composes one user's
+      // digest text per request, authorised by the Worker-minted,
+      // digest-scoped, per-user token. Long-running, like the transport.
+      const { loadHostedDigestConfig, startHostedDigestServer } = await import('./hosted-digest/index.js');
+      const config = loadHostedDigestConfig();
+      const handle = await startHostedDigestServer(config);
+      log.info({ port: handle.port }, 'digest-compose service started');
+      await new Promise<never>(() => {});
+      return 0; // unreachable
     }
     default: {
       write(`Unknown command: ${cmd}`);

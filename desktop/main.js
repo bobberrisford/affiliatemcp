@@ -12,7 +12,7 @@
  * file (`build/core.cjs`) we require() once and cache. There are no mocks in
  * the Electron path — if the bundle is missing we fail loudly.
  */
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, shell } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('node:path');
 const fs = require('node:fs');
@@ -70,6 +70,25 @@ function bundlePath(file) {
 /** Absolute path to the bundled MCP server entrypoint (for the Claude config). */
 function serverEntrypoint() {
   return bundlePath('server.cjs');
+}
+
+/**
+ * Absolute path to the bundled `skills/` tree that `skills:list` /
+ * `skills:install` read from.
+ * - dev: the repo `skills/` one level up from `desktop/`.
+ * - packaged: shipped under resourcesPath via `extraResources`.
+ */
+function bundledSkillsDir() {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'skills')
+    : path.join(__dirname, '..', 'skills');
+}
+
+/** The bundled premium-skills tree (gated behind an active subscription). */
+function bundledPremiumSkillsDir() {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, 'premium-skills')
+    : path.join(__dirname, '..', 'premium-skills');
 }
 
 /** @type {{ facade: any, config: any } | null} */
@@ -360,6 +379,98 @@ handle('shell:openExternal', async (_e, url) => {
   return { ok: true };
 });
 
+// ---- Deep-link into Claude with a pre-written prompt -----------------------
+
+// `claude://claude.ai/new?q=…` opens Claude Desktop with the prompt pre-filled
+// (the user reviews and sends it — it is never auto-submitted). This is a
+// deliberate, narrow exception to the https-only `shell:openExternal` handler
+// above: the MAIN process builds the whole URL from a fixed template and only
+// the prompt TEXT crosses from the renderer, so no caller-supplied scheme or
+// host is ever opened. Claude truncates `q` near 14k chars, so we refuse longer.
+const CLAUDE_PROMPT_MAX = 14000;
+handle('claude:openPrompt', async (_e, payload) => {
+  const text = payload && typeof payload.text === 'string' ? payload.text.trim() : '';
+  if (!text) {
+    return { ok: false, error: 'No prompt text to open.' };
+  }
+  if (text.length > CLAUDE_PROMPT_MAX) {
+    return { ok: false, error: 'That prompt is too long to open in Claude.' };
+  }
+  const q = encodeURIComponent(text);
+  try {
+    await shell.openExternal(`claude://claude.ai/new?q=${q}`);
+    return { ok: true, target: 'desktop' };
+  } catch {
+    // Claude Desktop isn't installed or the scheme isn't registered — fall back
+    // to the web app, which accepts the same `?q=` pre-fill.
+    await shell.openExternal(`https://claude.ai/new?q=${q}`);
+    return { ok: true, target: 'web' };
+  }
+});
+
+// ---- Cockpit (daily attention flags) ---------------------------------------
+
+// Compute the dashboard summary by calling the configured network's read
+// operations directly through the bundled core. No model call, no tokens. We
+// load credentials from the config dir first so the reads can authenticate.
+handle('cockpit:summary', async () => {
+  const { facade, config } = loadCore();
+  config.loadConfig();
+  const summary = await facade.computeCockpit();
+  return { ok: true, summary };
+});
+
+// ---- Data locker (read-only: pull, view; export comes later) ---------------
+
+// The locker pulls performance data through the SAME facade reads Claude's MCP
+// server uses, so the desktop and Claude share one cache store and one error
+// contract. Those reads already return a structured DataResult
+// ({ ok:true, data } | { ok:false, error: NetworkErrorEnvelope }); we return it
+// as-is. The app surfaces and exports this data — Claude interprets it.
+
+handle('locker:networks', async () => {
+  const { facade, config } = loadCore();
+  config.loadConfig();
+  return facade.listConfiguredNetworks();
+});
+
+handle('locker:earnings', async (_e, payload) => {
+  const { facade, config } = loadCore();
+  config.loadConfig();
+  const { slug, query, brand } = payload || {};
+  return facade.getEarnings(slug, query || {}, brand);
+});
+
+handle('locker:transactions', async (_e, payload) => {
+  const { facade, config } = loadCore();
+  config.loadConfig();
+  const { slug, query, brand } = payload || {};
+  return facade.listTransactions(slug, query || {}, brand);
+});
+
+// Save the already-pulled data the renderer hands us to a user-chosen local
+// file. The renderer builds the CSV/JSON string (it has the rows); the main
+// process owns the save dialog and the write — a renderer cannot touch the
+// filesystem. Local only: nothing leaves the machine, and the user picks the
+// path. The renderer never receives a path it didn't choose.
+handle('locker:export', async (_e, payload) => {
+  const content = payload && typeof payload.content === 'string' ? payload.content : '';
+  if (!content) {
+    return { ok: false, error: 'Nothing to export.' };
+  }
+  const suggestedName =
+    payload && typeof payload.suggestedName === 'string' && payload.suggestedName.trim()
+      ? payload.suggestedName.trim()
+      : 'affiliate-export.csv';
+  const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0];
+  const { canceled, filePath } = await dialog.showSaveDialog(win, { defaultPath: suggestedName });
+  if (canceled || !filePath) {
+    return { ok: false, canceled: true };
+  }
+  fs.writeFileSync(filePath, content, 'utf8');
+  return { ok: true, path: filePath };
+});
+
 // ---- Client detection ------------------------------------------------------
 
 handle('clients:detect', async () => {
@@ -397,6 +508,114 @@ handle('networks:verifyAuth', async (_e, { slug, values }) => {
 handle('networks:discoverBrands', async (_e, slug) => {
   const { facade } = await loadCore();
   return facade.discoverBrands(slug);
+});
+
+// ---- Skills catalogue + local deploy --------------------------------------
+
+// The bundled skills/ tree, summarised for the picker. Local read only.
+handle('skills:list', async () => {
+  const { facade } = await loadCore();
+  return { ok: true, skills: facade.listSkills({ skillsDir: bundledSkillsDir() }) };
+});
+
+// Copy the selected skill folders into the detected client's skills dir. A
+// local file copy, idempotent; the renderer calls this in the connect step
+// before the single Claude restart so tools and skills load together.
+handle('skills:install', async (_e, payload) => {
+  const { facade } = await loadCore();
+  const slugs = Array.isArray(payload?.slugs) ? payload.slugs : [];
+  const result = facade.installSkills(slugs, { skillsDir: bundledSkillsDir() });
+  return { ok: true, ...result };
+});
+
+// Premium packs: the catalogue plus the live entitlement flag, so the shelf
+// can render locked or unlocked.
+handle('skills:listPremium', async () => {
+  const { facade } = await loadCore();
+  const status = await facade.entitlementStatus();
+  return {
+    ok: true,
+    skills: facade.listSkills({ skillsDir: bundledPremiumSkillsDir() }),
+    entitled: status.entitled,
+  };
+});
+
+// Install premium packs — ENFORCED server-side: refuse unless entitled, so the
+// gate isn't just a UI affordance. (The app is open source, so this is a
+// deliberate, accepted convenience gate, per the decision.)
+handle('skills:installPremium', async (_e, payload) => {
+  const { facade } = await loadCore();
+  const status = await facade.entitlementStatus();
+  if (!status.entitled) {
+    return { ok: false, error: 'Premium is not active. Subscribe to install premium packs.' };
+  }
+  const slugs = Array.isArray(payload?.slugs) ? payload.slugs : [];
+  const result = facade.installSkills(slugs, { skillsDir: bundledPremiumSkillsDir() });
+  return { ok: true, ...result };
+});
+
+// ---- Skill composer (build-your-own; free) --------------------------------
+
+// The composer orchestrates existing generated tools only — it never adds a
+// tool surface. The core validates every chosen operation against real tool
+// names and writes a valid SKILL.md; a thrown validation error surfaces via
+// the handle() wrapper as { ok:false, error }.
+handle('composer:archetypes', async () => {
+  const { facade } = await loadCore();
+  return { ok: true, archetypes: facade.listSkillArchetypes() };
+});
+
+handle('composer:operations', async (_e, slug) => {
+  const { facade } = await loadCore();
+  return { ok: true, operations: facade.listNetworkOperations(slug) };
+});
+
+handle('composer:compose', async (_e, input) => {
+  const { facade } = await loadCore();
+  return { ok: true, ...facade.composeSkill(input || {}) };
+});
+
+handle('composer:save', async (_e, payload) => {
+  const { facade } = await loadCore();
+  const { slug, content } = payload || {};
+  return { ok: true, ...facade.saveComposedSkill(slug, content) };
+});
+
+// ---- Entitlement (paid tier only; free tier makes no calls) ----------------
+
+// Local, offline read of the cached entitlement. No network.
+handle('entitlement:status', async () => {
+  const { facade } = await loadCore();
+  return { ok: true, status: await facade.entitlementStatus() };
+});
+
+// Online refresh against the issuer (only calls out if an account key exists).
+handle('entitlement:refresh', async () => {
+  const { facade } = await loadCore();
+  return { ok: true, status: await facade.refreshEntitlement() };
+});
+
+// Start a subscription: get a Checkout URL from the issuer and open it in the
+// system browser. The URL comes from our own issuer, so main opens it directly
+// rather than via the network-dashboard allowlist.
+handle('entitlement:checkout', async () => {
+  const { facade } = await loadCore();
+  const res = await facade.startCheckout();
+  if (res.ok) await shell.openExternal(res.url);
+  return res;
+});
+
+// Open the Stripe billing portal (manage/cancel).
+handle('entitlement:portal', async () => {
+  const { facade } = await loadCore();
+  const res = await facade.openPortal();
+  if (res.ok) await shell.openExternal(res.url);
+  return res;
+});
+
+handle('entitlement:signout', async () => {
+  const { facade } = await loadCore();
+  return facade.signOutEntitlement();
 });
 
 // ---- Config + brands persistence ------------------------------------------

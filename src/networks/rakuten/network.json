@@ -10,7 +10,8 @@
   "known_limitations": [
     "Click-level data (GET /v1/reports/clicks_reports) is gated by Rakuten as a paid tier; listClicks throws NotImplementedError until the test account has access.",
     "listPublishers and listPublisherSectors are scaffolded for v0.2 only — they throw NotImplementedError.",
-    "The adapter has not been validated against a live Rakuten publisher account at commit time; claim_status reflects this."
+    "The adapter has not been validated against a live Rakuten publisher account at commit time; claim_status reflects this.",
+    "listProgrammes pagination is 1-based via page + page_size; when no limit is passed it pages to completion (stopping on an empty or short page), capped at MAX_PAGES with a warning rather than a silent truncation."
   ],
   "claim_status": "partial",
   "adapter_version": "0.1.0",

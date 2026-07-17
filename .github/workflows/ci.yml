@@ -21,6 +21,10 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+      - name: Verify timezone-sensitive adapter tests
+        run: |
+          TZ=UTC npx vitest run tests/networks/admitad/adapter.test.ts tests/networks/monetizze/adapter.test.ts
+          TZ=Europe/Paris npx vitest run tests/networks/admitad/adapter.test.ts tests/networks/monetizze/adapter.test.ts
       - run: npm run build
       - run: npm run verify:mcpb
 
@@ -77,3 +81,54 @@ jobs:
           cache-dependency-path: telemetry-cloudflare/package-lock.json
       - run: npm ci --prefix telemetry-cloudflare
       - run: npm --prefix telemetry-cloudflare run typecheck
+
+  # The entitlement-issuer Worker (payments + Ed25519 crypto) has its own
+  # workspace, so it needs its own gate — the root build never sees it.
+  issuer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: issuer/package-lock.json
+      - run: npm ci --prefix issuer
+      - run: npm --prefix issuer run typecheck
+      - run: npm --prefix issuer test
+      # wrangler dry-run: the only gate that validates wrangler.toml shape
+      - run: npm --prefix issuer run build
+
+  # The waitlist-capture Worker has its own workspace, so it needs its own
+  # gate — the root build never sees it.
+  waitlist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: waitlist/package-lock.json
+      - run: npm ci --prefix waitlist
+      - run: npm --prefix waitlist run typecheck
+      - run: npm --prefix waitlist test
+      # wrangler dry-run: the only gate that validates wrangler.toml shape
+      - run: npm --prefix waitlist run build
+
+  # The hosted-service scaffold + auth Worker (H2) has its own workspace, so
+  # it needs its own gate — the root build never sees it.
+  hosted:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: hosted/package-lock.json
+      - run: npm ci --prefix hosted
+      - run: npm --prefix hosted run typecheck
+      - run: npm --prefix hosted test
+      # wrangler dry-run: the only gate that validates wrangler.toml shape
+      - run: npm --prefix hosted run build

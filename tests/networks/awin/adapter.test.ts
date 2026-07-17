@@ -108,6 +108,18 @@ describe('Awin transformers (status normalisation, raw preservation)', () => {
     expect(_internals.mapProgrammeStatus({ status: 'never-seen-before' })).toBe('unknown');
   });
 
+  it('derives status from membershipStatus when /programmedetails omits status', () => {
+    // The single-fetch (getProgramme) response carries neither `status` nor the
+    // queried `relationship`; only `membershipStatus`. Without this fallback a
+    // joined programme fetched by id mapped to 'unknown'.
+    expect(_internals.mapProgrammeStatus({ membershipStatus: 'Joined' })).toBe('joined');
+    expect(_internals.toProgramme({ id: 307, membershipStatus: 'Joined' }).status).toBe('joined');
+    // Explicit `status`/`relationship` still take precedence over membershipStatus.
+    expect(
+      _internals.mapProgrammeStatus({ status: 'pending', membershipStatus: 'Joined' }),
+    ).toBe('pending');
+  });
+
   it('computes ageDays from validationDate (preferred) or transactionDate', () => {
     const now = new Date('2026-05-21T00:00:00Z');
     const age1 = _internals.computeAgeDays(
@@ -120,6 +132,74 @@ describe('Awin transformers (status normalisation, raw preservation)', () => {
       now,
     );
     expect(age2).toBe(50);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// listProgrammes: relationship → canonical status
+//
+// Regression guard for the discovery bug fixed 2026-06-29: real Awin rows carry
+// the ADVERTISER programme status ("Active"), never the publisher relationship.
+// The canonical status must come from the relationship we queried, otherwise
+// every not-joined/pending row maps to 'joined' and the client-side status
+// filter deletes the entire joinable catalogue (status:'available' → []).
+// ---------------------------------------------------------------------------
+
+describe('Awin.listProgrammes relationship → status', () => {
+  // Real-shaped Awin rows: status is "Active" (advertiser status), no per-row
+  // relationship field — exactly what the live API returns.
+  const awinRows = [
+    { id: 111, name: 'Joinable One', status: 'Active', currencyCode: 'GBP' },
+    { id: 222, name: 'Joinable Two', status: 'Active', currencyCode: 'USD' },
+  ];
+
+  it('returns joinable programmes stamped available (not []) for status:available', async () => {
+    const spy = mockFetchQueue([fakeResponse(awinRows)]);
+    const programmes = await awinAdapter.listProgrammes({ status: ['available'] });
+    expect(programmes.length).toBe(2);
+    expect(programmes.every((p) => p.status === 'available')).toBe(true);
+    // The server-side filter must use relationship=notjoined.
+    expect(String(spy.mock.calls[0]?.[0])).toContain('relationship=notjoined');
+  });
+
+  it('stamps joined for the default (no status) query', async () => {
+    const spy = mockFetchQueue([fakeResponse(awinRows)]);
+    const programmes = await awinAdapter.listProgrammes();
+    expect(programmes.length).toBe(2);
+    expect(programmes.every((p) => p.status === 'joined')).toBe(true);
+    expect(String(spy.mock.calls[0]?.[0])).toContain('relationship=joined');
+  });
+
+  it('stamps pending for status:pending', async () => {
+    mockFetchQueue([fakeResponse(awinRows)]);
+    const programmes = await awinAdapter.listProgrammes({ status: ['pending'] });
+    expect(programmes.length).toBe(2);
+    expect(programmes.every((p) => p.status === 'pending')).toBe(true);
+  });
+
+  it('fetches only the highest-precedence relationship for a mixed-status query', async () => {
+    // Documents the known limitation: one relationship is fetched per request.
+    const spy = mockFetchQueue([fakeResponse(awinRows)]);
+    const programmes = await awinAdapter.listProgrammes({ status: ['available', 'joined'] });
+    expect(String(spy.mock.calls[0]?.[0])).toContain('relationship=joined');
+    expect(programmes.every((p) => p.status === 'joined')).toBe(true);
+  });
+
+  it('maps a queried relationship to the canonical status', () => {
+    expect(_internals.relationshipToStatus('notjoined')).toBe('available');
+    expect(_internals.relationshipToStatus('joined')).toBe('joined');
+    expect(_internals.relationshipToStatus('pending')).toBe('pending');
+    expect(_internals.relationshipToStatus('suspended')).toBe('suspended');
+    expect(_internals.relationshipToStatus('rejected')).toBe('declined');
+    expect(_internals.relationshipToStatus('anything-else')).toBe('joined');
+  });
+
+  it('picks the Awin relationship param from a canonical status set', () => {
+    expect(_internals.pickAwinRelationship(['available'])).toBe('notjoined');
+    expect(_internals.pickAwinRelationship(['pending'])).toBe('pending');
+    expect(_internals.pickAwinRelationship(['suspended'])).toBe('suspended');
+    expect(_internals.pickAwinRelationship(['declined'])).toBe('rejected');
+    expect(_internals.pickAwinRelationship()).toBe('joined');
   });
 });
 
@@ -450,5 +530,24 @@ describe('§15.4 error transparency', () => {
       const env = (err as NetworkError).envelope;
       expect(env.type).toBe('auth_error');
     }
+  });
+
+  it('treats an unresolved bundle placeholder as unconfigured, not a 401', async () => {
+    // The Claude Desktop bundle passes the literal placeholder when a field is
+    // left blank. It must surface as config_error with setup guidance, and the
+    // request must never reach the network.
+    process.env['AWIN_API_TOKEN'] = '${user_config.awin_api_token}';
+    const fetchSpy = mockFetchQueue([]);
+    try {
+      await awinAdapter.listProgrammes();
+      throw new Error('expected to throw');
+    } catch (err) {
+      expect(err).toBeInstanceOf(NetworkError);
+      const env = (err as NetworkError).envelope;
+      expect(env.type).toBe('config_error');
+      expect(env.operation).toBe('listProgrammes');
+      expect(env.hint).toBeTruthy();
+    }
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });

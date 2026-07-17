@@ -22,9 +22,16 @@
  *
  * Sales / transaction reporting:
  *   GET /allsales?reportType=details&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
- *       [&status=pending|approved|canceled|bonus|non-commissionable][&page=N]
+ *       [&status=pending|approved|canceled|bonus|non-commissionable]
+ *       &page=N&pageSize=M
  *   Source: https://www.flexoffers.com/new-features/sales-api-and-transaction-reporting-updates/
  *           https://www.flexoffers.com/new-features/api-endpoints-update/
+ *   Pagination (confirmed by the #316 investigation): 1-based `page` plus
+ *   `pageSize`. Both are always sent explicitly (page from 1, pageSize =
+ *   PAGE_SIZE) so a pull never relies on the unconfirmed server default; when
+ *   no `limit` is passed, listTransactions steps `page` until the first short
+ *   page and returns the complete result set, capped at MAX_PAGES with a
+ *   stderr warning so truncation is never silent.
  *
  * Payments:
  *   GET /payments/summary , GET /payments/details?paymentId=N
@@ -109,7 +116,8 @@ const META: NetworkMeta = {
     'listProgrammes / getProgramme are not implemented: the publisher-side advertiser/programme listing endpoint shape is not documented well enough publicly to map joined-programme status reliably; both operations throw NotImplementedError until verified against a live account.',
     'listClicks is not exposed as a click-level endpoint via the public FlexOffers Web Service API (only aggregated click counts appear in sales reports); the operation throws NotImplementedError.',
     'generateTrackingLink builds a FlexLinks redirect URL (track.flexlinkspro.com) deterministically from FLEXOFFERS_ACCOUNT_ID and the advertiser id passed as programmeId; the exact redirect parameter names are taken from public link examples and require live verification.',
-    'The API key header name (apiKey) and the /allsales pagination parameter are taken from public integration write-ups, not a confirmed live response; see BLOCKED(verify) markers in client.ts and listTransactions.',
+    'The API key header name (apiKey) is taken from public integration write-ups, not a confirmed live response; see the BLOCKED(verify) marker in client.ts.',
+    'When no limit is passed, listTransactions pages /allsales to completion via an explicit 1-based page and pageSize=500 (parameters confirmed by the #316 investigation), stopping on the first short page and capped at MAX_PAGES with a logged warning rather than a silent truncation.',
     'Per-row currency is read from each sales row; FlexOffers is a US aggregator and most rows clear in USD, but the adapter never hardcodes currency.',
   ],
   supportsBrandOps: false,
@@ -118,6 +126,26 @@ const META: NetworkMeta = {
   side: 'publisher',
   credentialScope: 'single-brand',
 };
+
+// ---------------------------------------------------------------------------
+// Pagination constants
+// ---------------------------------------------------------------------------
+
+/**
+ * Page size for /allsales. The #316 investigation confirmed that /allsales
+ * paginates via a 1-based `page` plus a `pageSize` parameter; the adapter
+ * always sends both explicitly so a pull never depends on the unconfirmed
+ * server default page size.
+ */
+const PAGE_SIZE = 500;
+
+/**
+ * Backstop for the /allsales pagination loop in `listTransactions`. 50 pages
+ * of 500 rows (25,000 sales) is far beyond any realistic report window;
+ * hitting it logs a warning (stderr) so a truncated pull is never silent
+ * (principle 4.1). Same pattern as the Tolt and Tapfiliate adapters.
+ */
+const MAX_PAGES = 50;
 
 // ---------------------------------------------------------------------------
 // Resilience profile
@@ -355,6 +383,46 @@ function mapCanonicalToFlexOffersStatus(statuses?: TransactionStatus[]): string 
   }
 }
 
+/**
+ * Apply the client-side filters (canonical status, programmeId, age window) to
+ * a batch of transformed transactions.
+ *
+ * Why the status filter runs client-side even when a server-side filter was
+ * also sent: the server-side filter uses FlexOffers' upstream names (e.g.
+ * 'canceled'), which the transformer normalises to canonical names (e.g.
+ * 'reversed'). Filtering on the normalised status after transformation is
+ * always correct, including for statuses with no single upstream value (e.g.
+ * 'paid', 'other'). The programme filter is client-side because /allsales does
+ * not document an advertiser-id query parameter for the publisher report.
+ *
+ * Every predicate is row-local, so applying the filters per page during
+ * pagination is equivalent to filtering the complete pull.
+ */
+function applyLocalFilters(transactions: Transaction[], query?: TransactionQuery): Transaction[] {
+  let out = transactions;
+
+  const statusFilter = toTransactionStatusList(query?.status);
+  if (statusFilter && statusFilter.length > 0) {
+    const set = new Set(statusFilter);
+    out = out.filter((t) => set.has(t.status));
+  }
+
+  if (query?.programmeId) {
+    out = out.filter((t) => t.programmeId === query.programmeId);
+  }
+
+  const minAge = query?.minAgeDays;
+  if (typeof minAge === 'number') {
+    out = out.filter((t) => t.ageDays >= minAge);
+  }
+  const maxAge = query?.maxAgeDays;
+  if (typeof maxAge === 'number') {
+    out = out.filter((t) => t.ageDays <= maxAge);
+  }
+
+  return out;
+}
+
 function extractRows(response: FlexOffersSalesResponse | FlexOffersSaleRaw[]): FlexOffersSaleRaw[] {
   if (Array.isArray(response)) return response;
   if (Array.isArray(response.sales)) return response.sales;
@@ -421,12 +489,22 @@ export class FlexoffersAdapter implements NetworkAdapter {
    *
    * Endpoint:
    *   GET /allsales?reportType=details&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
-   *       [&status=pending|approved|canceled|bonus|non-commissionable][&page=N]
+   *       [&status=pending|approved|canceled|bonus|non-commissionable]
+   *       &page=N&pageSize=500
+   *
+   * Pagination (parameters confirmed by the #316 investigation): /allsales
+   * paginates via a 1-based `page` plus `pageSize`. Both are always sent
+   * explicitly (page from 1, pageSize = PAGE_SIZE) so the pull never relies on
+   * the unconfirmed server default. When the caller passes no `limit`, the
+   * loop steps `page` until the first short page and returns the complete
+   * result set, capped at MAX_PAGES with a stderr warning so a truncated pull
+   * is never silent (principle 4.1). A present `limit` stops the loop as soon
+   * as enough matching rows have been collected — never fewer requests'
+   * worth of data than the pre-pagination single call returned.
    *
    * The public docs do not document a maximum window per call; we default to a
-   * 30-day window when none is supplied and pass the full window in one call.
-   * BLOCKED(verify): confirm the maximum window and the pagination parameter
-   * (page vs pageSize) against a live account.
+   * 30-day window when none is supplied and pass the full window to every
+   * page. BLOCKED(verify): confirm the maximum window against a live account.
    *
    * --- PRD §15.9: unpaid-age filter ------------------------------------------
    *   `query.minAgeDays` / `query.maxAgeDays` filter on computed `ageDays`,
@@ -452,55 +530,59 @@ export class FlexoffersAdapter implements NetworkAdapter {
     };
 
     // Server-side status filter when a single canonical status maps cleanly.
-    // We always re-filter on the normalised status client-side (see below).
+    // The normalised status is always re-filtered client-side too — see
+    // applyLocalFilters for why.
     const statusFilter = toTransactionStatusList(query?.status);
     const upstreamStatus = mapCanonicalToFlexOffersStatus(statusFilter);
     if (upstreamStatus) {
       params['status'] = upstreamStatus;
     }
 
-    const response = await flexoffersRequest<FlexOffersSalesResponse>({
-      operation: 'listTransactions',
-      path: '/allsales',
-      apiKey,
-      query: params,
-      resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
-    });
+    const collected: Transaction[] = [];
+    let complete = false;
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const response = await flexoffersRequest<FlexOffersSalesResponse>({
+        operation: 'listTransactions',
+        path: '/allsales',
+        apiKey,
+        query: { ...params, page, pageSize: PAGE_SIZE },
+        resilience: RESILIENCE.listTransactions ?? RESILIENCE.default,
+      });
 
-    const rows = extractRows(response);
-    let transactions = rows.map((r) => toTransaction(r, now));
+      const rows = extractRows(response);
+      collected.push(
+        ...applyLocalFilters(
+          rows.map((r) => toTransaction(r, now)),
+          query,
+        ),
+      );
 
-    // Client-side canonical status filter — always applied when a status filter
-    // was requested, even when a server-side filter was also sent.
-    //
-    // Why filter client-side even when `upstreamStatus` is set: the server-side
-    // filter uses FlexOffers' upstream names (e.g. 'canceled'), which the
-    // transformer normalises to canonical names (e.g. 'reversed'). Filtering on
-    // the normalised status after transformation is always correct, including for
-    // statuses with no single upstream value (e.g. 'paid', 'other').
-    if (statusFilter && statusFilter.length > 0) {
-      const set = new Set(statusFilter);
-      transactions = transactions.filter((t) => set.has(t.status));
+      // A short (or empty) page means the report is exhausted. /allsales has
+      // no cursor and its totalCount envelope field is unverified, so a full
+      // page is the only trustworthy "more remains" signal.
+      if (rows.length < PAGE_SIZE) {
+        complete = true;
+        break;
+      }
+      // A present limit stops the loop once satisfied. The check runs on the
+      // locally filtered rows so a filtered pull keeps paging until enough
+      // MATCHING rows exist — never returning less than the caller asked for
+      // while more pages remain.
+      if (typeof query?.limit === 'number' && collected.length >= query.limit) {
+        complete = true;
+        break;
+      }
     }
 
-    // Programme filter is client-side: the /allsales endpoint does not document
-    // an advertiser-id query parameter for the publisher report.
-    if (query?.programmeId) {
-      transactions = transactions.filter((t) => t.programmeId === query.programmeId);
+    if (!complete) {
+      log.warn(
+        { operation: 'listTransactions', cap: MAX_PAGES, fetched: collected.length },
+        'flexoffers pagination hit MAX_PAGES cap; result may be truncated',
+      );
     }
 
-    const minAge = query?.minAgeDays;
-    if (typeof minAge === 'number') {
-      transactions = transactions.filter((t) => t.ageDays >= minAge);
-    }
-    const maxAge = query?.maxAgeDays;
-    if (typeof maxAge === 'number') {
-      transactions = transactions.filter((t) => t.ageDays <= maxAge);
-    }
-
-    if (typeof query?.limit === 'number') {
-      transactions = transactions.slice(0, query.limit);
-    }
+    const transactions =
+      typeof query?.limit === 'number' ? collected.slice(0, query.limit) : collected;
 
     log.debug({ count: transactions.length }, 'listTransactions complete');
     return transactions;
@@ -820,7 +902,8 @@ export const _internals = {
   mapCanonicalToFlexOffersStatus,
   extractRows,
   toAmount,
+  applyLocalFilters,
+  log,
+  MAX_PAGES,
+  PAGE_SIZE,
 };
-
-// Silence unused-import lint warning when noUnusedLocals is on.
-void log;

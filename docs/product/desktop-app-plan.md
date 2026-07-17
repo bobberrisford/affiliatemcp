@@ -45,9 +45,10 @@ licence. The entire onboarding experience is open and auditable.
 
 Why it's a one-way door: if you ship the app **closed**, you can never
 credibly re-open it, and you've quietly contradicted *"no hosted
-account, no telemetry, the maintainer never sees your data"* — because
+account, opt-in telemetry, the maintainer never sees your data"* — because
 nobody can verify a closed binary. Shipping it **open** means anyone can
-read the code and confirm it phones home to nothing. For a brand whose
+read the code and confirm the telemetry contract is narrow and consent-gated.
+For a brand whose
 entire pitch is trust, the app must be as open as the server it wraps.
 
 ### D3 — The open-core boundary, drawn *before* there's anything to gate ✅
@@ -194,7 +195,10 @@ it); the app only configures it.
 Everything here runs locally and reinforces the open core:
 - A "your networks" health view (status, last-verified, unpaid >90 days
   flags) — the anti-dashboard, rendered.
-- One-click local report export (CSV / the existing report).
+- A read-only data locker: pull performance data, view it as plain rows,
+  and export it locally (CSV / JSON). The app surfaces and exports the
+  data; Claude interprets it. Scope and the facade contract are settled in
+  `docs/decisions/2026-06-29-desktop-data-export.md`.
 - Link-audit surface for the audit skill.
 - Scheduled runs **while the app is open** (no hosting — honest about
   the laptop constraint).
@@ -296,9 +300,9 @@ Not a vibe — a set of enforced commitments:
    onboards people is itself open.
 2. **The free path is never crippled to upsell (D3).** Core does
    everything promised, standalone, forever. Commercial = our-infra-only.
-3. **No telemetry, provably (D4).** Stated on the welcome screen, true
+3. **Opt-in telemetry, provably (D4).** Stated on the welcome screen, true
    in the code, verifiable because the code is open. "Open" is what
-   makes "no phone-home" *credible* rather than a claim.
+   makes the consent gate credible rather than a claim.
 4. **Reproducible, signed builds.** Publish build instructions; let
    anyone rebuild the released binary. Trust through verifiability.
 5. **Community contributes adapters *and* help content (D8)** through

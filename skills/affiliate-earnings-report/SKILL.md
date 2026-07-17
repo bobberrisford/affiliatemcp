@@ -9,9 +9,14 @@ description: |
 
 You are producing a consolidated earnings report across all configured affiliate networks.
 
-## Step 1 — discover the wired networks
+## Step 1 — identify the configured networks
 
-Call `affiliate_list_networks`. The response is a `NetworkMeta[]`. If the list is empty, tell the user no networks are configured and suggest they run `affiliate-networks-mcp setup`. Stop.
+Use networks the user named or confirmed they configured. If none are known,
+ask which networks to include. Call `affiliate_list_networks` only to confirm
+that this server has a registered adapter for each named network; it does not
+prove that credentials are configured. When credential state is uncertain,
+recommend `affiliate-networks-mcp doctor <slug>` or attempt the requested
+operation and surface its verbatim error.
 
 ## Step 2 — pick a period
 
@@ -22,7 +27,7 @@ Default period: the last 30 days, ending today. If the user specified "last mont
 For each network slug `s` from step 1, call:
 
 ```
-affiliate_<s>_earnings_summary({ from: <iso>, to: <iso> })
+affiliate_<s>_get_earnings_summary({ from: <iso>, to: <iso> })
 ```
 
 Each call returns an `EarningsSummary` with:
@@ -48,12 +53,26 @@ Keep the table compact. Matter-of-fact tone, UK spelling.
 
 ## Stretch — anomaly detection
 
-If the user asks for "this month vs last month", or hints at "is anything weird?", call `affiliate_<s>_earnings_summary` twice per network (current window and prior comparable window) and compare:
+If the user asks for "this month vs last month", or hints at "is anything weird?", call `affiliate_<s>_get_earnings_summary` twice per network (current window and prior comparable window) and compare:
 
 - A network that produced > £0 in the prior window and £0 in the current window — flag as a potential outage and recommend `affiliate-networks-mcp doctor <slug>`.
 - A programme that contributed > 25% of a network's total in the prior window and 0% in the current window — flag as a potential programme drop.
 
 Be precise. Do not call something an anomaly without quoting the prior and current figures.
+
+## Large accounts
+
+On accounts where a pull runs to tens of thousands of rows, keep every tool
+result within the client's size limit:
+
+- Prefer summaries: `affiliate_<slug>_get_earnings_summary` answers totals
+  and status splits without pulling transaction rows.
+- When raw rows are needed, pull month-sized windows rather than the whole
+  period in one call, and page with `offset` (using `limit` as the page size)
+  when a window is still too big.
+- If a result returns `truncated: true` or `result_too_large`, follow its
+  hint: continue from the given `nextOffset` or narrow the window or filters.
+  Never total a truncated pull as if it were complete.
 
 ## Constraints
 

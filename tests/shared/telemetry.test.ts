@@ -93,6 +93,16 @@ describe('telemetry consent and privacy boundary', () => {
     expect(_readTelemetryStateForTests()?.monthlyInstallId).not.toBe(before);
   });
 
+  it('keys the monthly identifier off the record day, not the wall clock', () => {
+    // Deterministic regardless of the real date: a counter recorded for a June
+    // day belongs to June's month, so the id does not depend on when the test
+    // runs. Previously the id was stamped from the wall clock, so recording a
+    // past day in the current month produced the current month's id.
+    setTelemetryConsent(true);
+    recordTelemetry('lifecycle', 'server_start', 'success', 1, '2026-06-15');
+    expect(_readTelemetryStateForTests()?.month).toBe('2026-06');
+  });
+
   it('honours environment overrides and maps only coarse error categories', () => {
     process.env['AFFILIATE_MCP_TELEMETRY'] = 'true';
     expect(telemetryConsent()).toBe('enabled');
@@ -119,5 +129,32 @@ describe('PACKAGE_VERSION', () => {
       readFileSync(path.resolve(here, '..', '..', 'package.json'), 'utf8'),
     ) as { version: string };
     expect(PACKAGE_VERSION).toBe(pkg.version);
+  });
+
+  it('stays in sync with the plugin manifest so npm and the plugin channel agree', async () => {
+    const { PACKAGE_VERSION } = await import('../../src/shared/telemetry.js');
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const plugin = JSON.parse(
+      readFileSync(path.resolve(here, '..', '..', '.claude-plugin', 'plugin.json'), 'utf8'),
+    ) as { version: string };
+    expect(plugin.version).toBe(PACKAGE_VERSION);
+  });
+
+  it('stays in sync with both package-lock.json version fields so the lockfile cannot drift', async () => {
+    const { PACKAGE_VERSION } = await import('../../src/shared/telemetry.js');
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const lock = JSON.parse(
+      readFileSync(path.resolve(here, '..', '..', 'package-lock.json'), 'utf8'),
+    ) as { version: string; packages: Record<string, { version?: string }> };
+    expect(lock.version).toBe(PACKAGE_VERSION);
+    expect(lock.packages['']?.version).toBe(PACKAGE_VERSION);
+  });
+
+  it('reports the current released version', async () => {
+    // Bump this literal each release. It forces a deliberate tests/shared edit
+    // (the check:change guardrail under src/shared) and pins the published
+    // version the telemetry channel reports.
+    const { PACKAGE_VERSION } = await import('../../src/shared/telemetry.js');
+    expect(PACKAGE_VERSION).toBe('0.17.0');
   });
 });

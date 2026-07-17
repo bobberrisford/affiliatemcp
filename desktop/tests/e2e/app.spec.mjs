@@ -130,21 +130,20 @@ test('preload exposes the auto-update bridge (subscribe + the two actions)', asy
   expect(surface.openUpdateDownload).toBe('function');
 });
 
-test('the welcome update card round-trips a check (dev build reports up to date)', async () => {
-  // The welcome screen shows a "check for updates" button. Clicking it round-trips
-  // through the real update:check IPC. In the unpackaged e2e build there's no
-  // signed feed, so main reports "current" and the card settles on "latest
-  // version" with a "check again" button — it must NOT hang on "checking…".
-  // This exercises the full button → IPC → onUpdateStatus → repaint loop.
-  await page.waitForSelector('#update-card #u-check', { timeout: 5_000 });
-  await page.click('#update-card #u-check');
+test('the titlebar update check round-trips into the pill (dev build reports up to date)', async () => {
+  // The titlebar "check for updates" control round-trips through the real
+  // update:check IPC. In the unpackaged e2e build there's no signed feed, so
+  // main reports "current" and the persistent pill settles on "up to date" — it
+  // must NOT hang on "checking…". Exercises button → IPC → onUpdateStatus →
+  // repaint. (The pill self-dismisses after a few seconds; we assert well inside
+  // that window.)
+  await page.waitForSelector('#tb-check', { timeout: 5_000 });
+  await page.click('#tb-check');
   await page.waitForFunction(
-    () => /latest version/i.test(document.getElementById('update-card')?.textContent || ''),
+    () => /up to date/i.test(document.getElementById('update-pill')?.textContent || ''),
     null,
     { timeout: 5_000 },
   );
-  const hasCheckAgain = await page.locator('#update-card #u-check').count();
-  expect(hasCheckAgain).toBe(1);
 });
 
 test('discoverBrands returns an array for a multi-brand network with no list endpoint', async () => {
@@ -181,6 +180,78 @@ test('saveBrands rejects duplicate nicknames instead of silently overwriting', a
   ]));
   expect(res.ok).toBe(false);
   expect(String(res.error)).toMatch(/duplicate brand nickname/i);
+});
+
+test('skills:list returns the bundled catalogue over IPC', async () => {
+  // Reads the real bundled skills/ tree (dev path). Each entry is a plain,
+  // structured-clone-safe summary with a slug + name; the picker relies on this
+  // being a populated array, never a thrown error turned into { ok:false }.
+  const res = await page.evaluate(() => window.affiliate.listSkills());
+  expect(res.ok).toBe(true);
+  expect(Array.isArray(res.skills)).toBe(true);
+  expect(res.skills.length).toBeGreaterThan(0);
+  expect(typeof res.skills[0].slug).toBe('string');
+  expect(typeof res.skills[0].name).toBe('string');
+});
+
+test('skills:install with an empty selection is a safe no-op', async () => {
+  // Guards the "skip — just the tools" path: an empty selection must return a
+  // clean result with nothing installed, and must not write to the skills dir.
+  const res = await page.evaluate(() => window.affiliate.installSkills([]));
+  expect(res.ok).toBe(true);
+  expect(res.installed).toEqual([]);
+});
+
+test('cockpit:summary returns a structured summary over IPC (unconfigured here)', async () => {
+  // The sandbox config dir has no credentials, so the real Awin adapter is
+  // registered but unconfigured. computeCockpit must report that cleanly — a
+  // structured summary with configured:false and a flags array — without a
+  // single outbound network call (the configured check is credential-presence).
+  const res = await page.evaluate(() => window.affiliate.cockpitSummary());
+  expect(res.ok).toBe(true);
+  expect(res.summary).toBeTruthy();
+  expect(res.summary.configured).toBe(false);
+  expect(Array.isArray(res.summary.flags)).toBe(true);
+  expect(res.summary.flags.length).toBeGreaterThan(0);
+});
+
+test('locker:networks returns an array (empty in the unconfigured sandbox)', async () => {
+  // The data-locker picker lists only networks with credentials present. The
+  // sandbox config dir has none, so this is an empty array — never a thrown
+  // error turned into { ok:false } (the renderer .filter()s it directly).
+  const nets = await page.evaluate(() => window.affiliate.lockerNetworks());
+  expect(Array.isArray(nets)).toBe(true);
+  expect(nets.length).toBe(0);
+});
+
+test('locker:transactions surfaces a structured error for an unconfigured network', async () => {
+  // No credentials in the sandbox, so the real Awin read can't authenticate.
+  // The facade returns a structured DataResult with ok:false and a
+  // NetworkErrorEnvelope — never faked into success, never an empty table.
+  const res = await page.evaluate(() => window.affiliate.lockerTransactions('awin', { from: '2026-01-01', to: '2026-01-31' }));
+  expect(res.ok).toBe(false);
+  expect(res.error).toBeTruthy();
+  expect(typeof res.error.type).toBe('string');
+});
+
+test('locker:export refuses empty content before opening a save dialog', async () => {
+  // The happy path opens a native save dialog (and would block the run), so we
+  // assert only the refusal — it returns before any dialog, exactly as the
+  // openExternal/openPrompt tests avoid real side-effects.
+  const res = await page.evaluate(() => window.affiliate.lockerExport('x.csv', ''));
+  expect(res.ok).toBe(false);
+});
+
+test('claude:openPrompt refuses empty and over-length prompts (no open side-effect)', async () => {
+  // We assert only the refusal paths, which return before any shell.openExternal
+  // — exactly as the openExternal test above avoids triggering a real open. The
+  // happy path would launch Claude (or a browser fallback), so it isn't driven
+  // here; the renderer builds the URL only in the main process regardless.
+  const empty = await page.evaluate(() => window.affiliate.openClaudePrompt('   '));
+  expect(empty.ok).toBe(false);
+
+  const tooLong = await page.evaluate(() => window.affiliate.openClaudePrompt('x'.repeat(20_000)));
+  expect(tooLong.ok).toBe(false);
 });
 
 test('UI renders real network tiles from IPC (welcome → picker)', async () => {

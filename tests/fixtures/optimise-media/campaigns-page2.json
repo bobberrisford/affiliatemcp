@@ -1,0 +1,23 @@
+{
+  "data": [
+    {
+      "campaignId": 2004,
+      "campaignName": "Atolls Outdoors",
+      "relationshipStatus": "Joined",
+      "currency": "GBP",
+      "category": "Outdoors",
+      "displayUrl": "https://www.atolls-outdoors.example.com"
+    },
+    {
+      "campaignId": 2005,
+      "campaignName": "Atolls Homeware",
+      "relationshipStatus": "Available",
+      "currency": "GBP",
+      "category": "Home & Garden",
+      "displayUrl": "https://www.atolls-homeware.example.com"
+    }
+  ],
+  "page": 2,
+  "pageSize": 100,
+  "totalCount": 5
+}

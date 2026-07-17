@@ -17,20 +17,28 @@ Accept any of:
 - A pasted markdown / HTML document — extract every `<a href>` or `[text](url)`.
 - A sitemap URL or path — read it and extract `<loc>` entries.
 
-Filter the extracted URLs down to *affiliate* links by host. The networks this server supports use these host patterns:
+Filter the extracted URLs down to *affiliate* links by host. The server
+supports many networks (`affiliate_list_networks` is the authoritative list);
+these four have well-known, stable host patterns you can classify by host alone:
 
 - `awin1.com`, `awin.com`, `*.awin1.com` — Awin.
 - `*.dpbolvw.net`, `*.kqzyfj.com`, `*.tkqlhce.com`, `anrdoezrs.net`, `*.cj.com`, `*.cjlinks.com` — CJ Affiliate.
 - `*.impact.com`, `goto.target.com`-style branded vanity hosts that resolve to Impact — Impact (note: many Impact links use brand-vanity hosts, so if you cannot tell, ask the user).
 - `click.linksynergy.com`, `*.linksynergy.com`, `*.rakutenmarketing.com` — Rakuten Advertising.
 
-If you cannot classify a link, list it under "could not classify — please confirm".
+Links from the other supported networks will not match a pattern above. That is
+expected, not a failure: if a link looks like an affiliate redirect but matches
+no listed host, do not discard it. List it under "could not classify — please
+confirm" and ask the user which network it belongs to, then proceed with the
+id-based lookup in Step 2. Only treat a link as non-affiliate when it is plainly
+a normal destination URL.
 
 ## Step 2 — extract the programme identifier
 
-Each network encodes the programme id (or advertiser id) in the URL differently. The reliable approach: do not hand-parse. Instead, call `affiliate_list_networks` first to see which networks are wired up, then for each candidate URL:
+Each network encodes the programme id (or advertiser id) in the URL differently. The reliable approach: do not hand-parse. Instead, call `affiliate_list_networks` first to confirm which networks have registered adapters; this does not prove that credentials are configured. Then, for each candidate URL:
 
-1. Match the URL to a network by host.
+1. Match the URL to a network by host, or use the user's confirmed network for
+   a recognised affiliate link whose host is not in the list above.
 2. Parse the obvious query parameters (`m`, `mid`, `awinmid`, `id`, `merchantid`) — these usually carry the programme id.
 3. Call `affiliate_<slug>_get_programme` with that id.
 4. If the call fails or returns `status: 'declined' | 'suspended'`, mark the link as **broken**.
@@ -54,10 +62,22 @@ When a link is **broken** *and* the network supports link generation, offer to r
 1. Confirm with the user that they want to regenerate (don't surprise them).
 2. Ask for the destination URL if you do not already have it from the original link.
 3. Find an equivalent active programme they have joined — call `affiliate_<slug>_list_programmes` with `status: 'joined'` and a `search` term derived from the broken merchant's domain or name.
-4. Once a replacement programme id is confirmed, call `affiliate_<slug>_generate_link` with `programmeId` and `destinationUrl`.
+4. Once a replacement programme id is confirmed, call `affiliate_<slug>_generate_tracking_link` with `programmeId` and `destinationUrl`.
 5. Return the new tracking URL.
 
-Only Awin and Rakuten reliably expose link generation at v0.1; for CJ and Impact, fall back to telling the user to regenerate in the network dashboard.
+Not every network exposes programmatic link generation. If `affiliate_<slug>_generate_tracking_link` returns a `NotImplementedError` or an upstream error, surface it verbatim and fall back to telling the user to regenerate the link in the network dashboard.
+
+## Large accounts
+
+On accounts with very large programme or transaction volumes, keep every tool
+result within the client's size limit:
+
+- Pull in filtered slices (by programme or month-sized window) rather than
+  everything in one call, and page with `offset` (using `limit` as the page
+  size) when a slice is still too big.
+- If a result returns `truncated: true` or `result_too_large`, follow its
+  hint: continue from the given `nextOffset` or narrow the query. Never
+  report an audit as complete over a truncated pull.
 
 ## Constraints
 

@@ -39,9 +39,10 @@ Each step says what works today and what is still coming.
 2. **Analyse** · `Available now`
    Ask across every network at once: earnings, pending commissions, reversals,
    dead links. In plain English, no filters or exports.
-3. **Strategy & KPIs** · `Coming`
-   Set the targets you care about. It tracks where you stand against them, not
-   just what already happened.
+3. **Strategy & KPIs** · `Available now`
+   Record the targets you care about with client-onboarding. Reports, anomaly
+   watches, and portfolio rollups use them as advisory context, not authority to
+   change network data.
 4. **Approvals** · `Coming`
    Decide what runs on its own and what waits for your sign-off.
 5. **Automation** · `Coming`
@@ -66,13 +67,15 @@ Each step says what works today and what is still coming.
   hosted account. Networks see the same calls as your own dashboard.
 - **Automation only does what you've approved.** Nothing acts without your
   sign-off.
-- **No telemetry.** Nothing is tracked or sent anywhere.
+- **Privacy-first opt-in telemetry.** Runtime telemetry is off by default,
+  aggregate-only, and never includes affiliate data, credentials, prompts,
+  arguments, results, or error text.
 - **Open source, MIT licensed.** Read the code, or contribute to it.
 
 ### Things dashboards don't surface
 Transactions stuck pending, dead links across your site, reversal spikes,
 week-on-week drops, programmes trending to zero. Ask for any of these now, or
-set it to watch for them (coming).
+run the scheduled-watch skills in a host that supports scheduling.
 
 ### Mission teaser
 We're building toward affiliate work that runs itself, with you in control of
@@ -114,8 +117,54 @@ Hero directions considered (kept for reference):
 - "Chat with your affiliate data in the AI you already use." Dropped once the
   goal was clarified as automation rather than chat.
 
-The `72 networks` figure and network counts must be pulled from the same data
-the README auto-generates (see `website-plan.md` §8), never hand-typed.
+Network and adapter counts must be pulled from the same data the README
+auto-generates (see `website-plan.md` §8), never hand-typed.
+
+## Pricing
+
+> Repoint queued (2026-07-13): the waitlist was rescinded by
+> `../decisions/2026-07-13-build-hosted-without-presell.md`. The live page's
+> waitlist CTA and this deck's waitlist wording are queued to repoint to the
+> hosted product as workstream slices ship; first slice to touch the page
+> takes this with it.
+
+### Overview
+The local server runs free and complete. Premium options add skills and hosted connectivity for teams and agencies.
+
+### Free: local server
+The open-source MCP server runs on your machine. Every network adapter, all core workflows, your credentials. No account, no telemetry unless you opt in. MIT licence.
+
+### Skill packs
+One subscription, £20/month, unlocks the whole premium pack library: maintained workflow packs installed through the desktop app, kept working as network APIs change. Use them alongside your free local server.
+
+**Agency pack** (coming soon)
+QBR prep, client weekly report, portfolio rollup. Cross-programme performance analysis and client-ready exports.
+
+**Publisher money pack** (coming soon)
+Unpaid-commission chaser, earnings rollup across all networks, reversal investigation. Monthly earnings digest.
+
+### Hosted tier
+Connector-hosted access for publishers, brands, and agencies: no install, no terminal, no laptop-awake constraint. Pre-launch, waitlist-only, refundable until the tier ships to you.
+
+**Solo: £34/month**
+Hosted connector, up to 5 networks, weekly earnings digest by email. For individual publishers testing hosted connectivity.
+
+**Pro: £99/month**
+All hosted-eligible networks, scheduled anomaly watch, unpaid-commission digest, QBR and weekly-report generation, CSV export.
+
+**Team: £299/month**
+5 seats, client workspaces, shared brand context, audit log, client-ready report export. Card self-serve, no SLA, no custom contracts.
+
+### Founding offer
+**Founding Pro: £699/year**, 41% off the standard £1,188 annual price. Available during pre-launch only, and fully refundable at any point until the hosted tier ships to you. Founding buyers keep this rate.
+
+**Waitlist question:** Which networks matter most to you for hosted first? Helps us prioritise.
+
+### Honesty notes on hosted
+- **Pre-launch.** The hosted tier is not yet available. Founding offer holds your place.
+- **Not all networks go hosted.** Some affiliate networks' terms do not allow third-party credential holders. Those networks stay local-only, free, and complete.
+- **Local stays free and complete.** Whether or not you use hosted, the open-source server has full parity to what shipped before hosted existed.
+- **Keys are encrypted.** Hosted credentials are stored encrypted, decrypted only at the moment a request runs, used only to serve you, and deletable along with your account at any time.
 
 ## To draft next
 - `/get-started` — the non-technical onboarding page.

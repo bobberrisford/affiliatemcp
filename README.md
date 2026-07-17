@@ -4,16 +4,16 @@
 
 [![npm version](https://img.shields.io/npm/v/affiliate-networks-mcp?label=release)](https://www.npmjs.com/package/affiliate-networks-mcp) ![networks](https://img.shields.io/badge/networks-72-blue) ![adapters](https://img.shields.io/badge/adapters-86-blue) [![maintained by](https://img.shields.io/badge/maintained%20by-community%20%2F%20networks-orange)](./docs/networks)
 
-> **Network operators:** each adapter is community-built and `experimental` until your team adopts it. Find your network's adoption issue under the [`adopt-a-network`](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3Aadopt-a-network) label to verify and maintain it with live credentials.
+> **Network operators:** most adapters are community-built and `experimental`. Adoption gives your team ownership and a verification path; promotion to `partial` or `production` still requires current evidence and maintainer review. Find your network's issue under the [`adopt-this-network`](https://github.com/bobberrisford/affiliatemcp/issues?q=is%3Aissue+is%3Aopen+label%3Aadopt-this-network) label.
 
 Affiliate networks have two sides — and neither has a first-class AI workspace integration.
 
 **Publishers** earn commissions from the programmes they join.
 **Brands** (and the agencies who manage them) run those programmes
 and pay the commissions out. I wanted to chat to my own affiliate
-data in the AI workspace I already use; none of the networks had shipped an integration
-for either side, so I built one that covers both. Well, for the
-biggest networks.
+data in the AI workspace I already use; none of the networks had shipped an
+integration for either side, so I built a broad beta set that covers both
+publisher and advertiser-side work.
 
 If you're a **publisher**, you can ask:
 
@@ -54,14 +54,14 @@ question that fans out across networks and brands, and surfaces what
 the dashboards bury: publishers trending down, reversal spikes, dead
 links, programmes drifting toward zero.
 
-Either way, you do **not** need to know what an API is. You do not
-need to write code. You need:
+Either way, you do **not** need to know what an API is or write code. The
+non-technical Claude Desktop track needs:
 
 - Your existing logins to the affiliate networks you already work with.
-- Five minutes to run the setup wizard.
-- Claude Desktop, Claude Code, or Codex installed.
+- Claude Desktop installed.
 
-That is the whole list.
+The technical track uses a terminal, Node.js 20 or newer, and Claude Desktop,
+Claude Code, Codex, or another compatible local stdio MCP client; check the support states below before relying on an untested client journey.
 
 **And if you work for an affiliate network**, this is also for you. The
 bundled adapters are placeholders until each network adopts its own. See
@@ -70,18 +70,18 @@ bundled adapters are placeholders until each network adopts its own. See
 ## Why bother?
 
 **One question, every network and every brand.** "Show me earnings by
-programme" hits Awin, CJ, eBay, Impact and Rakuten in parallel. On the brand
+programme" hits your configured publisher networks in parallel. On the brand
 side, "show me revenue across all my clients this week" fans out across every
-brand × network pair you've registered.
+brand and network pair you've registered.
 
 **Plain English, not filters.** No more clicking through date pickers and saved
 views. "Last quarter, status pending, sorted by amount" is the whole prompt.
 
-**Your data, your machine.** It runs locally. Your keys live in
-`~/.affiliate-mcp/.env`, locked to your user account. There is no hosted
-account. Optional anonymous usage telemetry is off by default and never
-contains affiliate data, credentials, prompts, arguments, results, or error
-text. The networks see the same API calls they'd see from their dashboard.
+**Your data, your machine, by default.** It runs locally. Your keys live in
+`~/.affiliate-mcp/.env`, locked to your user account. Optional anonymous
+usage telemetry is off by default and never contains affiliate data,
+credentials, prompts, arguments, results, or error text. The networks see
+the same API calls they'd see from their dashboard.
 
 **Catches what dashboards bury.** Stale transactions, inactive programmes, dead
 deeplinks and week-on-week drops are surfaced by the packaged skills.
@@ -96,9 +96,12 @@ rely on file permissions, leave caching off. Run
 
 ## Getting started
 
-Choose the install path for the AI workspace you already use.
+Choose one of two primary tracks. Both run the same local MCP server and keep your credentials on your machine.
 
-**Claude Desktop — no Terminal or Node.js required:**
+### Track 1: non-technical, Claude Desktop
+
+Use the host-native Claude Desktop `.mcpb`. No Terminal, Node.js, or manual
+configuration is required.
 
 1. Download `affiliate-networks-mcp-<version>.mcpb` from the latest
    [GitHub release](https://github.com/bobberrisford/affiliatemcp/releases/latest).
@@ -107,13 +110,19 @@ Choose the install path for the AI workspace you already use.
 3. Add credentials for the networks you use, then ask Claude
    **"What affiliate networks do you have access to?"**
 
+The extension does not update itself: download the latest `.mcpb` and install it over the top; saved credentials are kept ([full steps for every install path](./docs/updating.md)).
 The native extension currently offers secure setup fields for Awin, CJ, Impact,
 and Partnerize. It runs the complete server, so an existing
 `~/.affiliate-mcp/.env` continues to enable every other adapter. A portable
 browser setup flow for the remaining networks is planned; until then, use the
-CLI setup path below when adding them.
+technical track below when adding them.
 
-**CLI and other AI clients:**
+The standalone Electron/DMG setup app is a **fixes-only compatibility
+fallback** for existing macOS users. It is not a third primary onboarding
+track. See [`desktop/README.md`](./desktop/README.md) for its remaining use
+case.
+
+### Track 2: technical and semi-technical, CLI plus local stdio
 
 You'll need Node.js 20 or newer installed. If you don't have it, use the
 [Node.js download page](https://nodejs.org/).
@@ -140,10 +149,11 @@ npx affiliate-networks-mcp test
 You should see one line per network: `ok` for everything that's healthy,
 `error — <reason>` for anything that isn't.
 
-**3. Connect it to Claude or Codex.** Pick the path that matches your client.
-The setup wizard offers this at the end automatically.
+**3. Connect it to your local MCP client.** Use a host-native package, the CLI
+installer, or local stdio configuration. The setup wizard offers the shipped
+CLI installer targets at the end automatically.
 
-**Claude Desktop (Mac/Windows app) — most users:**
+**Claude Desktop (Mac/Windows app):**
 
 ```
 npx affiliate-networks-mcp install
@@ -232,6 +242,30 @@ Restart Claude Desktop after saving.
 
 </details>
 
+For another local stdio MCP client, configure the server command
+`npx -y affiliate-networks-mcp`. These clients are compatible in principle,
+not yet tested first-party journeys. Draft PR
+[#49](https://github.com/bobberrisford/affiliatemcp/pull/49) is the existing
+VS Code/Copilot installer candidate.
+
+### Client support states
+
+These labels describe the onboarding journey, not whether every network
+adapter is live-verified. "Tested" below means repository-owned automated
+validation, not live proof against every host version. See
+[`REPORT.md`](./REPORT.md) for adapter maturity.
+
+| Client or path | Support state | What that means |
+| --- | --- | --- |
+| Claude Desktop `.mcpb` | **Shipped and release-tested** | Primary non-technical path. CI builds and smoke-tests the bundle. Secure setup fields currently cover Awin, CJ, Impact, and Partnerize. |
+| Claude Desktop CLI/manual config | **Shipped and tested** | Technical local stdio path. Installer/config behaviour has automated coverage. |
+| Claude Code plugin and CLI registration | **Shipped and tested** | Technical path with packaged skills and local MCP registration. |
+| Codex CLI and IDE extension | **Shipped and tested** | Technical path using the shared local Codex MCP configuration. This is not ChatGPT connector support. |
+| Claude Cowork private mirror | **Partially shipped** | Requires a private mirror and org-admin follow-through; it is not a simple individual setup path. |
+| Cursor, VS Code, and generic local MCP clients | **Possible, not yet a tested first-party journey** | The local stdio server is compatible in principle. Client-specific setup, packaging, and support ownership are tracked in [#207](https://github.com/bobberrisford/affiliatemcp/issues/207). |
+| Portable browser credential setup | **Planned, not shipped** | Intended to make all network credentials available without a terminal. Its security and DMG-retirement decision is tracked in [#206](https://github.com/bobberrisford/affiliatemcp/issues/206). |
+| ChatGPT connector or remote HTTPS MCP | **Planned, not shipped** | ChatGPT cannot use this local stdio server directly. The separate remote architecture decision is tracked in [#208](https://github.com/bobberrisford/affiliatemcp/issues/208). |
+
 **Check it worked.** In a new Claude conversation, ask **"What affiliate
 networks do you have access to?"** — you should see every network you
 configured. If you registered any brands, also try **"list my brands"**.
@@ -307,16 +341,17 @@ type.
 - **"Any anomalies in the affiliate data this week?"** — week-over-week
   scan for revenue drops, reversal spikes, top-10 dropouts, dead
   programmes. Designed to run on a schedule via Claude's own scheduling.
+- **"Set up Acme's strategy and KPIs"** — bind the brand during setup, record
+  advisory context with `client-onboarding`, then reports, anomaly watches, and
+  portfolio rollups use it to frame verdicts. It never authorises a network
+  write or changes the figures.
 
 ## Networks
 
-Five network families are bundled today. Three of them — **Awin**,
-**CJ Affiliate**, and **Impact** — ship adapters for both the
-publisher and the advertiser side, so the same network appears on
-two rows. **eBay Partner Network** is publisher-only (eBay is the
-sole advertiser on its own network — no brand-side product to
-integrate with). **Rakuten Advertising** is publisher-only at v0.1;
-the brand-side has a more complex auth model and we skipped it.
+The repository currently ships 86 adapters across 72 network families. The
+breadth is real, but maturity varies; most adapters are `experimental`. Check
+the table below and [`REPORT.md`](./REPORT.md) before relying on one for
+production work.
 
 <!-- AFFILIATE_MCP_NETWORK_TABLE_START -->
 | Network | Setup time | Approval required | Supported ops | Notes |
@@ -494,7 +529,7 @@ If you registered any brand-side networks, the wizard also writes
 nickname for each brand (e.g. `acme`) to the network's brand id on
 every network the brand is bound to. Empty for the publisher-only path.
 
-There is no hosted service. There is no account to create with us.
+That local path stays free and complete; a hosted tier is planned, opt-in.
 
 ## Managing brands
 
@@ -573,8 +608,8 @@ npx affiliate-networks-mcp doctor rakuten
 ```
 
 Most failures are one of three things: an expired token, a network
-that needs your approval re-confirmed, or a credential typed with a
-trailing space. The doctor catches all three.
+that needs your approval re-confirmed, or a credential typed with a trailing
+space. The JSON also reports `clientStrategies` health; it never deletes them.
 
 ## Per-network setup notes
 
@@ -675,15 +710,14 @@ click for credentials, and common stumbling blocks:
 
 ## For the curious (or technical)
 
-`affiliate-mcp` is a Model Context Protocol server. MCP is the protocol
-Claude uses to talk to outside tools. Each configured network becomes
-a set of tool calls Claude can invoke, named
-`affiliate_<network>_<operation>` — for example
-`affiliate_awin_list_transactions` for the publisher side or
-`affiliate_impact-advertiser_get_programme_performance` for the
-brand side. Three meta-tools are always present:
-`affiliate_list_networks`, `affiliate_run_diagnostic`, and
-`affiliate_resolve_brand`.
+`affiliate-mcp` has five practical layers. **Adapters** under `src/networks/`
+handle each network's auth, API quirks, normalisation, and capability metadata.
+**MCP tools** expose typed operations such as `affiliate_awin_list_transactions`;
+six meta-tools cover listing, diagnostics, brand resolution, and advisory client
+strategy. **Skills and workflows** compose tools into affiliate jobs. **MCP
+prompts** are reusable templates and currently Awin-specific. **Setup paths**
+connect the same local server to Claude Desktop, Claude Code, Codex, Cowork, or
+another compatible local stdio MCP client.
 
 The packaged skills under [`skills/`](./skills) are the
 conversation patterns Claude follows for common requests:
@@ -728,15 +762,14 @@ If you're poking around the source, the top-level folders are:
   runs against verbatim fixtures.
 - [`examples/`](./examples) — Claude Desktop config snippet.
 
-Each folder has its own short README explaining what lives there.
-
 ## Adding a network
 
 **If you work for an affiliate network**, the canonical path is in
 [`CONTRIBUTING.md`](./CONTRIBUTING.md) under "Adopting your network".
-You can take ownership via `.github/CODEOWNERS`, claim
-`claim_status: production` directly, and cover both publisher and
-advertiser sides — whichever your API exposes.
+You can take ownership via `.github/CODEOWNERS`, verify the adapter with live
+evidence, and cover whichever sides your API exposes. Adoption does not
+automatically grant `production`; promotion follows the same evidence,
+freshness, and maintainer-review gates as every adapter.
 
 If your favourite network isn't in the table and you don't work for
 it, you can add it anyway — and you don't necessarily need to be a

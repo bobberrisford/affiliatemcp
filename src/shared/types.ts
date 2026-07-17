@@ -116,6 +116,102 @@ export interface NetworkCapabilities {
 }
 
 // ---------------------------------------------------------------------------
+// Action capability map — the DOING surface
+// ---------------------------------------------------------------------------
+// See docs/decisions/2026-06-18-action-capability-map.md (accepted). A
+// read-only, descriptive inventory of the advisement/write/gap actions adapters
+// declare. Reading a descriptor NEVER executes an operation, probes auth,
+// evaluates authority policy, or mutates state. It is the stable identifier
+// surface a future policy engine, audit log, and host annotations bind to.
+//
+// This is NOT a catalogue of reads: the seven canonical read operations stay
+// owned by the tool registry, `affiliate_list_networks`, and
+// `affiliate_run_diagnostic`, and are never redeclared here.
+
+/**
+ * How an action reaches the network.
+ * - `api`: an owned operation calls a documented endpoint.
+ * - `browser`: the adapter emits the typed handoff from the accepted
+ *   browser-handoff contract. It never means this repo drives a browser.
+ * - `none`: a known API gap with no typed route; an explicit unsupported state
+ *   that can never be dispatched.
+ */
+export type ActionChannel = 'api' | 'browser' | 'none';
+
+/**
+ * What an action does to network state.
+ * - `read`: no side effect.
+ * - `advisement`: a typed, side-effect-free operation that prepares or
+ *   validates a reviewable plan for a named write (not generic reasoning).
+ * - `write`: submits, changes, removes, approves, or sends network state.
+ */
+export type ActionEffect = 'read' | 'advisement' | 'write';
+
+/**
+ * Default authority gate WITHOUT a signed policy (descriptive only): 0 read,
+ * 1 advisement, 3 write fail-closed. Tier 2 is NEVER stored in the map — only a
+ * future deterministic policy evaluator yields it, in code at dispatch time.
+ * The literal union makes "Tier 2 is never stored" a compile-time guarantee.
+ */
+export type DefaultAuthorityTier = 0 | 1 | 3;
+
+/**
+ * Runtime readiness for a requested scope, computed from local config only.
+ * `unknown` is fail-closed (used when readiness cannot be confirmed for the
+ * scope). Readiness never asserts credential validity, upstream health, policy
+ * authority, or browser-consumer presence — those stay with
+ * `affiliate_run_diagnostic`.
+ */
+export type ActionReadiness = 'ready' | 'missing_credentials' | 'unsupported' | 'unknown';
+
+/** Static public label for a credential an action engages. */
+export interface ActionCredentialRequirement {
+  label: string;
+}
+
+/**
+ * Runtime, presence-only status for one statically declared requirement.
+ * Never carries a value, token, scope, identity, cookie, session, or account
+ * or brand identifier.
+ */
+export interface ActionCredentialStatus extends ActionCredentialRequirement {
+  configured: boolean;
+}
+
+/**
+ * STATIC metadata, owned beside the operation that implements it. The `id` is
+ * an immutable, machine-oriented identifier stable from first ship. First-network
+ * actions use a network-scoped id (e.g. `impact-advertiser.proposeContract`);
+ * a provider-neutral id is adopted only after a second network proves the same
+ * semantics, via an explicit alias/migration, never a silent rename.
+ */
+export interface ActionDescriptor {
+  id: string;
+  network: NetworkSlug;
+  channel: ActionChannel;
+  effect: ActionEffect;
+  defaultAuthorityTier: DefaultAuthorityTier;
+  /** Human description; may change without changing `id`. */
+  description: string;
+  /** Credential labels this action engages; presence reported at runtime. */
+  credentialRequirements: ActionCredentialRequirement[];
+}
+
+/**
+ * A descriptor resolved against a concrete scope at query time. The map links
+ * live-health questions to the diagnostic surface rather than restating them.
+ */
+export interface ActionMapEntry {
+  descriptor: ActionDescriptor;
+  /** Computed now, from local config. Fail-closed to `unknown`. */
+  readiness: ActionReadiness;
+  /** Presence-only credential snapshot for the requested scope. Redacted. */
+  credentials: ActionCredentialStatus[];
+  /** Where to confirm live auth/health — the map links, never restates. */
+  liveHealthVia: 'affiliate_run_diagnostic';
+}
+
+// ---------------------------------------------------------------------------
 // Domain types — programmes, transactions, clicks, links, earnings
 // ---------------------------------------------------------------------------
 
@@ -419,6 +515,50 @@ export interface NetworkErrorEnvelope {
   timestamp: string; // ISO
 }
 
+// ---------------------------------------------------------------------------
+// Browser-handoff contract
+// ---------------------------------------------------------------------------
+// See docs/decisions/2026-06-12-browser-handoff-contract.md (accepted). When a
+// network's API does not expose an operation, an adapter may emit an
+// `ApiGapResponse` rather than throw: an API gap is an expected, documented
+// condition, not a failure, so it never travels through `NetworkErrorEnvelope`.
+// The response is a normal return value, serialised as-is by the tool layer;
+// MCP clients branch on `kind`. A pure emitter never drives a browser: the
+// handoff is carried out by a human, or later by an out-of-scope consumer that
+// reads this shared shape. These types are a deliberate, reviewed exception to
+// "do not modify src/shared/", authorised by that decision.
+
+/** Network-agnostic handoff payload. One consumer reads every handoff. */
+export interface BrowserHandoff {
+  /** Plain-English goal, e.g. "Apply to programme 12345 on Impact". */
+  goal: string;
+  /** Reviewed network-owned https location; never a caller- or model-supplied arbitrary URL. */
+  startingUrl: string;
+  /** Minimum non-secret values needed for the operation. JSON-serialisable; schema is per-operation. */
+  inputs: Record<string, unknown>;
+  /** Shared default floor plus per-action additions. See decision 4. */
+  constraints: string[];
+  /** True if the flow submits, changes, or sends anything. Forces confirm-before-submit. */
+  mutates: boolean;
+  /** How the outcome is confirmed: a URL to revisit and the state to expect there. */
+  verify: { url?: string; expect: string };
+  /** Optional bounded hints (stable selectors, known steps). Never executable or open-ended instructions. */
+  hints?: string[];
+}
+
+/** Normal return value for an operation the network's API does not expose. Never thrown. */
+export interface ApiGapResponse {
+  kind: 'api-gap';
+  network: NetworkSlug;
+  operation: string;
+  /** Factual one-liner naming the gap. */
+  reason: string;
+  /** Verbatim sentence the calling agent shows the user. */
+  userMessage: string;
+  /** Null when no fallback path is known; the message invites the user to teach the gap. */
+  browserFallback: BrowserHandoff | null;
+}
+
 /**
  * Thrown by operations that an adapter does not (yet) support.
  * Surfaces as a `not_implemented` envelope; never silently empty.
@@ -576,4 +716,84 @@ export interface BrandBinding {
 export interface BrandsFile {
   version: 1;
   brands: Record<string, BrandBinding[]>;
+}
+
+// ---------------------------------------------------------------------------
+// clients/<slug>/ — per-client advisory strategy and KPI files
+// ---------------------------------------------------------------------------
+// See docs/decisions/2026-06-12-client-strategy-recording.md and the grammar
+// addendum docs/decisions/2026-06-16-client-strategy-kpi-grammar-and-tools.md.
+// These files are advisory context for reporting; they never authorise a
+// network write.
+
+/** Comparator in a KPI target line. */
+export type KpiComparator = '>=' | '<=' | '>' | '<' | '=';
+
+/**
+ * Known KPI metrics. Closed enum: an unrecognised metric is a parse error, never
+ * a guess. `revenue`/`commission` are monetary; `epc`/`aov` are monetary
+ * per-unit; `reversal_rate`/`approval_rate` are percentages; `conversions` is a
+ * count.
+ */
+export type KpiMetric =
+  | 'revenue'
+  | 'conversions'
+  | 'commission'
+  | 'epc'
+  | 'aov'
+  | 'reversal_rate'
+  | 'approval_rate';
+
+/** Period a target is measured over. */
+export type KpiPeriod = 'day' | 'week' | 'month' | 'quarter' | 'year';
+
+/**
+ * One parsed target from the fenced `kpi` block:
+ * `metric: comparator value [unit] [per period]`.
+ * `unit` is a currency code for monetary metrics, `%` for rate metrics, or
+ * undefined when omitted. `period` is undefined when the line names no period.
+ */
+export interface KpiTarget {
+  metric: KpiMetric;
+  comparator: KpiComparator;
+  value: number;
+  unit?: string;
+  period?: KpiPeriod;
+}
+
+/**
+ * A line the parser could not accept. Carries the verbatim source line and a
+ * human-readable reason. Parse errors are reported and excluded from verdicts;
+ * the reader never guesses a malformed line's meaning.
+ */
+export interface KpiParseError {
+  line: number;
+  text: string;
+  reason: string;
+}
+
+/** Result of parsing the fenced `kpi` block in a `KPI.md` file. */
+export interface KpiParseResult {
+  /** Present when a `version:` marker was found and recognised. */
+  version?: number;
+  targets: KpiTarget[];
+  errors: KpiParseError[];
+}
+
+/** A single client-strategy markdown file (`Strategy.md` or `KPI.md`). */
+export interface ClientStrategyFile {
+  present: boolean;
+  markdown?: string;
+}
+
+/**
+ * The advisory strategy context for one client, keyed by the brand slug from
+ * `brands.json`. `orphan` is true when a `clients/<slug>/` directory exists but
+ * the slug has no brand binding. Missing files are normal, not an error.
+ */
+export interface ClientStrategy {
+  brand: string;
+  orphan: boolean;
+  strategy: ClientStrategyFile;
+  kpi: ClientStrategyFile & { parsed?: KpiParseResult };
 }

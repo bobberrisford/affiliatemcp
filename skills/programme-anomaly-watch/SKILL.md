@@ -15,9 +15,21 @@ Call `affiliate_resolve_brand` with no arguments. The response is an array of `{
 
 If the array is empty, say "No brands registered — nothing to watch" and stop. Do not pad.
 
+## Step 1b - load recorded plans
+
+Call `affiliate_list_client_strategies` once to see which registered brands have a plan recorded (`hasStrategy` / `hasKpi`) and whether any strategy directories are orphaned. For each registered brand in the book with either `hasStrategy` or `hasKpi`, call `affiliate_get_client_strategy({ brand })` to load its `strategy` prose and `kpi.targets`. Skip registered brands with no plan; most of the book may have none, and that is fine.
+
+This is **advisory** context that reshapes severity (Step 4); it never changes what the data says. Report any `kpi.parseErrors` verbatim and ignore those targets. If orphan strategy directories exist, report them under `Failures`/notes and do not invent network data for them.
+
 ## Step 2 — pick the windows
 
 Default period: the last 7 days, ending today. Comparison window: the 7 days immediately prior. Express all dates as ISO `YYYY-MM-DD`. Honour explicit user overrides ("this month vs last month", named dates).
+
+## Step 2b — use the snapshot for the current-window health signal
+
+Before fanning out, you may call `affiliate_build_brand_snapshot({ brand })` per brand for the current window (the 7-day default is `last7d`). Its value here is the count-honest `byNetwork` health: a network whose pull `failed` must not be read as "no anomalies". Treat a `failed` network exactly like a Step 3 binding failure — report it under `Failures` and say its absence of anomalies is not safe to assume.
+
+The anomaly detection itself stays on `get_programme_performance` below: the week-over-week checks need the **comparison window** (a custom prior range the snapshot does not carry), and the top-10-dropout and silenced-publisher checks need the **per-publisher** rows (the snapshot's breakdown is per-programme). So the snapshot informs health, not the anomaly maths.
 
 ## Step 3 — fan out per binding
 
@@ -39,7 +51,17 @@ Walk each `(brand, network)` binding and emit an anomaly for any of:
 - **Publisher silenced**: a publisher with non-zero `conversions` in the comparison window has zero `conversions` in the current window (a 100% drop). Name the publisher.
 - **Dead programme**: the binding produced zero `clicks` in the current window. Likely a tracking break or a dead link.
 
+Also emit an anomaly for a **KPI threshold breach** where a brand has a compatible target: `reversal_rate` over a `<=` or `<` limit, or `approval_rate` under a `>=` or `>` floor, this window. Quote the actual rate and the target. For unsupported comparators or unavailable metrics, say the target is unsupported for this anomaly scan and exclude it rather than guessing.
+
 Compute severity as the absolute current-period revenue at risk: for a revenue drop, the lost gross sale; for a silenced publisher, their comparison-period gross sale; for a dead programme, the comparison-period gross sale of the whole binding. Use the per-row `currency` — do not normalise.
+
+**Reshape severity by the recorded plan** (when one exists for the brand):
+
+- A drop in a partner type the brand's `Strategy.md` **deprioritised** can be lower concern only when the row data or publisher name makes that partner type evident. Down-rank it, keep the anomaly visible, and say why ("down 30%, but coupon is a deprioritised channel for this brand"). If partner type is not evident, do not guess.
+- A drop in a **preferred / priority** partner type, or anything that crosses a recorded **escalation threshold** ("flag any drop over 20%"), is urgent. Up-rank it within the anomaly list while still quoting the underlying current and comparison figures.
+- A KPI threshold breach is ranked by the recorded limit, not a generic baseline.
+
+With no plan recorded for a brand, rank it exactly as today on raw revenue at risk. Absence of a plan is never itself an anomaly.
 
 ## Step 5 — present the report
 
@@ -57,5 +79,7 @@ This skill is designed to be useful when run on a schedule. When invoked by Clau
 
 - Never call something an anomaly without quoting both the current and comparison figures.
 - Currency: respect the per-row `currency`. If a brand spans currencies, compute anomalies per currency.
-- Do not invent thresholds. The thresholds in step 4 are the contract — if the user wants different ones, ask.
+- Do not invent thresholds. The thresholds in step 4 are the contract; if the user wants different ones, ask. A recorded KPI target adds a brand-specific threshold; it never loosens the step-4 ones.
+- Recorded strategy and KPIs are advisory: they reshape severity and add KPI-breach checks, but never authorise an action and never change the underlying figures.
+- A KPI target on a metric a bound network cannot supply is reported as unsupported for that network and excluded from anomaly ranking; never zero-fill it.
 - Pair with `programme-performance-report` when the user wants the full per-publisher detail behind an anomaly.

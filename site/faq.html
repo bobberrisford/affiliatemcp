@@ -11,11 +11,15 @@
 <meta property="og:title" content="affiliate-mcp — faq">
 <meta property="og:description" content="Is it free? Is it safe? Which AI do I need? Which networks? Do I need to code? Answers to the common questions.">
 <meta property="og:url" content="https://agenticaffiliate.ai/faq.html">
-<meta property="og:image" content="https://agenticaffiliate.ai/og.svg">
+<meta property="og:image" content="https://agenticaffiliate.ai/og.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="agentic affiliate -- automate the affiliate grind">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="affiliate-mcp — faq">
 <meta name="twitter:description" content="Is it free? Is it safe? Which AI do I need? Which networks? Answers to the common questions.">
-<meta name="twitter:image" content="https://agenticaffiliate.ai/og.svg">
+<meta name="twitter:image" content="https://agenticaffiliate.ai/og.png">
 <style>
 @font-face{font-family:'Bricolage Grotesque';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/bricolage-grotesque-700.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
 @font-face{font-family:'Bricolage Grotesque';font-style:normal;font-weight:800;font-display:swap;src:url(fonts/bricolage-grotesque-800.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
@@ -54,9 +58,9 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
 <body data-page="">
 
 <nav class="nav"><div class="wrap">
-  <a class="brand" href="index.html"><svg viewBox="0 0 120 120"><rect width="120" height="120" rx="14" fill="#2B2BFF"></rect><polyline points="34,38 58,60 34,82" fill="none" stroke="#fff" stroke-width="13"></polyline><rect x="66" y="68" width="24" height="14" fill="#fff"></rect></svg><span class="wm">affiliate<span class="mcp">mcp</span></span></a>
-  <div class="links"><a href="index.html#how">how it works</a><a href="networks.html">networks</a><a href="adopt.html">adopt your adapter</a><a href="what-you-can-ask.html">what you can ask</a><a href="mission.html">mission</a></div>
-  <div class="right"><a class="btn d sm" href="https://github.com/bobberrisford/affiliatemcp">★ github</a><a class="btn p sm" href="get-started.html">npx setup ▸</a></div>
+  <a class="brand" href="index.html"><svg viewBox="0 0 120 120"><rect width="120" height="120" rx="14" fill="#2B2BFF"></rect><polyline points="34,38 58,60 34,82" fill="none" stroke="#fff" stroke-width="13"></polyline><rect x="66" y="68" width="24" height="14" fill="#fff"></rect></svg><span class="wm">agentic <span class="mcp">affiliate</span></span></a>
+  <div class="links"><a href="index.html#how">how it works</a><a href="networks.html">networks</a><a href="adopt.html">adopt your adapter</a><a href="what-you-can-ask.html">what you can ask</a><a href="pricing.html">pricing</a><a href="mission.html">mission</a></div>
+  <div class="right"><a class="btn d sm" href="https://github.com/bobberrisford/affiliatemcp">★ github</a><a class="btn p sm" href="get-started.html">get started ▸</a></div>
 </div></nav>
 
 <header class="phead"><div class="wrap">
@@ -77,15 +81,15 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
     </details>
     <details>
       <summary><span class="pm">+</span>do i need to know how to code?</summary>
-      <div class="ans"><p><b>No.</b> You do not need to know what an API is. If you can copy and paste one line at a time, you can set it up — the wizard walks you through each network. See <a href="get-started.html" style="border-bottom:2px solid var(--blue)">get started</a>.</p></div>
+      <div class="ans"><p><b>No.</b> The primary non-technical path is the Claude Desktop <code>.mcpb</code>, with no Node.js or terminal required. The complete setup path for every network uses the technical CLI track. See <a href="get-started.html" style="border-bottom:2px solid var(--blue)">get started</a>.</p></div>
     </details>
     <details>
       <summary><span class="pm">+</span>which ai do i need?</summary>
-      <div class="ans"><p>Claude Desktop, Claude Code, or Codex. The setup wizard connects whichever you use. You ask your questions right inside that app.</p></div>
+      <div class="ans"><p>Claude Desktop, Claude Code, and Codex have shipped setup paths. Claude Desktop <code>.mcpb</code> is the primary non-technical path. Cursor, VS Code, and generic local MCP clients are possible through stdio but do not yet have a tested first-party setup journey here. ChatGPT requires a remote HTTPS MCP path, which is planned but not shipped.</p></div>
     </details>
     <details>
       <summary><span class="pm">+</span>is the macos app where i use it?</summary>
-      <div class="ans"><p><b>No.</b> The macOS app is a setup tool for Claude Desktop users who would rather not use a terminal. It stores your network API keys locally on your machine and connects Claude Desktop, then quits. The conversations happen in Claude Desktop, Claude Code, or Codex. If you use Claude Code, you don't need it: just ask Claude Code to install the affiliate-mcp plugin.</p></div>
+      <div class="ans"><p><b>No.</b> The standalone Electron/DMG setup app is a fixes-only compatibility fallback for existing macOS users. New non-technical Claude Desktop users should install the host-native <code>.mcpb</code>. The conversations happen in Claude Desktop, Claude Code, or Codex.</p></div>
     </details>
     <details>
       <summary><span class="pm">+</span>which networks does it support?</summary>
@@ -97,7 +101,7 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
     </details>
     <details>
       <summary><span class="pm">+</span>is my data sent anywhere?</summary>
-      <div class="ans"><p>Your keys and affiliate data stay on your machine, apart from requests sent directly to the networks you configure. Optional anonymous usage telemetry is off by default and is sent only after you explicitly opt in. There is no hosted account. Full detail is on the <a href="privacy.html" style="border-bottom:2px solid var(--blue)">privacy page</a>.</p></div>
+      <div class="ans"><p>Your keys and affiliate data stay on your machine, apart from requests sent directly to the networks you configure. Optional anonymous usage telemetry is off by default and is sent only after you explicitly opt in. The local server keeps no hosted account; the optional <a href="hosted.html" style="border-bottom:2px solid var(--blue)">hosted tier</a> is a separate product that stores your keys encrypted on our servers to run reports while your machine is off. Full detail is on the <a href="privacy.html" style="border-bottom:2px solid var(--blue)">privacy page</a>.</p></div>
     </details>
     <details>
       <summary><span class="pm">+</span>who built this?</summary>
@@ -111,9 +115,9 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
 </div></section>
 
 <footer class="foot"><div class="wrap">
-  <div class="big">affiliate<span class="mcp">mcp</span></div>
+  <div class="big">agentic <span class="mcp">affiliate</span></div>
   <div class="stamps"><span class="chip acid">FREE &amp; OPEN</span><span class="chip">MIT LICENCE</span><span class="chip">LOCAL-FIRST</span><span class="chip mag">OPT-IN ONLY</span><span class="chip">UK ENGLISH</span></div>
-  <div class="rows"><div class="cols"><a href="get-started.html">get started</a><a href="networks.html">networks</a><a href="adopt.html">adopt your adapter</a><a href="contribute.html">contribute</a><a href="faq.html">faq</a><a href="privacy.html">privacy</a><a href="mission.html">manifesto</a><a href="https://github.com/bobberrisford/affiliatemcp">github</a></div>
+  <div class="rows"><div class="cols"><a href="get-started.html">get started</a><a href="networks.html">networks</a><a href="adopt.html">adopt your adapter</a><a href="contribute.html">contribute</a><a href="faq.html">faq</a><a href="privacy.html">privacy</a><a href="security.html">security</a><a href="mission.html">manifesto</a><a href="https://github.com/bobberrisford/affiliatemcp">github</a></div>
   <div style="font-family:var(--font-mono);font-size:.74rem;color:var(--fg-invert-mut)">built from the open-source repo · free · open · yours</div></div>
 </div></footer>
 

@@ -20,13 +20,19 @@ import path from 'node:path';
 import {
   connectClaudeDesktop,
   discoverBrands,
+  getEarnings,
+  getProgrammePerformance,
+  listClicks,
+  listConfiguredNetworks,
   listNetworks,
+  listTransactions,
   saveBrands,
   saveEnv,
   setupSteps,
   validateField,
   verifyAuth,
 } from '../../src/core/facade.js';
+import { NetworkError } from '../../src/shared/errors.js';
 import {
   buildAffiliateEntryValue,
   AFFILIATE_ENTRY_VALUE,
@@ -35,9 +41,12 @@ import { _clearRegistry, registerAdapter } from '../../src/shared/registry.js';
 import { NotImplementedError } from '../../src/shared/types.js';
 import type {
   DiscoveredBrand,
+  EarningsSummary,
   NetworkAdapter,
   NetworkMeta,
+  ProgrammePerformanceRow,
   SetupStep,
+  Transaction,
 } from '../../src/shared/types.js';
 import { makeFakeAdapter } from '../cli/fakes.js';
 
@@ -450,5 +459,163 @@ describe('buildAffiliateEntryValue', () => {
       command: AFFILIATE_ENTRY_VALUE.command,
       args: [...AFFILIATE_ENTRY_VALUE.args],
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// read-only performance data (the desktop "data locker")
+// ---------------------------------------------------------------------------
+
+describe('performance data reads', () => {
+  const sampleSummary = (slug: string): EarningsSummary => ({
+    network: slug,
+    totalEarnings: 100,
+    currency: 'GBP',
+    byProgramme: [],
+    byStatus: { pending: 0, approved: 100, reversed: 0, paid: 0, other: 0, currency: 'GBP' },
+    periodFrom: '2026-01-01',
+    periodTo: '2026-01-31',
+  });
+
+  const sampleTxn = (slug: string): Transaction => ({
+    id: 't1',
+    network: slug,
+    programmeId: 'p1',
+    programmeName: 'Acme',
+    status: 'approved',
+    amount: 50,
+    currency: 'GBP',
+    commission: 5,
+    dateConverted: '2026-01-10',
+    ageDays: 10,
+    rawNetworkData: { raw: true },
+  });
+
+  it('getEarnings returns ok+data for a publisher adapter', async () => {
+    const base = makeFakeAdapter({ slug: 'pub-a', name: 'Pub A', steps: [] });
+    registerAdapter({ ...base, getEarningsSummary: async () => sampleSummary('pub-a') });
+    // A closed past window exercises the cache-key branch; the cache is off in
+    // tests (AFFILIATE_MCP_CACHE unset) so withCache passes straight through.
+    const res = await getEarnings('pub-a', { from: '2026-01-01', to: '2026-01-31' });
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.data.totalEarnings).toBe(100);
+  });
+
+  it('listTransactions returns the adapter rows', async () => {
+    const base = makeFakeAdapter({ slug: 'pub-b', name: 'Pub B', steps: [] });
+    registerAdapter({ ...base, listTransactions: async () => [sampleTxn('pub-b')] });
+    const res = await listTransactions('pub-b');
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data).toHaveLength(1);
+      expect(res.data[0]?.commission).toBe(5);
+    }
+  });
+
+  it('returns a config_error envelope for an unknown network', async () => {
+    const res = await listClicks('does-not-exist');
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.error.type).toBe('config_error');
+      expect(res.error.network).toBe('does-not-exist');
+      expect(res.error.operation).toBe('listClicks');
+    }
+  });
+
+  it('surfaces a thrown NetworkError envelope verbatim (never faked into success)', async () => {
+    const base = makeFakeAdapter({ slug: 'pub-c', name: 'Pub C', steps: [] });
+    registerAdapter({
+      ...base,
+      listTransactions: async () => {
+        throw new NetworkError({
+          type: 'auth_error',
+          network: 'pub-c',
+          operation: 'listTransactions',
+          message: 'bad token',
+          timestamp: '2026-01-01T00:00:00.000Z',
+        });
+      },
+    });
+    const res = await listTransactions('pub-c');
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.error.type).toBe('auth_error');
+      expect(res.error.message).toBe('bad token');
+    }
+  });
+
+  it('requires a brand for an advertiser-side network', async () => {
+    registerAdapter(
+      makeMultiBrandAdapter({ slug: 'adv-a', name: 'Adv A', listBrands: async () => [] }),
+    );
+    const res = await getProgrammePerformance('adv-a', {});
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.error.type).toBe('config_error');
+      expect(res.error.message).toMatch(/brand is required/i);
+    }
+  });
+
+  it('returns config_error for an unregistered brand (BrandNotRegistered)', async () => {
+    registerAdapter(
+      makeMultiBrandAdapter({ slug: 'adv-b', name: 'Adv B', listBrands: async () => [] }),
+    );
+    const res = await getProgrammePerformance('adv-b', {}, 'ghost');
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error.type).toBe('config_error');
+  });
+
+  it('resolves a registered brand and threads the networkBrandId into ctx', async () => {
+    let seenBrandId: string | undefined;
+    const base = makeMultiBrandAdapter({ slug: 'adv-c', name: 'Adv C', listBrands: async () => [] });
+    const row: ProgrammePerformanceRow = {
+      date: '2026-01',
+      publisherId: 'pub',
+      publisherName: 'P',
+      clicks: 1,
+      conversions: 0,
+      grossSale: 0,
+      commission: 0,
+      currency: 'GBP',
+      status: 'pending',
+      rawNetworkData: {},
+    };
+    registerAdapter({
+      ...base,
+      getProgrammePerformance: async (_q, ctx) => {
+        seenBrandId = ctx?.networkBrandId;
+        return [row];
+      },
+    });
+    await saveBrands('adv-c', [{ networkBrandId: 'SID-1', slug: 'acme' }]);
+    const res = await getProgrammePerformance('adv-c', {}, 'acme');
+    expect(res.ok).toBe(true);
+    expect(seenBrandId).toBe('SID-1');
+  });
+
+  it('returns not_implemented when the adapter lacks getProgrammePerformance', async () => {
+    registerAdapter(makeFakeAdapter({ slug: 'pub-d', name: 'Pub D', steps: [] }));
+    const res = await getProgrammePerformance('pub-d', {});
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error.type).toBe('not_implemented');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// listConfiguredNetworks (the data-locker picker source)
+// ---------------------------------------------------------------------------
+
+describe('listConfiguredNetworks', () => {
+  it('lists only networks whose setup-step credentials are all present', () => {
+    registerAdapter(
+      makeFakeAdapter({ slug: 'has-creds', name: 'Has', steps: [step({ field: 'HAS_CREDS_TOKEN' })] }),
+    );
+    registerAdapter(
+      makeFakeAdapter({ slug: 'no-creds', name: 'No', steps: [step({ field: 'NO_CREDS_TOKEN' })] }),
+    );
+    process.env['HAS_CREDS_TOKEN'] = 'present';
+    const slugs = listConfiguredNetworks().map((n) => n.slug);
+    expect(slugs).toContain('has-creds');
+    expect(slugs).not.toContain('no-creds');
   });
 });

@@ -3,6 +3,11 @@ name: Publish
 on:
   push:
     branches: [main]
+  # Manual re-run path: the publish job is idempotent (it skips when the
+  # version is already on npm), so a maintainer can safely re-trigger a
+  # publish that was cancelled or lost to a runner outage without needing
+  # a new push to main.
+  workflow_dispatch:
 
 permissions:
   contents: write # create the GitHub release + tag
@@ -19,7 +24,9 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
       # OIDC trusted publishing requires npm >= 11.5.1; Node 20 ships npm 10.x.
-      - run: npm install -g npm@latest
+      # Pinned to major 11: npm 12 requires Node >= 22, so `npm@latest` broke
+      # every publish run on this Node 20 workflow when npm 12 shipped.
+      - run: npm install -g npm@11
       - run: npm ci
       - name: Decide whether this version needs publishing
         id: check
@@ -61,4 +68,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="$(node -p "require('./package.json').version")"
+          # Versioned asset: archival, and lets anyone pin a specific release.
           gh release upload "v$VERSION" ".artifacts/affiliate-networks-mcp-$VERSION.mcpb" --clobber
+          # Stable-named copy: the marketing site links to
+          # releases/latest/download/affiliate-networks-mcp.mcpb, which always
+          # resolves to the newest release, so the download link never goes stale.
+          cp ".artifacts/affiliate-networks-mcp-$VERSION.mcpb" ".artifacts/affiliate-networks-mcp.mcpb"
+          gh release upload "v$VERSION" ".artifacts/affiliate-networks-mcp.mcpb" --clobber

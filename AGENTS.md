@@ -8,8 +8,11 @@ This file orients AI coding agents (Claude Code and equivalents) opening
 `affiliate-mcp` is a Model Context Protocol server with 86 publisher-side and
 advertiser-side adapters across 72 affiliate-network families. It serves
 MCP-capable clients including Claude Desktop, Claude Code, and Codex. The user
-brings their own API credentials; the server is local-only, with no hosted
-version. Optional
+brings their own API credentials; the server runs locally, and the local
+product is free and complete. A hosted tier is planned, pre-launch, governed
+by the accepted custody record
+`docs/decisions/2026-07-12-hosted-credential-custody.md`; do not build hosted
+surfaces beyond what that record and the technical roadmap authorise. Optional
 telemetry is opt-in, off by default, and aggregate-only; it conforms to
 `PRIVACY.md` and the decision record
 `docs/decisions/2026-06-13-privacy-first-telemetry.md`. UK English throughout,
@@ -187,10 +190,37 @@ generated names that do not explain the work.
 
 Start each change from one user outcome. Before implementation, identify:
 
+- the intended customer journey and which target cohort benefits;
 - the architectural layer that owns the behaviour;
 - any PRs or decisions it depends on;
 - any public MCP, domain, CLI, or client contract it changes;
 - the failure modes and deliberately excluded scope.
+
+Use the repo-local `delivery-steward` skill for implementation, documentation,
+and delivery work. It is the operational workflow for turning one user outcome
+into a small, validated, reviewable change. Use `prepare-for-review` before
+opening, updating, or requesting review on a PR. Use `review-pr` for independent
+review and re-review.
+
+For routine implementation choices, inspect the owning files, follow existing
+patterns, make a sensible decision, and record it briefly in the final summary
+or PR brief. Escalate only when the work needs a genuinely product-sensitive,
+architecture-sensitive, security-sensitive, irreversible, or public-contract
+decision. When escalating, recommend a direction, explain the material
+trade-offs, and propose the next step.
+
+Rob (`@bobberrisford`) is the current maintainer and default decision owner for
+affiliate-domain truth, product direction, architecture, privacy, security,
+deployment, and cross-client trade-offs. Agents implement, validate, review,
+summarise, and recommend. They may make routine implementation choices, but
+major product, architecture, security, privacy, deployment, public-contract, or
+write-authority decisions require Rob's deliberate acceptance unless another
+maintainer or CODEOWNER is explicitly assigned.
+
+Project assumptions may evolve as requirements, usage evidence, architecture,
+or product direction change. Question an assumption when that change materially
+affects the current outcome or contract. Do not repeatedly challenge settled
+assumptions during routine work without new evidence.
 
 Keep provider-neutral domain behaviour in shared core and MCP layers. Claude,
 Codex, Desktop, CLI, and other client integrations should remain thin clients
@@ -201,8 +231,26 @@ Create and merge a small decision PR before implementation when the work has an
 unresolved architecture, public-contract, security, payment, licensing,
 action-execution, or cross-client decision. Record the decision under
 `docs/decisions/YYYY-MM-DD-<slug>.md` with context, the chosen direction,
-rejected alternatives, consequences, and implementation follow-ups. Keep
-dependent implementation PRs draft until the decision or foundation PR merges.
+rejected alternatives, consequences, and implementation follow-ups. Until that
+decision merges, limit dependent work to discovery, interface sketches, and
+explicitly disposable prototypes. Do not build production foundations or
+implementation PRs against the unresolved direction. Draft status controls
+review state; it does not authorise speculative implementation.
+
+For a feature that needs multiple PRs, create one concise workstream brief in
+the first PR or tracking issue. Record the user outcome, dependency graph,
+owning domains, risk gates, acceptance proof per PR, and stop conditions. Land
+work in this order:
+
+1. decision PR for unresolved governance or contracts;
+2. the smallest concrete foundation with its first real consumer;
+3. stacked vertical implementation slices, each independently coherent;
+4. integration proof and any cross-slice documentation that could not stay
+   with the slice it validates.
+
+After a parent merges, retarget its child to `main`, refresh it once, rerun the
+relevant proof, and inspect the complete resulting diff before promotion. Do
+not repeatedly merge `main` into every queued branch.
 
 Split a PR when it combines independent user outcomes or separable high-risk
 domains. Tests, directly related docs, fixtures, and generated artefacts may
@@ -210,11 +258,26 @@ stay with their feature. A PR over 1,000 additions or 20 changed files is not
 automatically rejected, but its description must explain why splitting would
 make the change harder to understand or validate.
 
-Use the repo-local `prepare-for-review` skill before opening, updating, or
-requesting review on a PR. Use the repo-local `review-pr` skill for independent
-review and re-review. Both are available to Claude Code and Codex. Only one
-PR at a time may actively await `@offmann`'s review. Other work may continue in
-draft. A PR is review-ready only when:
+Use risk-based work-in-progress lanes:
+
+- `active-risk`: at most one review-ready PR awaiting deliberate maintainer
+  judgement for architecture, security, privacy, public-contract, write,
+  deployment, release, or cross-client impact;
+- `routine`: at most two concurrent, decision-complete PRs in disjoint owning
+  domains that preserve public contracts and do not need maintainer risk
+  review;
+- `exploration`: discovery or explicitly disposable prototype work behind an
+  unresolved decision, never production implementation;
+- `blocked`, `queued-risk`, `merge-queued`, and `close-candidate`: work waiting
+  on a named dependency, ordered for later review, approved and awaiting merge,
+  or proposed for closure.
+
+File overlap is only one conflict signal. PRs share a lane and merge order when
+they affect the same owning module, public contract, decision, migration,
+generated authority, release surface, or customer journey. Decision and
+foundation PRs that unblock other work take priority in the risk lane.
+
+A PR is review-ready only when:
 
 - it is conflict-free and based on its intended foundation;
 - CI is green;
@@ -228,13 +291,56 @@ repair them before requesting review. Reviewers may repair or rerun CI when
 explicitly asked to unblock the PR, but should keep the fix on the existing
 branch and report the exact proof.
 
-Request `@offmann` for changes involving shared/public contracts,
-cross-network semantics, authentication or security, write actions or consent,
-payments or licensing, deployment architecture, cross-client architecture, or
-product-direction decisions with implementation consequences. Routine isolated
-changes do not require this risk-based review gate. A PR author must never be
-requested to review their own PR; when `@offmann` authors a risk-based change,
-request the maintainer instead.
+Risk-based review is required for changes involving shared/public contracts,
+cross-network semantics, authentication or security, privacy, write actions or
+consent, payments or licensing, releases, deployment architecture, cross-client
+architecture, or product-direction decisions with implementation consequences.
+Routine isolated changes do not require this risk-based review gate.
+
+When Rob authors a risk-based PR, do not request `@offmann`. Use an independent
+agent review as the backstop: a fresh Claude/Codex review should inspect the
+complete diff, accepted decisions, changed tests, and CI before Rob decides
+whether to merge. If another human maintainer or CODEOWNER is available and
+owns the affected area, request them; otherwise Rob may self-review and
+self-merge after documenting the evidence and any accepted risk. External
+contributor PRs still require maintainer or CODEOWNER review before merge.
+
+The repository currently operates at maintainer-led, agent-assisted autonomy:
+agents may implement, validate, repair, review, push, and recommend a merge.
+Agents must not merge unless Rob or another maintainer explicitly asks them to
+merge that specific PR. Rob may merge his own PRs when the readiness gates are
+met, CI is green, the complete diff has been inspected, and any risk-based
+decision has been deliberately accepted. Broader autonomous merge remains a
+separate, evidence-gated policy change. See
+`docs/decisions/2026-06-26-rob-led-delivery-system.md` for the current
+maintainer-led model and
+`docs/decisions/2026-06-20-risk-based-delivery-system.md` for historical
+context and the autonomy ladder.
+
+Treat delivery as a learning system. At the end of meaningful implementation,
+review, or coordination work, briefly consider whether the interaction exposed
+a repeated failure mode, unnecessary hand-off, missing guardrail, noisy rule,
+or unusually effective pattern. When there is concrete evidence and a useful
+change to suggest, add a short `Delivery-system learning` side note to the final
+report or PR brief: observation, evidence, and the smallest proposed update.
+This is encouraged, not required. Do not manufacture a lesson, repeat generic
+process advice, or add the note on every task. Do not mix governance changes
+into a feature PR; record or propose them separately for human acceptance.
+
+### Agent skill system
+
+- `AGENTS.md` is the always-on repository contract. Keep invariants and human
+  governance here.
+- `.claude/skills/` is the canonical source for repo-local coding-agent
+  workflows. `.agents/skills/` exposes the shared delivery and review skills to
+  Codex through relative symlinks; do not create copied mirrors.
+- Use `delivery-steward` for implementation, docs, and delivery progress;
+  `prepare-for-review` for PR readiness and handoff; `review-pr` for independent
+  review; and `contribute` for the specialised external-contributor flows it
+  lists.
+- Evolve an existing skill when its responsibility already fits. Add or split a
+  skill only when the workflow has a distinct trigger and operational steps.
+  Update the relevant structural tests when changing the system.
 
 ## Conventions
 
@@ -331,10 +437,16 @@ CLI entry points (built or via `npm run dev`):
 
 ## What not to do
 
-- No hosted version. No OAuth proxy. The user's credentials and affiliate data
-  never leave their machine. Telemetry, where enabled, must stay opt-in (off by
-  default), aggregate-only, and conform exactly to `PRIVACY.md`: never
-  credentials, affiliate data, or account identifiers.
+- No hosted custody beyond the accepted contract. On the local path, the
+  user's credentials and affiliate data never leave their machine. Hosted work
+  is authorised only by
+  `docs/decisions/2026-07-12-hosted-credential-custody.md`: bring-your-own-key,
+  encrypted at rest, decrypted per request, serving only the key's owner,
+  opt-in, with local staying free and complete. No OAuth proxy and no other
+  hosted surface without its own accepted decision record. Telemetry, where
+  enabled, must stay opt-in (off by default), aggregate-only, and conform
+  exactly to `PRIVACY.md`: never credentials, affiliate data, or account
+  identifiers.
 - Do not modify files under `src/shared/` unless extending the contract is the
   only path forward. Open an issue first.
 - Do not modify another network's adapter. Each network owns its directory.
@@ -358,8 +470,11 @@ CLI entry points (built or via `npm run dev`):
 
 - Each registered adapter exposes its supported canonical operations as
   `affiliate_<network>_<snake_case_op>` tools.
-- Three meta-tools are always present: `affiliate_list_networks`,
-  `affiliate_run_diagnostic`, and `affiliate_resolve_brand`.
+- Seven meta-tools are always present: `affiliate_list_networks`,
+  `affiliate_run_diagnostic`, `affiliate_resolve_brand`, the advisory
+  client-strategy tools `affiliate_get_client_strategy`,
+  `affiliate_set_client_strategy`, and `affiliate_list_client_strategies`, and
+  the action capability map `affiliate_list_actions`.
 - `NetworkErrorEnvelope` shape is stable; downstream MCP clients depend on its
   field names.
 - Adding an adapter registers its supported tools automatically; do not

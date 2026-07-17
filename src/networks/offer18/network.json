@@ -11,7 +11,8 @@
     "Offer18 is a tenant network engine: there is no fixed base URL. The real base is the per-tenant instance host supplied via OFFER18_BASE_URL.",
     "Amount unit assumed to be major currency units (e.g. 5.00 = five units of the reported currency); not confirmed against a live tenant.",
     "Click-level data is not exposed as a distinct affiliate endpoint; listClicks is unsupported.",
-    "Tracking links are not deterministically constructible from the affiliate API; generateTrackingLink is unsupported."
+    "Tracking links are not deterministically constructible from the affiliate API; generateTrackingLink is unsupported.",
+    "listProgrammes paginates /api/af/offers via the page parameter: with no limit it pulls every page (stopping on the reported total, a short or empty page, or a repeated page), capped at MAX_PAGES with a logged warning rather than a silent truncation; a caller-supplied limit fetches a single page as before."
   ],
   "claim_status": "experimental",
   "adapter_version": "0.1.0",

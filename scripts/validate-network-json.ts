@@ -24,6 +24,8 @@ import { getAdapter } from '../src/shared/registry.js';
 // (`getAdapter(slug)`) below actually finds adapters at runtime.
 import '../src/networks/index.js';
 
+export const PROMOTED_ADAPTER_FRESHNESS_DAYS = 180;
+
 export const NetworkJsonSchema = z
   .object({
     slug: z.string().regex(/^[a-z0-9-]+$/, 'lowercase, kebab-case'),
@@ -54,7 +56,54 @@ export interface SchemaValidationOutcome {
   manifest?: NetworkJson;
 }
 
-export function validateManifest(manifestPath: string): SchemaValidationOutcome {
+function parseIsoDateOnly(value: string): Date | undefined {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return undefined;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return undefined;
+  }
+  return date;
+}
+
+function utcDateOnly(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+export function validatePromotionFreshness(
+  manifest: NetworkJson,
+  now: Date = new Date(),
+): string[] {
+  const verified = parseIsoDateOnly(manifest.last_verified);
+  if (!verified) return ['last_verified: invalid calendar date'];
+  if (manifest.claim_status !== 'partial' && manifest.claim_status !== 'production') return [];
+
+  const today = utcDateOnly(now);
+  const ageDays = Math.floor((today.getTime() - verified.getTime()) / 86_400_000);
+  if (ageDays < 0) {
+    return [
+      `last_verified: ${manifest.claim_status} adapters cannot use a future verification date (${manifest.last_verified})`,
+    ];
+  }
+  if (ageDays > PROMOTED_ADAPTER_FRESHNESS_DAYS) {
+    return [
+      `last_verified: ${manifest.claim_status} adapters require live verification within ${PROMOTED_ADAPTER_FRESHNESS_DAYS} days; ${manifest.last_verified} is ${ageDays} days old`,
+    ];
+  }
+  return [];
+}
+
+export function validateManifest(
+  manifestPath: string,
+  options: { now?: Date } = {},
+): SchemaValidationOutcome {
   if (!existsSync(manifestPath)) {
     return { ok: false, manifestPath, errors: [`network.json not found at ${manifestPath}`] };
   }
@@ -74,6 +123,14 @@ export function validateManifest(manifestPath: string): SchemaValidationOutcome 
       ok: false,
       manifestPath,
       errors: result.error.issues.map((i) => `${i.path.join('.') || '(root)'}: ${i.message}`),
+    };
+  }
+  const freshnessErrors = validatePromotionFreshness(result.data, options.now);
+  if (freshnessErrors.length > 0) {
+    return {
+      ok: false,
+      manifestPath,
+      errors: freshnessErrors,
     };
   }
   return { ok: true, manifestPath, manifest: result.data };

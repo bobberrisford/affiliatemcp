@@ -5,13 +5,13 @@
     "url": "https://github.com/bobberrisford"
   },
   "metadata": {
-    "description": "Affiliate-network adapters for Claude — publisher and advertiser side."
+    "description": "Affiliate-network data for Claude through a local MCP server with 80+ publisher and advertiser-side adapters."
   },
   "plugins": [
     {
       "name": "affiliate-networks-mcp",
       "source": "./",
-      "description": "Chat with your affiliate-network data in Claude. Awin, CJ, eBay Partner Network, Impact, Rakuten, Skimlinks, Partnerize, Tradedoubler, Sovrn Commerce, Everflow and mrge (newer networks experimental).",
+      "description": "Chat with your affiliate-network data in Claude through a local MCP server. 80+ publisher and advertiser-side adapters, most experimental.",
       "category": "data",
       "tags": ["affiliate", "mcp", "awin", "cj", "impact", "rakuten", "ebay", "skimlinks", "partnerize", "tradedoubler", "sovrn", "everflow", "mrge"]
     }

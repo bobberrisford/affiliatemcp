@@ -10,6 +10,7 @@
   "known_limitations": [
     "Adapter built from public API documentation; not yet verified against a live account.",
     "The base_url above is a placeholder. Scaleo has no shared API host: the real base is the network's own per-tenant tracking URL, supplied via SCALEO_BASE_URL (e.g. https://yournetwork.scaletrk.com).",
+    "listProgrammes walks the offers pagination (page / perPage) to completion when no limit is set, capped at MAX_PAGES with a warning rather than a silent truncation.",
     "Monetary amounts are assumed to be major currency units in the reported currency; confirm against a live tenant.",
     "Affiliate API access is enabled per user by the platform administrator, not self-service.",
     "generateTrackingLink is not implemented: Scaleo click links require the affiliate id, which is not among the configured credentials."

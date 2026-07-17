@@ -11,7 +11,8 @@
     "Amounts are assumed to be in major currency units (e.g. pounds), not minor units (pence). Verify against a live account; raw payloads are preserved on rawNetworkData.",
     "Click-level data is not exposed via the OMG Network API; listClicks is unsupported.",
     "Tracking-link construction is not documented for the OMG Network API; generateTrackingLink is unsupported.",
-    "Product feeds are documented for the network but are not modelled by this adapter."
+    "Product feeds are documented for the network but are not modelled by this adapter.",
+    "listProgrammes pages /Campaigns to completion when no limit is given, capped at MAX_PAGES (50 pages of 100) with a logged warning rather than a silent truncation."
   ],
   "claim_status": "experimental",
   "adapter_version": "0.1.0",

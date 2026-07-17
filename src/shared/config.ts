@@ -8,6 +8,25 @@
  *
  * Missing required credentials surface as `config_error` envelopes via
  * `requireCredential` — never silently substituted.
+ *
+ * --- Request-scoped resolution (hosted workstream H1) -----------------------
+ *
+ * `getCredential` is the one place nearly every adapter's credential read
+ * already funnels through (directly, or via a per-network `requireToken` /
+ * `requireAccountSid`-style helper that calls `requireCredential`, which
+ * calls this). That makes it the correct, and only, seam for request-scoped
+ * credential resolution: extending it here means every adapter that already
+ * reads credentials this way gains request-scoped resolution for free,
+ * without rewriting adapters one by one — see
+ * `src/shared/request-context.ts` for why this is the single seam and
+ * `docs/product/hosted-mvp-workstream.md` (H1) for the workstream this
+ * belongs to.
+ *
+ * The added lookup is strictly additive: `getContextCredential` only returns
+ * a value when a request context is active AND that context's `credentials`
+ * overlay names this credential. Outside of any `runInRequestContext` call —
+ * the entire local server path — it returns `undefined` and `getCredential`
+ * falls through to `process.env` exactly as before this change.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -15,8 +34,10 @@ import { homedir } from 'node:os';
 import path from 'node:path';
 
 import { buildErrorEnvelope, NetworkError } from './errors.js';
+import { getContextCredential } from './request-context.js';
 import type { NetworkSlug } from './types.js';
 import { createLogger } from './logging.js';
+import { telemetrySurface, type TelemetrySurface } from './telemetry.js';
 
 const log = createLogger('config');
 
@@ -102,14 +123,77 @@ export function _resetConfigForTests(): void {
 }
 
 /**
- * Read an env variable. Returns `undefined` when unset or blank. Does NOT
+ * Patterns that mean "this looks like a credential value but is not a real one".
+ *
+ * Why this exists: the Claude Desktop bundle maps each credential to a host
+ * placeholder, e.g. `AWIN_API_TOKEN=${user_config.awin_api_token}`
+ * (`scripts/build-mcpb.ts`), on `required: false` fields. When a user leaves a
+ * field blank, Claude Desktop passes the *literal, unsubstituted* placeholder
+ * string through as the env value. Likewise, a user who copies
+ * `examples/claude-desktop-config.json` without editing it ships `your-token-here`.
+ * Both are non-empty strings, so the plain blank check below treats them as
+ * configured and the adapter sends them upstream as a real token — producing a
+ * confusing 401 instead of the helpful `config_error` setup path. We classify
+ * them as missing so the unconfigured-network journey stays clear.
+ */
+const PLACEHOLDER_CREDENTIAL_PATTERNS: readonly RegExp[] = [
+  // Unresolved Claude Desktop bundle placeholder, e.g. `${user_config.awin_api_token}`.
+  /^\$\{user_config\.[^}]*\}$/,
+  // Unedited example sentinel from docs/examples. Both separator styles appear
+  // across the network docs: `your-token-here` and `your_secret_key_here`.
+  /^your[_-][\w-]*[_-]here$/i,
+];
+
+/**
+ * True when a value is a recognised unresolved placeholder or documented
+ * example sentinel rather than a real credential. Exported for the
+ * configuration-readiness surface (`affiliate_list_networks`) and tests.
+ */
+export function isPlaceholderCredential(value: string): boolean {
+  const v = value.trim();
+  return PLACEHOLDER_CREDENTIAL_PATTERNS.some((re) => re.test(v));
+}
+
+/**
+ * Read a credential. Checks the active request context's `credentials`
+ * overlay first (see the file-level "Request-scoped resolution" note),
+ * then falls back to `process.env[name]` — the only source before this
+ * seam existed, and the only source whenever no request context is active.
+ *
+ * Returns `undefined` when unset, blank, or set to a recognised unresolved
+ * placeholder / example sentinel (see `isPlaceholderCredential`). Does NOT
  * throw — see `requireCredential` for the throw-on-missing variant.
  */
 export function getCredential(name: string): string | undefined {
-  const v = process.env[name];
+  const contextValue = getContextCredential(name);
+  const v = contextValue !== undefined ? contextValue : process.env[name];
   if (v === undefined) return undefined;
   if (v.trim() === '') return undefined;
+  if (isPlaceholderCredential(v)) return undefined;
   return v;
+}
+
+/**
+ * Surface-aware "how to set this credential" guidance. Mirrors
+ * `updateInstructionForSurface` (`src/shared/update-check.ts`): the same
+ * `telemetrySurface()` signal that tailors the update notice tailors the setup
+ * hint, so a user is always told where to enter the credential for the way they
+ * installed — the extension settings for the Desktop bundle, the CLI wizard for
+ * an npm install.
+ */
+export function setupInstructionForSurface(
+  name: string,
+  surface: TelemetrySurface = telemetrySurface(),
+): string {
+  switch (surface) {
+    case 'mcpb':
+    case 'desktop-bundle':
+      return `Open Claude Desktop -> Settings -> Extensions -> Affiliate Networks and enter ${name} in the extension's configuration.`;
+    case 'npm':
+    case 'unknown':
+    default:
+      return `Run \`affiliate-networks-mcp setup\` to provide ${name}, or set it in ${CONFIG_ENV_FILE}.`;
+  }
 }
 
 /**
@@ -122,15 +206,19 @@ export function requireCredential(
 ): string {
   const v = getCredential(name);
   if (v === undefined) {
+    const where = setupInstructionForSurface(name);
+    // Keep any adapter-supplied guidance about *where to obtain* the credential
+    // (e.g. "generate a token at the dashboard"), then always append the
+    // surface-correct *where to enter it* step so the next action matches how
+    // the user installed.
+    const hint = context.hint ? `${context.hint} ${where}` : where;
     throw new NetworkError(
       buildErrorEnvelope({
         type: 'config_error',
         network: context.network,
         operation: context.operation,
         message: `Missing required credential ${name}.`,
-        hint:
-          context.hint ??
-          `Run \`affiliate-networks-mcp setup\` to provide ${name}, or set it in ${CONFIG_ENV_FILE}.`,
+        hint,
       }),
     );
   }

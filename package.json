@@ -1,7 +1,7 @@
 {
   "name": "affiliate-networks-mcp",
-  "version": "0.7.1",
-  "description": "Chat with your affiliate-network data in Claude or ChatGPT. Publisher and advertiser-side adapters for Awin, CJ, eBay Partner Network, Impact, Rakuten, Skimlinks, Partnerize, Tradedoubler, Sovrn Commerce, Everflow and mrge (newer networks experimental). Local-only, bring your own keys.",
+  "version": "0.17.0",
+  "description": "Bring affiliate-network data to Claude or Codex through a local stdio MCP server. 80+ publisher and advertiser-side adapters, most experimental. Local-only, bring your own keys.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -34,6 +34,8 @@
     "verify": "npm run typecheck && npm run lint && npm test && npm run build",
     "prepublishOnly": "npm run build",
     "dev": "tsx src/index.ts",
+    "dev:hosted-transport": "tsx src/index.ts hosted-transport",
+    "dev:hosted-digest": "tsx src/index.ts hosted-digest",
     "typecheck": "tsc -p tsconfig.dev.json",
     "lint": "eslint \"src/**/*.ts\" \"scripts/**/*.ts\" \"tests/**/*.ts\"",
     "lint:design": "npx --yes oxlint@latest -c design-system/adherence.oxlintrc.json desktop/renderer || true",
@@ -47,7 +49,8 @@
     "validate:network": "tsx scripts/validate-network-json.ts",
     "generate:readme": "tsx scripts/generate-readme-table.ts",
     "generate:report": "tsx scripts/generate-report.ts",
-    "generate:report-image": "tsx scripts/generate-report-image.ts"
+    "generate:report-image": "tsx scripts/generate-report-image.ts",
+    "generate:api-index": "tsx scripts/generate-api-index.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.4",
@@ -59,12 +62,12 @@
     "@types/node": "^20.14.10",
     "@typescript-eslint/eslint-plugin": "^7.16.0",
     "@typescript-eslint/parser": "^7.16.0",
-    "esbuild": "0.28.0",
+    "esbuild": "^0.28.1",
     "eslint": "^8.57.0",
     "pino-pretty": "^11.2.2",
     "prettier": "^3.3.3",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3",
-    "vitest": "^2.0.2"
+    "vitest": "^4.1.9"
   }
 }

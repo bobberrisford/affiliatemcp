@@ -16,11 +16,14 @@ attached. You draft; the user sends. Never send anything yourself.
 `approved` and which has no `datePaid`. `pending` is not yet validated and is
 out of scope; `reversed` and `paid` are excluded.
 
-## Step 1 — discover the wired networks
+## Step 1 — identify the configured networks
 
-Call `affiliate_list_networks`. The response is a `NetworkMeta[]`. If the list
-is empty, tell the user no networks are configured and suggest
-`affiliate-networks-mcp setup`. Stop.
+Use publisher networks the user named or confirmed they configured. If none are
+known, ask which networks to include. Call `affiliate_list_networks` only to
+confirm that this server has a registered adapter for each named network; it
+does not prove that credentials are configured. When credential state is
+uncertain, recommend `affiliate-networks-mcp doctor <slug>` or attempt the
+requested operation and surface its verbatim error.
 
 Only publisher-side networks (`side === 'publisher'`) are in scope — chasing is
 a publisher action. Skip any `side === 'advertiser'` entries and say so. Inspect
@@ -134,6 +137,20 @@ Above the drafts, give a short ledger: per network, transactions chased and
 total per currency, plus rows needing validation-date review, networks skipped
 (nothing past threshold), and networks that failed (verbatim error). Then
 present the drafts and the attachment(s).
+
+## Large accounts
+
+On accounts where a pull runs to tens of thousands of rows, keep every tool
+result within the client's size limit:
+
+- Prefer summaries: `affiliate_<slug>_get_earnings_summary` answers totals
+  and status splits without pulling transaction rows.
+- When raw rows are needed, pull month-sized windows rather than the whole
+  period in one call, and page with `offset` (using `limit` as the page size)
+  when a window is still too big.
+- If a result returns `truncated: true` or `result_too_large`, follow its
+  hint: continue from the given `nextOffset` or narrow the window or filters.
+  Never total a truncated pull as if it were complete.
 
 ## Constraints
 

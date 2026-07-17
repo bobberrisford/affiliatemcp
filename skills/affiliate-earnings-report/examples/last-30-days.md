@@ -9,8 +9,8 @@ A publisher with Awin and Impact configured.
 Called `affiliate_list_networks` → `awin`, `impact`.
 
 Called:
-- `affiliate_awin_earnings_summary({ from: "2026-04-01", to: "2026-04-30" })` → £284.12 GBP
-- `affiliate_impact_earnings_summary({ from: "2026-04-01", to: "2026-04-30" })` → $112.40 USD
+- `affiliate_awin_get_earnings_summary({ from: "2026-04-01", to: "2026-04-30" })` → £284.12 GBP
+- `affiliate_impact_get_earnings_summary({ from: "2026-04-01", to: "2026-04-30" })` → $112.40 USD
 
 ## Earnings — 2026-04-01 to 2026-04-30 (30 days)
 

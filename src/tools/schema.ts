@@ -25,6 +25,7 @@ export function toJsonSchema(zodSchema: z.ZodTypeAny): Record<string, unknown> {
 
 function describe(t: z.ZodTypeAny): Record<string, unknown> {
   if (t instanceof z.ZodOptional) return describe(t.unwrap());
+  if (t instanceof z.ZodEnum) return { type: 'string', enum: [...(t.options as string[])] };
   if (t instanceof z.ZodString) return { type: 'string' };
   if (t instanceof z.ZodNumber) return { type: 'number' };
   if (t instanceof z.ZodBoolean) return { type: 'boolean' };

@@ -66,6 +66,21 @@ export interface PartnerizeRequestInput {
 }
 
 /**
+ * A decoded Partnerize response plus the pagination cursor, when present.
+ *
+ * Partnerize's granular reporting endpoints paginate with a `cursor_id`
+ * RESPONSE HEADER (granular_reporting.apib: "if the result set includes a
+ * `cursor_id` header attribute"); the caller passes it back as a `cursor_id`
+ * query parameter to fetch the next page. The header, not the body, carries
+ * the cursor, so the client must surface it alongside the decoded body.
+ */
+export interface PartnerizeCursorResponse<T> {
+  body: T;
+  /** The `cursor_id` response header, present when another page is available. */
+  cursorId?: string;
+}
+
+/**
  * Issue a single Partnerize API request under the resilience policy.
  *
  * Why the response is typed as `T` with no runtime validation: Partnerize's
@@ -75,6 +90,19 @@ export interface PartnerizeRequestInput {
  * is that adapter transformers MUST tolerate missing keys defensively.
  */
 export async function partnerizeRequest<T>(input: PartnerizeRequestInput): Promise<T> {
+  const { body } = await partnerizeRequestWithCursor<T>(input);
+  return body;
+}
+
+/**
+ * Issue a single Partnerize API request and surface the `cursor_id` response
+ * header alongside the decoded body. Adapter pagination loops use this to
+ * follow cursor continuation on the granular reporting endpoints; callers that
+ * do not paginate should use `partnerizeRequest` instead.
+ */
+export async function partnerizeRequestWithCursor<T>(
+  input: PartnerizeRequestInput,
+): Promise<PartnerizeCursorResponse<T>> {
   const ctx: WithResilienceContext = { network: 'partnerize', operation: input.operation };
 
   return withResilience(
@@ -113,15 +141,19 @@ export async function partnerizeRequest<T>(input: PartnerizeRequestInput): Promi
         );
       }
 
+      // Pagination cursor: Partnerize returns `cursor_id` as a response header
+      // on paginated result sets (see PartnerizeCursorResponse).
+      const cursorId = res.headers.get('cursor_id') ?? undefined;
+
       // Empty body — return as the empty object. Adapters that legitimately
       // expect a payload will detect the missing fields and throw a meaningful
       // envelope.
       if (rawBody.trim() === '') {
-        return {} as T;
+        return { body: {} as T, cursorId };
       }
 
       try {
-        return JSON.parse(rawBody) as T;
+        return { body: JSON.parse(rawBody) as T, cursorId };
       } catch (err) {
         throw new NetworkError(
           buildErrorEnvelope({

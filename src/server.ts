@@ -12,6 +12,15 @@
  *     able to see what failed.
  *   - Unknown tool name → text content explaining the miss; never an opaque
  *     "an error occurred".
+ *
+ * Request-scoped identity seam (hosted workstream H1,
+ * `docs/product/hosted-mvp-workstream.md`): every `tools/call` dispatch runs
+ * `tool.handle(args)` inside `runInRequestContext(localDefaultContext(), ...)`
+ * (`src/shared/request-context.ts`). This is the seam's first real consumer —
+ * the local server now runs every tool call through the same request-context
+ * mechanism a hosted deployment will use, but `localDefaultContext()` carries
+ * a fixed identity and no overlays, so credential, OAuth-token, brand, and
+ * client-strategy resolution behave exactly as before this change.
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -26,14 +35,20 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { generateAllTools, type ToolDefinition } from './tools/generate.js';
+import { guardToolResult } from './tools/result-guard.js';
 import { getPrompt, listPrompts } from './prompts/generate.js';
+import { buildEntitlementRequired, GATED_TOOLS, isEntitled } from './brand-data/entitlement.js';
+import { recordActionAudit } from './shared/audit.js';
 import { isErrorEnvelope, NetworkError, toErrorEnvelope } from './shared/errors.js';
 import { createLogger } from './shared/logging.js';
+import { localDefaultContext, runInRequestContext } from './shared/request-context.js';
 import {
   flushTelemetry,
+  PACKAGE_VERSION,
   recordTelemetry,
   telemetryOutcomeFromErrorType,
 } from './shared/telemetry.js';
+import { runStartupUpdateCheck } from './shared/update-check.js';
 
 // Side-effect import: registers every network adapter with the shared registry.
 // Must precede any code path that calls `getAdapters()` / `getAdapter()`.
@@ -43,11 +58,34 @@ const log = createLogger('server');
 
 const SERVER_INFO = {
   name: 'affiliate-mcp',
-  version: '0.1.0',
+  // Single source of truth, kept in sync with package.json by the release
+  // process and a version-sync test. Previously hardcoded to a stale '0.1.0',
+  // which both misreported to clients and would mislead the update check.
+  version: PACKAGE_VERSION,
 } as const;
+
+export interface TelemetryToolClassification {
+  network: string;
+  operation: string;
+}
+
+const META_TOOL_OPERATIONS = new Map<string, string>([
+  ['affiliate_list_networks', 'list_networks'],
+  ['affiliate_run_diagnostic', 'run_diagnostic'],
+  ['affiliate_resolve_brand', 'resolve_brand'],
+  ['affiliate_get_client_strategy', 'get_client_strategy'],
+  ['affiliate_set_client_strategy', 'set_client_strategy'],
+  ['affiliate_list_client_strategies', 'list_client_strategies'],
+  ['affiliate_list_actions', 'list_actions'],
+  ['affiliate_build_brand_snapshot', 'build_brand_snapshot'],
+  ['affiliate_get_brand_rows', 'get_brand_rows'],
+  ['affiliate_get_brand_action_bundle', 'get_brand_action_bundle'],
+  ['affiliate_query_brand_data', 'query_brand_data'],
+]);
 
 export async function startServer(): Promise<void> {
   void flushTelemetry();
+  void runStartupUpdateCheck();
   recordTelemetry('lifecycle', 'server_start', 'success');
   const tools = generateAllTools();
   const toolMap = new Map<string, ToolDefinition>(tools.map((t) => [t.name, t]));
@@ -62,6 +100,7 @@ export async function startServer(): Promise<void> {
       name: t.name,
       description: t.description,
       inputSchema: t.inputSchema,
+      ...(t.annotations ? { annotations: t.annotations } : {}),
     })),
   }));
 
@@ -89,28 +128,76 @@ export async function startServer(): Promise<void> {
       };
     }
 
-    try {
-      const result = await tool.handle(args);
-      recordTelemetry(extractNetwork(name), extractOperation(name), 'success');
+    // Entitlement gate: one choke point for the paid brand-data tools, applied
+    // after the tool resolves and before its handler runs. Dormant by default
+    // (isEntitled() returns true in v1); a denied call is surfaced as a
+    // structured entitlement_required result, audited, and counted — never faked
+    // into success or collapsed into an opaque error (Principle 4.1). Gated
+    // tools stay registered and visible in ListTools (visible-but-locked).
+    if (GATED_TOOLS.has(name) && !isEntitled()) {
+      recordActionAudit({
+        event: 'write_denied',
+        action: `brand-data.${name}`,
+        network: 'meta',
+        reasonCode: 'entitlement',
+        summary: `${name} requires the paid brand-data tier`,
+      });
+      const telemetry = classifyToolForTelemetry(name);
+      recordTelemetry(telemetry.network, telemetry.operation, 'other_error');
+      log.info({ tool: name }, 'entitlement gate: denied');
       return {
+        isError: true,
+        content: [
+          { type: 'text' as const, text: JSON.stringify(buildEntitlementRequired(name), null, 2) },
+        ],
+      };
+    }
+
+    try {
+      const result = await runInRequestContext(localDefaultContext(), () => tool.handle(args));
+      const telemetry = classifyToolForTelemetry(name);
+      recordTelemetry(telemetry.network, telemetry.operation, 'success');
+      // Size guard (decision 2026-07-03): keep every response under the byte
+      // budget Claude clients accept. Small results stay pretty-printed and
+      // byte-identical to the previous behaviour; oversized ones degrade
+      // honestly rather than failing opaquely client-side. The request's own
+      // offset seeds the envelope's nextOffset — but only for tools whose
+      // schema accepts offset; steering a caller into a paging call the
+      // schema would reject is a trap, not a hint.
+      const requestOffset =
+        typeof (args as Record<string, unknown> | undefined)?.['offset'] === 'number'
+          ? ((args as Record<string, unknown>)['offset'] as number)
+          : 0;
+      const schemaProps = (tool.inputSchema as { properties?: Record<string, unknown> })
+        .properties;
+      const guarded = guardToolResult(name, result, undefined, {
+        baseOffset: requestOffset,
+        offsetSupported: schemaProps?.['offset'] !== undefined,
+      });
+      if (guarded.outcome !== 'ok') {
+        log.warn({ tool: name, outcome: guarded.outcome }, 'tool result exceeded size budget');
+      }
+      return {
+        ...(guarded.outcome === 'result_too_large' ? { isError: true } : {}),
         content: [
           {
             type: 'text' as const,
-            text: JSON.stringify(result, null, 2),
+            text: guarded.text,
           },
         ],
       };
     } catch (err) {
+      const telemetry = classifyToolForTelemetry(name);
       const envelope =
         err instanceof NetworkError
           ? err.envelope
           : isErrorEnvelope(err)
             ? err
-            : toErrorEnvelope(err, { network: extractNetwork(name), operation: name });
+            : toErrorEnvelope(err, { network: telemetry.network, operation: name });
       log.warn({ tool: name, envelope }, 'tool invocation failed');
       recordTelemetry(
-        extractNetwork(name),
-        extractOperation(name),
+        telemetry.network,
+        telemetry.operation,
         telemetryOutcomeFromErrorType(envelope.type),
       );
       return {
@@ -143,6 +230,12 @@ export async function startServer(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   log.info({ tools: tools.length }, 'affiliate-mcp server started on stdio');
+}
+
+export function classifyToolForTelemetry(toolName: string): TelemetryToolClassification {
+  const metaOperation = META_TOOL_OPERATIONS.get(toolName);
+  if (metaOperation) return { network: 'meta', operation: metaOperation };
+  return { network: extractNetwork(toolName), operation: extractOperation(toolName) };
 }
 
 /** Best-effort: pull the network slug out of a tool name `affiliate_<slug>_<op>`. */

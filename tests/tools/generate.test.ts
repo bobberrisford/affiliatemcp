@@ -1,28 +1,37 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { mkdtempSync } from 'node:fs';
+import { existsSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
   generateAllTools,
   generateMetaTools,
   generateToolsFor,
+  type RunDiagnosticMetaResult,
 } from '../../src/tools/generate.js';
+import { PACKAGE_VERSION } from '../../src/shared/telemetry.js';
 import { _clearRegistry } from '../../src/shared/registry.js';
 import { saveBrands } from '../../src/shared/brands.js';
+import { resolveKpiFile, resolveStrategyFile } from '../../src/shared/client-strategy.js';
 import { BrandNotRegistered } from '../../src/shared/errors.js';
 import type { NetworkAdapter } from '../../src/shared/types.js';
 
 let tmp: string;
 let originalConfigDir: string | undefined;
 let originalCacheSetting: string | undefined;
+let originalImpactSid: string | undefined;
+let originalImpactToken: string | undefined;
 
 beforeEach(() => {
   _clearRegistry();
   tmp = mkdtempSync(path.join(tmpdir(), 'amcp-tool-gen-'));
   originalConfigDir = process.env['AFFILIATE_MCP_CONFIG_DIR'];
   originalCacheSetting = process.env['AFFILIATE_MCP_CACHE'];
+  originalImpactSid = process.env['IMPACT_ADVERTISER_ACCOUNT_SID'];
+  originalImpactToken = process.env['IMPACT_ADVERTISER_AUTH_TOKEN'];
   process.env['AFFILIATE_MCP_CONFIG_DIR'] = tmp;
   process.env['AFFILIATE_MCP_CACHE'] = 'on';
+  delete process.env['IMPACT_ADVERTISER_ACCOUNT_SID'];
+  delete process.env['IMPACT_ADVERTISER_AUTH_TOKEN'];
 });
 
 afterEach(() => {
@@ -30,6 +39,10 @@ afterEach(() => {
   else process.env['AFFILIATE_MCP_CONFIG_DIR'] = originalConfigDir;
   if (originalCacheSetting === undefined) delete process.env['AFFILIATE_MCP_CACHE'];
   else process.env['AFFILIATE_MCP_CACHE'] = originalCacheSetting;
+  if (originalImpactSid === undefined) delete process.env['IMPACT_ADVERTISER_ACCOUNT_SID'];
+  else process.env['IMPACT_ADVERTISER_ACCOUNT_SID'] = originalImpactSid;
+  if (originalImpactToken === undefined) delete process.env['IMPACT_ADVERTISER_AUTH_TOKEN'];
+  else process.env['IMPACT_ADVERTISER_AUTH_TOKEN'] = originalImpactToken;
 });
 
 /**
@@ -81,22 +94,38 @@ function fakeAdapter(slug: string, name: string): NetworkAdapter {
 }
 
 describe('tool generator', () => {
-  it('always emits the three meta tools', () => {
+  it('always emits the meta tools', () => {
     const meta = generateMetaTools();
     const names = meta.map((t) => t.name).sort();
     expect(names).toEqual([
+      'affiliate_build_brand_snapshot',
+      'affiliate_get_brand_action_bundle',
+      'affiliate_get_brand_rows',
+      'affiliate_get_client_strategy',
+      'affiliate_list_actions',
+      'affiliate_list_client_strategies',
       'affiliate_list_networks',
+      'affiliate_query_brand_data',
       'affiliate_resolve_brand',
       'affiliate_run_diagnostic',
+      'affiliate_set_client_strategy',
     ]);
   });
 
   it('with no adapters registered, only meta tools are present', () => {
     const all = generateAllTools();
     expect(all.map((t) => t.name).sort()).toEqual([
+      'affiliate_build_brand_snapshot',
+      'affiliate_get_brand_action_bundle',
+      'affiliate_get_brand_rows',
+      'affiliate_get_client_strategy',
+      'affiliate_list_actions',
+      'affiliate_list_client_strategies',
       'affiliate_list_networks',
+      'affiliate_query_brand_data',
       'affiliate_resolve_brand',
       'affiliate_run_diagnostic',
+      'affiliate_set_client_strategy',
     ]);
   });
 
@@ -187,6 +216,282 @@ describe('affiliate_resolve_brand meta-tool', () => {
     const rows = (await tool.handle({ network: 'impact-advertiser' })) as Array<{ network: string }>;
     expect(rows).toHaveLength(1);
     expect(rows[0]!.network).toBe('impact-advertiser');
+  });
+});
+
+describe('affiliate_get_client_strategy meta-tool', () => {
+  const get = () => generateMetaTools().find((t) => t.name === 'affiliate_get_client_strategy')!;
+  const set = () => generateMetaTools().find((t) => t.name === 'affiliate_set_client_strategy')!;
+
+  it('reports absent files without error', async () => {
+    const result = (await get().handle({ brand: 'acme' })) as {
+      brand: string;
+      orphan: boolean;
+      strategy: { present: boolean };
+      kpi: { present: boolean; targets: unknown[]; parseErrors: unknown[] };
+    };
+    expect(result).toMatchObject({
+      brand: 'acme',
+      orphan: false,
+      strategy: { present: false },
+      kpi: { present: false, targets: [], parseErrors: [] },
+    });
+  });
+
+  it('returns parsed targets after a valid write', async () => {
+    await set().handle({
+      brand: 'acme',
+      strategyMarkdown: 'Premium partners preferred.',
+      kpiMarkdown: '```kpi\nversion: 1\nrevenue: >= 400000 GBP per quarter\n```',
+    });
+    const result = (await get().handle({ brand: 'acme' })) as {
+      strategy: { present: boolean; markdown?: string };
+      kpi: {
+        present: boolean;
+        markdown?: string;
+        version?: number;
+        targets: unknown[];
+        parseErrors: unknown[];
+      };
+    };
+    expect(result.strategy.markdown).toMatch(/Premium partners/);
+    expect(result.kpi).toMatchObject({ present: true, version: 1, parseErrors: [] });
+    expect(result.kpi.markdown).toBeUndefined();
+    expect(result.kpi.targets).toContainEqual({
+      metric: 'revenue',
+      comparator: '>=',
+      value: 400000,
+      unit: 'GBP',
+      period: 'quarter',
+    });
+  });
+
+  it('surfaces parse errors for an already-written malformed block', async () => {
+    // A direct hand-edit could leave a malformed block on disk; the reader must
+    // surface it rather than crash or guess.
+    const { saveKpi } = await import('../../src/shared/client-strategy.js');
+    saveKpi('acme', '```kpi\nrevenue: >= 100 GBP\n```'); // missing version
+    const result = (await get().handle({ brand: 'acme' })) as {
+      kpi: { parseErrors: Array<{ reason: string }> };
+    };
+    expect(result.kpi.parseErrors[0]?.reason).toMatch(/version: 1/);
+  });
+});
+
+describe('affiliate_set_client_strategy meta-tool', () => {
+  const set = () => generateMetaTools().find((t) => t.name === 'affiliate_set_client_strategy')!;
+
+  it('writes both files and reports what was written', async () => {
+    const result = (await set().handle({
+      brand: 'acme',
+      strategyMarkdown: 'Prose.',
+      kpiMarkdown: '```kpi\nversion: 1\nconversions: >= 1200 per month\n```',
+    })) as { written: boolean; wrote: { strategy: boolean; kpi: boolean } };
+    expect(result).toMatchObject({ written: true, wrote: { strategy: true, kpi: true } });
+    expect(existsSync(resolveStrategyFile('acme'))).toBe(true);
+    expect(existsSync(resolveKpiFile('acme'))).toBe(true);
+  });
+
+  it('rejects a malformed KPI block without writing anything', async () => {
+    const result = (await set().handle({
+      brand: 'acme',
+      kpiMarkdown: '```kpi\nversion: 1\nmargin: >= 20%\n```', // unknown metric
+    })) as { written: boolean; parseErrors: Array<{ reason: string }> };
+    expect(result.written).toBe(false);
+    expect(result.parseErrors[0]?.reason).toMatch(/unknown metric "margin"/);
+    expect(existsSync(resolveKpiFile('acme'))).toBe(false);
+  });
+
+  it('rejects malformed KPI before writing a paired strategy update', async () => {
+    const result = (await set().handle({
+      brand: 'acme',
+      strategyMarkdown: 'Do not persist this when KPI is invalid.',
+      kpiMarkdown: '```kpi\nversion: 1\nmargin: >= 20%\n```',
+    })) as { written: boolean; parseErrors: Array<{ reason: string }> };
+    expect(result.written).toBe(false);
+    expect(result.parseErrors[0]?.reason).toMatch(/unknown metric "margin"/);
+    expect(existsSync(resolveStrategyFile('acme'))).toBe(false);
+    expect(existsSync(resolveKpiFile('acme'))).toBe(false);
+  });
+
+  it('rejects an invalid brand slug without writing', async () => {
+    const result = (await set().handle({ brand: 'Bad Slug!', strategyMarkdown: 'x' })) as {
+      written: boolean;
+      reason: string;
+    };
+    expect(result.written).toBe(false);
+    expect(result.reason).toMatch(/invalid brand slug/i);
+  });
+
+  it('requires at least one of strategyMarkdown or kpiMarkdown', async () => {
+    await expect(set().handle({ brand: 'acme' })).rejects.toThrow();
+  });
+});
+
+describe('affiliate_list_client_strategies meta-tool', () => {
+  const list = () =>
+    generateMetaTools().find((t) => t.name === 'affiliate_list_client_strategies')!;
+
+  it('returns [] when nothing is registered or on disk', async () => {
+    expect(await list().handle({})).toEqual([]);
+  });
+
+  it('flags a registered brand with no strategy recorded', async () => {
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [{ network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-1' }],
+      },
+    });
+    const rows = (await list().handle({})) as Array<{
+      slug: string;
+      hasStrategy: boolean;
+      registered: boolean;
+    }>;
+    expect(rows).toContainEqual(
+      expect.objectContaining({ slug: 'acme', hasStrategy: false, registered: true }),
+    );
+  });
+});
+
+describe('affiliate_list_actions meta-tool', () => {
+  type ActionRow = {
+    descriptor: { id: string; network: string; channel: string; effect: string };
+    readiness: string;
+    credentials: Array<{ label: string; configured: boolean }>;
+    liveHealthVia: string;
+  };
+  type Unsupported = { unsupportedScope: { dimension: string; value: string }; message: string };
+
+  const find = () => generateMetaTools().find((t) => t.name === 'affiliate_list_actions')!;
+
+  // The collector ties descriptors to registration; register the real Impact
+  // adapter so its proposeContract descriptor is in scope. (Outer beforeEach
+  // clears the registry first.)
+  beforeEach(async () => {
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    const { impactAdvertiserAdapter } = await import(
+      '../../src/networks/impact-advertiser/adapter.js'
+    );
+    registerAdapter(impactAdvertiserAdapter);
+  });
+
+  it('returns the proposeContract advisement entry, fail-closed to unknown with no brand', async () => {
+    const rows = (await find().handle({})) as ActionRow[];
+    expect(Array.isArray(rows)).toBe(true);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.descriptor.id).toBe('impact-advertiser.proposeContract');
+    expect(rows[0]!.descriptor.effect).toBe('advisement');
+    expect(rows[0]!.descriptor.channel).toBe('api');
+    expect(rows[0]!.readiness).toBe('unknown'); // no brand filter → fail-closed
+    expect(rows[0]!.credentials).toEqual([
+      { label: 'IMPACT_ADVERTISER_ACCOUNT_SID', configured: false },
+      { label: 'IMPACT_ADVERTISER_AUTH_TOKEN', configured: false },
+    ]);
+    expect(rows[0]!.liveHealthVia).toBe('affiliate_run_diagnostic');
+  });
+
+  it('reports missing credentials for a bound brand without exposing values', async () => {
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [{ network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-1' }],
+      },
+    });
+    const rows = (await find().handle({ brand: 'acme' })) as ActionRow[];
+    expect(rows[0]!.readiness).toBe('missing_credentials');
+    expect(JSON.stringify(rows)).not.toContain('networkBrandId');
+  });
+
+  it('reports ready only when the brand is bound and both read credentials are present', async () => {
+    process.env['IMPACT_ADVERTISER_ACCOUNT_SID'] = 'secret-sid';
+    process.env['IMPACT_ADVERTISER_AUTH_TOKEN'] = 'secret-token';
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [{ network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-1' }],
+      },
+    });
+    const rows = (await find().handle({ brand: 'acme' })) as ActionRow[];
+    expect(rows[0]!.readiness).toBe('ready');
+    expect(rows[0]!.credentials.every((credential) => credential.configured)).toBe(true);
+    expect(JSON.stringify(rows)).not.toContain('secret-sid');
+    expect(JSON.stringify(rows)).not.toContain('secret-token');
+  });
+
+  it('returns an explicit unsupportedScope for an unknown network, not []', async () => {
+    const r = (await find().handle({ network: 'does-not-exist' })) as Unsupported;
+    expect(r.unsupportedScope).toEqual({ dimension: 'network', value: 'does-not-exist' });
+    expect(Array.isArray(r)).toBe(false);
+  });
+
+  it('returns an explicit unsupportedScope for an unbound brand', async () => {
+    const r = (await find().handle({ brand: 'ghost-brand' })) as Unsupported;
+    expect(r.unsupportedScope).toEqual({ dimension: 'brand', value: 'ghost-brand' });
+  });
+
+  it('returns an explicit unsupportedScope for a stale brand binding', async () => {
+    saveBrands({
+      version: 1,
+      brands: {
+        stale: [{ network: 'not-registered', credentialId: 'default', networkBrandId: 'OLD-1' }],
+      },
+    });
+    const r = (await find().handle({ brand: 'stale' })) as Unsupported;
+    expect(r.unsupportedScope).toEqual({ dimension: 'brand', value: 'stale' });
+    expect(r.message).toMatch(/no binding to a registered adapter/i);
+  });
+
+  it('returns an explicit unsupportedScope for a valid brand/network mismatch', async () => {
+    saveBrands({
+      version: 1,
+      brands: {
+        acme: [{ network: 'impact-advertiser', credentialId: 'default', networkBrandId: 'IA-1' }],
+      },
+    });
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(fakeAdapter('quiet-network', 'Quiet Network'));
+    const r = (await find().handle({ brand: 'acme', network: 'quiet-network' })) as Unsupported;
+    expect(r.unsupportedScope).toEqual({
+      dimension: 'brand_network',
+      value: 'acme@quiet-network',
+    });
+  });
+
+  it('returns [] when a valid brand scope has no declared actions', async () => {
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(fakeAdapter('quiet-network', 'Quiet Network'));
+    saveBrands({
+      version: 1,
+      brands: {
+        quiet: [{ network: 'quiet-network', credentialId: 'default', networkBrandId: 'QN-1' }],
+      },
+    });
+    expect(await find().handle({ brand: 'quiet' })).toEqual([]);
+  });
+
+  it('filters by effect and channel', async () => {
+    expect(await find().handle({ effect: 'write' })).toEqual([]); // no write actions yet
+    expect(await find().handle({ channel: 'browser' })).toEqual([]); // none declared
+    const adv = (await find().handle({ effect: 'advisement' })) as ActionRow[];
+    expect(adv).toHaveLength(1);
+  });
+
+  it('is non-probing — issues no network call', async () => {
+    const original = globalThis.fetch;
+    const spy = vi.fn();
+    globalThis.fetch = spy as unknown as typeof fetch;
+    try {
+      await find().handle({});
+      await find().handle({ effect: 'advisement' });
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = original;
+    }
+  });
+
+  it('declares itself read-only to MCP hosts', () => {
+    expect(find().annotations?.readOnlyHint).toBe(true);
   });
 });
 
@@ -342,6 +647,78 @@ describe('affiliate_list_networks — operationClaimStatuses (review feedback)',
 });
 
 // ---------------------------------------------------------------------------
+// affiliate_list_networks surfaces configuration readiness
+// ---------------------------------------------------------------------------
+
+describe('affiliate_list_networks — configuration readiness', () => {
+  function adapterNeedingToken(slug: string, name: string): NetworkAdapter {
+    const a = fakeAdapter(slug, name);
+    (a as { setupSteps: () => unknown }).setupSteps = () => [
+      { field: 'DEMO_TOKEN', label: 'API token', description: 'The token.', type: 'password' },
+    ];
+    return a;
+  }
+
+  type Row = {
+    slug: string;
+    configured: boolean;
+    missingCredentials: string[];
+    setupAction?: string;
+  };
+
+  async function listRows(): Promise<Row[]> {
+    const tool = generateMetaTools().find((t) => t.name === 'affiliate_list_networks')!;
+    return (await tool.handle({})) as Row[];
+  }
+
+  afterEach(() => {
+    delete process.env['DEMO_TOKEN'];
+  });
+
+  it('reports unconfigured with a setupAction when the credential is absent', async () => {
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(adapterNeedingToken('demo', 'Demo Network'));
+    delete process.env['DEMO_TOKEN'];
+
+    const row = (await listRows())[0]!;
+    expect(row.configured).toBe(false);
+    expect(row.missingCredentials).toEqual(['DEMO_TOKEN']);
+    expect(row.setupAction).toBeTruthy();
+    expect(row.setupAction).toContain('DEMO_TOKEN');
+  });
+
+  it('treats an unresolved bundle placeholder as unconfigured', async () => {
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(adapterNeedingToken('demo', 'Demo Network'));
+    process.env['DEMO_TOKEN'] = '${user_config.demo_token}';
+
+    const row = (await listRows())[0]!;
+    expect(row.configured).toBe(false);
+    expect(row.missingCredentials).toEqual(['DEMO_TOKEN']);
+  });
+
+  it('reports configured with no setupAction once the credential is present', async () => {
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(adapterNeedingToken('demo', 'Demo Network'));
+    process.env['DEMO_TOKEN'] = 'a-real-token';
+
+    const row = (await listRows())[0]!;
+    expect(row.configured).toBe(true);
+    expect(row.missingCredentials).toEqual([]);
+    expect(row.setupAction).toBeUndefined();
+  });
+
+  it('treats an adapter with no setupSteps as configured', async () => {
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(fakeAdapter('quiet', 'Quiet Network'));
+
+    const row = (await listRows())[0]!;
+    expect(row.configured).toBe(true);
+    expect(row.missingCredentials).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Workstream 1: affiliate_run_diagnostic preserves per-op claimStatus
 // ---------------------------------------------------------------------------
 
@@ -377,6 +754,110 @@ describe('affiliate_run_diagnostic — preserves per-op claimStatus (review feed
     const ops = result.results[0]!.capabilities!.operations;
     expect(ops['getProgrammePerformance']!.claimStatus).toBe('experimental');
     expect(ops['listProgrammes']!.claimStatus).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// affiliate_run_diagnostic reports the server's own update status
+// ---------------------------------------------------------------------------
+
+describe('affiliate_run_diagnostic — server update status', () => {
+  const NEWER = `${Number.parseInt(PACKAGE_VERSION.split('.')[0] ?? '0', 10) + 1}.0.0`;
+  let restoreEnv: Record<string, string | undefined>;
+
+  /** Stub the registry read that checkForUpdate performs via global fetch. */
+  function stubRegistry(version: string): void {
+    vi.stubGlobal(
+      'fetch',
+      (async () =>
+        new Response(JSON.stringify({ version }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })) as unknown as typeof fetch,
+    );
+  }
+
+  function diagnosticTool() {
+    return generateMetaTools().find((t) => t.name === 'affiliate_run_diagnostic')!;
+  }
+
+  beforeEach(() => {
+    restoreEnv = {
+      AFFILIATE_MCP_UPDATE_CHECK: process.env['AFFILIATE_MCP_UPDATE_CHECK'],
+      AFFILIATE_MCP_SURFACE: process.env['AFFILIATE_MCP_SURFACE'],
+    };
+    delete process.env['AFFILIATE_MCP_UPDATE_CHECK'];
+    process.env['AFFILIATE_MCP_SURFACE'] = 'mcpb';
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    for (const [k, v] of Object.entries(restoreEnv)) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+  });
+
+  it('reports checked:false with the running version when the check is disabled', async () => {
+    process.env['AFFILIATE_MCP_UPDATE_CHECK'] = '0';
+    const result = (await diagnosticTool().handle({})) as RunDiagnosticMetaResult;
+
+    expect(result.server).toEqual({ current: PACKAGE_VERSION, checked: false });
+  });
+
+  it('degrades to checked:false when the registry is unreachable and no cache exists', async () => {
+    vi.stubGlobal(
+      'fetch',
+      (async () => {
+        throw new Error('network unreachable');
+      }) as unknown as typeof fetch,
+    );
+    const result = (await diagnosticTool().handle({})) as RunDiagnosticMetaResult;
+
+    expect(result.server).toEqual({ current: PACKAGE_VERSION, checked: false });
+    expect(Array.isArray(result.results)).toBe(true);
+  });
+
+  it('reports a newer release with the surface-correct instruction', async () => {
+    stubRegistry(NEWER);
+    const result = (await diagnosticTool().handle({})) as RunDiagnosticMetaResult;
+
+    expect(result.server.checked).toBe(true);
+    expect(result.server.current).toBe(PACKAGE_VERSION);
+    expect(result.server.latest).toBe(NEWER);
+    expect(result.server.updateAvailable).toBe(true);
+    // Surface is mcpb: the instruction must point at the .mcpb re-install path.
+    expect(result.server.instruction).toContain('.mcpb');
+  });
+
+  it('omits the instruction when already on the latest release', async () => {
+    stubRegistry(PACKAGE_VERSION);
+    const result = (await diagnosticTool().handle({})) as RunDiagnosticMetaResult;
+
+    expect(result.server.checked).toBe(true);
+    expect(result.server.updateAvailable).toBe(false);
+    expect(result.server.instruction).toBeUndefined();
+  });
+
+  it('preserves the original DiagnosticResult fields alongside the server block', async () => {
+    stubRegistry(PACKAGE_VERSION);
+    const a = fakeAdapter('diag-upd', 'Diag Update');
+    (a as { capabilitiesCheck: () => Promise<unknown> }).capabilitiesCheck = async () => ({
+      network: 'diag-upd',
+      generatedAt: new Date().toISOString(),
+      operations: { listProgrammes: { supported: true } },
+      knownLimitations: [],
+    });
+    const { registerAdapter } = await import('../../src/shared/registry.js');
+    registerAdapter(a);
+
+    const result = (await diagnosticTool().handle({
+      network: 'diag-upd',
+    })) as RunDiagnosticMetaResult;
+
+    expect(typeof result.generatedAt).toBe('string');
+    expect(result.results[0]!.network).toBe('diag-upd');
+    expect(result.server.checked).toBe(true);
   });
 });
 

@@ -15,7 +15,7 @@ export const TELEMETRY_SCHEMA_VERSION = 1;
 export const TELEMETRY_ENDPOINT =
   process.env['AFFILIATE_MCP_TELEMETRY_ENDPOINT'] ??
   'https://telemetry.agenticaffiliate.ai/v1/ingest';
-export const PACKAGE_VERSION = '0.7.1';
+export const PACKAGE_VERSION = '0.17.0';
 
 export type TelemetrySurface = 'npm' | 'mcpb' | 'desktop-bundle' | 'unknown';
 export type TelemetryOutcome =
@@ -114,7 +114,11 @@ export function recordTelemetry(
 
     const state = readState() ?? { consent: true };
     state.consent = true;
-    ensureMonthlyId(state);
+    // Key the monthly install id off the record's own day, not the wall clock,
+    // so a counter recorded for a given day belongs to that day's month. Real
+    // calls pass today's day (unchanged behaviour); explicit-day calls and
+    // month-boundary flushes now rotate correctly.
+    ensureMonthlyId(state, new Date(day));
     state.pending ??= {};
     const daily = (state.pending[day] ??= {});
     const key = `${network}|${operation}|${outcome}`;

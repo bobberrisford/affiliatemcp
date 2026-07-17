@@ -147,7 +147,7 @@ upstream payloads, persists on disk between sessions. Mitigations: opt-in
 enablement, `0700` directory, `0600` files, config-directory co-location with
 the already-sensitive `.env`, no credential values in entries, opportunistic
 expiry deletion, and `cache clear`. This touches shared and tool behaviour plus
-data handling, so it is a risk-based review item for `@offmann`.
+data handling, so it is a risk-based review item for maintainer review.
 
 ## Rejected alternatives
 
