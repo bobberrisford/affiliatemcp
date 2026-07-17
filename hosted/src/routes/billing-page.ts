@@ -113,8 +113,8 @@ function tierLabel(tier: HostedTier): string {
 function renderBillingActions(entitlement: Entitlement): string {
   if (entitlement.tier === 'none') {
     return `
-      ${navForm('/connect/billing/checkout', 'Subscribe Solo: £34/month', { tier: 'solo' })}
-      ${navForm('/connect/billing/checkout', 'Subscribe Pro: £99/month', { tier: 'pro' })}
+      ${navForm('/connect/billing/checkout', 'Subscribe Solo: £34/month', { tier: 'solo' }, 'p')}
+      ${navForm('/connect/billing/checkout', 'Subscribe Pro: £99/month', { tier: 'pro' }, 'p')}
     `;
   }
   if (entitlement.tier === 'solo') {
@@ -128,7 +128,7 @@ function renderBillingActions(entitlement: Entitlement): string {
     // is offered here regardless, in case the dashboard is not set up that
     // way yet.
     return `
-      ${navForm('/connect/billing/checkout', 'Upgrade to Pro: £99/month', { tier: 'pro' })}
+      ${navForm('/connect/billing/checkout', 'Upgrade to Pro: £99/month', { tier: 'pro' }, 'p')}
       ${navForm('/connect/billing/portal', 'Manage subscription')}
     `;
   }
@@ -149,12 +149,10 @@ async function renderBillingPage(env: Env, session: BrowserSession, noteMessage?
     <p>Current plan: <strong>${escapeHtml(tierLabel(entitlement.tier))}</strong>
     <span class="muted">(status: ${escapeHtml(entitlement.status)})</span></p>
     ${renderBillingActions(entitlement)}
-    <p class="muted">Solo is £34/month; Pro is £99/month
-    (<code>docs/decisions/2026-07-12-pricing-billing-and-licence.md</code>).
-    Subscribing and managing both hand off to Stripe's own Checkout and
-    Billing Portal pages; this Worker never collects or stores card details
-    itself. See <code>hosted/README.md</code>, "Billing (Stripe checkout,
-    portal, and the billing page)".</p>
+    <p class="muted">Solo is £34/month; Pro is £99/month. Subscribing and
+    managing your plan both open Stripe's own secure checkout and billing
+    pages, where you can change tier, update your card, or cancel at any time.
+    Card details go straight to Stripe; they are never entered or stored here.</p>
   `,
   );
 }
