@@ -268,4 +268,32 @@ describe('runCall: failures', () => {
     expect(code).toBe(2);
     expect(stderr()).toContain('Unexpected extra argument');
   });
+
+  // Entitlement gate parity with the MCP server (`src/server.ts`): `call` must
+  // not be a way around the paid brand-data choke point.
+  describe('entitlement gate', () => {
+    const prev = process.env['AFFILIATE_MCP_ENTITLED'];
+    afterEach(() => {
+      if (prev === undefined) delete process.env['AFFILIATE_MCP_ENTITLED'];
+      else process.env['AFFILIATE_MCP_ENTITLED'] = prev;
+    });
+
+    it('denies a gated brand-data tool when entitlement is off, exactly like the server', async () => {
+      process.env['AFFILIATE_MCP_ENTITLED'] = 'false';
+      const code = await runCall({ argv: ['affiliate_get_brand_rows'] });
+      expect(code).toBe(1);
+      expect(stderr()).toContain('entitlement_required');
+      expect(stderr()).toContain('affiliate_get_brand_rows');
+      // The denial fires before the handler runs, so nothing is printed as success.
+      expect(stdout()).toBe('');
+    });
+
+    it('does not deny gated tools while the gate is dormant (default access)', async () => {
+      delete process.env['AFFILIATE_MCP_ENTITLED'];
+      await runCall({ argv: ['affiliate_get_brand_rows'] });
+      // May still fail for unrelated reasons (no brand args), but never with an
+      // entitlement denial while the gate is dormant.
+      expect(stderr()).not.toContain('entitlement_required');
+    });
+  });
 });

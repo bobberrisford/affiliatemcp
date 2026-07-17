@@ -32,6 +32,7 @@
 import { generateAllTools, type ToolDefinition } from '../tools/generate.js';
 import { isErrorEnvelope, NetworkError, toErrorEnvelope } from '../shared/errors.js';
 import { getAdapters } from '../shared/registry.js';
+import { buildEntitlementRequired, GATED_TOOLS, isEntitled } from '../brand-data/entitlement.js';
 
 function out(line = ''): void {
   process.stdout.write(line.endsWith('\n') ? line : `${line}\n`);
@@ -362,6 +363,17 @@ export async function runCall(opts: CallOptions): Promise<number> {
   } catch (e) {
     err((e as Error).message);
     return 2;
+  }
+
+  // Entitlement gate: the same choke point the MCP server applies before it
+  // runs a handler (`src/server.ts`), so `call` and the server behave
+  // identically for the paid brand-data tools rather than the CLI being a way
+  // around the gate. Dormant by default (isEntitled() returns true in v1); a
+  // denied call surfaces the structured entitlement_required result on stderr
+  // and exits non-zero — never faked into success (PRD principle 4.1).
+  if (GATED_TOOLS.has(tool.name) && !isEntitled()) {
+    err(JSON.stringify(buildEntitlementRequired(tool.name), null, 2));
+    return 1;
   }
 
   try {
