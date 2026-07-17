@@ -328,3 +328,49 @@ not add other servers, deploy a `managed-mcp.json` instead (macOS:
 
 Credentials are still per-user (env vars or `~/.affiliate-mcp/.env` on each
 machine); the managed config carries no secrets.
+
+---
+
+## 8. Cloudflare Workers deploy pipeline
+
+The three Cloudflare Workers deploy from CI on merge to `main`, so there is no
+per-deploy manual step. Each mirrors `deploy-pages.yml`: path-scoped, gated,
+public config committed inline, account-specific values injected from Actions
+variables, and secrets set once on the Worker (never in CI). See
+`docs/decisions/2026-07-17-telemetry-and-containers-ci-deploy.md` and
+`docs/decisions/2026-07-16-hosted-worker-ci-deploy.md`.
+
+| Worker | Workflow | Fires on |
+|---|---|---|
+| `affiliate-mcp-hosted` | `deploy-hosted.yml` | push to `main` under `hosted/**` |
+| `affiliate-mcp-telemetry` | `deploy-telemetry.yml` | push to `main` under `telemetry-cloudflare/**` |
+| `affiliate-mcp-containers` (MCP transport + digest) | `deploy-containers.yml` | push under `containers/**`, `Dockerfile`, `src/hosted-transport/**`, `src/hosted-digest/**`; **and** after a successful `Publish` run (so adapter/`src` changes reach the hosted transport in lockstep with each npm release); manual dispatch |
+
+Each also runs manually: `gh workflow run deploy-<name>.yml -f confirm=deploy`.
+A containers deploy recycles the single pinned transport instance (brief
+in-memory session drop; clients reconnect); its trigger scope keeps that rare.
+
+### One-time setup (never per-deploy)
+
+These are the only manual actions, done once. After them every deploy is
+automatic.
+
+1. **`CLOUDFLARE_API_TOKEN`** repo secret must carry, on top of Workers + KV +
+   D1: **`Account → Containers → Edit`** and **`Account → Cloudchamber → Edit`**
+   (both — Containers alone does not authorise the image push). One token serves
+   all three deploy workflows.
+2. **`CLOUDFLARE_ACCOUNT_ID`** repo secret (already set for `deploy-hosted`).
+3. **Actions variables** (Settings → Secrets and variables → Actions →
+   Variables), substituted into `containers/wrangler.toml` at deploy, with the
+   workflow failing fast if either is unset:
+   - `TRANSPORT_PUBLIC_URL` — the containers Worker's own custom domain, e.g.
+     `https://mcp.agenticaffiliate.ai` (gates OAuth discovery).
+   - `HOSTED_WORKER_ORIGIN` — the hosted Worker's origin, e.g.
+     `https://hosted.agenticaffiliate.ai`.
+
+Worker secrets (`VAULT_MASTER_KEY`, `SESSION_SIGNING_KEY`, `STRIPE_*`,
+`RESEND_API_KEY`, `DIGEST_COMPOSE_SECRET`, telemetry's `GITHUB_TOKEN`) are set
+once with `wrangler secret put` and are untouched by a code deploy.
+
+D1 schema migrations are never part of a code deploy; run them deliberately with
+`npm --prefix telemetry-cloudflare run db:migrate`.
