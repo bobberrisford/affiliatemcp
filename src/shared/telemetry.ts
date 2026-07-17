@@ -11,19 +11,38 @@ import path from 'node:path';
 
 import { resolveConfigPaths } from '../cli/wizard/paths.js';
 
-export const TELEMETRY_SCHEMA_VERSION = 1;
+export const TELEMETRY_SCHEMA_VERSION = 2;
 export const TELEMETRY_ENDPOINT =
   process.env['AFFILIATE_MCP_TELEMETRY_ENDPOINT'] ??
   'https://telemetry.agenticaffiliate.ai/v1/ingest';
 export const PACKAGE_VERSION = '0.17.0';
 
 export type TelemetrySurface = 'npm' | 'mcpb' | 'desktop-bundle' | 'unknown';
+/**
+ * Coarse outcome categories, one count per (network, operation, outcome). The
+ * finer error split exists so field breakage is diagnosable from aggregate
+ * counts alone: `upstream_5xx` means the network's servers are failing,
+ * `upstream_4xx` means the request is being rejected (contract drift or a bug
+ * in how we build the request), `internal_error` means the adapter threw a
+ * raw value instead of a NetworkErrorEnvelope (a Principle 4.1 violation, so
+ * a bug in this codebase), and `timeout` / `circuit_open` /
+ * `network_unavailable` separate user-environment noise from real breakage.
+ * These are categories only; no error text, status line, or message ever
+ * accompanies them.
+ */
 export type TelemetryOutcome =
   | 'success'
   | 'auth_error'
   | 'rate_limit'
   | 'config_error'
+  | 'not_implemented'
+  | 'timeout'
+  | 'circuit_open'
+  | 'network_unavailable'
+  | 'upstream_4xx'
+  | 'upstream_5xx'
   | 'upstream_error'
+  | 'internal_error'
   | 'other_error';
 
 export interface TelemetryCount {
@@ -34,7 +53,7 @@ export interface TelemetryCount {
 }
 
 export interface TelemetryPayload {
-  schema_version: 1;
+  schema_version: 2;
   day: string;
   monthly_install_id: string;
   package_version: string;
@@ -55,7 +74,14 @@ const OUTCOMES = new Set<TelemetryOutcome>([
   'auth_error',
   'rate_limit',
   'config_error',
+  'not_implemented',
+  'timeout',
+  'circuit_open',
+  'network_unavailable',
+  'upstream_4xx',
+  'upstream_5xx',
   'upstream_error',
+  'internal_error',
   'other_error',
 ]);
 const SAFE_DIMENSION = /^[a-z0-9][a-z0-9_-]{0,79}$/;
@@ -191,16 +217,43 @@ export function telemetrySurface(): TelemetrySurface {
   return process.env['npm_execpath'] || process.env['npm_config_user_agent'] ? 'npm' : 'unknown';
 }
 
-export function telemetryOutcomeFromErrorType(type: string): TelemetryOutcome {
-  if (type === 'auth_error') return 'auth_error';
-  if (type === 'rate_limit') return 'rate_limit';
-  if (type === 'config_error') return 'config_error';
-  if (
-    type === 'network_api_error' ||
-    type === 'network_unavailable' ||
-    type === 'timeout' ||
-    type === 'circuit_open'
-  ) {
+const ENVELOPE_TYPE_OUTCOMES: Record<string, TelemetryOutcome> = {
+  auth_error: 'auth_error',
+  rate_limit: 'rate_limit',
+  config_error: 'config_error',
+  not_implemented: 'not_implemented',
+  timeout: 'timeout',
+  circuit_open: 'circuit_open',
+  network_unavailable: 'network_unavailable',
+};
+
+/**
+ * Classify a failed tool invocation into a countable outcome category.
+ *
+ * `structured` states whether the throw spoke a documented error contract: a
+ * NetworkErrorEnvelope, a NetworkError wrapping one, or a sanctioned typed
+ * error the caller recognises (see `telemetryOutcomeForThrown` in server.ts).
+ * An unstructured raw throw is a Principle 4.1 violation, so it is counted as
+ * `internal_error` regardless of what the best-effort coercion later guesses
+ * for the user-facing envelope: the count measures where the bug lives, not
+ * what the coercion inferred from message text. Only the envelope's type and
+ * HTTP status class are read; no message, body, or status line reaches the
+ * counter.
+ */
+export function telemetryOutcomeFromEnvelope(
+  envelope: { type: string; httpStatus?: number },
+  structured: boolean,
+): TelemetryOutcome {
+  if (!structured) return 'internal_error';
+  const mapped = ENVELOPE_TYPE_OUTCOMES[envelope.type];
+  if (mapped) return mapped;
+  if (envelope.type === 'network_api_error') {
+    if (typeof envelope.httpStatus === 'number' && envelope.httpStatus >= 500) {
+      return 'upstream_5xx';
+    }
+    if (typeof envelope.httpStatus === 'number' && envelope.httpStatus >= 400) {
+      return 'upstream_4xx';
+    }
     return 'upstream_error';
   }
   return 'other_error';

@@ -60,3 +60,10 @@ td {
 th {
   color: #b7ff45;
 }
+tr.bug-signal td {
+  background: #2a1416;
+  color: #ffb4a8;
+}
+code {
+  color: #b7ff45;
+}

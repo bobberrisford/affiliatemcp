@@ -38,15 +38,24 @@ import { generateAllTools, type ToolDefinition } from './tools/generate.js';
 import { guardToolResult } from './tools/result-guard.js';
 import { getPrompt, listPrompts } from './prompts/generate.js';
 import { buildEntitlementRequired, GATED_TOOLS, isEntitled } from './brand-data/entitlement.js';
+import { ZodError } from 'zod';
+
 import { recordActionAudit } from './shared/audit.js';
-import { isErrorEnvelope, NetworkError, toErrorEnvelope } from './shared/errors.js';
+import {
+  BrandNotRegistered,
+  isErrorEnvelope,
+  NetworkError,
+  toErrorEnvelope,
+} from './shared/errors.js';
 import { createLogger } from './shared/logging.js';
 import { localDefaultContext, runInRequestContext } from './shared/request-context.js';
+import { NotImplementedError, type NetworkErrorEnvelope } from './shared/types.js';
 import {
   flushTelemetry,
   PACKAGE_VERSION,
   recordTelemetry,
-  telemetryOutcomeFromErrorType,
+  telemetryOutcomeFromEnvelope,
+  type TelemetryOutcome,
 } from './shared/telemetry.js';
 import { runStartupUpdateCheck } from './shared/update-check.js';
 
@@ -195,11 +204,7 @@ export async function startServer(): Promise<void> {
             ? err
             : toErrorEnvelope(err, { network: telemetry.network, operation: name });
       log.warn({ tool: name, envelope }, 'tool invocation failed');
-      recordTelemetry(
-        telemetry.network,
-        telemetry.operation,
-        telemetryOutcomeFromErrorType(envelope.type),
-      );
+      recordTelemetry(telemetry.network, telemetry.operation, telemetryOutcomeForThrown(err, envelope));
       return {
         isError: true,
         content: [
@@ -236,6 +241,30 @@ export function classifyToolForTelemetry(toolName: string): TelemetryToolClassif
   const metaOperation = META_TOOL_OPERATIONS.get(toolName);
   if (metaOperation) return { network: 'meta', operation: metaOperation };
   return { network: extractNetwork(toolName), operation: extractOperation(toolName) };
+}
+
+/**
+ * Pick the telemetry outcome for a throw that reached the tool-call boundary.
+ *
+ * Sanctioned typed throws speak a documented contract even though they are
+ * not NetworkErrors: `NotImplementedError` is the stated way for an adapter
+ * to refuse an unimplemented operation, and `BrandNotRegistered` is an
+ * expected user-configuration miss. Both classify by their coerced envelope
+ * type. Zod argument-validation failures are caller errors, not code bugs,
+ * and count as other_error. Only a throw outside this set is a Principle 4.1
+ * violation and therefore counted as internal_error.
+ */
+export function telemetryOutcomeForThrown(
+  err: unknown,
+  envelope: NetworkErrorEnvelope,
+): TelemetryOutcome {
+  if (err instanceof ZodError) return 'other_error';
+  const structured =
+    err instanceof NetworkError ||
+    isErrorEnvelope(err) ||
+    err instanceof NotImplementedError ||
+    err instanceof BrandNotRegistered;
+  return telemetryOutcomeFromEnvelope(envelope, structured);
 }
 
 /** Best-effort: pull the network slug out of a tool name `affiliate_<slug>_<op>`. */

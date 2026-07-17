@@ -31,9 +31,13 @@ summary contains:
 - A random installation identifier that rotates every UTC month.
 - Package version and launch surface (`npm`, `mcpb`, `desktop-bundle`, or
   `unknown`).
-- Counts by affiliate-network slug, operation name, and coarse outcome:
-  success, authentication error, rate limit, configuration error, upstream
-  error, or other error.
+- Counts by affiliate-network slug, operation name, and coarse outcome
+  category: success, authentication error, rate limit, configuration error,
+  operation not implemented, timeout, circuit open, network unreachable,
+  upstream request rejected (HTTP 4xx), upstream server failure (HTTP 5xx),
+  other upstream error, internal error (the software itself misbehaved), or
+  other error. Only the category is sent, never any error message, response
+  body, or status line.
 - Coarse lifecycle counts such as server starts, completed setup, and completed
   client installation.
 

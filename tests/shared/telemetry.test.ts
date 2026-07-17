@@ -11,7 +11,7 @@ import {
   setTelemetryConsent,
   telemetryConsent,
   telemetryFilePath,
-  telemetryOutcomeFromErrorType,
+  telemetryOutcomeFromEnvelope,
   TELEMETRY_ENDPOINT,
 } from '../../src/shared/telemetry.js';
 
@@ -77,6 +77,7 @@ describe('telemetry consent and privacy boundary', () => {
     const succeeded = vi.fn().mockResolvedValue(new Response('', { status: 202 }));
     await flushTelemetry(new Date('2026-06-12T12:00:00Z'), succeeded);
     const body = JSON.parse(String(succeeded.mock.calls[0]?.[1]?.body)) as Record<string, unknown>;
+    expect(body['schema_version']).toBe(2);
     expect(body).not.toHaveProperty('arguments');
     expect(body).not.toHaveProperty('results');
     expect(body).not.toHaveProperty('error');
@@ -103,14 +104,49 @@ describe('telemetry consent and privacy boundary', () => {
     expect(_readTelemetryStateForTests()?.month).toBe('2026-06');
   });
 
-  it('honours environment overrides and maps only coarse error categories', () => {
+  it('honours environment overrides', () => {
     process.env['AFFILIATE_MCP_TELEMETRY'] = 'true';
     expect(telemetryConsent()).toBe('enabled');
     process.env['AFFILIATE_MCP_TELEMETRY'] = 'false';
     expect(telemetryConsent()).toBe('disabled');
-    expect(telemetryOutcomeFromErrorType('auth_error')).toBe('auth_error');
-    expect(telemetryOutcomeFromErrorType('network_api_error')).toBe('upstream_error');
-    expect(telemetryOutcomeFromErrorType('not_implemented')).toBe('other_error');
+  });
+
+  it('maps structured envelopes to categories and reads only type and status class', () => {
+    expect(telemetryOutcomeFromEnvelope({ type: 'auth_error' }, true)).toBe('auth_error');
+    expect(telemetryOutcomeFromEnvelope({ type: 'rate_limit' }, true)).toBe('rate_limit');
+    expect(telemetryOutcomeFromEnvelope({ type: 'config_error' }, true)).toBe('config_error');
+    expect(telemetryOutcomeFromEnvelope({ type: 'not_implemented' }, true)).toBe(
+      'not_implemented',
+    );
+    expect(telemetryOutcomeFromEnvelope({ type: 'timeout' }, true)).toBe('timeout');
+    expect(telemetryOutcomeFromEnvelope({ type: 'circuit_open' }, true)).toBe('circuit_open');
+    expect(telemetryOutcomeFromEnvelope({ type: 'network_unavailable' }, true)).toBe(
+      'network_unavailable',
+    );
+    expect(telemetryOutcomeFromEnvelope({ type: 'unknown_future_type' }, true)).toBe(
+      'other_error',
+    );
+  });
+
+  it('splits upstream API errors by HTTP status class so contract drift is visible', () => {
+    expect(telemetryOutcomeFromEnvelope({ type: 'network_api_error', httpStatus: 502 }, true)).toBe(
+      'upstream_5xx',
+    );
+    expect(telemetryOutcomeFromEnvelope({ type: 'network_api_error', httpStatus: 400 }, true)).toBe(
+      'upstream_4xx',
+    );
+    expect(telemetryOutcomeFromEnvelope({ type: 'network_api_error' }, true)).toBe(
+      'upstream_error',
+    );
+  });
+
+  it('counts an unstructured raw throw as internal_error regardless of coerced type', () => {
+    // A raw throw is a Principle 4.1 violation: a bug in this codebase, not an
+    // upstream condition, even when the coercion guessed a friendlier type.
+    expect(telemetryOutcomeFromEnvelope({ type: 'timeout' }, false)).toBe('internal_error');
+    expect(telemetryOutcomeFromEnvelope({ type: 'network_api_error', httpStatus: 500 }, false)).toBe(
+      'internal_error',
+    );
   });
 });
 
