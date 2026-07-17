@@ -519,26 +519,23 @@ Start here if you want to understand the product direction:
 
 When you run the setup wizard it writes a single file at
 `~/.affiliate-mcp/.env` on your machine, locked to your user account
-(file mode `0600`). That's the only place your API keys exist outside
-the network dashboards. Both publisher and brand-side credentials live
-here, each keyed by network slug. Open, edit, delete, or copy it like
-any other file.
+(file mode `0600`). That's the only place your API keys exist outside the
+network dashboards. Both publisher and brand-side credentials live here, each
+keyed by network slug; open, edit, delete, or copy it like any other file.
 
 If you registered any brand-side networks, the wizard also writes
-`~/.affiliate-mcp/brands.json` next to it. That file maps your local
-nickname for each brand (e.g. `acme`) to the network's brand id on
-every network the brand is bound to. Empty for the publisher-only path.
+`~/.affiliate-mcp/brands.json` next to it, mapping your local nickname for each
+brand (e.g. `acme`) to the network's brand id on every network the brand is
+bound to (empty for the publisher-only path).
 
 That local path stays free and complete; a hosted tier is planned, opt-in.
 
 ## Managing brands
 
-The brand-side flow adds one concept: a local **brand slug**. You give
-each client (or each of your own brands) a short nickname; the tool
-maps it to the network's own brand id on every network the brand is
-registered on.
-
-A real `brands.json` looks like this:
+The brand-side flow adds one concept: a local **brand slug**. You give each
+client (or each of your own brands) a short nickname; the tool maps it to the
+network's own brand id on every network the brand is registered on. A real
+`brands.json` looks like this:
 
 ```json
 {
@@ -547,51 +544,39 @@ A real `brands.json` looks like this:
     "acme": [
       { "network": "impact-advertiser", "credentialId": "default", "networkBrandId": "IA-12345" },
       { "network": "cj-advertiser", "credentialId": "default", "networkBrandId": "7654321" }
-    ],
-    "globex": [
-      { "network": "awin-advertiser", "credentialId": "default", "networkBrandId": "98765" }
     ]
   }
 }
 ```
 
 The same logical brand can appear under multiple networks; that's how
-*"earnings for Acme across all networks"* fans out across the right
-brand id on each one. You can hand-edit this file to rename, remove,
-or add brands. Re-run `npx affiliate-networks-mcp setup` to register
-new ones interactively — the wizard skips brands already in the file.
+*"earnings for Acme across all networks"* fans out across the right brand id on
+each one. You can hand-edit this file to rename, remove, or add brands, or re-run
+`npx affiliate-networks-mcp setup` to register new ones interactively (the wizard
+skips brands already in the file).
 
 Three skills are tuned for the brand side:
-
-- [`programme-performance-report`](./skills/programme-performance-report/SKILL.md)
-  — one brand across its bound networks. Per-publisher rollup, status
-  split, period-over-period delta.
-- [`agency-portfolio-rollup`](./skills/agency-portfolio-rollup/SKILL.md)
-  — every brand × every network in the book. Brand-aggregated headline
-  with week-over-week deltas.
-- [`programme-anomaly-watch`](./skills/programme-anomaly-watch/SKILL.md)
-  — week-over-week anomaly scan, designed to run on a schedule.
+[`programme-performance-report`](./skills/programme-performance-report/SKILL.md)
+(single-brand, per-publisher rollup),
+[`agency-portfolio-rollup`](./skills/agency-portfolio-rollup/SKILL.md)
+(every brand × network, brand-aggregated), and
+[`programme-anomaly-watch`](./skills/programme-anomaly-watch/SKILL.md)
+(scheduled week-over-week anomaly scan).
 
 ## Use it from the terminal
 
-The `call` command exposes the same registered operations as the MCP server for
-quick checks, shell scripts, and CI. Calls are explicit but may contact an
-upstream network; for example, `generate_tracking_link` can mint a link.
+`call` runs the same registered operations as the MCP server, for quick checks,
+scripts, and CI (`call --help` for full usage). Some calls contact an upstream
+network (for example `generate_tracking_link` mints a link). Schema-aware
+`key=value` parsing keeps string ids, converts numbers, and takes comma-separated
+or JSON arrays; `--args '<json>'` passes a full object. Results are JSON on
+stdout; failures are `NetworkErrorEnvelope` JSON on stderr with a non-zero exit.
 
 ```bash
-# Discover and inspect operations
-npx affiliate-networks-mcp call --list
-npx affiliate-networks-mcp call --list --network awin
+npx affiliate-networks-mcp call --list [--network awin]
 npx affiliate-networks-mcp call --describe awin list_transactions
-
-# Invoke with <network> <operation> or a full affiliate_<network>_<operation> name
-npx affiliate-networks-mcp call awin list_transactions from=2026-01-01 to=2026-02-01 limit=50
-npx affiliate-networks-mcp call awin list_transactions --args '{"from":"2026-01-01","status":["approved","pending"],"limit":50}'
+npx affiliate-networks-mcp call awin list_transactions from=2026-01-01 limit=50
 ```
-
-Schema-aware `key=value` parsing preserves string ids, converts numbers, and
-accepts comma-separated or JSON arrays. Results are JSON on stdout; failures
-are `NetworkErrorEnvelope` JSON on stderr with a non-zero exit code.
 
 ## When something goes wrong
 
@@ -719,21 +704,15 @@ prompts** are reusable templates and currently Awin-specific. **Setup paths**
 connect the same local server to Claude Desktop, Claude Code, Codex, Cowork, or
 another compatible local stdio MCP client.
 
-The packaged skills under [`skills/`](./skills) are the
-conversation patterns Claude follows for common requests:
-
-**Publisher side:**
-
-- [`affiliate-earnings-report`](./skills/affiliate-earnings-report/SKILL.md)
-- [`affiliate-network-status`](./skills/affiliate-network-status/SKILL.md)
-- [`affiliate-network-setup-help`](./skills/affiliate-network-setup-help/SKILL.md)
-- [`audit-affiliate-links`](./skills/audit-affiliate-links/SKILL.md)
-
-**Brand side:**
-
-- [`programme-performance-report`](./skills/programme-performance-report/SKILL.md)
-- [`agency-portfolio-rollup`](./skills/agency-portfolio-rollup/SKILL.md)
-- [`programme-anomaly-watch`](./skills/programme-anomaly-watch/SKILL.md)
+The packaged skills under [`skills/`](./skills) are the conversation patterns
+Claude follows for common requests. Publisher side:
+[`affiliate-earnings-report`](./skills/affiliate-earnings-report/SKILL.md),
+[`affiliate-network-status`](./skills/affiliate-network-status/SKILL.md),
+[`affiliate-network-setup-help`](./skills/affiliate-network-setup-help/SKILL.md),
+[`audit-affiliate-links`](./skills/audit-affiliate-links/SKILL.md). Brand side:
+[`programme-performance-report`](./skills/programme-performance-report/SKILL.md),
+[`agency-portfolio-rollup`](./skills/agency-portfolio-rollup/SKILL.md),
+[`programme-anomaly-watch`](./skills/programme-anomaly-watch/SKILL.md).
 
 For per-network capability detail, known upstream quirks, and the
 editorial baseline used when accepting new network claims, see
