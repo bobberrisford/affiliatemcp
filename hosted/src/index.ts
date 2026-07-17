@@ -143,7 +143,8 @@
  */
 
 import type { Env } from './env.js';
-import { corsHeaders, html, json, nowSeconds, setSessionCookieHeader } from './http.js';
+import { corsHeaders, json, nowSeconds, setSessionCookieHeader } from './http.js';
+import { escapeHtml, renderShell } from './page-chrome.js';
 import { hashLinkToken, isValidEmail, normaliseEmail } from './identity.js';
 import {
   dispatchMagicLink,
@@ -324,9 +325,11 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
 }
 
 function renderErrorPage(message: string): Response {
-  return html(
-    `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>sign-in error</title></head>
-<body><p>${message}</p></body></html>`,
+  return renderShell(
+    'sign-in error',
+    `<h1>sign-in error</h1>
+    <p>${escapeHtml(message)}</p>
+    <p><a class="btn p" href="https://agenticaffiliate.ai/hosted.html">get a new sign-in link</a></p>`,
     400,
   );
 }

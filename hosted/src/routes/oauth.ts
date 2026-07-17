@@ -43,7 +43,8 @@
 
 import type { Env } from '../env.js';
 import { publicBaseUrl } from '../env.js';
-import { html, json, nowSeconds } from '../http.js';
+import { json, nowSeconds } from '../http.js';
+import { escapeHtml, renderShell } from '../page-chrome.js';
 import { ipRateLimitHash, isValidEmail, normaliseEmail } from '../identity.js';
 import {
   buildSessionPayload,
@@ -108,46 +109,15 @@ export function isPublicOAuthApiPath(pathname: string): boolean {
   );
 }
 
-// ── Minimal self-contained page chrome (matches the connect/callback style) ──
+// ── Page chrome ──────────────────────────────────────────────────────────────
 
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-const PAGE_STYLE = `
-  body { font-family:'JetBrains Mono',ui-monospace,Menlo,monospace; background:#fff; color:#0a0a0a;
-         margin:0; padding:40px 20px; display:flex; justify-content:center; }
-  .card { width:100%; max-width:640px; border:2px solid #0a0a0a; padding:28px; box-shadow:6px 6px 0 #0a0a0a; }
-  h1 { font-size:22px; font-weight:700; margin:0 0 4px; text-transform:lowercase; }
-  p { font-size:14px; line-height:1.55; }
-  .muted { color:#555; font-size:12px; }
-  .note { border:1px dashed #0a0a0a; padding:10px; font-size:12px; margin:14px 0; }
-  label { display:block; font-size:13px; font-weight:700; margin:14px 0 4px; }
-  input[type="email"] { width:100%; box-sizing:border-box; font-family:inherit; font-size:13px; padding:8px;
-                        border:1px solid #0a0a0a; }
-  button { font-family:inherit; font-size:13px; padding:8px 14px; border:2px solid #0a0a0a; background:#fff;
-           cursor:pointer; margin-top:14px; }
-  form.inline { display:inline-block; margin:0; }
-`;
-
-/** An HTML page in the OAuth ceremony. Like the connect flow's `page()`, every
- * such page is `no-store` (from `html()`) and `no-referrer`, because these
- * pages carry a short-lived session token in a hidden field. */
+/** An HTML page in the OAuth ceremony. Renders through the shared design-system
+ * shell (`../page-chrome.ts`), the same look as the connect dashboard and the
+ * marketing site. Like every hosted page it is `no-store` (from `html()`) and
+ * `no-referrer` (set by `renderShell`), because these pages carry a short-lived
+ * session token in a hidden field. */
 function oauthPage(title: string, bodyHtml: string, status = 200): Response {
-  const res = html(
-    `<!doctype html><html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(title)}</title><style>${PAGE_STYLE}</style></head>
-<body><div class="card">${bodyHtml}</div></body></html>`,
-    status,
-  );
-  res.headers.set('referrer-policy', 'no-referrer');
-  return res;
+  return renderShell(title, bodyHtml, status);
 }
 
 function errorPage(message: string, status = 400): Response {
@@ -354,13 +324,13 @@ function renderSignInPage(reqId: string, clientName: string | undefined, errorMe
     <p>${who} wants to connect to your affiliate-mcp hosted account.</p>
     ${errorHtml}
     <p>Sign in with your email to continue. We will send you a one-time link;
-    once you follow it you can approve the connection. You will not need to
-    copy or paste any token &mdash; your client receives access automatically.</p>
+    once you follow it you can approve the connection. There is no token to copy
+    or paste: your client receives access automatically.</p>
     <form method="post" action="/authorize/email">
       <input type="hidden" name="auth_req" value="${escapeHtml(reqId)}">
       <label for="email">Email</label>
       <input type="email" id="email" name="email" placeholder="you@example.com" required>
-      <button type="submit">send sign-in link</button>
+      <button class="btn p" type="submit">send sign-in link</button>
     </form>
     <p class="muted">Signing in creates a hosted account if you do not already
     have one. The link expires in 15 minutes and works once.</p>
@@ -449,19 +419,19 @@ export async function renderConsentPage(env: Env, reqId: string, userId: string)
     <div class="note">Approving lets this client act on affiliate-mcp with the
     same access as signing in yourself: it can read your connected networks and
     their data, add or remove connections, and manage your account. Only approve
-    a client you trust. You can revoke access at any time (see
-    <code>hosted/README.md</code>).</div>
+    a client you trust. You can revoke access at any time from your dashboard, or
+    by removing the connector in your client.</div>
     <form class="inline" method="post" action="/authorize/consent">
       <input type="hidden" name="auth_req" value="${escapeHtml(reqId)}">
       <input type="hidden" name="token" value="${escapeHtml(token)}">
       <input type="hidden" name="decision" value="approve">
-      <button type="submit">approve</button>
+      <button class="btn p" type="submit">approve</button>
     </form>
     <form class="inline" method="post" action="/authorize/consent">
       <input type="hidden" name="auth_req" value="${escapeHtml(reqId)}">
       <input type="hidden" name="token" value="${escapeHtml(token)}">
       <input type="hidden" name="decision" value="deny">
-      <button type="submit">deny</button>
+      <button class="btn ghost" type="submit">deny</button>
     </form>
   `,
   );

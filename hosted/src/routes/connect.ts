@@ -69,7 +69,7 @@
 
 import type { Env } from '../env.js';
 import { vaultMasterKeyProvider } from '../env.js';
-import { bearerToken, cookieToken, html, sameOriginPost } from '../http.js';
+import { bearerToken, cookieToken, sameOriginPost } from '../http.js';
 import { dispatchMagicLink, MagicLinkConfigError } from '../auth-link.js';
 import { isValidEmail, normaliseEmail } from '../identity.js';
 import { testConnection, type ConnectionTestResult } from '../connect-test.js';
@@ -77,71 +77,27 @@ import { CONNECT_NETWORKS, findConnectNetwork, type ConnectNetwork } from '../ne
 import { getCredentials, isValidCredentialRecord, listNetworks, putCredentials } from '../vault.js';
 import { resolveValidSession, sessionScope } from '../token.js';
 import { resolveEntitlement, type HostedTier } from '../billing.js';
+import { escapeHtml, renderShell } from '../page-chrome.js';
 
 // ── Shared page chrome ──────────────────────────────────────────────────────
-// Same monospace, boxed-card look as the OAuth ceremony pages
-// (`src/routes/oauth.ts`) and the H2 error page (`../index.ts`) — deliberately
-// not factored into a shared constant across files, a minimal, disposable
-// style, not a design system.
-const PAGE_STYLE = `
-  body { font-family:'JetBrains Mono',ui-monospace,Menlo,monospace; background:#fff; color:#0a0a0a;
-         margin:0; padding:40px 20px; display:flex; justify-content:center; }
-  .card { width:100%; max-width:640px; border:2px solid #0a0a0a; padding:28px; box-shadow:6px 6px 0 #0a0a0a; }
-  h1 { font-size:22px; font-weight:700; margin:0 0 4px; text-transform:lowercase; }
-  h2 { font-size:16px; font-weight:700; margin:20px 0 8px; }
-  p { font-size:14px; line-height:1.55; }
-  .muted { color:#555; font-size:12px; }
-  label { display:block; font-size:13px; font-weight:700; margin:14px 0 4px; }
-  .field-help { font-size:12px; color:#555; margin:2px 0 6px; }
-  input[type="text"], input[type="password"], input[type="email"] {
-    width:100%; box-sizing:border-box; font-family:inherit; font-size:13px; padding:8px;
-    border:1px solid #0a0a0a;
-  }
-  textarea { width:100%; box-sizing:border-box; font-family:inherit; font-size:12px; padding:10px;
-             border:1px solid #0a0a0a; margin:12px 0; }
-  button { font-family:inherit; font-size:13px; padding:8px 14px; border:2px solid #0a0a0a; background:#fff;
-           cursor:pointer; margin-top:12px; }
-  form.nav { display:inline-block; margin:0; }
-  form.nav button { margin-top:0; padding:4px 10px; font-size:12px; }
-  ul.network-list { list-style:none; padding:0; margin:16px 0; }
-  ul.network-list li { border:1px solid #0a0a0a; padding:10px 12px; margin-bottom:8px;
-                        display:flex; justify-content:space-between; align-items:center; }
-  .status-connected { color:#0a6b2c; font-weight:700; }
-  .status-not-connected { color:#555; }
-  .status-failed { color:#8a1f11; font-weight:700; }
-  .note { border:1px dashed #0a0a0a; padding:10px; font-size:12px; margin:14px 0; }
-`;
-
-export function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+// Every hosted page (connect, billing, OAuth ceremony, sign-in error) now
+// renders through the one design-system chrome in `../page-chrome.ts` — the
+// affiliate-mcp look a user just saw on the marketing site, not the earlier
+// throwaway monospace card. `escapeHtml` lives there too; it is re-exported
+// here so `./billing-page.ts` (which imports it, along with `page` and
+// `navForm`, from this module) keeps working unchanged.
+export { escapeHtml };
 
 /**
- * Every connect page carries `Referrer-Policy: no-referrer` on top of the
- * Worker-wide `cache-control: no-store` inherited from `html()` (`../http.js`).
- * No page in this flow renders the session token anywhere — the browser holds
- * it in the HttpOnly `hosted_session` cookie (see the file header) — so no URL
- * or form body here carries it, and suppressing the Referer entirely means even
- * these token-free URLs leak nothing outbound through the external
- * documentation links these pages contain. `status` defaults to 200; pass 403
- * for the CSRF-rejection page and 500 for a sign-in configuration error.
+ * A hosted page in the connect family. Delegates to the shared design-system
+ * shell (`renderShell`): brand header + a single card holding `bodyHtml`,
+ * `cache-control: no-store` (from `html()`), and `referrer-policy: no-referrer`
+ * (no page here renders the session token — the browser holds it in the
+ * HttpOnly `hosted_session` cookie, see the file header). `status` defaults to
+ * 200; pass 403 for the CSRF-rejection page and 500 for a sign-in config error.
  */
 export function page(title: string, bodyHtml: string, status = 200): Response {
-  const res = html(
-    `<!doctype html><html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(title)}</title>
-<style>${PAGE_STYLE}</style></head>
-<body><div class="card">${bodyHtml}</div></body></html>`,
-    status,
-  );
-  res.headers.set('referrer-policy', 'no-referrer');
-  return res;
+  return renderShell(title, bodyHtml, status);
 }
 
 // ── Session resolution (browser-flavoured; see file header) ────────────────
@@ -225,7 +181,7 @@ export function signInPromptPage(env: Env, extraNote?: string): Response {
     <form method="post" action="/connect/signin">
       <label for="email">Email</label>
       <input type="email" id="email" name="email" placeholder="you@example.com" required>
-      <button type="submit">send sign-in link</button>
+      <button class="btn p" type="submit">send sign-in link</button>
     </form>
     <p class="muted">Signing in by email creates a hosted account if you do not
     already have one. The link expires in 15 minutes and works once. Connecting
@@ -294,18 +250,22 @@ export async function handleConnectSignin(request: Request, env: Env): Promise<R
  * `./billing-page.ts`) without inventing a second navigation-form shape: one
  * POST form remains the only way this connect family moves the browser
  * anywhere.
+ *
+ * `variant` sets the button's design-system style: 'ghost sm' (the default) for
+ * secondary navigation like back-links, 'p' for a primary call to action.
  */
 export function navForm(
   action: string,
   label: string,
   extraFields: Record<string, string> = {},
+  variant = 'ghost sm',
 ): string {
   const extraHtml = Object.entries(extraFields)
     .map(([name, value]) => `<input type="hidden" name="${escapeHtml(name)}" value="${escapeHtml(value)}">`)
     .join('');
   return `<form class="nav" method="post" action="${escapeHtml(action)}">
     ${extraHtml}
-    <button type="submit">${escapeHtml(label)}</button>
+    <button class="btn ${escapeHtml(variant)}" type="submit">${escapeHtml(label)}</button>
   </form>`;
 }
 
@@ -432,7 +392,7 @@ function renderConnectFormBody(
     ${errorHtml}
     <form method="post" action="/connect/${network.slug}">
       ${fieldsHtml}
-      <button type="submit">save and test connection</button>
+      <button class="btn p" type="submit">save and test connection</button>
     </form>
     <p class="muted">Stuck finding these details? ${escapeHtml(network.name)}'s own
     help pages are here: <a href="${escapeHtml(network.docsUrl)}">${escapeHtml(network.docsUrl)}</a>.</p>
@@ -574,7 +534,7 @@ function renderConnectResultBody(
         add it as a custom connector (steps below) and sign in through your
         browser. There is no token to copy or paste.</li>
       </ol>
-      <p>${navForm('/connect/billing', 'choose a plan')}</p>
+      <p>${navForm('/connect/billing', 'choose a plan', {}, 'p')}</p>
       ${connectorUrlHtml}
       <p class="muted">After you subscribe: in Claude, open
       <strong>Settings &rarr; Connectors &rarr; Add custom connector</strong>,
