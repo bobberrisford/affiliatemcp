@@ -41,9 +41,9 @@ import { buildEntitlementRequired, GATED_TOOLS, isEntitled } from '../brand-data
 import { recordActionAudit } from '../shared/audit.js';
 import { isErrorEnvelope, NetworkError, toErrorEnvelope } from '../shared/errors.js';
 import { createLogger } from '../shared/logging.js';
-import { PACKAGE_VERSION, recordTelemetry, telemetryOutcomeFromErrorType } from '../shared/telemetry.js';
+import { PACKAGE_VERSION, recordTelemetry } from '../shared/telemetry.js';
 import { runInRequestContext } from '../shared/request-context.js';
-import { classifyToolForTelemetry } from '../server.js';
+import { classifyToolForTelemetry, telemetryOutcomeForThrown } from '../server.js';
 
 // Side-effect import: registers every network adapter with the shared registry.
 // Idempotent (module evaluation is cached) and already happens transitively via
@@ -321,7 +321,7 @@ export function buildHostedMcpServer(deps: HostedMcpServerDeps): Server {
             ? err
             : toErrorEnvelope(err, { network: telemetry.network, operation: name });
       log.warn({ tool: name, envelope }, 'tool invocation failed');
-      recordTelemetry(telemetry.network, telemetry.operation, telemetryOutcomeFromErrorType(envelope.type));
+      recordTelemetry(telemetry.network, telemetry.operation, telemetryOutcomeForThrown(err, envelope));
       recordHostedAudit({ userId, network: telemetry.network, operation: telemetry.operation, outcome: 'error' });
       return {
         isError: true,
