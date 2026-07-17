@@ -1,5 +1,13 @@
 # Hosted MCP transport: go-live deploy runbook
 
+> **Now CI-deployed.** The containers Worker (MCP transport + digest) deploys
+> from `.github/workflows/deploy-containers.yml` on merge to `main` and after a
+> release — see `docs/decisions/2026-07-17-telemetry-and-containers-ci-deploy.md`
+> and DEPLOY.md §8. This runbook remains the reference for the **one-time**
+> account setup (API-token scopes, custom domain, Actions variables) and as the
+> break-glass manual path (`gh workflow run deploy-containers.yml -f
+> confirm=deploy`, or a local `wrangler deploy`).
+
 The ordered, copy-pasteable checklist to take the hosted MCP **transport**
 (the always-on Node service MCP clients connect to) from nothing to a live,
 reachable URL. This is the missing piece Tier B of

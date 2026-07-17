@@ -1,0 +1,73 @@
+name: Deploy telemetry Worker
+
+# Deploy of the opt-in usage-telemetry Worker (affiliate-mcp-telemetry,
+# https://telemetry.agenticaffiliate.ai) to Cloudflare, as part of the regular
+# pipeline. See docs/decisions/2026-07-17-telemetry-and-containers-ci-deploy.md.
+#
+# Runs on push to main whenever the telemetry Worker (or this workflow) changes,
+# mirroring deploy-hosted.yml. Also runnable manually via workflow_dispatch.
+#
+# The telemetry Worker is aggregate, opt-in, and non-billing, so the gate is a
+# typecheck + a wrangler dry-run rather than the full root test suite (its unit
+# tests run in ci.yml on the same commit). Config is committed inline in
+# telemetry-cloudflare/wrangler.jsonc (custom domain, D1 id, vars — all public
+# and non-secret), so nothing is injected. D1 schema migrations stay a separate
+# deliberate `npm --prefix telemetry-cloudflare run db:migrate`, never part of a
+# code deploy.
+#
+# Auth: repo secrets CLOUDFLARE_API_TOKEN (Workers scope) and
+# CLOUDFLARE_ACCOUNT_ID.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'telemetry-cloudflare/**'
+      - '.github/workflows/deploy-telemetry.yml'
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to confirm a production deploy of the telemetry Worker'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-telemetry
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require explicit confirmation (manual runs only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.confirm != 'deploy' }}
+        run: |
+          echo "::error::Set the 'confirm' input to 'deploy' to proceed with a production deploy."
+          exit 1
+
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: telemetry-cloudflare/package-lock.json
+
+      - run: npm ci --prefix telemetry-cloudflare
+
+      # Gate: the Worker typechecks and its config + bindings resolve before we
+      # ship. `wrangler deploy --dry-run` needs no credentials.
+      - run: npm --prefix telemetry-cloudflare run typecheck
+      - run: npx --prefix telemetry-cloudflare wrangler deploy --dry-run
+
+      # `wrangler deploy` uploads code + vars + bindings. The GITHUB_TOKEN
+      # Worker secret (dashboard issues fetch) is set via `wrangler secret put`,
+      # persists on the Worker, and is not affected by a code deploy.
+      - name: Deploy telemetry Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npm --prefix telemetry-cloudflare run deploy

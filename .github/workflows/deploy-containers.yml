@@ -1,0 +1,115 @@
+name: Deploy containers Worker
+
+# Deploy of the Cloudflare Containers Worker (affiliate-mcp-containers:
+# MCP transport + digest compose, https://mcp.agenticaffiliate.ai) as part of
+# the regular pipeline. See
+# docs/decisions/2026-07-17-telemetry-and-containers-ci-deploy.md.
+#
+# The container image is built from the repo-root Dockerfile (it bundles all of
+# root src/), so the deployed transport tracks adapter/shared-code changes too,
+# not just containers/. Triggers are scoped so the single pinned transport
+# instance is recycled rarely and predictably, never on every unrelated merge:
+#
+#   - push to main touching the transport/digest's OWN code or the image
+#     definition (containers/**, Dockerfile, src/hosted-transport/**,
+#     src/hosted-digest/**);
+#   - after a Publish run succeeds on main (workflow_run), so adapter/src changes
+#     reach the hosted transport in lockstep with each npm release
+#     (RELEASING.md: every client gets the same working set per release);
+#   - manual workflow_dispatch (typed confirm), the break-glass path.
+#
+# CI is the RIGHT place for this deploy: a fresh runner has no cached wrangler
+# OAuth session, so it authenticates with CLOUDFLARE_API_TOKEN alone and cannot
+# hit the local cached-session scope trap (containers/wrangler.toml gotchas).
+# ubuntu-latest ships Docker; `wrangler deploy` builds + pushes the image.
+#
+# One-time setup (never per-deploy): CLOUDFLARE_API_TOKEN must additionally hold
+# Account -> Containers -> Edit AND Account -> Cloudchamber -> Edit; and the
+# Actions variables TRANSPORT_PUBLIC_URL and HOSTED_WORKER_ORIGIN must be set.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'containers/**'
+      - 'Dockerfile'
+      - 'src/hosted-transport/**'
+      - 'src/hosted-digest/**'
+      - '.github/workflows/deploy-containers.yml'
+  workflow_run:
+    workflows: ['Publish']
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "deploy" to confirm a production deploy of the containers Worker'
+        required: true
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-containers
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # For a release-coupled run, only proceed when the Publish run actually
+    # succeeded on main. push and workflow_dispatch runs always proceed.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    steps:
+      - name: Require explicit confirmation (manual runs only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.confirm != 'deploy' }}
+        run: |
+          echo "::error::Set the 'confirm' input to 'deploy' to proceed with a production deploy."
+          exit 1
+
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: containers/package-lock.json
+
+      - run: npm ci --prefix containers
+
+      # Gate: the Worker typechecks and the build (dry-run, no image push)
+      # resolves before we ship. Needs no credentials.
+      - run: npm --prefix containers run typecheck
+      - run: npm --prefix containers run build
+
+      - name: Inject public origins from Actions variables
+        env:
+          TRANSPORT_PUBLIC_URL: ${{ vars.TRANSPORT_PUBLIC_URL }}
+          HOSTED_WORKER_ORIGIN: ${{ vars.HOSTED_WORKER_ORIGIN }}
+        run: |
+          set -euo pipefail
+          for name in TRANSPORT_PUBLIC_URL HOSTED_WORKER_ORIGIN; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Actions variable ${name} is not set (repo Settings -> Secrets and variables -> Actions -> Variables)."
+              exit 1
+            fi
+          done
+          sed -i \
+            -e "s|__TRANSPORT_PUBLIC_URL__|${TRANSPORT_PUBLIC_URL}|" \
+            -e "s|__HOSTED_WORKER_ORIGIN__|${HOSTED_WORKER_ORIGIN}|" \
+            containers/wrangler.toml
+          if grep -nE '__[A-Z_]+__' containers/wrangler.toml; then
+            echo "::error::An injectable placeholder was left unsubstituted in containers/wrangler.toml."
+            exit 1
+          fi
+
+      # `wrangler deploy` builds the repo-root Dockerfile via the runner's Docker
+      # and pushes the image (Cloudchamber) + uploads the Worker. Secrets set via
+      # `wrangler secret put` (DIGEST_COMPOSE_SECRET) persist and are not touched.
+      - name: Deploy containers Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npm --prefix containers run deploy
