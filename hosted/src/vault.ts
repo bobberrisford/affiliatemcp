@@ -407,6 +407,41 @@ export async function listNetworks(kv: KVNamespace, userId: string): Promise<str
   return networks.sort();
 }
 
+/** Non-secret metadata for one connected network: the slug and the blob's
+ * timestamps. Never includes, and cannot be derived into, a credential value. */
+export interface CredentialMetadata {
+  network: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/**
+ * List each connected network with its blob timestamps, for the self-serve
+ * account export (`src/routes/account.ts`). Reads the stored blobs but NEVER
+ * decrypts them and never touches the data key: only the `network`,
+ * `createdAt`, and `updatedAt` metadata fields leave this function — the
+ * `iv`/`ciphertext` are deliberately not returned, so an export can enumerate
+ * what a user has connected and when, without ever exposing a credential
+ * value. Same KV-walk shape as `listNetworks`; a blob that vanishes between
+ * the list and the read is skipped rather than erroring.
+ */
+export async function listCredentialMetadata(kv: KVNamespace, userId: string): Promise<CredentialMetadata[]> {
+  const prefix = vaultCredPrefix(userId);
+  const out: CredentialMetadata[] = [];
+  let cursor: string | undefined;
+  do {
+    const page = await kv.list({ prefix, cursor });
+    for (const entry of page.keys) {
+      const raw = await kv.get(entry.name);
+      if (!raw) continue;
+      const stored = JSON.parse(raw) as StoredCredentialBlob;
+      out.push({ network: stored.network, createdAt: stored.createdAt, updatedAt: stored.updatedAt });
+    }
+    cursor = page.list_complete ? undefined : page.cursor;
+  } while (cursor);
+  return out.sort((a, b) => a.network.localeCompare(b.network));
+}
+
 /** Remove one network's credential. Idempotent: deleting a network the user
  * never connected is not an error. Does not touch the user's data key or any
  * other network's blob. */
