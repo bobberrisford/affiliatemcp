@@ -107,29 +107,45 @@ decision is accepted and the hosted MVP proceeds per
 
 ## Phase 1: hosted MVP, charge from day one (months 2 to 6)
 
+> **Status (2026-07-18):** the hosted MVP shipped and is live. Slices H1–H6
+> merged — H1 request-scoped identity seam (#356), H2 hosted scaffold +
+> magic-link auth (#357), H3 encrypted credential vault (#359), H4 remote MCP
+> transport (#360), H5 guided connect flow (#361), H6 scheduled digest +
+> billing tie-in (#362), plus the billing page/checkout/portal (#364) and the
+> OAuth 2.1 connector-auth migration (#371–#375). `hosted.agenticaffiliate.ai`
+> and the transport at `mcp.agenticaffiliate.ai` are serving. The checkboxes
+> below are updated to match; `docs/product/hosted-mvp-workstream.md` and
+> `docs/product/hosted-oauth-ship-runbook.md` are the detailed source of truth.
+> Still open before public launch: per-user audit log, automatic first-value
+> report, self-serve account export, public trust page, incident/disclosure
+> runbook, and the vault key-rotation procedure written down.
+
 ### Identity and tenancy foundation
 
-The server is identity-blind today: credentials load once from
-`~/.affiliate-mcp/.env` into `process.env`, OAuth tokens cache in module-level
-state, and `brands.json` plus client-strategy files live on local disk. Every
-one of these becomes request-scoped, keyed by an authenticated user, with the
-local single-user path preserved unchanged.
+The server is identity-blind in the local single-user path: credentials load
+once from `~/.affiliate-mcp/.env` into `process.env`, OAuth tokens cache in
+module-level state, and `brands.json` plus client-strategy files live on local
+disk. In the hosted path each of these is request-scoped, keyed by an
+authenticated user, with the local single-user path preserved unchanged.
 
-- [ ] **[build]** Request-scoped credential resolution replacing process-global
-      loading; the local server resolves to the single local user.
-- [ ] **[build]** Request-scoped OAuth token cache.
+- [x] **[build]** Request-scoped credential resolution replacing process-global
+      loading; the local server resolves to the single local user. (H1, #356)
+- [x] **[build]** Request-scoped OAuth token cache. (H1, #356)
 - [ ] **[build]** Per-tenant brand and client-strategy storage behind the same
       interfaces the local file paths implement today.
-- [ ] **[build]** User accounts and login (email magic link or OAuth sign-in;
-      no passwords to store).
-- [ ] **[build]** Encrypted per-user credential vault: KMS-backed envelope
+- [x] **[build]** User accounts and login (email magic link or OAuth sign-in;
+      no passwords to store). (H2 magic link #357; OAuth 2.1 #371–#375)
+- [x] **[build]** Encrypted per-user credential vault: KMS-backed envelope
       encryption, decrypt only at call time, key rotation procedure written
-      down. Use established secrets infrastructure, nothing home-rolled.
+      down. Use established secrets infrastructure, nothing home-rolled. (H3,
+      #359 — vault shipped; the written-down key-rotation procedure is still
+      outstanding, see Trust surface below.)
 
 ### Remote MCP transport
 
-- [ ] **[build]** Streamable HTTP MCP endpoint with per-user token auth
-      following the MCP authorisation spec; adapters untouched.
+- [x] **[build]** Streamable HTTP MCP endpoint with per-user token auth
+      following the MCP authorisation spec; adapters untouched. (H4, #360;
+      OAuth discovery slice 2b, #375)
 - [ ] **[build]** Per-tier rate limits and quotas at the transport boundary.
 - [ ] **[build]** Per-user audit log of tool calls (network, operation,
       timestamp; never response payloads).
@@ -138,24 +154,27 @@ local single-user path preserved unchanged.
 
 ### Guided connect flow
 
-- [ ] **[build]** Browser onboarding for the four production networks (Awin,
+- [x] **[build]** Browser onboarding for the four production networks (Awin,
       CJ, Impact, Rakuten): OAuth where the network supports it, guided
-      paste-once where it does not, connection test on save.
+      paste-once where it does not, connection test on save. (H5, #361)
 - [ ] **[build]** Automatic first-value report after the first successful
       connection (the roadmap's "guided first value" item, hosted edition).
 
 ### First paid-only feature and billing
 
-- [ ] **[build]** Scheduled digest job runner: earnings plus unpaid
+- [x] **[build]** Scheduled digest job runner: earnings plus unpaid
       commissions, delivered by email on the user's cadence. The simplest
-      thing a local stdio server cannot do.
-- [ ] **[build]** Hosted entitlement: merchant-of-record subscription state
+      thing a local stdio server cannot do. (H6, #362)
+- [x] **[build]** Hosted entitlement: merchant-of-record subscription state
       drives tier checks at the transport boundary, replacing the Phase 0
-      stub seam. Trial logic: 14 days, no card, usage-capped.
+      stub seam. Trial logic: 14 days, no card, usage-capped. (H6 + billing
+      #364 — entitlement gate and Stripe subscription state shipped; confirm
+      the 14-day trial parameters at go-live.)
 
 ### Trust surface
 
-- [ ] **[build]** Self-serve full account export and hard delete.
+- [ ] **[build]** Self-serve full account export and hard delete. (Hard delete
+      shipped — `DELETE /account`; self-serve export still to add.)
 - [ ] **[content]** Public trust page: what is stored, how it is encrypted,
       who can access it, how deletion works, the disclosure commitment.
 - [ ] **[ops]** Incident and disclosure runbook written before launch, not
