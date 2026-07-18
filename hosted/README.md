@@ -641,9 +641,11 @@ that neither the token nor the cookie value ever appears in a rendered page.
 Navigation between these pages is a small inline POST form the cookie
 accompanies (`SameSite=Lax` attaches it on same-site navigations and top-level
 GET navigations). As
-defence in depth, every page is served `Referrer-Policy: no-referrer` on top of
+defence in depth, every page is served `Referrer-Policy: same-origin` on top of
 the Worker-wide `cache-control: no-store`, so its token-free URLs leak nothing
-outbound through the external documentation links these pages contain. The GET
+outbound through the external documentation links these pages contain, while the
+real `Origin` header still reaches same-origin POSTs (which the connect flow's
+own CSRF gate needs — see the `renderShell` header, `src/page-chrome.ts`). The GET
 variants of the list/form/retest routes exist only for callers that can send an
 Authorization header; a browser without a cookie simply sees the sign-in prompt.
 
@@ -1304,7 +1306,7 @@ Cloudflare.
   failure paths, that no batch/multi-network endpoint exists, that no HTML
   response ever carries an unmasked credential value, that no URL in any
   rendered page carries the session token, and that every connect response
-  carries `cache-control: no-store` and `referrer-policy: no-referrer`
+  carries `cache-control: no-store` and `referrer-policy: same-origin`
   (`test/connect-routes.test.ts`); and (H6) subscription-state resolution
   and complete billing deletion (`test/billing.test.ts`), the Stripe
   webhook-signature verifier plus the billing-portal session request shape

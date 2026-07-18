@@ -421,12 +421,17 @@ export async function handleConsentPage(request: Request, env: Env): Promise<Res
     return errorPage('This authorisation request has expired. Restart the connection from your client.');
   }
   const handoff = await consumeConsentHandoff(env.HOSTED_USERS, handoffId);
+  // Whatever happens next, the handoff cookie has served its one purpose (or
+  // pointed at a spent/absent record); clear it so the browser drops the dead
+  // pointer rather than re-presenting it on a refresh.
+  const clearCookie = clearConsentCookieHeader();
   if (!handoff) {
-    return errorPage('This authorisation request has expired. Restart the connection from your client.');
+    const err = errorPage('This authorisation request has expired. Restart the connection from your client.');
+    err.headers.append('set-cookie', clearCookie);
+    return err;
   }
   const res = await renderConsentPage(env, handoff.authRequestId, handoff.userId);
-  // The handoff is already consumed server-side; drop the browser's dead pointer.
-  res.headers.append('set-cookie', clearConsentCookieHeader());
+  res.headers.append('set-cookie', clearCookie);
   return res;
 }
 

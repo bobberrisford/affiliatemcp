@@ -617,10 +617,12 @@ describe('token-free consent handoff', () => {
     // The consumed handoff cookie is cleared on the render.
     expect(first.headers.get('set-cookie')).toContain('hosted_consent=;');
 
-    // Single-use: the same cookie will not render a second consent page.
+    // Single-use: the same cookie will not render a second consent page, and
+    // the spent-handoff error path clears the dead cookie too.
     const second = await worker.fetch(getReqCookie('/authorize/consent', `hosted_consent=${handoff}`), env);
     expect(second.status).toBe(400);
     expect(await second.text()).not.toContain('name="token"');
+    expect(second.headers.get('set-cookie')).toContain('hosted_consent=;');
   });
 
   it('serves an error page (not consent) when the handoff cookie is absent', async () => {
