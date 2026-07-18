@@ -108,8 +108,12 @@
  *                              Checkout Session for the requested tier
  *   POST /billing/webhook      Stripe-signature-verified, mirrors the
  *                              subscription lifecycle into HOSTED_BILLING
+ *   POST /billing/meter        full-session-gated, consumes one free-tier
+ *                              report window and returns the decision; the
+ *                              transport calls it only for `free`-tier callers
+ *                              (`src/meter.ts`, decision 2026-07-18)
  *   GET  /billing/entitlement  full-session-gated, { tier, status }, the
- *                              ONE billing route the hosted MCP transport
+ *                              ONE billing-read route the hosted MCP transport
  *                              calls
  *   POST /billing/portal       full-session-gated, creates a Stripe Billing
  *                              Portal session for the caller's own customer
@@ -185,6 +189,7 @@ import {
 import {
   handleBillingCheckout,
   handleBillingEntitlement,
+  handleBillingMeter,
   handleBillingPortal,
   handleBillingWebhook,
 } from './routes/billing.js';
@@ -499,6 +504,9 @@ export default {
     }
     if (url.pathname === '/billing/entitlement' && request.method === 'GET') {
       return handleBillingEntitlement(request, env, cors);
+    }
+    if (url.pathname === '/billing/meter' && request.method === 'POST') {
+      return handleBillingMeter(request, env, cors);
     }
     if (url.pathname === '/billing/portal' && request.method === 'POST') {
       return handleBillingPortal(request, env, cors);

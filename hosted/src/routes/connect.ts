@@ -524,7 +524,12 @@ function renderConnectResultBody(
     // `solo`/`pro` -> the full add-connector + first-prompt copy.
     const front = env.SITE_ORIGIN || 'https://agenticaffiliate.ai';
 
-    if (tier === 'none') {
+    // `free` (metered, no card) and the defensive `none` share the pre-upgrade
+    // variant. The value-first rewrite that leads with the add-to-Claude steps
+    // and the free-report allowance is a follow-up (decision 2026-07-18, PR-3);
+    // here the change is only to keep this page correct now that an
+    // unsubscribed caller resolves to `free` rather than `none`.
+    if (tier === 'none' || tier === 'free') {
       return `
       <h1>${escapeHtml(network.name)} connected</h1>
       <p class="status-connected">Connection test passed.</p>

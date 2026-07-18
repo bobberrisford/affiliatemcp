@@ -15,13 +15,17 @@
  * any hosted tool call proceeds, and Solo is additionally capped at
  * `SOLO_NETWORK_CAP` distinct connected networks (`tier-gate.ts`).
  *
- * H6 gate ordering, cheapest-refusal-first: tool lookup -> brand-data
+ * Gate ordering, cheapest-refusal-first: tool lookup -> brand-data
  * entitlement gate (unchanged) -> hosted billing-tier gate (one HTTP call to
- * the hosted Worker) -> per-tier rate limit (no HTTP call) -> Solo network
+ * the hosted Worker) -> free-tier meter (one HTTP call, `free` tier only,
+ * decision 2026-07-18) -> per-tier rate limit (no HTTP call) -> Solo network
  * cap (one HTTP call, vault list) -> vault-credential overlay (one HTTP
- * call) -> adapter dispatch. An unsubscribed caller is refused before ANY of
- * the three HTTP round trips below it, so a `tier: 'none'` caller never
- * causes a vault read.
+ * call) -> adapter dispatch. Since the freemium amendment, an authenticated
+ * caller is at worst `free` (the hosted Worker's `resolveEntitlement` no
+ * longer returns `none`); a `free` caller whose weekly allowance is spent is
+ * refused at the meter, before the rate-limit bucket, the Solo network-cap
+ * vault list, and the credential overlay, so an out-of-quota caller never
+ * causes those downstream round trips.
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -57,8 +61,9 @@ import { recordHostedAudit } from './audit.js';
 import type { TokenBucketRateLimiter } from './rate-limiter.js';
 import type { HostedTransportConfig } from './env.js';
 import { fetchHostedEntitlement, HostedEntitlementUnavailableError } from './entitlement-client.js';
+import { consumeFreeWindow, MeterUnavailableError } from './meter-client.js';
 import { listConnectedNetworks, VaultUnavailableError } from './vault-client.js';
-import { checkNetworkCap, checkTierEntitlement } from './tier-gate.js';
+import { buildFreeQuotaRefusal, checkNetworkCap, checkTierEntitlement } from './tier-gate.js';
 
 const log = createLogger('hosted-transport');
 
@@ -68,8 +73,9 @@ const SERVER_INFO = {
 } as const;
 
 /** Per-tier rate limiters (H6). `pro` also serves as the fallback for any tier not otherwise
- * differentiated; today that is only `solo` when no Solo-specific env override is set (see
- * `env.ts`'s `rateLimitCapacitySolo`/`rateLimitRefillPerSecondSolo` fallback). */
+ * differentiated: `solo` when no Solo-specific env override is set (see `env.ts`'s
+ * `rateLimitCapacitySolo`/`rateLimitRefillPerSecondSolo` fallback), and `free`, whose primary
+ * bound is the weekly meter (decision 2026-07-18) with this bucket only a burst guard. */
 export interface HostedTierRateLimiters {
   solo: TokenBucketRateLimiter;
   pro: TokenBucketRateLimiter;
@@ -214,10 +220,57 @@ export function buildHostedMcpServer(deps: HostedMcpServerDeps): Server {
       };
     }
 
+    // Free-tier meter (decision 2026-07-18): a `free` caller's tool calls are
+    // metered to a rolling weekly report allowance. One HTTP call to the hosted
+    // Worker, made ONLY for the free tier — a paid caller is never metered and
+    // never hits this. The Worker owns the durable per-user, per-window count
+    // (`hosted/src/meter.ts`); this consults it and, when the allowance is
+    // spent, returns the structured `free_quota_exceeded` upgrade prompt. A
+    // meter-service outage is surfaced honestly as `meter_unavailable`, never
+    // faked into "out of free reports" nor silently waved through.
+    if (entitlement.tier === 'free') {
+      let meter;
+      try {
+        meter = await consumeFreeWindow(bearerToken, deps.config.authUrl);
+      } catch (err) {
+        const message =
+          err instanceof MeterUnavailableError
+            ? err.message
+            : `unexpected error reading the hosted meter service: ${(err as Error).message}`;
+        recordTelemetry(telemetry.network, telemetry.operation, 'other_error');
+        recordHostedAudit({ userId, network: telemetry.network, operation: telemetry.operation, outcome: 'error' });
+        return {
+          isError: true,
+          content: [
+            {
+              type: 'text' as const,
+              text: JSON.stringify(
+                { error: 'meter_unavailable', message: `Could not read the free-tier report meter: ${message}` },
+                null,
+                2,
+              ),
+            },
+          ],
+        };
+      }
+      if (!meter.allowed) {
+        const quotaRefusal = buildFreeQuotaRefusal(meter.resetAt);
+        recordTelemetry(telemetry.network, telemetry.operation, 'other_error');
+        recordHostedAudit({ userId, network: telemetry.network, operation: telemetry.operation, outcome: 'denied' });
+        return {
+          isError: true,
+          content: [{ type: 'text' as const, text: JSON.stringify(quotaRefusal, null, 2) }],
+        };
+      }
+    }
+
     // Per-user rate limit (H4, tier-aware since H6): checked before any
     // vault call or adapter dispatch, so an over-limit user never even
     // causes a vault round-trip. Solo and Pro draw from separate buckets so
     // one tier's traffic can never exhaust the other's limit.
+    // Solo draws from its own bucket; `pro` and `free` share the other. Free
+    // is already bounded by the weekly meter above, so the rate limiter is only
+    // a burst guard for it, not its primary constraint.
     const limiter = entitlement.tier === 'solo' ? deps.limiters.solo : deps.limiters.pro;
     const rateLimitEnvelope = checkRateLimit(limiter, userId, telemetry.network, telemetry.operation);
     if (rateLimitEnvelope) {
