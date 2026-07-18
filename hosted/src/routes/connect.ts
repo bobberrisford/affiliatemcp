@@ -44,9 +44,14 @@
  * (or `Referer`) via `sameOriginPost` (`../http.js`) and return a 403 page
  * otherwise. Pure-navigation and idempotent POSTs (`/connect` list,
  * `/connect/:network/form`, `/retest`) do not need the check. Every page in
- * this flow is served `Referrer-Policy: no-referrer` on top of the Worker-wide
+ * this flow is served `Referrer-Policy: same-origin` on top of the Worker-wide
  * `cache-control: no-store`, so its token-free URLs leak nothing outbound
- * through the external documentation links these pages contain. The GET
+ * through the external documentation links these pages contain (cross-origin
+ * requests get no `Referer` at all). `same-origin` — not `no-referrer` — is
+ * deliberate: a `no-referrer` document forces the `Origin` header to `null` on
+ * its own same-origin POSTs (Fetch standard), which would make `sameOriginPost`
+ * reject the credential submission this very check is meant to protect. See
+ * `renderShell` in `../page-chrome.ts` for the full reasoning. The GET
  * variants of the list/form/retest routes exist only for callers that CAN send
  * an Authorization header; a browser without a cookie simply sees the sign-in
  * prompt.
@@ -91,7 +96,7 @@ export { escapeHtml };
 /**
  * A hosted page in the connect family. Delegates to the shared design-system
  * shell (`renderShell`): brand header + a single card holding `bodyHtml`,
- * `cache-control: no-store` (from `html()`), and `referrer-policy: no-referrer`
+ * `cache-control: no-store` (from `html()`), and `referrer-policy: same-origin`
  * (no page here renders the session token — the browser holds it in the
  * HttpOnly `hosted_session` cookie, see the file header). `status` defaults to
  * 200; pass 403 for the CSRF-rejection page and 500 for a sign-in config error.

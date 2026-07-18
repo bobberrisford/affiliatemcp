@@ -139,9 +139,34 @@ function brandHeader(siteOrigin: string): string {
 
 /**
  * Render a full hosted page in the design system: brand header + a single card
- * holding `bodyHtml`. `no-store` comes from `html()`; `no-referrer` is added
- * here because pages in the connect and OAuth flows embed short-lived tokens in
- * hidden fields and link out to external docs — the Referer must never leak.
+ * holding `bodyHtml`. `no-store` comes from `html()`; `same-origin` referrer
+ * policy is added here.
+ *
+ * `same-origin` (NOT `no-referrer`): these pages link out to external docs, and
+ * the Referer must never leak there — `same-origin` sends no Referer at all on
+ * any cross-origin navigation, which covers that. But it critically still sends
+ * the real `Origin` header on SAME-origin POSTs, which `no-referrer` does NOT:
+ * per the Fetch standard ("Append a request Origin header"), a `no-referrer`
+ * document forces the Origin header to the literal `null` on every non-GET
+ * request. That silently broke the connect flow's own CSRF gate — a genuine
+ * same-origin credential POST arrived as `Origin: null` with no `Referer`, so
+ * `sameOriginPost` (`./http.ts`) rejected it and the user saw "request not
+ * verified". `same-origin` preserves the Origin header on same-origin requests
+ * (Fetch: it is nulled only when the request's origin is NOT same-origin with
+ * the target), so the CSRF check passes while cross-origin Referer stays dark.
+ *
+ * The Referer trade-off `same-origin` accepts: on a SAME-origin navigation the
+ * full URL (path + query) is sent as `Referer`. Nothing here embeds a live
+ * secret in a URL — the session token lives only in the HttpOnly cookie, and no
+ * page loads a same-origin subresource (all CSS/SVG is inlined). The one URL
+ * that carries a token is `/auth/callback?token=<magic-link-token>`, which
+ * renders the OAuth consent page directly (`../index.ts` `handleCallback`); its
+ * consent POST is same-origin, so under `same-origin` that token now reaches
+ * same-origin request logs via `Referer` (it did not under `no-referrer`). That
+ * token is single-use and already CONSUMED (KV-deleted) before the page renders,
+ * so a logged copy is already spent, and it never leaks cross-origin. Tightening
+ * that page to a token-free consent URL is tracked as a follow-up, not a blocker.
+ *
  * `siteOrigin` defaults to the production marketing site.
  */
 export function renderShell(
@@ -158,6 +183,6 @@ export function renderShell(
 <body>${brandHeader(siteOrigin)}<main class="wrap"><div class="card">${bodyHtml}</div></main></body></html>`,
     status,
   );
-  res.headers.set('referrer-policy', 'no-referrer');
+  res.headers.set('referrer-policy', 'same-origin');
   return res;
 }

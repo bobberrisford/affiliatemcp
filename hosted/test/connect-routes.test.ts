@@ -11,7 +11,9 @@
  * credential value never appears unmasked in any HTML response, that the
  * session token and the cookie value never appear anywhere in a rendered page
  * (the cookie is HttpOnly), and that every connect response carries
- * `cache-control: no-store` and `referrer-policy: no-referrer`.
+ * `cache-control: no-store` and `referrer-policy: same-origin` (same-origin —
+ * not no-referrer — so browsers preserve the `Origin` header on the credential
+ * POST; a no-referrer page sends `Origin: null` and the CSRF gate rejects it).
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -329,6 +331,28 @@ describe('CSRF on POST /connect/:network', () => {
     expect(res.status).toBe(200);
     expect(await res.text()).toContain('Connection test passed');
   });
+
+  // Regression: a `Referrer-Policy: no-referrer` document forces the browser to
+  // send `Origin: null` (and no `Referer`) on its own same-origin POSTs (Fetch
+  // standard, "Append a request Origin header"). This is exactly what the
+  // connect form pages produced before the flow moved to `same-origin`, and it
+  // made a genuine credential submission fail the CSRF gate with a 403 "request
+  // not verified". The literal `null` origin must still be rejected (only the
+  // page's referrer policy is what changed, so real browsers now send the true
+  // Origin); this pins WHY those pages must not be `no-referrer`.
+  it('rejects a literal "null" Origin (what a no-referrer page emits) with a 403', async () => {
+    const { env, vaultKv, signingKey } = await makeTestEnv();
+    const token = await issueSessionToken(signingKey, generateUserId());
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    const res = await worker.fetch(
+      authedPost('/connect/awin', { AWIN_API_TOKEN: 'x', AWIN_PUBLISHER_ID: '1' }, token, 'null'),
+      env,
+    );
+    expect(res.status).toBe(403);
+    expect(await res.text()).toContain('could not be verified');
+    expect(vaultKv.store.size).toBe(0);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
 });
 
 // ── POST /connect/:network (store + connection test) ────────────────────────
@@ -639,21 +663,25 @@ describe('subscription sequencing on the connection-test success page', () => {
   });
 });
 
-// ── no-store and no-referrer on every connect response ──────────────────────
+// ── no-store and same-origin on every connect response ──────────────────────
+// `same-origin` (not `no-referrer`) is load-bearing: a `no-referrer` document
+// forces its own same-origin POSTs to send `Origin: null` (Fetch standard),
+// which `sameOriginPost` rejects — that is the exact "request not verified"
+// regression these assertions guard against. See `renderShell`.
 describe('security headers on every connect response', () => {
-  it('a signed-in /connect response carries cache-control: no-store and referrer-policy: no-referrer', async () => {
+  it('a signed-in /connect response carries cache-control: no-store and referrer-policy: same-origin', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
     const res = await worker.fetch(authedGet('/connect', token), env);
     expect(res.headers.get('cache-control')).toBe('no-store');
-    expect(res.headers.get('referrer-policy')).toBe('no-referrer');
+    expect(res.headers.get('referrer-policy')).toBe('same-origin');
   });
 
   it('the sign-in prompt page also carries both headers', async () => {
     const { env } = await makeTestEnv();
     const res = await worker.fetch(get('/connect'), env);
     expect(res.headers.get('cache-control')).toBe('no-store');
-    expect(res.headers.get('referrer-policy')).toBe('no-referrer');
+    expect(res.headers.get('referrer-policy')).toBe('same-origin');
   });
 
   it('the connection-test result page carries both headers', async () => {
@@ -665,7 +693,7 @@ describe('security headers on every connect response', () => {
       env,
     );
     expect(res.headers.get('cache-control')).toBe('no-store');
-    expect(res.headers.get('referrer-policy')).toBe('no-referrer');
+    expect(res.headers.get('referrer-policy')).toBe('same-origin');
   });
 });
 

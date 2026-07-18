@@ -114,8 +114,12 @@ export function isPublicOAuthApiPath(pathname: string): boolean {
 /** An HTML page in the OAuth ceremony. Renders through the shared design-system
  * shell (`../page-chrome.ts`), the same look as the connect dashboard and the
  * marketing site. Like every hosted page it is `no-store` (from `html()`) and
- * `no-referrer` (set by `renderShell`), because these pages carry a short-lived
- * session token in a hidden field. */
+ * `same-origin` referrer policy (set by `renderShell`): cross-origin
+ * navigations (including the eventual redirect to the client's `redirect_uri`)
+ * carry no `Referer`. The consent token lives in a hidden field, i.e. the POST
+ * body, which `Referer` never carries, so the policy choice does not affect it;
+ * `same-origin` is used flow-wide so the connect flow's own same-origin CSRF
+ * check keeps working (see `renderShell`). */
 function oauthPage(title: string, bodyHtml: string, status = 200): Response {
   return renderShell(title, bodyHtml, status);
 }
