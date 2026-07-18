@@ -21,12 +21,17 @@
  *      sign-in uses (`dispatchMagicLink`, `src/auth-link.ts`), carrying the
  *      request id in the pending-link record — never in the emailed URL.
  *   3. The user clicks the emailed link. `GET /auth/callback` (`src/index.ts`)
- *      consumes it, establishes identity exactly as before, and — because the
- *      pending record carries an `authRequestId` — renders the CONSENT page
- *      (`renderConsentPage` below) instead of the plain session page. Consent
- *      identity is proved by a short-lived full session token embedded in the
- *      form as a hidden field (the same header-or-hidden-field, never-a-URL
- *      discipline the H5 connect flow uses, `src/routes/connect.ts`).
+ *      consumes it and establishes identity exactly as before. Because the
+ *      pending record carries an `authRequestId`, instead of rendering a page at
+ *      that token-bearing URL it stashes a single-use consent handoff
+ *      (`oauth:consent:`, `src/oauth.ts`), sets an opaque cookie naming it, and
+ *      303-redirects to the token-free `GET /authorize/consent`. That page
+ *      (`handleConsentPage` → `renderConsentPage` below) reads the cookie,
+ *      consumes the handoff, and renders the CONSENT page. Consent identity is
+ *      proved by a short-lived full session token embedded in the form as a
+ *      hidden field (the same header-or-hidden-field, never-a-URL discipline the
+ *      H5 connect flow uses, `src/routes/connect.ts`); nothing that identifies
+ *      the request or the user ever rides in a URL.
  *   4. Approving (`POST /authorize/consent`) mints a single-use authorization
  *      code bound to the PKCE challenge and 302-redirects the browser back to
  *      the client's `redirect_uri` with `code` and `state`.
@@ -43,7 +48,7 @@
 
 import type { Env } from '../env.js';
 import { publicBaseUrl } from '../env.js';
-import { json, nowSeconds } from '../http.js';
+import { clearConsentCookieHeader, consentCookie, json, nowSeconds } from '../http.js';
 import { escapeHtml, renderShell } from '../page-chrome.js';
 import { ipRateLimitHash, isValidEmail, normaliseEmail } from '../identity.js';
 import {
@@ -56,6 +61,7 @@ import { bumpRateLimit, dispatchMagicLink, MagicLinkConfigError } from '../auth-
 import {
   authorizationServerMetadata,
   consumeAuthCode,
+  consumeConsentHandoff,
   consumeRefreshToken,
   deletePendingRequest,
   getClient,
@@ -393,11 +399,41 @@ export async function handleAuthorizeEmail(request: Request, env: Env): Promise<
   );
 }
 
-// ── Consent page (rendered by /auth/callback, submitted to /authorize/consent) ──
+// ── Consent page (GET /authorize/consent, submitted to POST /authorize/consent) ──
+
+/**
+ * `GET /authorize/consent` — the token-free consent page.
+ *
+ * The magic-link callback (`src/index.ts`) does NOT render consent at its own
+ * `?token=<magic-link-token>` URL: under the flow-wide `same-origin` referrer
+ * policy the consent form's same-origin POST would carry that token to
+ * same-origin request logs via `Referer`. Instead the callback stashes a
+ * single-use consent handoff and 303-redirects here with an opaque
+ * `hosted_consent` cookie naming it (`src/http.ts`). This handler reads the
+ * cookie, consumes the handoff (single-use, like the magic link itself), and
+ * renders the consent page — so nothing identifying the request or the user is
+ * ever in a URL. It also clears the now-consumed cookie. A missing cookie or a
+ * spent/expired handoff falls through to the "restart the connection" page.
+ */
+export async function handleConsentPage(request: Request, env: Env): Promise<Response> {
+  const handoffId = consentCookie(request);
+  if (!handoffId) {
+    return errorPage('This authorisation request has expired. Restart the connection from your client.');
+  }
+  const handoff = await consumeConsentHandoff(env.HOSTED_USERS, handoffId);
+  if (!handoff) {
+    return errorPage('This authorisation request has expired. Restart the connection from your client.');
+  }
+  const res = await renderConsentPage(env, handoff.authRequestId, handoff.userId);
+  // The handoff is already consumed server-side; drop the browser's dead pointer.
+  res.headers.append('set-cookie', clearConsentCookieHeader());
+  return res;
+}
 
 /**
  * Render the consent page for a pending authorization request, once the user's
- * identity has been established by the magic-link callback (`src/index.ts`).
+ * identity has been established by the magic-link callback (`src/index.ts`) and
+ * carried here through the token-free handoff (`handleConsentPage` above).
  * A short-lived full session token is minted and embedded as a hidden field:
  * it is the proof of identity the consent POST carries, kept out of the URL
  * exactly like the H5 connect flow's token handling. Returns an error page if

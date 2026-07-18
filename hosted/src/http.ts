@@ -97,8 +97,10 @@ export const SESSION_COOKIE_NAME = 'hosted_session';
  *
  * CSRF is still covered: `Lax` is not sent on cross-site POSTs or subresource
  * requests, and every state-changing POST additionally enforces a same-origin
- * `Origin`/`Referer` check (`sameOriginPost`). The OAuth authorize/consent flow
- * reads no cookie at all (`src/routes/oauth.ts`), so this does not affect it.
+ * `Origin`/`Referer` check (`sameOriginPost`). The OAuth consent POST reads no
+ * cookie (it proves identity with the hidden session token, `src/routes/oauth.ts`);
+ * the only cookie the OAuth ceremony uses is the separate, short-lived
+ * consent-handoff cookie below, which carries no session and gates nothing.
  * The one behaviour change: the Stripe-return landing (a cross-site top-level
  * GET) now arrives signed IN rather than signed out; the billing page still
  * treats `GET /billing/entitlement` as the source of truth, never the redirect.
@@ -114,21 +116,57 @@ export function clearSessionCookieHeader(): string {
   return `${SESSION_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
 }
 
-/** Read the `hosted_session` cookie value from the request's `Cookie` header,
- * or `null`. Parses defensively: splits on `;`, trims each pair, and matches
- * the exact cookie name, ignoring any other cookies present. */
-export function cookieToken(request: Request): string | null {
+/** Read one named cookie value from the request's `Cookie` header, or `null`.
+ * Parses defensively: splits on `;`, trims each pair, and matches the exact
+ * cookie name, ignoring any other cookies present. */
+function readCookie(request: Request, name: string): string | null {
   const header = request.headers.get('cookie');
   if (!header) return null;
   for (const part of header.split(';')) {
     const trimmed = part.trim();
     const eq = trimmed.indexOf('=');
     if (eq === -1) continue;
-    if (trimmed.slice(0, eq).trim() !== SESSION_COOKIE_NAME) continue;
+    if (trimmed.slice(0, eq).trim() !== name) continue;
     const value = trimmed.slice(eq + 1).trim();
     return value.length > 0 ? value : null;
   }
   return null;
+}
+
+/** Read the `hosted_session` cookie value from the request, or `null`. */
+export function cookieToken(request: Request): string | null {
+  return readCookie(request, SESSION_COOKIE_NAME);
+}
+
+// ── OAuth consent-handoff cookie (token-free consent page) ──────────────────
+// The magic-link callback (`src/index.ts`) renders no page when it resumes an
+// OAuth authorization: leaving `?token=<magic-link-token>` in the address bar
+// would put that token in the Referer of the consent form's same-origin POST
+// (the flow-wide policy is `same-origin`, `page-chrome.ts`). Instead the
+// callback stashes the consent state in KV (`oauth:consent:`, `src/oauth.ts`),
+// hands the browser this opaque, single-purpose cookie, and 303-redirects to the
+// token-free `/authorize/consent` page, which re-derives the state from it
+// (`handleConsentPage`, `src/routes/oauth.ts`). This cookie is NOT a session: it
+// carries no identity token and authorises nothing on its own; it only names a
+// short-lived KV handoff. Scoped to `/authorize/consent` (not `/`) so it is
+// never sent to any other route, `SameSite=Lax` so the top-level GET navigation
+// the 303 produces carries it (same reasoning as the session cookie above).
+export const CONSENT_COOKIE_NAME = 'hosted_consent';
+
+export function setConsentCookieHeader(handoffId: string, maxAgeSeconds: number): string {
+  return `${CONSENT_COOKIE_NAME}=${handoffId}; HttpOnly; Secure; SameSite=Lax; Path=/authorize/consent; Max-Age=${maxAgeSeconds}`;
+}
+
+/** Clear the consent-handoff cookie (same attributes, `Max-Age=0`). Sent on the
+ * consent-page render, which has already consumed the handoff server-side, so
+ * the browser drops the now-dead pointer immediately. */
+export function clearConsentCookieHeader(): string {
+  return `${CONSENT_COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/authorize/consent; Max-Age=0`;
+}
+
+/** Read the `hosted_consent` handoff cookie value from the request, or `null`. */
+export function consentCookie(request: Request): string | null {
+  return readCookie(request, CONSENT_COOKIE_NAME);
 }
 
 /**
