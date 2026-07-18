@@ -154,8 +154,18 @@ function brandHeader(siteOrigin: string): string {
  * verified". `same-origin` preserves the Origin header on same-origin requests
  * (Fetch: it is nulled only when the request's origin is NOT same-origin with
  * the target), so the CSRF check passes while cross-origin Referer stays dark.
- * No hosted page carries a token in a URL or in a same-origin subresource
- * request (all CSS/SVG is inlined), so same-origin Referer leaks nothing.
+ *
+ * The Referer trade-off `same-origin` accepts: on a SAME-origin navigation the
+ * full URL (path + query) is sent as `Referer`. Nothing here embeds a live
+ * secret in a URL — the session token lives only in the HttpOnly cookie, and no
+ * page loads a same-origin subresource (all CSS/SVG is inlined). The one URL
+ * that carries a token is `/auth/callback?token=<magic-link-token>`, which
+ * renders the OAuth consent page directly (`../index.ts` `handleCallback`); its
+ * consent POST is same-origin, so under `same-origin` that token now reaches
+ * same-origin request logs via `Referer` (it did not under `no-referrer`). That
+ * token is single-use and already CONSUMED (KV-deleted) before the page renders,
+ * so a logged copy is already spent, and it never leaks cross-origin. Tightening
+ * that page to a token-free consent URL is tracked as a follow-up, not a blocker.
  *
  * `siteOrigin` defaults to the production marketing site.
  */
