@@ -220,15 +220,25 @@ export function buildHostedMcpServer(deps: HostedMcpServerDeps): Server {
       };
     }
 
-    // Free-tier meter (decision 2026-07-18): a `free` caller's tool calls are
-    // metered to a rolling weekly report allowance. One HTTP call to the hosted
-    // Worker, made ONLY for the free tier — a paid caller is never metered and
-    // never hits this. The Worker owns the durable per-user, per-window count
-    // (`hosted/src/meter.ts`); this consults it and, when the allowance is
-    // spent, returns the structured `free_quota_exceeded` upgrade prompt. A
+    // Free-tier meter (decision 2026-07-18): a `free` caller's DATA tool calls
+    // are metered to a rolling weekly report allowance. One HTTP call to the
+    // hosted Worker, made ONLY for the free tier — a paid caller is never
+    // metered and never hits this. Meta tools (`affiliate_list_networks`,
+    // `run_diagnostic`, `list_actions`, `resolve_brand`) are EXCLUDED, mirroring
+    // `checkNetworkCap`'s `META_NETWORK` skip below: the decision meters "the
+    // first successful data tool call", and discovery/diagnostic navigation is
+    // not a report — a free user must not burn a weekly report on
+    // `run_diagnostic`. The window opens on the call attempt (before dispatch),
+    // not on its success: metering must gate BEFORE the expensive vault/adapter
+    // work, so a first call that then fails still opens the window. This fails
+    // safe (slightly stricter, no leak) and retries within the 30-minute window
+    // are free; it is the one deliberate deviation from the decision's
+    // "successful" wording. The Worker owns the durable per-user, per-window
+    // count (`hosted/src/meter.ts`); this consults it and, when the allowance
+    // is spent, returns the structured `free_quota_exceeded` upgrade prompt. A
     // meter-service outage is surfaced honestly as `meter_unavailable`, never
     // faked into "out of free reports" nor silently waved through.
-    if (entitlement.tier === 'free') {
+    if (entitlement.tier === 'free' && telemetry.network !== META_NETWORK) {
       let meter;
       try {
         meter = await consumeFreeWindow(bearerToken, deps.config.authUrl);
