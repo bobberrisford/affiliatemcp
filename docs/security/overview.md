@@ -17,16 +17,26 @@ Canonical references it does not repeat:
 
 ## The short version
 
-`affiliate-networks-mcp` is a local-first, open-source MCP server. It runs on
-the user's own machine, under the user's own account, using credentials the
-user supplies. There is no hosted service, no account to create with us, and no
-server-side multi-tenancy. The project does not receive, store, or process a
-user's credentials or affiliate data.
+`affiliate-networks-mcp` is a local-first, open-source MCP server. On the local
+path — the default and the free path this document describes — it runs on the
+user's own machine, under the user's own account, using credentials the user
+supplies. There is no account to create with us and no server-side
+multi-tenancy; the project does not receive, store, or process a user's
+credentials or affiliate data.
+
+There is one exception: a separate, opt-in **hosted tier** does hold per-user
+credentials on hosted infrastructure, under a documented custody contract. It
+is out of scope for the local-path answers below; its custody model,
+encryption boundaries, and honest limits are stated in
+[`hosted-trust.md`](./hosted-trust.md), with the retention policy in
+[`PRIVACY.md`](../../PRIVACY.md). The rest of this document describes the local
+path unless it says otherwise.
 
 This matters for an assessment because most vendor questionnaires assume the
-vendor holds the customer's data on the vendor's infrastructure. Here that
-assumption does not hold. The security boundary that matters is the operator's
-own machine and their own network API keys.
+vendor holds the customer's data on the vendor's infrastructure. On the local
+path that assumption does not hold: the security boundary that matters is the
+operator's own machine and their own network API keys. On the hosted tier the
+boundary moves to the hosted infrastructure, per the trust page above.
 
 ## How data flows
 
@@ -60,20 +70,20 @@ own machine and their own network API keys.
 
 | Category | Answer |
 | --- | --- |
-| Hosting / deployment model | Local-first. The software runs as a process on the user's own machine. No hosted service, no SaaS tenancy, no account with us. |
+| Hosting / deployment model | Local-first by default. The software runs as a process on the user's own machine; on this path there is no SaaS tenancy and no account with us. A separate, opt-in hosted tier runs on Cloudflare under the custody contract in [`hosted-trust.md`](./hosted-trust.md). |
 | Where customer data is stored | On the user's machine only. Credentials in `~/.affiliate-mcp/.env` (mode `0600`); brand mappings in `~/.affiliate-mcp/brands.json`; optional result cache under `~/.affiliate-mcp/cache/` (off by default, owner-only permissions). |
 | Does the vendor receive customer data or credentials? | No. Credentials go only to the configured networks' official APIs. Affiliate data is fetched live and processed locally; it is not forwarded to this project. |
 | Sub-processors | None for credentials or affiliate data. For optional opt-in telemetry only, Cloudflare routes and stores aggregate counts (see `PRIVACY.md`). If telemetry is off, there are no sub-processors. |
 | Data in transit | All network API calls are over HTTPS to the networks' own endpoints. Optional telemetry is sent over HTTPS. |
 | Data at rest | Managed by the user's own operating system. Local files use owner-only permissions (`0600` for files, `0700` for the cache directory). The project does not add a separate encryption layer; full-disk encryption is the operator's control. On a shared machine where file permissions cannot be relied on, leave caching off so transaction-level results are never written to disk. |
-| Authentication and access control | The user authenticates directly to each network using their own API credentials. There is no login to a service operated by us, so there are no user accounts, roles, or sessions to manage on our side. |
+| Authentication and access control | On the local path the user authenticates directly to each network using their own API credentials, with no login to a service operated by us. The opt-in hosted tier does have accounts (email magic-link sign-in) and sessions, scoped to serving only the account's own data; see [`hosted-trust.md`](./hosted-trust.md). |
 | Data retention | We retain none of the user's credentials or affiliate data. Local files persist until the user deletes them. Telemetry retention is defined in `PRIVACY.md`. |
 | Data deletion / portability | The user controls all data. Remove a network by deleting its keys from `~/.affiliate-mcp/.env`; clear the cache with `affiliate-networks-mcp cache clear`; remove everything by uninstalling and deleting `~/.affiliate-mcp/`. |
 | Logging | Operational logs go to stderr on the user's machine and are not collected by us. The project never logs credentials. |
 | Telemetry / analytics | Off by default, opt-in, aggregate-only. Never carries credentials, account identifiers, affiliate data, prompts, arguments, results, amounts, URLs, error text, or exact timestamps. Full contract in `PRIVACY.md`. |
 | Source code review | The project is open source. The full implementation, including the adapter contract and resilience layer, is available for inspection at <https://github.com/bobberrisford/affiliatemcp>. |
 | Vulnerability reporting | Prefer GitHub private vulnerability reporting when available; otherwise request a private disclosure channel without posting exploit details publicly. See `SECURITY.md`. |
-| Compliance certifications (SOC 2, ISO 27001) | Not applicable in the usual sense: there is no hosted service or vendor-held data to certify. The relevant controls (device security, key management, disk encryption) sit with the operator and their organisation. |
+| Compliance certifications (SOC 2, ISO 27001) | On the local path, not applicable in the usual sense: there is no vendor-held data to certify, and the relevant controls (device security, key management, disk encryption) sit with the operator. The hosted tier holds vendor-side data but is not yet certified; formal-compliance work is explicitly deferred until team-tier demand, per [`hosted-trust.md`](./hosted-trust.md). |
 | Data protection / GDPR | We are not a processor of the user's affiliate data, because it is never sent to us. The operator and the affiliate networks remain the parties handling that data under their existing agreements. |
 
 ## Telemetry, stated plainly

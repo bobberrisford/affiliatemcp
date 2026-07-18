@@ -1,26 +1,34 @@
 # Security
 
 `affiliate-networks-mcp` is a local-first, open-source MCP server. It runs on
-the user's own machine, uses credentials the user supplies, and has no hosted
-service. This document covers the security posture in brief and how to report a
+the user's own machine and uses credentials the user supplies. There is also a
+separate, opt-in hosted tier; its custody model, encryption boundaries, and
+honest limits are stated in
+[`docs/security/hosted-trust.md`](./docs/security/hosted-trust.md). This
+document covers the security posture in brief and how to report a
 vulnerability. The full data-handling detail, including the answers brands and
 agencies usually ask for in a vendor assessment, is in
 [`docs/security/overview.md`](./docs/security/overview.md).
 
 ## Posture in one paragraph
 
-There is no hosted service and no account to create with us. Network
-credentials are written to `~/.affiliate-mcp/.env` on the user's machine with
-owner-only permissions (mode `0600`) and are sent only to the official APIs of
-the networks the user configures. Affiliate data is fetched live, processed
+On the local path — the default and the free path — there is no account to
+create with us. Network credentials are written to `~/.affiliate-mcp/.env` on
+the user's machine with owner-only permissions (mode `0600`) and are sent only
+to the official APIs of the networks the user configures. The opt-in hosted
+tier is the one exception to "nothing leaves your machine", under the custody
+contract in
+[`docs/security/hosted-trust.md`](./docs/security/hosted-trust.md). Affiliate data is fetched live, processed
 locally, and is not forwarded to this project. Optional usage telemetry is off
 by default, opt-in, aggregate-only, and never carries credentials, account
 identifiers, or affiliate data. The retention and storage contract is in
 [`PRIVACY.md`](./PRIVACY.md).
 
-Because the project holds none of a user's credentials or affiliate data, the
-relevant security boundary is the user's own machine and their own network API
-keys, not a vendor's infrastructure.
+On the local path the project holds none of a user's credentials or affiliate
+data, so the relevant security boundary is the user's own machine and their own
+network API keys, not a vendor's infrastructure. On the opt-in hosted tier that
+boundary moves to the hosted infrastructure under a documented custody
+contract; see [`docs/security/hosted-trust.md`](./docs/security/hosted-trust.md).
 
 ## Supported versions
 

@@ -165,6 +165,19 @@ requests and their own scheduled jobs. It is never used for aggregation
 across users, never for analytics, and never for any purpose beyond serving
 its owner.
 
+**Where it is stored.** The hosted tier runs on Cloudflare. The data above
+lives in three deliberately separate Cloudflare KV namespaces — an identity
+store (account id and the email-hash lookup, no affiliate credentials or
+data), the encrypted vault (the wrapped per-user key and one encrypted blob
+per network), and a billing store (tier, status, and the one billing email).
+
+**Export.** You can export everything held about your account at any time: the
+account record, which networks you have connected and when, and your
+subscription and billing state. The export lists connected networks as
+metadata and never includes a stored credential value, so an export file
+cannot be used to act as you. Use the per-network reveal in your dashboard if
+you need a live credential back.
+
 **Deletion.** Deleting a hosted account deletes its stored data completely:
 the encrypted credential data, the wrapped key protecting it, the account
 record, and the subscription record including the billing email — after
@@ -178,6 +191,14 @@ part of the same deletion runbook (`hosted/README.md`).
 what this project is allowed to do with it: no cross-tenant aggregation, no
 analytics, no purpose beyond serving the key's owner, the same posture as
 every other section of this policy.
+
+**More detail.** The public trust page
+[`docs/security/hosted-trust.md`](docs/security/hosted-trust.md) states the
+custody model, encryption boundaries, and honest limits in full;
+[`docs/security/hosted-key-rotation.md`](docs/security/hosted-key-rotation.md)
+and
+[`docs/security/hosted-incident-response.md`](docs/security/hosted-incident-response.md)
+cover secret rotation and the incident/disclosure procedure.
 
 ## Contact
 
