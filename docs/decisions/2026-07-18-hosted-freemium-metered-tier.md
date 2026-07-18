@@ -1,8 +1,8 @@
 # A metered free tier for the hosted connector, replacing the hard paywall
 
 - **Date:** 2026-07-18
-- **Status:** Proposed (awaiting Rob's acceptance; no implementation until
-  accepted)
+- **Status:** Accepted (2026-07-18, Rob: "do it", given in-session during the
+  delivery window)
 - **Affects:** the hosted MCP transport tier gate
   (`src/hosted-transport/tier-gate.ts`, `entitlement-client.ts`, and the
   dispatch path), the hosted billing entitlement model
