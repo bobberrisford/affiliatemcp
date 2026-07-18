@@ -1,7 +1,7 @@
 # Seeded test tenant for automated live authenticated hosted testing
 
 - **Date:** 2026-07-18
-- **Status:** Proposed
+- **Status:** Accepted (2026-07-18, Rob); rotation handled by option A
 - **Affects:** CI (`.github/workflows/`), `tests/hosted-personas/`, and possibly
   the hosted auth server (`hosted/src/oauth.ts`, `hosted/src/token.ts`) if a
   non-rotating CI credential is chosen
@@ -61,7 +61,7 @@ the refresh token"). A refresh token stored statically in a CI secret therefore
 breaks after its first run. Two ways to handle this, and the choice is the real
 decision:
 
-- **A. Rotate-and-write-back (recommended for now).** A single scheduled or
+- **A. Rotate-and-write-back (chosen).** A single scheduled or
   `workflow_dispatch` job, `concurrency: hosted-live-auth` (never parallel),
   exchanges the stored refresh token, runs the smoke, then writes the newly
   rotated refresh token back to the `HOSTED_TEST_REFRESH_TOKEN` secret via the
@@ -73,7 +73,7 @@ decision:
   read-only service token to the hosted auth server for this one purpose. Cleaner
   operationally (no write-back), but it is new authentication surface with its
   own threat model and its own decision, and it widens the standing-credential
-  blast radius. Deferred; revisit if option A proves noisy.
+  blast radius. Not chosen; revisit only if option A proves noisy.
 
 ## Rejected alternatives
 
