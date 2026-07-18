@@ -85,8 +85,11 @@ function syntheticApiRequest(path: string, token: string, body: unknown): Reques
   });
 }
 
-/** A same-worker 303 redirect to a Stripe-hosted URL, carrying the same
- * no-store/no-referrer posture as every other page in this flow. */
+/** A same-worker 303 redirect to a Stripe-hosted URL. `no-store` matches every
+ * page in this flow; `no-referrer` (stricter than the flow-wide `same-origin`)
+ * is used here specifically because this hop is cross-origin to Stripe and must
+ * leak no `Referer` there — a redirect response hosts no form, so it never needs
+ * the `Origin`-header behaviour that made `same-origin` necessary elsewhere. */
 function redirectTo(url: string): Response {
   return new Response(null, {
     status: 303,

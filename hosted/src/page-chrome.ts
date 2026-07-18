@@ -139,9 +139,24 @@ function brandHeader(siteOrigin: string): string {
 
 /**
  * Render a full hosted page in the design system: brand header + a single card
- * holding `bodyHtml`. `no-store` comes from `html()`; `no-referrer` is added
- * here because pages in the connect and OAuth flows embed short-lived tokens in
- * hidden fields and link out to external docs — the Referer must never leak.
+ * holding `bodyHtml`. `no-store` comes from `html()`; `same-origin` referrer
+ * policy is added here.
+ *
+ * `same-origin` (NOT `no-referrer`): these pages link out to external docs, and
+ * the Referer must never leak there — `same-origin` sends no Referer at all on
+ * any cross-origin navigation, which covers that. But it critically still sends
+ * the real `Origin` header on SAME-origin POSTs, which `no-referrer` does NOT:
+ * per the Fetch standard ("Append a request Origin header"), a `no-referrer`
+ * document forces the Origin header to the literal `null` on every non-GET
+ * request. That silently broke the connect flow's own CSRF gate — a genuine
+ * same-origin credential POST arrived as `Origin: null` with no `Referer`, so
+ * `sameOriginPost` (`./http.ts`) rejected it and the user saw "request not
+ * verified". `same-origin` preserves the Origin header on same-origin requests
+ * (Fetch: it is nulled only when the request's origin is NOT same-origin with
+ * the target), so the CSRF check passes while cross-origin Referer stays dark.
+ * No hosted page carries a token in a URL or in a same-origin subresource
+ * request (all CSS/SVG is inlined), so same-origin Referer leaks nothing.
+ *
  * `siteOrigin` defaults to the production marketing site.
  */
 export function renderShell(
@@ -158,6 +173,6 @@ export function renderShell(
 <body>${brandHeader(siteOrigin)}<main class="wrap"><div class="card">${bodyHtml}</div></main></body></html>`,
     status,
   );
-  res.headers.set('referrer-policy', 'no-referrer');
+  res.headers.set('referrer-policy', 'same-origin');
   return res;
 }

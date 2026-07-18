@@ -177,12 +177,15 @@ describe('GET|POST /connect/billing: session gating', () => {
     expect(await res.text()).toContain('<h1>billing</h1>');
   });
 
-  it('carries cache-control: no-store and referrer-policy: no-referrer', async () => {
+  it('carries cache-control: no-store and referrer-policy: same-origin', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
     const res = await worker.fetch(authedGet('/connect/billing', token), env);
     expect(res.headers.get('cache-control')).toBe('no-store');
-    expect(res.headers.get('referrer-policy')).toBe('no-referrer');
+    // same-origin (not no-referrer): this page's own subscribe/upgrade POSTs are
+    // same-origin and must keep their Origin header for the CSRF gate. The
+    // Stripe checkout redirect below is the one response that stays no-referrer.
+    expect(res.headers.get('referrer-policy')).toBe('same-origin');
   });
 });
 

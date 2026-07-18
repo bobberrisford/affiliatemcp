@@ -83,6 +83,16 @@ describe('sameOriginPost', () => {
     expect(sameOriginPost(req({ referer: 'https://evil.example/x' }), env)).toBe(false);
   });
 
+  // A `Referrer-Policy: no-referrer` document sends the literal string `null` as
+  // the Origin header (and no Referer) on its own same-origin POSTs, per the
+  // Fetch standard. That must be rejected — it is neither the expected origin
+  // nor a parseable Referer. This is why the hosted pages serving these POST
+  // forms use `same-origin` (which preserves the true Origin), NOT `no-referrer`
+  // (see `renderShell` in src/page-chrome.ts).
+  it('rejects a literal "null" Origin with no Referer (the no-referrer trap)', () => {
+    expect(sameOriginPost(req({ origin: 'null' }), env)).toBe(false);
+  });
+
   it('fails closed when both Origin and Referer are absent', () => {
     expect(sameOriginPost(req({}), env)).toBe(false);
   });
