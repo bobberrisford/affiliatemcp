@@ -614,12 +614,14 @@ describe('connector URL on the connection-test success page', () => {
   });
 });
 
-// ── subscription sequencing on the success page (#379) ──────────────────────
-// The hosted transport gates tool calls on an active subscription, so the
-// success page must send an unsubscribed user to billing BEFORE the
-// add-connector/first-prompt copy, or their first prompt fails at the boundary.
-describe('subscription sequencing on the connection-test success page', () => {
-  it('directs an unsubscribed user to subscribe before adding the connector', async () => {
+// ── success-page sequencing across tiers (#379, reworked by the freemium
+// amendment `docs/decisions/2026-07-18-hosted-freemium-metered-tier.md`) ──────
+// The hard paywall is gone: a connected `free` user can run reports straight
+// away (metered), so the success page is value-first — it leads with the
+// add-connector and first-prompt copy and offers upgrading as a secondary step,
+// rather than sending the user to billing before they can do anything.
+describe('success-page sequencing on the connection-test success page', () => {
+  it('gives a free (unsubscribed) user the add-connector and first-prompt copy, plus a secondary upgrade path', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
@@ -631,11 +633,13 @@ describe('subscription sequencing on the connection-test success page', () => {
     );
     const body = await res.text();
     expect(body).toContain('Connection test passed');
-    // Sequenced to billing first.
-    expect(body).toContain('subscribe');
+    // Value-first: the free plan, the add-connector step, and a first prompt are all present now.
+    expect(body).toContain('free plan');
+    expect(body).toContain('3 reports a week');
+    expect(body).toContain('custom connector');
+    expect(body).toContain('Suggested first prompt');
+    // Upgrading is offered, but as a secondary step, not a precondition.
     expect(body).toContain('/connect/billing');
-    // The "run a prompt now" affordance is withheld until subscribed.
-    expect(body).not.toContain('Suggested first prompt');
   });
 
   it('shows the add-connector and first-prompt copy for an entitled user', async () => {

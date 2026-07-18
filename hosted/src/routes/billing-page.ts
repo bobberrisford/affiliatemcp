@@ -114,11 +114,48 @@ function tierLabel(tier: HostedTier): string {
   return 'none';
 }
 
+/**
+ * A factual Free / Solo / Pro comparison shown above the action buttons
+ * (decision 2026-07-18). Its job is to answer "why pay?" plainly: what the free
+ * plan already gives, and what each paid tier adds on top. Matter-of-fact per
+ * the repo's editorial tone, not marketing copy. The caller's current tier is
+ * marked so the page reads as "where you are, and what's next", and the numbers
+ * are kept in one place here and in the footer line below. Renders with only
+ * the typography the page chrome already styles (headings, lists, `muted`), so
+ * it needs no new CSS.
+ */
+function renderPlanComparison(currentTier: HostedTier): string {
+  const here = (tier: HostedTier): string =>
+    tier === currentTier ? ' <span class="muted">(your plan)</span>' : '';
+  return `
+    <h2>plans</h2>
+    <h3>Free &mdash; &pound;0${here('free')}</h3>
+    <ul>
+      <li>Ask about your own affiliate data in Claude, ChatGPT, or any MCP client</li>
+      <li>3 reports a week (a report is one 30-minute working session)</li>
+      <li>No card, no commitment</li>
+    </ul>
+    <h3>Solo &mdash; &pound;34/month${here('solo')}</h3>
+    <ul>
+      <li>Everything in Free, with no weekly report cap</li>
+      <li>Up to 5 connected networks</li>
+      <li>Weekly earnings digest by email</li>
+    </ul>
+    <h3>Pro &mdash; &pound;99/month${here('pro')}</h3>
+    <ul>
+      <li>Everything in Solo, plus every hosted-eligible network</li>
+      <li>Scheduled anomaly watch and unpaid-commission digest</li>
+      <li>QBR and weekly-report actions</li>
+      <li>CSV export</li>
+    </ul>
+  `;
+}
+
 function renderBillingActions(entitlement: Entitlement): string {
   // `free` (metered, no subscription) and the defensive `none` both offer the
-  // subscribe actions; the full value-first plan comparison is a follow-up
-  // (decision 2026-07-18, PR-3). A `free` caller is a real, signed-in user on
-  // the metered tier, so "subscribe" is the correct next step for them.
+  // subscribe actions, shown beneath the plan comparison (`renderPlanComparison`).
+  // A `free` caller is a real, signed-in user on the metered tier, so "subscribe"
+  // (to lift the cap / unlock the paid layer) is the correct next step for them.
   if (entitlement.tier === 'none' || entitlement.tier === 'free') {
     return `
       ${navForm('/connect/billing/checkout', 'Subscribe Solo: £34/month', { tier: 'solo' }, 'p')}
@@ -156,11 +193,12 @@ async function renderBillingPage(env: Env, session: BrowserSession, noteMessage?
     ${noteHtml}
     <p>Current plan: <strong>${escapeHtml(tierLabel(entitlement.tier))}</strong>
     <span class="muted">(status: ${escapeHtml(entitlement.status)})</span></p>
+    ${renderPlanComparison(entitlement.tier)}
     ${renderBillingActions(entitlement)}
-    <p class="muted">Solo is £34/month; Pro is £99/month. Subscribing and
-    managing your plan both open Stripe's own secure checkout and billing
-    pages, where you can change tier, update your card, or cancel at any time.
-    Card details go straight to Stripe; they are never entered or stored here.</p>
+    <p class="muted">The free plan needs no card. Subscribing and managing a paid
+    plan both open Stripe's own secure checkout and billing pages, where you can
+    change tier, update your card, or cancel at any time. Card details go
+    straight to Stripe; they are never entered or stored here.</p>
   `,
   );
 }
