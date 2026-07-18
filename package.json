@@ -43,6 +43,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "persona:report": "tsx scripts/persona-run.ts",
+    "hosted:capture-token": "tsx scripts/hosted-capture-token.ts",
     "test:live": "echo \"test:live placeholder — implemented in a later chunk\" && exit 0",
     "smoke:mcp": "node scripts/smoke-mcp.mjs",
     "verify:mcpb": "npm run build:mcpb && node scripts/smoke-mcp.mjs --entry .artifacts/mcpb/server/index.cjs --server-only",
