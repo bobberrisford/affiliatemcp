@@ -173,6 +173,7 @@ GET  /.well-known/oauth-authorization-server  RFC 8414 discovery document
 POST /register                                RFC 7591 dynamic client registration
 GET  /authorize                               validate the request + render the sign-in page
 POST /authorize/email                         send the magic link for this authorization
+GET  /authorize/consent                       token-free consent page (reads the callback's handoff cookie)
 POST /authorize/consent                       approve/deny → issue code, redirect to the client
 POST /token                                   authorization_code and refresh_token grants
 ```
@@ -191,12 +192,19 @@ POST /token                                   authorization_code and refresh_tok
    "link origin is `PUBLIC_BASE_URL`, never the request Host" guarantees are
    identical), carrying the pending authorization request id in the
    pending-link record — never in the emailed URL.
-3. The user clicks the link. `GET /auth/callback` consumes it, establishes
-   identity exactly as before, and — because the pending record carries an
-   `authRequestId` — renders the **consent page** instead of the session
-   page. Consent identity is proved by a short-lived full session token in a
-   hidden form field, the same header-or-hidden-field, never-a-URL discipline
-   the H5 connect flow uses (`src/routes/connect.ts`).
+3. The user clicks the link. `GET /auth/callback` consumes it and establishes
+   identity exactly as before. Because the pending record carries an
+   `authRequestId`, it does **not** render consent at that
+   `?token=<magic-link-token>` URL (under the flow-wide `same-origin` referrer
+   policy the consent POST's `Referer` would carry that token to same-origin
+   logs). Instead it stashes a single-use consent handoff (`oauth:consent:`),
+   sets an opaque `hosted_consent` cookie naming it, and 303-redirects to the
+   token-free `GET /authorize/consent`, which reads the cookie, consumes the
+   handoff, and renders the **consent page**. Consent identity is proved by a
+   short-lived full session token in a hidden form field, the same
+   header-or-hidden-field, never-a-URL discipline the H5 connect flow uses
+   (`src/routes/connect.ts`); nothing identifying the request or user is ever
+   in a URL.
 4. Approving mints a single-use authorization code bound to the PKCE
    challenge and 302-redirects the browser back to the client's
    `redirect_uri` with `code` and `state`. Denying redirects with
@@ -633,9 +641,11 @@ that neither the token nor the cookie value ever appears in a rendered page.
 Navigation between these pages is a small inline POST form the cookie
 accompanies (`SameSite=Lax` attaches it on same-site navigations and top-level
 GET navigations). As
-defence in depth, every page is served `Referrer-Policy: no-referrer` on top of
+defence in depth, every page is served `Referrer-Policy: same-origin` on top of
 the Worker-wide `cache-control: no-store`, so its token-free URLs leak nothing
-outbound through the external documentation links these pages contain. The GET
+outbound through the external documentation links these pages contain, while the
+real `Origin` header still reaches same-origin POSTs (which the connect flow's
+own CSRF gate needs — see the `renderShell` header, `src/page-chrome.ts`). The GET
 variants of the list/form/retest routes exist only for callers that can send an
 Authorization header; a browser without a cookie simply sees the sign-in prompt.
 
@@ -1296,7 +1306,7 @@ Cloudflare.
   failure paths, that no batch/multi-network endpoint exists, that no HTML
   response ever carries an unmasked credential value, that no URL in any
   rendered page carries the session token, and that every connect response
-  carries `cache-control: no-store` and `referrer-policy: no-referrer`
+  carries `cache-control: no-store` and `referrer-policy: same-origin`
   (`test/connect-routes.test.ts`); and (H6) subscription-state resolution
   and complete billing deletion (`test/billing.test.ts`), the Stripe
   webhook-signature verifier plus the billing-portal session request shape

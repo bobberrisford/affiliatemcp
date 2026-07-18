@@ -32,8 +32,12 @@
  *                              first use), creates the user record if new, and
  *                              then EITHER resumes an OAuth authorization (if
  *                              the pending-link record carries an
- *                              `authRequestId` — renders the consent page,
- *                              `renderConsentPage`, `src/routes/oauth.ts`) OR,
+ *                              `authRequestId` — stashes a single-use consent
+ *                              handoff, sets an opaque cookie naming it, and
+ *                              303-redirects to the token-free
+ *                              `GET /authorize/consent`, `src/routes/oauth.ts`,
+ *                              rather than rendering consent at this token-
+ *                              bearing URL) OR,
  *                              for a plain sign-in, sets an HttpOnly session
  *                              cookie (`setSessionCookieHeader`, `src/http.ts`)
  *                              and 303-redirects to the browser connect/manage
@@ -60,6 +64,8 @@
  *   POST /register                                RFC 7591 dynamic registration
  *   GET  /authorize                               validate + sign-in page (PKCE)
  *   POST /authorize/email                         send the magic link for it
+ *   GET  /authorize/consent                       token-free consent page (reads
+ *                                                 the handoff cookie the callback set)
  *   POST /authorize/consent                       approve/deny → code + redirect
  *   POST /token                                   authorization_code + refresh_token
  *
@@ -147,7 +153,7 @@
  */
 
 import type { Env } from './env.js';
-import { corsHeaders, json, nowSeconds, setSessionCookieHeader } from './http.js';
+import { corsHeaders, json, nowSeconds, setConsentCookieHeader, setSessionCookieHeader } from './http.js';
 import { escapeHtml, renderShell } from './page-chrome.js';
 import { hashLinkToken, isValidEmail, normaliseEmail } from './identity.js';
 import {
@@ -160,13 +166,14 @@ import {
   handleAuthorize,
   handleAuthorizeEmail,
   handleConsent,
+  handleConsentPage,
   handleOAuthMetadata,
   handleRegister,
   handleToken,
   isPublicOAuthApiPath,
   oauthCors,
-  renderConsentPage,
 } from './routes/oauth.js';
+import { OAUTH_CONSENT_HANDOFF_TTL_SECONDS, putConsentHandoff } from './oauth.js';
 import { handleDeleteAccount } from './routes/account.js';
 import {
   handleConnectForm,
@@ -299,11 +306,34 @@ async function handleCallback(request: Request, env: Env): Promise<Response> {
   // If this sign-in was started to complete an OAuth authorization
   // (`./routes/oauth.js`), resume into the consent page instead of handing the
   // user a token to copy: the OAuth client, not the user, ends up holding a
-  // token. `renderConsentPage` handles a request that expired between the
-  // email send and the click. This is the path the decision makes primary
+  // token. This is the path the decision makes primary
   // (`docs/decisions/2026-07-15-hosted-connector-oauth.md`).
+  //
+  // Do NOT render consent at this URL: it still carries `?token=<magic-link>` in
+  // the address bar, and the consent form's same-origin POST would put that
+  // token in the Referer of same-origin request logs (the flow-wide policy is
+  // `same-origin` since it must send Origin for the connect flow's CSRF gate —
+  // `page-chrome.ts`). The token is already consumed above, so a logged copy is
+  // spent, but we keep it out of URLs entirely. Instead stash the authorization
+  // request id and the just-established user id in a single-use KV handoff, hand
+  // the browser an opaque HttpOnly cookie naming it, and 303-redirect to the
+  // token-free `/authorize/consent`, which re-derives both from the cookie
+  // (`handleConsentPage`, `./routes/oauth.js`). No token, request id, or user id
+  // ever rides in a URL.
   if (pending.authRequestId) {
-    return renderConsentPage(env, pending.authRequestId, userId);
+    const handoffId = await putConsentHandoff(env.HOSTED_USERS, {
+      authRequestId: pending.authRequestId,
+      userId,
+      expiresAt: nowSeconds() + OAUTH_CONSENT_HANDOFF_TTL_SECONDS,
+    });
+    return new Response(null, {
+      status: 303,
+      headers: {
+        location: '/authorize/consent',
+        'set-cookie': setConsentCookieHeader(handoffId, OAUTH_CONSENT_HANDOFF_TTL_SECONDS),
+        'cache-control': 'no-store',
+      },
+    });
   }
 
   // Plain sign-in (no OAuth authorization in flight): establish the BROWSER
@@ -420,6 +450,13 @@ export default {
     }
     if (url.pathname === '/authorize/email' && request.method === 'POST') {
       return handleAuthorizeEmail(request, env);
+    }
+    // The token-free consent page: GET renders it (reading the handoff cookie
+    // the callback set), POST records the approve/deny decision. The magic-link
+    // callback 303-redirects to this GET rather than rendering consent at its
+    // own `?token=` URL (see `handleCallback` and `handleConsentPage`).
+    if (url.pathname === '/authorize/consent' && request.method === 'GET') {
+      return handleConsentPage(request, env);
     }
     if (url.pathname === '/authorize/consent' && request.method === 'POST') {
       return handleConsent(request, env);
