@@ -1,0 +1,102 @@
+name: Hosted live authenticated smoke
+
+# Tier 3 automated subset (option A) for the seeded test tenant. See
+# docs/decisions/2026-07-18-hosted-seeded-test-tenant.md.
+#
+# Exchanges the seeded refresh token for a short-lived access token, runs the
+# live authenticated smoke against the real connector, then writes the ROTATED
+# refresh token back to the secret (the auth server rotates refresh tokens on
+# use, so the stored one must be updated each run).
+#
+# Never runs on pull requests, so a fork cannot read the secrets. Single
+# concurrency, no cancellation, so two runs can never race the write-back.
+#
+# Required, provisioned manually by the maintainer (never by an agent):
+#   - secret HOSTED_TEST_REFRESH_TOKEN  (rotating; updated by this workflow)
+#   - secret HOSTED_TEST_CLIENT_ID
+#   - secret HOSTED_TEST_SECRETS_PAT    (fine-grained PAT, this repo, secrets:write)
+#   - optional var HOSTED_TEST_NETWORK  (a network the tenant has connected)
+# When HOSTED_TEST_REFRESH_TOKEN is unset, the job is a no-op success.
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hosted-live-auth
+  cancel-in-progress: false
+
+jobs:
+  live-auth-smoke:
+    if: ${{ github.repository == 'bobberrisford/affiliatemcp' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check the test tenant is provisioned
+        id: gate
+        env:
+          REFRESH_TOKEN: ${{ secrets.HOSTED_TEST_REFRESH_TOKEN }}
+        run: |
+          if [ -z "${REFRESH_TOKEN}" ]; then
+            echo "::notice::HOSTED_TEST_REFRESH_TOKEN is unset; the seeded test tenant is not provisioned. Skipping."
+            echo "provisioned=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "provisioned=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v5
+        if: ${{ steps.gate.outputs.provisioned == 'true' }}
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+        if: ${{ steps.gate.outputs.provisioned == 'true' }}
+
+      - name: Refresh token, run smoke, and rotate the stored refresh token
+        if: ${{ steps.gate.outputs.provisioned == 'true' }}
+        env:
+          AUTH_URL: https://hosted.agenticaffiliate.ai
+          REFRESH_TOKEN: ${{ secrets.HOSTED_TEST_REFRESH_TOKEN }}
+          CLIENT_ID: ${{ secrets.HOSTED_TEST_CLIENT_ID }}
+          # PAT scoped to this repo's secrets:write — used ONLY to write the
+          # rotated refresh token back. Never the default GITHUB_TOKEN.
+          GH_TOKEN: ${{ secrets.HOSTED_TEST_SECRETS_PAT }}
+          HOSTED_TEST_NETWORK: ${{ vars.HOSTED_TEST_NETWORK }}
+        run: |
+          set -euo pipefail
+
+          resp=$(curl -sS -X POST "${AUTH_URL}/token" \
+            -H 'content-type: application/x-www-form-urlencoded' \
+            --data-urlencode 'grant_type=refresh_token' \
+            --data-urlencode "refresh_token=${REFRESH_TOKEN}" \
+            --data-urlencode "client_id=${CLIENT_ID}")
+
+          access=$(printf '%s' "$resp" | jq -r '.access_token // empty')
+          newrefresh=$(printf '%s' "$resp" | jq -r '.refresh_token // empty')
+
+          if [ -z "$access" ]; then
+            echo "::error::Token refresh failed: $(printf '%s' "$resp" | jq -rc '.error // "no access_token in response"')"
+            exit 1
+          fi
+          # Keep both out of any log line.
+          echo "::add-mask::$access"
+          [ -n "$newrefresh" ] && echo "::add-mask::$newrefresh"
+
+          # Option A: persist the rotated refresh token before running the smoke,
+          # so a smoke failure never strands the tenant on a spent token.
+          if [ -n "$newrefresh" ] && [ "$newrefresh" != "$REFRESH_TOKEN" ]; then
+            if [ -z "${GH_TOKEN:-}" ]; then
+              echo "::error::Refresh token rotated but HOSTED_TEST_SECRETS_PAT is unset; cannot write it back. Provision the PAT."
+              exit 1
+            fi
+            printf '%s' "$newrefresh" | gh secret set HOSTED_TEST_REFRESH_TOKEN
+            echo "::notice::Rotated refresh token written back to HOSTED_TEST_REFRESH_TOKEN."
+          fi
+
+          HOSTED_TEST_ACCESS_TOKEN="$access" npx vitest run tests/hosted-personas/live-authenticated.test.ts

@@ -41,14 +41,29 @@ testing relies on them rather than re-implementing them:
 | Entitlement transitions: `checkout.session.completed` grants, `subscription.deleted` cancels, lapsed→none, idempotent replay, signature tamper/replay guard | subscribe / churn | `hosted/test/billing.test.ts`, `hosted/test/stripe.test.ts` |
 | Digest scope: none/solo/pro digest-type gating | scheduled digests | `hosted/test/scope.test.ts`, `hosted/test/billing.test.ts` |
 
-## Tier 3 — live authenticated end-to-end (not automated here)
+## Tier 3 — live authenticated end-to-end (seeded test tenant, option A)
 
 A full persona walk (magic-link login → paste keys → subscribe → tool call →
 cap/refusal → cancel → delete) needs a real login, real network keys, and a real
-Stripe-test subscription. It cannot be driven by an agent (account creation and
-credential entry are out of bounds) and is not in ordinary CI. It belongs in a
-maintainer-run runbook against a dedicated test tenant; provisioning a seeded
-test tenant to automate a subset is an open decision (plan D1).
+Stripe-test subscription. Account creation and credential entry cannot be driven
+by an agent, so provisioning is maintainer-only — the runbook is in
+[`docs/decisions/2026-07-18-hosted-seeded-test-tenant.md`](../../docs/decisions/2026-07-18-hosted-seeded-test-tenant.md)
+(Accepted, option A).
+
+Once the tenant is provisioned, a subset runs automatically:
+
+- `live-authenticated.test.ts` — given a short-lived access token
+  (`HOSTED_TEST_ACCESS_TOKEN`), connects to the live connector, lists tools, and
+  makes an entitled meta call (plus an optional vault-backed read when
+  `HOSTED_TEST_NETWORK` is set). Skips without the token.
+- `.github/workflows/hosted-live-auth.yml` — daily / `workflow_dispatch`,
+  single-concurrency, never on PRs. Exchanges the seeded refresh token, runs the
+  smoke, then writes the **rotated** refresh token back to the secret (the auth
+  server rotates refresh tokens on use). A no-op success until the tenant secrets
+  are set.
+
+The remaining destructive legs (cancel, hard delete) stay in the maintainer
+runbook; the automated smoke is read-only.
 
 ## Known gap kept visible
 
