@@ -73,6 +73,8 @@
  *   GET    /vault/credentials/:network/reveal decrypt and return one network's
  *                              credential (H4 only — see the file-header
  *                              comment in `src/routes/vault.ts`)
+ *   GET    /account/export             export everything held about the
+ *                              caller, metadata only, never a credential value
  *   DELETE /account                    complete account deletion
  *
  * H5 (`docs/product/hosted-mvp-workstream.md`, `src/routes/connect.ts`) adds
@@ -163,7 +165,7 @@ import {
   oauthCors,
   renderConsentPage,
 } from './routes/oauth.js';
-import { handleDeleteAccount } from './routes/account.js';
+import { handleDeleteAccount, handleExportAccount } from './routes/account.js';
 import {
   handleConnectForm,
   handleConnectList,
@@ -437,6 +439,9 @@ export default {
     const vaultRevealMatch = url.pathname.match(/^\/vault\/credentials\/([^/]+)\/reveal$/);
     if (vaultRevealMatch && request.method === 'GET') {
       return handleRevealCredentials(request, env, decodeURIComponent(vaultRevealMatch[1] as string), cors);
+    }
+    if (url.pathname === '/account/export' && request.method === 'GET') {
+      return handleExportAccount(request, env, cors);
     }
     if (url.pathname === '/account' && request.method === 'DELETE') {
       return handleDeleteAccount(request, env, cors);
