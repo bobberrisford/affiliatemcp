@@ -285,7 +285,7 @@ function render(f){
         <span class="lab">just say something like</span>
         <p class="q">"${s.say}"</p>
         <div class="acts">
-          <a class="open" href="claude://claude.ai/new?q=${encodeURIComponent(s.say)}" title="Opens the Claude desktop app with this prompt ready — you review and send">open in claude ▸</a>
+          <a class="open" href="https://claude.ai/new?q=${encodeURIComponent(s.say)}" title="Opens the Claude desktop app with this prompt ready — you review and send">open in claude ▸</a>
           <button class="copy" type="button" data-cmd="${esc(s.say)}">copy</button>
         </div>
       </div>`;
