@@ -205,6 +205,24 @@ describe('billing page: tier-dependent actions', () => {
     expectNoTokenLeak(body, token);
   });
 
+  it('shows a Free / Solo / Pro comparison that answers "why upgrade", marking the current plan', async () => {
+    const { env, signingKey } = await makeTestEnv();
+    const token = await issueSessionToken(signingKey, generateUserId());
+    const res = await worker.fetch(authedGet('/connect/billing', token), env);
+    const body = await res.text();
+    // All three plans and their prices are laid out.
+    expect(body).toContain('Free &mdash; &pound;0');
+    expect(body).toContain('Solo &mdash; &pound;34/month');
+    expect(body).toContain('Pro &mdash; &pound;99/month');
+    // The free caller's own plan is marked.
+    expect(body).toContain('Free &mdash; &pound;0 <span class="muted">(your plan)</span>');
+    // The "why upgrade" reasons are concrete, not vague.
+    expect(body).toContain('no weekly report cap');
+    expect(body).toContain('anomaly watch');
+    expect(body).toContain('CSV export');
+    expectNoTokenLeak(body, token);
+  });
+
   it('tier solo renders an Upgrade to Pro button and a Manage subscription button, no Subscribe buttons', async () => {
     const { env, billingKv, signingKey } = await makeTestEnv();
     const userId = generateUserId();
