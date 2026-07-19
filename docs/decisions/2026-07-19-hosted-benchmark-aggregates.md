@@ -1,7 +1,10 @@
 # Hosted programme benchmarks (aggregate-only)
 
 - **Date:** 2026-07-19
-- **Status:** Proposed
+- **Status:** Accepted (2026-07-19, Rob). The boundary move is deliberately
+  accepted; the lockstep amendments to custody clause 4, `PRIVACY.md`, manifesto
+  Principle 2, and the public site trust copy are required follow-ups (the site
+  edit is public-facing and awaits a separate explicit go-ahead).
 - **Affects:** the hosted service (`hosted/`, `src/hosted-transport/`,
   `src/hosted-digest/`), `PRIVACY.md`, the local-first boundary in
   `docs/product/manifesto.md` (Principle 2), the trust/security and privacy
