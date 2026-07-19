@@ -36,7 +36,7 @@
 
 const ACTIVE_STATUSES = new Set(['active', 'trialing']);
 
-export type HostedTier = 'none' | 'solo' | 'pro';
+export type HostedTier = 'none' | 'free' | 'solo' | 'pro';
 export type PaidHostedTier = 'solo' | 'pro';
 
 /** Stored subscription record, keyed by hosted userId. */
@@ -77,14 +77,17 @@ export async function putSubscriptionRecord(
   await kv.put(subKey(userId), JSON.stringify(record));
 }
 
-/** The entitlement the transport boundary and the digest job both consult: a closed `none | solo
- * | pro` tier plus the raw Stripe status for display/debugging. `none` covers "never
- * subscribed" and "subscription lapsed" identically — the transport gate does not need to
- * distinguish them, matching the issuer Worker's `active` boolean collapsing the same cases. */
+/** The entitlement the transport boundary and the digest job both consult: a closed `free | solo
+ * | pro` tier plus the raw Stripe status for display/debugging. An authenticated user who has
+ * never subscribed, or whose subscription has lapsed, resolves to `free` (the metered free tier,
+ * `docs/decisions/2026-07-18-hosted-freemium-metered-tier.md`); the two cases are collapsed
+ * identically because the transport meter treats them the same. `none` is NOT returned here — it
+ * is reserved for "not a valid hosted session", a state resolved upstream before this call, so
+ * every caller of `resolveEntitlement` already holds a valid session and is at worst `free`. */
 export async function resolveEntitlement(kv: KVNamespace, userId: string): Promise<Entitlement> {
   const record = await getSubscriptionRecord(kv, userId);
   if (!record || !isActiveStatus(record.status)) {
-    return { tier: 'none', status: record?.status ?? 'none' };
+    return { tier: 'free', status: record?.status ?? 'none' };
   }
   return { tier: record.tier, status: record.status };
 }

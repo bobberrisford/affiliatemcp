@@ -281,7 +281,7 @@ describe('digest-scoped token: every other session-gated surface refuses it', ()
     const ctx = await makeContext();
     const res = await worker.fetch(authed('/billing/entitlement', 'GET', ctx.fullToken), ctx.env);
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ tier: 'none', status: 'none' });
+    expect(await res.json()).toEqual({ tier: 'free', status: 'none' });
 
     const put = await worker.fetch(
       authed('/vault/credentials', 'POST', ctx.fullToken, { network: 'cj', credentials: { CJ_API_TOKEN: 'x' } }),

@@ -28,6 +28,7 @@ import {
   putSubscriptionReverseIndex,
   resolveEntitlement,
 } from '../billing.js';
+import { consumeFreeWindow } from '../meter.js';
 import { createBillingPortalSession, createCheckoutSession, verifyStripeSignature } from '../stripe.js';
 // Full-scope only (H6, `./guard.ts`): a digest-scoped token has no business
 // creating checkout sessions or reading billing state — its whole job is two
@@ -221,6 +222,28 @@ export async function handleBillingEntitlement(
 
   const entitlement = await resolveEntitlement(env.HOSTED_BILLING, auth.userId);
   return json(entitlement, { status: 200 }, cors);
+}
+
+// ── POST /billing/meter ────────────────────────────────────────────────────
+// Session-gated, state-changing: consume one free-tier report window for the
+// caller and return the decision. Like `/billing/entitlement`, the hosted MCP
+// transport calls this with the caller's OWN session bearer token (never a
+// service credential), and only for a `free`-tier caller — a paid caller is
+// never metered, so the transport does not call this for them. A POST because
+// it mutates the meter (opens a window when one is due); the response is a
+// plain decision object carrying counts and timestamps only, never affiliate
+// data. See `../meter.ts` for the rolling-window model and the accepted
+// no-lock race posture.
+export async function handleBillingMeter(
+  request: Request,
+  env: Env,
+  cors: Record<string, string>,
+): Promise<Response> {
+  const auth = await requireFullSession(request, env, cors);
+  if (auth instanceof Response) return auth;
+
+  const decision = await consumeFreeWindow(env.HOSTED_BILLING, auth.userId, Date.now());
+  return json(decision, { status: 200 }, cors);
 }
 
 // ── POST /billing/portal ──────────────────────────────────────────────────

@@ -191,7 +191,7 @@ describe('GET|POST /connect/billing: session gating', () => {
 
 // ── Tier-dependent action buttons ───────────────────────────────────────────
 describe('billing page: tier-dependent actions', () => {
-  it('tier none renders both Subscribe Solo and Subscribe Pro buttons, and no manage button', async () => {
+  it('an unsubscribed (free-tier) user sees both Subscribe buttons, no manage button, and a Free current-plan label', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
     const res = await worker.fetch(authedGet('/connect/billing', token), env);
@@ -199,7 +199,9 @@ describe('billing page: tier-dependent actions', () => {
     expect(body).toContain('Subscribe Solo');
     expect(body).toContain('Subscribe Pro');
     expect(body).not.toContain('Manage subscription');
-    expect(body).toContain('Current plan: <strong>none</strong>');
+    // Unsubscribed users now resolve to the metered free tier (decision 2026-07-18),
+    // so the current-plan label reads "Free", not "none".
+    expect(body).toContain('Current plan: <strong>Free</strong>');
     expectNoTokenLeak(body, token);
   });
 

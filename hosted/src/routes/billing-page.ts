@@ -110,11 +110,16 @@ async function readUrlFromApiResponse(res: Response): Promise<string | null> {
 function tierLabel(tier: HostedTier): string {
   if (tier === 'solo') return 'Solo';
   if (tier === 'pro') return 'Pro';
+  if (tier === 'free') return 'Free';
   return 'none';
 }
 
 function renderBillingActions(entitlement: Entitlement): string {
-  if (entitlement.tier === 'none') {
+  // `free` (metered, no subscription) and the defensive `none` both offer the
+  // subscribe actions; the full value-first plan comparison is a follow-up
+  // (decision 2026-07-18, PR-3). A `free` caller is a real, signed-in user on
+  // the metered tier, so "subscribe" is the correct next step for them.
+  if (entitlement.tier === 'none' || entitlement.tier === 'free') {
     return `
       ${navForm('/connect/billing/checkout', 'Subscribe Solo: £34/month', { tier: 'solo' }, 'p')}
       ${navForm('/connect/billing/checkout', 'Subscribe Pro: £99/month', { tier: 'pro' }, 'p')}

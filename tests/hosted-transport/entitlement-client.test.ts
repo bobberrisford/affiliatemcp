@@ -32,6 +32,14 @@ describe('fetchHostedEntitlement', () => {
     expect((init.headers as Record<string, string>)['authorization']).toBe('Bearer amcps_the_callers_own_token');
   });
 
+  it('accepts the metered free tier', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ tier: 'free', status: 'none' }), { status: 200 }),
+    );
+    const entitlement = await fetchHostedEntitlement('t', 'https://hosted.test');
+    expect(entitlement).toEqual({ tier: 'free', status: 'none' });
+  });
+
   it('throws HostedEntitlementUnavailableError on a network failure', async () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('ECONNREFUSED'));
     await expect(fetchHostedEntitlement('t', 'https://hosted.test')).rejects.toThrow(HostedEntitlementUnavailableError);
