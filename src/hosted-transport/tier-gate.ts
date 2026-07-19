@@ -6,8 +6,16 @@
  * (`src/brand-data/entitlement.ts`), extended for the three hosted tiers
  * instead of a single free/paid flag.
  *
- * Per `docs/decisions/2026-07-12-pricing-billing-and-licence.md`:
- *   - `none`  — no hosted access at all. Every tool call is refused.
+ * Per `docs/decisions/2026-07-12-pricing-billing-and-licence.md` and the
+ * freemium amendment `docs/decisions/2026-07-18-hosted-freemium-metered-tier.md`:
+ *   - `none`  — not a valid hosted session. Refused. In practice unreachable
+ *     from the resolved entitlement (the hosted Worker's `resolveEntitlement`
+ *     returns `free`, never `none`, for any authenticated caller); kept as a
+ *     defensive refusal only.
+ *   - `free`  — the metered free tier. `checkTierEntitlement` lets it proceed;
+ *     the per-window meter (`meter-client.ts`, consulted in `mcp-server.ts`)
+ *     is what bounds it, returning `free_quota_exceeded` when the rolling
+ *     weekly allowance is spent.
  *   - `solo`  — hosted access capped at 5 distinct connected networks; no
  *     Pro-only scheduled features (today, no interactive tool is Pro-only —
  *     the digest job itself enforces the Solo/Pro split on which digest
@@ -31,7 +39,7 @@ export const SOLO_NETWORK_CAP = 5;
  * `EntitlementRequired` (`src/brand-data/entitlement.ts`) in shape and in being returned as
  * plain tool-result JSON with `isError: true`, not thrown. */
 export interface HostedTierRefusal {
-  error: 'entitlement_required' | 'network_cap_exceeded';
+  error: 'entitlement_required' | 'network_cap_exceeded' | 'free_quota_exceeded';
   entitled: false;
   tier: HostedTier;
   message: string;
@@ -53,9 +61,33 @@ export function checkTierEntitlement(tier: HostedTier): HostedTierRefusal | unde
   return buildRefusal({
     error: 'entitlement_required',
     tier,
-    message: 'The hosted affiliate-mcp connector requires an active Solo or Pro subscription.',
+    message: 'This request has no valid hosted session.',
+    upgradeHint: 'Sign in to the hosted dashboard, then add the connector to your MCP client.',
+  });
+}
+
+/**
+ * The free-tier meter refusal, returned when a `free` caller has spent their
+ * rolling weekly report allowance (`meter-client.ts` reports `allowed: false`).
+ * Structured exactly like the other tier refusals — plain tool-result JSON with
+ * `isError: true`, never a thrown transport error — so a client can render it
+ * as an upgrade prompt. `resetAt` (unix ms, when the oldest window ages out) is
+ * folded into the human message when known; the meter, not this builder, owns
+ * the counting.
+ */
+export function buildFreeQuotaRefusal(resetAt: number | null): HostedTierRefusal {
+  const resetSentence =
+    resetAt !== null
+      ? ` Your next free report is available on ${new Date(resetAt).toISOString().slice(0, 10)}.`
+      : '';
+  return buildRefusal({
+    error: 'free_quota_exceeded',
+    tier: 'free',
+    message: `You have used all of this week's free reports on the hosted connector.${resetSentence}`,
     upgradeHint:
-      'Subscribe at the Solo (£34/mo, up to 5 networks, weekly earnings digest) or Pro (£99/mo, all networks, unpaid-commissions digest) tier to use the hosted connector.',
+      'Subscribe to Solo (£34/mo: no weekly cap, up to 5 networks, weekly earnings digest) or Pro ' +
+      '(£99/mo: all networks, anomaly watch, unpaid-commission digest, report actions, CSV export) ' +
+      'to run reports without the free-tier limit. Manage your plan on the hosted billing page.',
   });
 }
 

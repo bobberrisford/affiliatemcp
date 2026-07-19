@@ -6,16 +6,25 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { checkNetworkCap, checkTierEntitlement, SOLO_NETWORK_CAP } from '../../src/hosted-transport/tier-gate.js';
+import {
+  buildFreeQuotaRefusal,
+  checkNetworkCap,
+  checkTierEntitlement,
+  SOLO_NETWORK_CAP,
+} from '../../src/hosted-transport/tier-gate.js';
 import { META_NETWORK } from '../../src/hosted-transport/dispatch.js';
 
 describe('checkTierEntitlement', () => {
-  it('refuses tier "none"', () => {
+  it('refuses tier "none" (no valid session; defensive only)', () => {
     const refusal = checkTierEntitlement('none');
     expect(refusal).toBeDefined();
     expect(refusal?.error).toBe('entitlement_required');
     expect(refusal?.entitled).toBe(false);
     expect(refusal?.tier).toBe('none');
+  });
+
+  it('allows the metered free tier through (the meter, not this gate, bounds it)', () => {
+    expect(checkTierEntitlement('free')).toBeUndefined();
   });
 
   it('allows tier "solo"', () => {
@@ -24,6 +33,28 @@ describe('checkTierEntitlement', () => {
 
   it('allows tier "pro"', () => {
     expect(checkTierEntitlement('pro')).toBeUndefined();
+  });
+});
+
+describe('buildFreeQuotaRefusal', () => {
+  it('builds a structured free_quota_exceeded refusal with an upgrade hint', () => {
+    const refusal = buildFreeQuotaRefusal(null);
+    expect(refusal.error).toBe('free_quota_exceeded');
+    expect(refusal.entitled).toBe(false);
+    expect(refusal.tier).toBe('free');
+    expect(refusal.upgradeHint).toMatch(/Solo/);
+    expect(refusal.upgradeHint).toMatch(/Pro/);
+  });
+
+  it('names the reset date in the message when a resetAt is known', () => {
+    const resetAt = Date.UTC(2026, 6, 25); // 2026-07-25
+    const refusal = buildFreeQuotaRefusal(resetAt);
+    expect(refusal.message).toContain('2026-07-25');
+  });
+
+  it('omits a reset date when none is known', () => {
+    const refusal = buildFreeQuotaRefusal(null);
+    expect(refusal.message).not.toMatch(/\d{4}-\d{2}-\d{2}/);
   });
 });
 
