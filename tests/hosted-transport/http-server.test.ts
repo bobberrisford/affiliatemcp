@@ -62,6 +62,9 @@ interface FakeHostedWorker {
   /** When true, `POST /billing/meter` returns a 500 — simulates a meter-service outage, distinct
    * from "out of free reports". */
   meterUnavailable: boolean;
+  /** How many times `POST /billing/meter` has been hit — lets a test assert a paid caller is
+   * never metered and a meta tool never consumes a window. */
+  meterCalls: number;
   close: () => Promise<void>;
 }
 
@@ -88,7 +91,7 @@ function startFakeHostedWorker(): Promise<FakeHostedWorker> {
   const vault = new Map<string, Record<string, string>>();
   const entitlements = new Map<string, FakeEntitlement>();
   const meterDecisions = new Map<string, FakeMeterDecision>();
-  const state = { billingUnavailable: false, meterUnavailable: false };
+  const state = { billingUnavailable: false, meterUnavailable: false, meterCalls: 0 };
 
   function sessionFor(req: IncomingMessage): FakeSession | undefined {
     const authHeader = req.headers['authorization'];
@@ -139,6 +142,7 @@ function startFakeHostedWorker(): Promise<FakeHostedWorker> {
       // Free-tier meter (decision 2026-07-18): POST /billing/meter, session-gated.
       // Returns the per-user decision a test set, or a permissive default.
       if (url.pathname === '/billing/meter' && req.method === 'POST') {
+        state.meterCalls += 1;
         if (state.meterUnavailable) {
           sendJson(res, 500, { error: 'internal_error' });
           return;
@@ -211,6 +215,12 @@ function startFakeHostedWorker(): Promise<FakeHostedWorker> {
         },
         set meterUnavailable(v: boolean) {
           state.meterUnavailable = v;
+        },
+        get meterCalls() {
+          return state.meterCalls;
+        },
+        set meterCalls(v: number) {
+          state.meterCalls = v;
         },
         close: () => new Promise((res, rej) => server.close((err) => (err ? rej(err) : res()))),
       });
@@ -496,6 +506,42 @@ describe('hosted MCP transport (H6) billing-tier gate', () => {
     expect(body.error).toBe('meter_unavailable');
     expect(cjSpy.mock.calls.some(([input]) => String(input).includes('commissions.api.cj.com'))).toBe(false);
     fakeWorker.meterUnavailable = false;
+
+    await client.close();
+  });
+
+  it('free tier: a meta tool does not consume a report window (never calls the meter), even when the meter would refuse', async () => {
+    const userId = 'hosted_usr_test_free_meta';
+    const token = 'amcps_test.session.free_meta';
+    fakeWorker.sessions.set(token, { userId, exp: Math.floor(Date.now() / 1000) + 3600 });
+    fakeWorker.entitlements.set(userId, { tier: 'free', status: 'none' });
+    // Meter would refuse if consulted — proving the meta tool skips it entirely.
+    fakeWorker.meterDecisions.set(userId, { allowed: false, remaining: 0, resetAt: Date.now() + 86_400_000 });
+    fakeWorker.meterCalls = 0;
+
+    const client = await connectClient(token);
+    const result = await client.callTool({ name: 'affiliate_list_networks', arguments: {} });
+
+    expect(result.isError).toBeFalsy();
+    expect(fakeWorker.meterCalls).toBe(0);
+
+    await client.close();
+  });
+
+  it('paid tier: a pro caller is never metered (the meter route is not called)', async () => {
+    const userId = 'hosted_usr_test_pro_no_meter';
+    const token = 'amcps_test.session.pro_no_meter';
+    fakeWorker.sessions.set(token, { userId, exp: Math.floor(Date.now() / 1000) + 3600 });
+    fakeWorker.entitlements.set(userId, { tier: 'pro', status: 'active' });
+    fakeWorker.vault.set(`${userId}:cj`, { CJ_API_TOKEN: 'tok', CJ_COMPANY_ID: '7654321' });
+    mockCjNetworkCall('7654321');
+    fakeWorker.meterCalls = 0;
+
+    const client = await connectClient(token);
+    const result = await client.callTool({ name: 'affiliate_cj_verify_auth', arguments: {} });
+
+    expect(result.isError).toBeFalsy();
+    expect(fakeWorker.meterCalls).toBe(0);
 
     await client.close();
   });
