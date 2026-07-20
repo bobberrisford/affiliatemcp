@@ -1,11 +1,32 @@
-# affiliate-mcp — demo video
+# affiliate-mcp — demo videos
 
-A [Remotion](https://www.remotion.dev/) project that renders a ~70-second
-product demo of `affiliate-mcp`. It uses the repo's own design-system tokens
-and fonts (`design-system/colors_and_type.css`, `design-system/fonts/`), so the
-video stays on-brand with the site and launch cards.
+A [Remotion](https://www.remotion.dev/) project that renders product videos for
+`affiliate-mcp`. It uses the repo's own design-system tokens and fonts
+(`design-system/colors_and_type.css`, `design-system/fonts/`), so the videos
+stay on-brand with the site and launch cards.
 
-## What it shows
+Two compositions are registered:
+
+- **`DemoVideo`** (~70s) — the full product overview, both the free local
+  server and the hosted tier.
+- **`HostedVideo`** (~46s) — a standalone video for the hosted product alone:
+  the no-install, non-technical path, the commercial story, and the custody
+  contract. Scenes live under `src/scenes/hosted/` and it reuses the shared
+  `Pricing` scene.
+
+## `HostedVideo` — the hosted-only cut
+
+Eight scenes: hosted title, who it's for (the non-technical cohort and the
+install walls hosted removes), the five-step email-to-answers onboarding, a
+live report through the connector (*"Show my unpaid commissions on Awin from
+the last 30 days"* running on the hosted server), scheduled automation that
+lands in your inbox with the laptop shut, the custody "honest bits" (keys
+encrypted and never given to Claude, export/hard-delete, four networks live),
+pricing (Free / Solo / Pro), and a "get hosted" CTA. Render it with
+`remotion render HostedVideo out/affiliate-mcp-hosted.mp4` plus the same
+`--browser-executable` flag as below.
+
+## `DemoVideo` — the full overview
 
 Twelve scenes, cut together with fades:
 
