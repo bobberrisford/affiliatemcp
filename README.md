@@ -596,6 +596,26 @@ Most failures are one of three things: an expired token, a network
 that needs your approval re-confirmed, or a credential typed with a trailing
 space. The JSON also reports `clientStrategies` health; it never deletes them.
 
+## Giving feedback
+
+If something is missing, confusing, or you have an idea, tell us. Feedback flows
+through GitHub and turns into docs fixes, adapter repairs, and roadmap items.
+
+- **Feature request, workflow gap, or general feedback:** open a
+  [feedback issue](https://github.com/bobberrisford/affiliatemcp/issues/new?template=feedback.yml).
+- **Blocked during setup:** use the
+  [setup-stuck](https://github.com/bobberrisford/affiliatemcp/issues/new?template=setup-stuck.yml)
+  template.
+- **An adapter is broken:** use
+  [network-broken](https://github.com/bobberrisford/affiliatemcp/issues/new?template=network-broken.yml).
+- **Open-ended question:** start a
+  [Discussion](https://github.com/bobberrisford/affiliatemcp/discussions).
+
+Feedback stays on your terms: the local product never phones home, and telemetry
+(if you opt in) sends only anonymous counts, never your feedback text. How
+feedback becomes a product change is documented in
+[`docs/product/feedback-loop.md`](docs/product/feedback-loop.md).
+
 ## Per-network setup notes
 
 Each network has a short page covering dashboard navigation, where to

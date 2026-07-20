@@ -16,6 +16,9 @@ planning. They are useful context, but accepted records under
 - [`openai-parity.md`](./openai-parity.md) records the current split between
   shipped Codex support and future ChatGPT support. The canonical roadmap owns
   cross-client sequencing.
+- [`feedback-loop.md`](./feedback-loop.md) is the operating model for how user
+  feedback is captured across GitHub, the desktop app, and the hosted product,
+  and turned into docs fixes, adapter repairs, and roadmap items.
 
 ## Active proposals and working drafts
 

@@ -1,0 +1,68 @@
+name: Feedback or feature request
+description: Share a workflow gap, a feature request, or general feedback
+title: "[feedback] <short summary>"
+labels: ["feedback", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for feature requests, workflow gaps, or general feedback. If a
+        setup step blocked you, use [setup-stuck](./setup-stuck.yml); if an
+        adapter is failing, use [network-broken](./network-broken.yml); if you
+        want a new network or skill, use those templates instead.
+
+        This is a public issue. Do not paste credentials, account IDs, or
+        account-specific data.
+  - type: dropdown
+    id: feedback-type
+    attributes:
+      label: What kind of feedback
+      options:
+        - Feature request
+        - Workflow gap (a task I could not finish)
+        - Something confusing
+        - General feedback
+    validations:
+      required: true
+  - type: dropdown
+    id: cohort
+    attributes:
+      label: Which best describes you
+      description: Optional. Helps us weigh feedback across the people who use this.
+      options:
+        - Publisher
+        - Advertiser, brand, or agency
+        - Developer or data team
+        - Affiliate network employee
+        - Other
+    validations:
+      required: false
+  - type: textarea
+    id: goal
+    attributes:
+      label: What were you trying to do
+      description: The affiliate task or outcome you had in mind, in your own words.
+    validations:
+      required: true
+  - type: textarea
+    id: gap
+    attributes:
+      label: What is missing or frustrating
+      description: What stopped you, felt awkward, or would make this more useful.
+    validations:
+      required: true
+  - type: input
+    id: networks
+    attributes:
+      label: Which network(s), if any
+      description: Optional. Comma-separated slugs, if this relates to specific networks.
+      placeholder: e.g. awin, impact
+    validations:
+      required: false
+  - type: checkboxes
+    id: contact-ok
+    attributes:
+      label: Follow-up
+      options:
+        - label: I am happy to be contacted on this issue for follow-up questions.
+          required: false

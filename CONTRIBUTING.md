@@ -70,6 +70,12 @@ Contributions, in roughly the order we care about:
 - **Good first issues** for small docs fixes, fixture cleanup, setup guidance,
   and contained adapter corrections.
 
+You do not have to write code to help. Feature requests, workflow gaps, and
+general feedback are welcome through the
+[feedback template](https://github.com/bobberrisford/affiliatemcp/issues/new?template=feedback.yml).
+How feedback is triaged and turned into product changes is documented in
+[`docs/product/feedback-loop.md`](docs/product/feedback-loop.md).
+
 ## Product direction
 
 The project exists to make affiliate data available where affiliate work
