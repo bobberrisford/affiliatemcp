@@ -11,8 +11,10 @@ import { HowItWorks } from './scenes/HowItWorks';
 import { Scale } from './scenes/Scale';
 import { PublisherDemo } from './scenes/PublisherDemo';
 import { BrandDemo } from './scenes/BrandDemo';
-import { LocalFirst } from './scenes/LocalFirst';
 import { Skills } from './scenes/Skills';
+import { LocalFirst } from './scenes/LocalFirst';
+import { Hosted } from './scenes/Hosted';
+import { Pricing } from './scenes/Pricing';
 import { GetStarted } from './scenes/GetStarted';
 import { Outro } from './scenes/Outro';
 
@@ -25,9 +27,11 @@ export const SCENES = [
   { C: Scale, d: 165 },
   { C: PublisherDemo, d: 320 },
   { C: BrandDemo, d: 300 },
+  { C: Skills, d: 170 },
   { C: LocalFirst, d: 150 },
-  { C: Skills, d: 175 },
-  { C: GetStarted, d: 190 },
+  { C: Hosted, d: 195 },
+  { C: Pricing, d: 195 },
+  { C: GetStarted, d: 205 },
   { C: Outro, d: 130 },
 ] as const;
 

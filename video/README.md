@@ -1,13 +1,13 @@
 # affiliate-mcp — demo video
 
-A [Remotion](https://www.remotion.dev/) project that renders a ~65-second
+A [Remotion](https://www.remotion.dev/) project that renders a ~70-second
 product demo of `affiliate-mcp`. It uses the repo's own design-system tokens
 and fonts (`design-system/colors_and_type.css`, `design-system/fonts/`), so the
 video stays on-brand with the site and launch cards.
 
 ## What it shows
 
-Ten scenes, cut together with fades:
+Twelve scenes, cut together with fades:
 
 1. **Title** — wordmark, tagline, the three promises (free & open source,
    local-first, bring your own keys).
@@ -21,14 +21,24 @@ Ten scenes, cut together with fades:
 6. **Brand / agency demo** — *"Any anomalies across my clients this week?"*
    surfaces revenue drops, reversal spikes, top-10 dropouts, and dead
    programmes.
-7. **Local-first** — keys stay on your machine, read-only by default.
-8. **Packaged skills** — the publisher- and brand-side conversation patterns.
-9. **Get started** — `npx affiliate-networks-mcp setup`, and the clients it
-   works with.
-10. **Outro** — wordmark, licence, repo link.
+7. **Packaged skills** — the publisher- and brand-side conversation patterns.
+8. **Local-first** — keys stay on your machine, read-only by default; the free
+   local server does everything, for every network.
+9. **Hosted** — the no-install, no-terminal path for people who can't
+   self-host: email sign-in, encrypted dashboard, connector in Claude, reports
+   on a schedule. Keys are encrypted and never handed to Claude; four networks
+   (Awin, CJ, Impact, Rakuten) are live today.
+10. **Pricing** — where the product is monetised: Free (£0, 3 reports/week),
+    Solo (£34/mo), Pro (£99/mo). Paid tiers add automation and assurance, never
+    access to your own data; local stays free and complete.
+11. **Get started** — the two ways in: self-host (`npx affiliate-networks-mcp
+    setup`) or hosted (email sign-in).
+12. **Outro** — wordmark, licence, repo link.
 
-All figures, brand names (Acme, Northwind, …), and transactions are
-illustrative placeholders — no real account data.
+Pricing, tiers, custody claims, and the four-networks-live limit mirror the
+accepted decision records under `docs/decisions/` and the live
+`site/hosted.html`. All figures, brand names (Acme, Northwind, …), and
+transactions in the demo are illustrative placeholders — no real account data.
 
 ## Develop
 
