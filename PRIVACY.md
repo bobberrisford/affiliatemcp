@@ -161,9 +161,9 @@ environment. Credentials are decrypted only at call time, in memory, to
 serve the request that needs them; plaintext is never written to storage.
 
 **Who can access it.** A stored credential serves only that user's own
-requests and their own scheduled jobs. It is never used for aggregation
-across users, never for analytics, and never for any purpose beyond serving
-its owner.
+requests and their own scheduled jobs. It is never used for analytics, and
+never for any purpose beyond serving its owner, with one bounded exception:
+opt-in programme benchmarks, described under "Aggregation" below.
 
 **Deletion.** Deleting a hosted account deletes its stored data completely:
 the encrypted credential data, the wrapped key protecting it, the account
@@ -174,10 +174,19 @@ soft flag; once it runs, there is nothing left to decrypt and nobody left to
 email. Cancelling the Stripe subscription itself happens on Stripe's side as
 part of the same deletion runbook (`hosted/README.md`).
 
-**No aggregation.** The hosted tier changes where a credential lives, not
-what this project is allowed to do with it: no cross-tenant aggregation, no
-analytics, no purpose beyond serving the key's owner, the same posture as
-every other section of this policy.
+**Aggregation: one opt-in exception.** The hosted tier changes where a
+credential lives, not what this project is allowed to do with it: no
+analytics and no purpose beyond serving the key's owner, the same posture as
+every other section of this policy — with a single, deliberate exception.
+Hosted users may **opt in** (off by default, revocable at any time) to
+programme benchmarks that compare their own figures against a category
+median. These are **aggregate-only and k-anonymous**: a benchmark is computed
+and shown only when enough distinct tenants are in a category, only
+derived metrics are ever aggregated (never raw transactions, publisher or
+brand identities, credentials, or any single-tenant figure), the computation
+runs server-side and stores only the aggregate outputs with no tenant
+linkage, and no individual tenant's data is ever exposed. This is governed by
+[`docs/decisions/2026-07-19-hosted-benchmark-aggregates.md`](docs/decisions/2026-07-19-hosted-benchmark-aggregates.md).
 
 ## Contact
 

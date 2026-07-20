@@ -87,7 +87,10 @@ dashboard session:
    [`2026-07-12-hosted-credential-custody.md`](../decisions/2026-07-12-hosted-credential-custody.md)
    for the bring-your-own-key hosted custody contract. Local stays free,
    complete, and the default; the hosted tier is additive, pre-launch, and
-   scoped to serving each key's own owner.
+   scoped to serving each key's own owner, with one bounded exception: opt-in,
+   aggregate-only, k-anonymous programme benchmarks under
+   [`2026-07-19-hosted-benchmark-aggregates.md`](../decisions/2026-07-19-hosted-benchmark-aggregates.md),
+   which are off by default, revocable, and expose no single tenant's data.
 3. **Safe typed tools.** Tools should expose affiliate operations with clear
    inputs and outputs. They should not ask the assistant to guess at raw API
    behaviour.
