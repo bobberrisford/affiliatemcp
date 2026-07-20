@@ -1,0 +1,25 @@
+{
+  "name": "affiliate-mcp-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Remotion demo video for affiliate-mcp",
+  "license": "MIT",
+  "scripts": {
+    "dev": "remotion studio",
+    "render": "remotion render DemoVideo out/affiliate-mcp-demo.mp4",
+    "still": "remotion still",
+    "upgrade": "remotion upgrade"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.410",
+    "@remotion/fonts": "4.0.410",
+    "@remotion/transitions": "^4.0.410",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.410"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.0",
+    "typescript": "5.8.3"
+  }
+}
