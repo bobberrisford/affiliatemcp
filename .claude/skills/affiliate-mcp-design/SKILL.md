@@ -13,11 +13,15 @@ the authority boundary in `docs/decisions/2026-07-20-agentic-company-operations.
 
 ## The card kit
 
-Reuse the launch card template (`docs/product/launches/week-*/card.html`) and
-the brand CSS and fonts in `design-system/`. Card types include
-`earnings-card-square` and `qbr-scorecard-square`. Each card has:
+Reusable templates live under `design-system/cards/` (currently
+`commission-audit-card.html`, card type `audit-found-card-square`); the
+shipped weekly launch cards (`docs/product/launches/week-*/card.html`) are
+the reference idiom for one-off cards. Card types include
+`audit-found-card-square`, `earnings-card-square`, and
+`qbr-scorecard-square`. Each card has:
 
-- one focal number, not a wall of figures;
+- one focal number, not a wall of figures — in one currency, with any other
+  currencies on the sub-line, never summed across currencies;
 - the brand wordmark;
 - the "made with agenticaffiliate.ai" attribution footer.
 
@@ -26,7 +30,9 @@ the brand CSS and fonts in `design-system/`. Card types include
 Every figure on a card is **real anonymised data or explicitly a demo**. Never
 render invented client numbers as real. If real data is unavailable, watermark
 or label the card as a sample before it leaves this skill. This mirrors the
-pre-publish guardrail already carried in every launch bundle.
+pre-publish guardrail already carried in every launch bundle. The reusable
+templates ship with their SAMPLE watermark on; remove it only when every
+figure on the card is real anonymised data.
 
 ## Output
 

@@ -17,6 +17,7 @@ considered downstream of this one.
 | `components.css` | **Import second.** Canonical components: `.btn*`, `.card`, `.term`, `.data-table`, `.status`/`.dot-*`. Surfaces consume these — they do not re-define them. |
 | `assets/mark.svg` | Brand mark — white terminal prompt on a riso-blue tile. |
 | `assets/mark-glyph.svg` | Mark in `currentColor` for any background. |
+| `cards/commission-audit-card.html` | Reusable self-contained 1080x1080 social card template (`audit-found-card-square`): focal "found" figure, per-network breakdown, SAMPLE watermark on by default. Render recipe in its header comment. |
 | `adherence.oxlintrc.json` | Lint rules that keep code on-brand: no raw hex, no raw px, only the three brand fonts, import components from the entry point. |
 | `manifest.json` | Token + card manifest from the design tool (reference). |
 

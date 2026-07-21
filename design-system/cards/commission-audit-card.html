@@ -1,0 +1,149 @@
+<!doctype html>
+<!--
+  commission-audit-card.html — reusable 1080x1080 social card template
+  (card type: audit-found-card-square).
+
+  Source of truth for the brand values is design-system/colors_and_type.css;
+  the :root tokens below mirror it byte-for-byte so the file stays
+  self-contained. Keep them identical when the design system changes.
+
+  How to use:
+  - Edit only the regions marked with an EDIT comment.
+  - One focal number in ONE currency. If the audit spans currencies, make the
+    largest-value currency the focal number and list the others on the .sub
+    line. Never sum across currencies.
+  - Figures must be real anonymised data or explicitly a sample. The SAMPLE
+    watermark below ships ON. Remove the .watermark-sample element only when
+    every figure on the card is real anonymised data (guardrail:
+    .claude/skills/affiliate-mcp-design/SKILL.md).
+
+  How to render to PNG (Playwright, not a declared dependency — install on
+  demand: npm i -D playwright && npx playwright install chromium):
+    const { chromium } = await import('playwright');
+    const browser = await chromium.launch();
+    const page = await browser.newPage({ viewport: { width: 1080, height: 1080 }, deviceScaleFactor: 2 });
+    await page.goto('file://' + absolutePathToThisFile);
+    await page.locator('.frame').screenshot({ path: 'card.png' }); // 2160x2160
+    await browser.close();
+  If Playwright is unavailable, say so and stop; never fabricate an image.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>agentic affiliate — commission audit card (1:1)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B0B0C; --paper:#FFFFFF;
+    --blue:#2B2BFF; --blue-bright:#5A78FF; --magenta:#FF2E88;
+    --fg-invert-mut:#9A9DAC;
+    --pos:var(--blue); --neg:var(--magenta);
+    --font-display:'Bricolage Grotesque','Arial Black',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#0a0a0a}
+  .stage{position:fixed;inset:0;display:grid;place-items:center;overflow:hidden}
+  .frame{position:relative;overflow:hidden;transform-origin:center center;flex:none;
+    width:1080px;height:1080px;background:var(--ink);color:var(--paper);
+    padding:80px;display:flex;flex-direction:column;justify-content:space-between}
+  .frame::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:0.5;mix-blend-mode:multiply;
+    background-image:radial-gradient(rgba(11,11,12,0.16) 0.5px,transparent 0.6px);background-size:3px 3px}
+  .dots{position:absolute;inset:0;color:var(--paper);opacity:0.06;
+    background-image:radial-gradient(currentColor 1.4px,transparent 1.6px);background-size:11px 11px}
+
+  .top{display:flex;align-items:center;gap:20px;position:relative}
+  .top svg{width:88px;height:88px;border-radius:12px}
+  .top .wm{font-family:var(--font-display);font-weight:800;font-size:2.6rem;letter-spacing:-0.03em}
+  .top .wm .mcp{background:var(--blue);color:var(--paper);padding:0 11px;border-radius:8px}
+
+  .mid{position:relative}
+  .q{font-family:var(--font-mono);font-size:1.45rem;font-weight:700;color:var(--fg-invert-mut);margin-bottom:22px}
+  .q .you{color:var(--blue-bright)}
+  .numrow{display:flex;align-items:flex-end;gap:28px;flex-wrap:wrap}
+  .num{font-family:var(--font-display);font-weight:800;font-size:158px;line-height:0.82;letter-spacing:-0.04em;margin:0}
+  .num .pence{font-size:84px;background:var(--blue);color:var(--paper);padding:0 14px;border-radius:10px}
+  .delta{font-family:var(--font-mono);font-weight:700;font-size:1.5rem;letter-spacing:0.02em;
+    background:var(--blue);color:var(--paper);padding:10px 16px;border-radius:10px;box-shadow:4px 4px 0 0 var(--ink);margin-bottom:14px}
+  .sub{font-family:var(--font-mono);font-size:1.3rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--fg-invert-mut);margin-top:26px}
+  .sub b{color:var(--blue-bright)}
+
+  .breakdown{position:relative;margin-top:6px}
+  .row{display:grid;grid-template-columns:190px 1fr 150px;align-items:center;gap:20px;padding:14px 0;border-top:2px solid rgba(255,255,255,0.10)}
+  .row:last-child{border-bottom:2px solid rgba(255,255,255,0.10)}
+  .net{font-family:var(--font-mono);font-weight:700;font-size:1.35rem;letter-spacing:0.02em}
+  .bar{height:16px;background:rgba(255,255,255,0.08);position:relative;border-radius:3px;overflow:hidden}
+  .bar i{position:absolute;inset:0 auto 0 0;background:var(--blue);border-radius:3px}
+  .amt{font-family:var(--font-mono);font-weight:700;font-size:1.35rem;text-align:right}
+
+  .foot{position:relative;display:flex;align-items:center;justify-content:space-between}
+  .kick{font-family:var(--font-display);font-weight:800;font-size:2.1rem;line-height:1.02;letter-spacing:-0.02em;text-transform:lowercase}
+  .kick .mag{color:var(--magenta)}
+  .stamp{font-family:var(--font-mono);font-weight:700;font-size:1.05rem;letter-spacing:0.02em;color:var(--fg-invert-mut);
+    border:2px solid rgba(255,255,255,0.18);padding:10px 16px;border-radius:10px;white-space:nowrap}
+  .stamp b{color:var(--paper)}
+
+  .watermark-sample{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:10}
+  .watermark-sample span{font-family:var(--font-mono);font-weight:700;font-size:5rem;letter-spacing:0.18em;
+    color:var(--magenta);opacity:0.35;transform:rotate(-24deg);border:6px solid var(--magenta);padding:14px 40px;border-radius:14px}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="frame" data-w="1080" data-h="1080">
+    <div class="dots"></div>
+
+    <!-- SAMPLE watermark: ships ON. Remove this element only when every
+         figure on the card is real anonymised data. -->
+    <div class="watermark-sample"><span>SAMPLE DATA</span></div>
+
+    <div class="top">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="affiliate-mcp mark">
+        <rect x="0" y="0" width="120" height="120" rx="14" fill="#2B2BFF"></rect>
+        <polyline points="34,38 58,60 34,82" fill="none" stroke="#FFFFFF" stroke-width="13" stroke-linecap="square" stroke-linejoin="miter"></polyline>
+        <rect x="66" y="68" width="24" height="14" fill="#FFFFFF"></rect>
+      </svg>
+      <span class="wm">agentic <span class="mcp">affiliate</span></span>
+    </div>
+
+    <div class="mid">
+      <!-- EDIT: question line — the prompt the audit answered -->
+      <div class="q"><span class="you">you ▸</span> audit my commissions across every network</div>
+      <div class="numrow">
+        <!-- EDIT: focal number — "found" total in ONE currency (largest
+             currency if several; others go on the .sub line) -->
+        <div class="num">£1,698<span class="pence">.50</span></div>
+        <!-- EDIT: chip — count and age context. Neutral blue by default;
+             switch to var(--neg) only for deliberate emphasis. -->
+        <div class="delta">13 txns · 90+ days</div>
+      </div>
+      <!-- EDIT: sub-line — finding split (approved-unpaid vs unexplained
+           reversals), plus any other currencies -->
+      <div class="sub">approved unpaid £1,412 · <b>unexplained reversals £286</b></div>
+    </div>
+
+    <div class="breakdown">
+      <!-- EDIT: 3-5 per-network rows — name / bar width % of the largest /
+           per-currency amount -->
+      <div class="row"><span class="net">Awin</span><span class="bar"><i style="width:100%"></i></span><span class="amt">£840</span></div>
+      <div class="row"><span class="net">CJ</span><span class="bar"><i style="width:62%"></i></span><span class="amt">£520</span></div>
+      <div class="row"><span class="net">Impact</span><span class="bar"><i style="width:40%"></i></span><span class="amt">£338</span></div>
+    </div>
+
+    <div class="foot">
+      <!-- EDIT: kicker — two short lowercase lines, one magenta accent -->
+      <div class="kick">money found.<br>now <span class="mag">chase it.</span></div>
+      <div class="stamp">made with <b>agenticaffiliate.ai</b></div>
+    </div>
+  </div>
+</div>
+<script>
+  const f=document.querySelector('.frame');
+  function fit(){const s=Math.min(innerWidth/f.dataset.w,innerHeight/f.dataset.h);f.style.transform='scale('+s+')';}
+  addEventListener('resize',fit);fit();
+</script>
+</body>
+</html>

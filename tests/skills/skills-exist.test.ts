@@ -27,6 +27,7 @@ const SKILLS = [
   'affiliate-network-status',
   'affiliate-network-setup-help',
   'chase-unpaid-commissions',
+  'commission-audit',
 ] as const;
 
 // Agency-side skills (PR 4). Same tests apply; plus tool-name validation
@@ -45,6 +46,7 @@ const AGENCY_SKILLS = [
   'partner-outreach',
   'brand-application-shortlist',
   'awin-apply-to-programmes',
+  'programme-leakage-audit',
 ] as const;
 
 /** Crude but adequate YAML frontmatter parser — captures the leading `---` block. */

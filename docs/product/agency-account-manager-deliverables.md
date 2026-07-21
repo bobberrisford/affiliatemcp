@@ -160,12 +160,15 @@ The list of partner applications waiting on a decision.
 
 ## Commission and validation
 
-### 13. Validation queue report — PARTIAL
+### 13. Validation queue report — SHIPPED
 Pending transactions awaiting review, bucketed by age.
 - Triggers: "What's waiting to be validated on Acme?", "Acme's pending queue."
 - Tools: `list_transactions` filtered to pending status. The report surfaces the queue; the AM approves or declines in the dashboard.
 - Capability note: unavailable where the advertiser adapter does not implement
   `list_transactions`.
+- Covered by [`programme-leakage-audit`](../../skills/programme-leakage-audit),
+  which combines the age-bucketed queue with reversal concentration
+  (cross-referencing #14 for the by-publisher decline deep dive).
 
 ### 14. Reversal / decline report — PARTIAL
 Why commissions were declined, grouped by reason and by publisher.

@@ -28,6 +28,11 @@ onboarding. MCP prompts currently ship separately and are Awin-specific.
   commissions a network validated but has not paid past a term (90
   days by default) and drafts a per-network chase email with the
   unpaid sales attached as a CSV.
+- [`commission-audit/`](./commission-audit) — full "money you are
+  owed" audit across every configured network: approved-but-unpaid
+  past a threshold, reversals with no stated reason, and stale
+  pending, with per-currency totals and a count-honest coverage
+  summary. Hands off to `chase-unpaid-commissions` for the drafts.
 
 ### Brand / agency side
 
@@ -67,6 +72,11 @@ onboarding. MCP prompts currently ship separately and are Awin-specific.
   recruitment outreach for a brand, grounded in real performance figures
   and the recorded plan. Drafts only; never sends and never invents
   contact details.
+- [`programme-leakage-audit/`](./programme-leakage-audit) — "money the
+  programme is leaking" audit per brand: reversal concentration by
+  reason including the unspecified share, plus the stale validation
+  queue bucketed by age. Agency mode sweeps the whole book. Pairs with
+  `programme-reversal-report` for the by-publisher deep dive.
 
 A capability-aware roadmap of brand/agency deliverables, including which
 outcomes should extend shipped skills rather than create new ones, lives in
