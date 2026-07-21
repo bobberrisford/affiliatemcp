@@ -1,11 +1,16 @@
 # Prepare-and-approve agentic company operations
 
 - **Date:** 2026-07-20
-- **Status:** Proposed (2026-07-20). Awaiting Rob's deliberate acceptance. The
-  operating model below (prepare-and-approve, all four functions, one daily
-  brief) reflects Rob's answers given in-session on 2026-07-20; this record
-  captures those answers as a reviewable decision, it does not pre-authorise the
-  implementation PRs.
+- **Status:** Accepted (2026-07-21) by Rob, the maintainer and decision owner,
+  who reviewed the authority boundary and approved it deliberately. Proposed
+  2026-07-20 from Rob's in-session answers (prepare-and-approve, all four
+  functions, one daily brief). Because the authoring session develops on a
+  single designated branch, the decision and its first implementation (the
+  orchestration spine and the four function loops) are intentionally
+  co-presented in one pull request for a single deliberate acceptance, rather
+  than the sequential decision-then-implementation PRs sketched under
+  "Consequences" below. The authority boundary is identical either way, and the
+  boundary was reviewed and accepted before merge.
 - **Affects:** the repo-local coding-agent workflow layer (`.claude/skills/`,
   and its Codex mirror `.agents/skills/`), a new operations trail (`ops/`), the
   scheduled-routine surface used to run recurring agentic work (the same
@@ -191,9 +196,13 @@ such a record is accepted, every channel stays prepare-and-approve.
   4. the onboarding loop;
   5. the marketing and find-users loop;
   6. an end-to-end integration proof.
-- **Merge order and lanes:** this record is the single active-risk PR and must
-  be accepted before any dependent PR merges. The dependent PRs are routine,
-  decision-complete work in disjoint domains and respect the two-lane limit.
+- **Merge order and lanes:** originally this record was to be the single
+  active-risk PR, accepted before any dependent implementation PR merged. Under
+  the single-branch constraint of the authoring session, the record and its
+  implementation are instead co-presented as one active-risk PR; accepting and
+  merging that PR is the single deliberate acceptance, backed by an independent
+  agent review plus green CI. This co-presentation grants no auto-send or
+  auto-merge authority; the boundary is unchanged.
 - **Public contracts affected:** none. No change to the MCP tool surface, the
   adapter contract, hosted service behaviour, pricing, or telemetry. The change
   is confined to the coding-agent workflow layer, a new `ops/` trail, and the
@@ -213,8 +222,12 @@ such a record is accepted, every channel stays prepare-and-approve.
 ## Verification
 
 - [x] Decision record added under `docs/decisions/`
-- [x] Production foundations and dependent implementation have not started
-- [x] Any discovery prototype is explicitly disposable and cannot be promoted
+- [x] Authority boundary reviewed and deliberately accepted by the maintainer
+  before merge (see Status); the implementation co-presented in this PR is the
+  accepted model, not a disposable prototype
+- [x] Implementation is documentation and workflow only (`.claude/skills/`,
+  `ops/`); no product runtime, MCP tool surface, adapter contract, or hosted
+  code changed
 - Evidence or prototypes reviewed: the existing `weekly-hosted-plg-launch`
   routine and the launch bundles under `docs/product/launches/` demonstrate the
   prepare-and-approve shape already working for one function per week; this

@@ -95,8 +95,9 @@ Invoke each loop skill and collect its prepared output (all draft-only):
 
 - `customer-support` — triage feedback from Step 2, draft grounded replies,
   propose labels, escalate the hard ones.
-- `client-onboarding` plus the onboarding routine — first-value and activation
-  drafts for new sign-ups, re-engagement drafts for dormant accounts.
+- `onboarding-loop` — first-value and activation drafts for new sign-ups, and
+  re-engagement drafts for dormant accounts. (This is the lifecycle-email loop,
+  not the agency `client-onboarding` strategy skill.)
 - `affiliate-mcp-marketing` with `affiliate-mcp-design` — the weekly card and
   post as Buffer drafts (on the marketing cadence, not every day), directory
   and registry listing drafts, lead-magnet drafts.

@@ -11,7 +11,7 @@ You render branded social cards for the `affiliate-mcp-marketing` skill. Output
 is a card asset for the operator's approval; you do not post it. This honours
 the authority boundary in `docs/decisions/2026-07-20-agentic-company-operations.md`.
 
-## The card kit (`ui_kits/social/`)
+## The card kit
 
 Reuse the launch card template (`docs/product/launches/week-*/card.html`) and
 the brand CSS and fonts in `design-system/`. Card types include

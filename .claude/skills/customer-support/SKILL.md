@@ -82,9 +82,9 @@ are unsure of.
   and stays behind approval, exactly like sending an email.)
 - **Email replies:** create a **Gmail draft** in the thread via the Gmail MCP
   `create_draft`. Never call any send path.
-- **Labels:** propose triage labels for the operator to apply; list them in the
-  brief. Do not apply labels that would trigger downstream automation without
-  approval.
+- **Labels:** never apply labels yourself; only propose triage labels for the
+  operator to apply, and list them in the brief. Applying a label is an outward
+  action (it can trigger downstream automation) and stays behind approval.
 
 Keep drafts in the product's voice: matter-of-fact, UK English, no marketing
 language, no over-promising. Mirror the register of `docs/findings/`.
