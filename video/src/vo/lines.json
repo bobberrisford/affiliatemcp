@@ -1,0 +1,46 @@
+{
+  "voice": "en-gb",
+  "note": "caption = on-screen text; speak = TTS-friendly text fed to the voiceover generator. One entry per scene, in order.",
+  "lines": [
+    {
+      "id": "title",
+      "caption": "affiliate-mcp Hosted — your affiliate data, right inside Claude.",
+      "speak": "This is affiliate MCP Hosted. All your affiliate data, right inside Claude."
+    },
+    {
+      "id": "why",
+      "caption": "No install. No terminal. Built for people who just want answers.",
+      "speak": "No install. No terminal. It is built for the people who just want answers, not a setup guide."
+    },
+    {
+      "id": "connect",
+      "caption": "Sign in with your email, then connect your networks in a guided dashboard.",
+      "speak": "Sign in with your email, then connect your networks in a simple, guided dashboard."
+    },
+    {
+      "id": "report",
+      "caption": "Then just ask: “show my unpaid commissions on Awin.”",
+      "speak": "Now, just ask. For example: show my unpaid commissions on Awin from the last thirty days."
+    },
+    {
+      "id": "schedule",
+      "caption": "It works while you sleep: weekly reports and alerts, by email.",
+      "speak": "It even works while you sleep. Weekly reports and anomaly alerts arrive in your inbox on a schedule."
+    },
+    {
+      "id": "trust",
+      "caption": "Your keys are encrypted, and never shared with Claude.",
+      "speak": "Your keys are encrypted, used only to serve you, and never shared with Claude."
+    },
+    {
+      "id": "pricing",
+      "caption": "Start free. Upgrade only when it's earning its keep.",
+      "speak": "Start completely free. Upgrade only when the automation is earning its keep."
+    },
+    {
+      "id": "cta",
+      "caption": "Sign in with your email at agenticaffiliate.ai",
+      "speak": "affiliate MCP Hosted. Sign in with your email, at agentic affiliate dot A.I."
+    }
+  ]
+}

@@ -8,6 +8,7 @@
     "dev": "remotion studio",
     "render": "remotion render DemoVideo out/affiliate-mcp-demo.mp4",
     "render:hosted": "remotion render HostedVideo out/affiliate-mcp-hosted.mp4",
+    "vo": "node scripts/gen-vo.mjs",
     "still": "remotion still",
     "upgrade": "remotion upgrade"
   },

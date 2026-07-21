@@ -9,10 +9,35 @@ Two compositions are registered:
 
 - **`DemoVideo`** (~70s) — the full product overview, both the free local
   server and the hosted tier.
-- **`HostedVideo`** (~46s) — a standalone video for the hosted product alone:
-  the no-install, non-technical path, the commercial story, and the custody
-  contract. Scenes live under `src/scenes/hosted/` and it reuses the shared
+- **`HostedVideo`** (~60s, narrated) — a standalone video for the hosted
+  product alone: the no-install, non-technical path, the commercial story, and
+  the custody contract. It is voiceover-driven and captioned, with one idea per
+  scene. Scenes live under `src/scenes/hosted/` and it reuses the shared
   `Pricing` scene.
+
+## Voiceover and captions (HostedVideo)
+
+`HostedVideo` is paced by its narration. The script is `src/vo/lines.json`
+(one entry per scene, with separate `caption` and TTS `speak` text). Running
+the generator synthesises one audio clip per scene into `public/vo/` and writes
+`src/vo/manifest.json`; the composition reads that manifest to size each scene,
+so pacing always matches the voice, and burns the `caption` text in as a
+lower-third subtitle.
+
+```bash
+npm run vo        # regenerate the narration + manifest, then re-render
+npm run render:hosted -- --browser-executable=<chrome>
+```
+
+The default voice is **espeak-ng** (offline, installed via
+`apt-get install -y espeak-ng`). It is a synthetic placeholder and sounds like
+one. **To use a premium voice** (e.g. ElevenLabs, or Azure/Piper on a machine
+with open network), drop a same-named file per scene into `public/vo/` —
+`public/vo/title.mp3`, `public/vo/why.mp3`, and so on — then run `npm run vo`.
+The generator prefers an existing `.mp3` over regenerating the `.wav` and
+re-measures durations, so the timing and captions stay in sync automatically.
+The scene-by-scene copy to hand a voice artist is exactly the `speak` fields in
+`src/vo/lines.json`.
 
 ## `HostedVideo` — the hosted-only cut
 

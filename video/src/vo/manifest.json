@@ -1,0 +1,54 @@
+{
+  "fps": 30,
+  "generatedWith": "espeak-ng",
+  "scenes": [
+    {
+      "id": "title",
+      "file": "vo/title.wav",
+      "seconds": 6.006,
+      "frames": 181
+    },
+    {
+      "id": "why",
+      "file": "vo/why.wav",
+      "seconds": 7.233,
+      "frames": 217
+    },
+    {
+      "id": "connect",
+      "file": "vo/connect.wav",
+      "seconds": 5.317,
+      "frames": 160
+    },
+    {
+      "id": "report",
+      "file": "vo/report.wav",
+      "seconds": 6.945,
+      "frames": 209
+    },
+    {
+      "id": "schedule",
+      "file": "vo/schedule.wav",
+      "seconds": 6.821,
+      "frames": 205
+    },
+    {
+      "id": "trust",
+      "file": "vo/trust.wav",
+      "seconds": 5.352,
+      "frames": 161
+    },
+    {
+      "id": "pricing",
+      "file": "vo/pricing.wav",
+      "seconds": 5.233,
+      "frames": 157
+    },
+    {
+      "id": "cta",
+      "file": "vo/cta.wav",
+      "seconds": 5.918,
+      "frames": 178
+    }
+  ]
+}
