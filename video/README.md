@@ -29,15 +29,34 @@ npm run vo        # regenerate the narration + manifest, then re-render
 npm run render:hosted -- --browser-executable=<chrome>
 ```
 
-The default voice is **espeak-ng** (offline, installed via
-`apt-get install -y espeak-ng`). It is a synthetic placeholder and sounds like
-one. **To use a premium voice** (e.g. ElevenLabs, or Azure/Piper on a machine
-with open network), drop a same-named file per scene into `public/vo/` —
-`public/vo/title.mp3`, `public/vo/why.mp3`, and so on — then run `npm run vo`.
-The generator prefers an existing `.mp3` over regenerating the `.wav` and
-re-measures durations, so the timing and captions stay in sync automatically.
-The scene-by-scene copy to hand a voice artist is exactly the `speak` fields in
-`src/vo/lines.json`.
+The generator picks a voice source per scene, in this order:
+
+1. **ElevenLabs** — used when `ELEVENLABS_API_KEY` is set. This is the intended
+   production voice.
+2. **A hand-dropped `public/vo/<id>.mp3`** — e.g. a clip from a voice artist.
+3. **espeak-ng** — an offline synthetic fallback (installed via
+   `apt-get install -y espeak-ng`). It sounds robotic; it exists only so the
+   film always renders with *some* narration.
+
+### ElevenLabs (recommended)
+
+```bash
+export ELEVENLABS_API_KEY=sk_...            # required
+export ELEVENLABS_VOICE_ID=JBFqnCBsd6RMkjVDRZzb   # optional; default "George" (British)
+export ELEVENLABS_MODEL=eleven_multilingual_v2    # optional
+npm run vo
+npm run render:hosted -- --browser-executable=<chrome>
+```
+
+`npm run vo` calls ElevenLabs once per scene using the `speak` text, writes
+`public/vo/<id>.mp3`, re-measures every clip, and rewrites the manifest, so the
+pacing and captions re-sync automatically. Pick any voice from your ElevenLabs
+library and pass its id as `ELEVENLABS_VOICE_ID` (a British voice best fits the
+UK-English tone). If you run behind an HTTPS proxy, add `NODE_USE_ENV_PROXY=1`
+and make sure `api.elevenlabs.io` is allowed by egress policy.
+
+The clean, scene-by-scene copy to review or hand to a voice artist is exactly
+the `speak` fields in `src/vo/lines.json`.
 
 ## `HostedVideo` — the hosted-only cut
 
