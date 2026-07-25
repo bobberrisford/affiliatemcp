@@ -36,6 +36,12 @@ planning. They are useful context, but accepted records under
   discovery proposal for a hosted version; superseded by the accepted
   custody decision and the active workstream brief.
 - [`chatgpt-scoping.md`](./chatgpt-scoping.md) is a pre-implementation proposal.
+- [`ai-visibility.md`](./ai-visibility.md) is a proposal for the product's role in
+  AI visibility: the cross-reference layer that joins externally sourced citation
+  data to programme truth across networks, rather than a citation source we build.
+  Its boundary questions are recorded in
+  [`../decisions/2026-07-25-ai-visibility-boundary.md`](../decisions/2026-07-25-ai-visibility-boundary.md),
+  which is Proposed and must be accepted before implementation.
 - [`agency-account-manager-deliverables.md`](./agency-account-manager-deliverables.md)
   is the active, capability-aware backlog for agency deliverables and skills.
 - [`website-copy.md`](./website-copy.md) is working copy for the website.
