@@ -1,7 +1,8 @@
 # Campaign mode: scheduling a reviewed social run
 
 - **Date:** 2026-07-27
-- **Status:** Proposed (awaiting Rob)
+- **Status:** Accepted (2026-07-27) by Rob, the maintainer and decision owner. This
+  widens agent authority, narrowly, and was merged as a deliberate act.
 - **Amends:** [`2026-07-20-agentic-company-operations.md`](./2026-07-20-agentic-company-operations.md)
   (Accepted 2026-07-21) — specifically the clause requiring social posts to be
   "Buffer drafts (never queued or published by the agent)", and the marketing
