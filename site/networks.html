@@ -105,5 +105,6 @@ document.getElementById("q").addEventListener("input",function(e){q=e.target.val
 document.getElementById("filters").addEventListener("click",function(e){var b=e.target.closest(".filt");if(!b)return;this.querySelectorAll(".filt").forEach(function(x){x.classList.remove("on")});b.classList.add("on");filt=b.dataset.f;render();});
 render();
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"__CF_BEACON_TOKEN__"}'></script>
 </body>
 </html>

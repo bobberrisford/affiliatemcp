@@ -123,7 +123,7 @@ everything, run `npx affiliate-networks-mcp uninstall` (or
 `claude plugin uninstall affiliate-networks-mcp`), then delete the
 `~/.affiliate-mcp/` directory.
 
-## Hosted tier (pre-launch, opt-in)
+## Hosted tier (live, opt-in)
 
 > Appended alongside workstream slice H3 (`docs/product/hosted-mvp-workstream.md`),
 > per the follow-up recorded in
@@ -133,9 +133,19 @@ everything, run `npx affiliate-networks-mcp uninstall` (or
 > opt into the separate hosted tier described here. Local stays free and
 > complete either way.
 
-The hosted tier is not a public product yet. This section is written now, in
-the same change set as the credential vault it describes, so the policy is
-accurate before the first paying hosted customer rather than after.
+The hosted tier is live and open for sign-up at
+[agenticaffiliate.ai/hosted.html](https://agenticaffiliate.ai/hosted.html). This
+section was written ahead of launch, in the same change set as the credential
+vault it describes, so the policy was accurate before the first hosted customer
+rather than after.
+
+Two current limits are stated here rather than left to be discovered:
+self-serve export is not built yet, so a copy of your stored data has to be
+requested; and because session tokens are stateless, a token already issued
+stays valid until it expires rather than being revoked on the spot. For the
+hosted tier we act as a processor of the data you store with us; there is no
+SOC 2 or ISO 27001 certification and no data processing agreement on offer at
+present.
 
 **What is stored.** Per-user affiliate network API credentials and OAuth
 tokens, plus per-tenant brand and client-strategy context. For paying
