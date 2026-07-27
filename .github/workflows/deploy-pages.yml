@@ -29,6 +29,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      # The beacon ships as a placeholder so the repo never carries an
+      # environment-specific token. If the Actions variable CF_BEACON_TOKEN is
+      # set, substitute it; if it is not, strip the beacon entirely rather than
+      # deploy a script tag with an invalid token that would fire a useless
+      # request from every visitor. Either state is correct and deployable, so
+      # the site is never blocked on the token existing.
+      - name: Inject or strip the analytics beacon
+        env:
+          CF_BEACON_TOKEN: ${{ vars.CF_BEACON_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -n "${CF_BEACON_TOKEN:-}" ]; then
+            grep -rl '__CF_BEACON_TOKEN__' site --include='*.html' \
+              | xargs -r sed -i "s|__CF_BEACON_TOKEN__|${CF_BEACON_TOKEN}|g"
+            echo "::notice::Analytics beacon enabled."
+          else
+            grep -rl '__CF_BEACON_TOKEN__' site --include='*.html' \
+              | xargs -r sed -i '/__CF_BEACON_TOKEN__/d'
+            echo "::notice::CF_BEACON_TOKEN is unset; beacon stripped from the deployed site."
+          fi
+          if grep -rq '__CF_BEACON_TOKEN__' site --include='*.html'; then
+            echo "::error::placeholder survived substitution"; exit 1
+          fi
+
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
