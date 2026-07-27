@@ -46,16 +46,33 @@ the honest posts lead, the feature posts follow.
 - Hosted is the call to action in every post. Local is mentioned where honesty
   requires it, and never as the thing being sold.
 
-## UTM convention
+## Attribution: one link per post, no tracking parameters
+
+Cloudflare Web Analytics deliberately does not log query strings, so a
+`?utm_content=` scheme would have given us nothing. Each post instead gets its
+own path, which redirects to the destination. Cloudflare reports paths, so the
+path *is* the attribution — and nothing follows the reader around.
 
 ```
-https://agenticaffiliate.ai/hosted.html?utm_source=linkedin&utm_medium=social&utm_campaign=hosted-jul26&utm_content=<slug>
+https://agenticaffiliate.ai/go/<slug>
 ```
+
+| # | link | lands on |
+| --- | --- | --- |
+| 1 | `/go/why-i-hosted-it` | hosted.html |
+| 2 | `/go/security-page-was-wrong` | security.html |
+| 3 | `/go/answered-in-the-thread` | hosted.html |
+| 4 | `/go/three-reports-no-card` | hosted.html |
+| 5 | `/go/networks-i-turned-down` | hosted.html |
+| 6 | `/go/laptop-shut` | hosted.html |
+| 7 | `/go/demo-unpaid` | hosted.html |
+
+Built in PR #419. Each page is `noindex` with a canonical to its destination.
 
 ---
 
 ## 1 · Wed 29 Jul, 08:00 — the contradiction
-`utm_content=why-i-hosted-it`
+link: `agenticaffiliate.ai/go/why-i-hosted-it`
 
 > I spent months making sure this software never touched anyone's affiliate credentials.
 >
@@ -73,12 +90,12 @@ https://agenticaffiliate.ai/hosted.html?utm_source=linkedin&utm_medium=social&ut
 >
 > Automate the drudgery.
 
-**First comment:** `Hosted, and what it does and doesn't do: <hosted.html?…why-i-hosted-it>`
+**First comment:** `Hosted, and what it does and doesn't do: https://agenticaffiliate.ai/go/why-i-hosted-it`
 
 ---
 
 ## 2 · Thu 30 Jul, 08:00 — the security page was wrong
-`utm_content=security-page-was-wrong`
+link: `agenticaffiliate.ai/go/security-page-was-wrong`
 
 > Our security page told brands we had no hosted service. We had already launched one.
 >
@@ -92,12 +109,12 @@ https://agenticaffiliate.ai/hosted.html?utm_source=linkedin&utm_medium=social&ut
 >
 > A security page that only contains good news is not a security page. It is marketing with a padlock on it.
 
-**First comment:** `The rewritten page, both tiers: <security.html?…security-page-was-wrong>`
+**First comment:** `The rewritten page, both tiers: https://agenticaffiliate.ai/go/security-page-was-wrong`
 
 ---
 
 ## 3 · Thu 30 Jul, 16:30 — answered before the call ended
-`utm_content=answered-in-the-thread`
+link: `agenticaffiliate.ai/go/answered-in-the-thread`
 
 > A client asks how their programme is doing. Right now that question costs you the rest of the afternoon.
 >
@@ -109,12 +126,12 @@ https://agenticaffiliate.ai/hosted.html?utm_source=linkedin&utm_medium=social&ut
 >
 > Free tier is three of those sessions a week, no card. That is enough to find out whether your Monday looks different.
 
-**First comment:** `Ask your own data: <hosted.html?…answered-in-the-thread>`
+**First comment:** `Ask your own data: https://agenticaffiliate.ai/go/answered-in-the-thread`
 
 ---
 
 ## 4 · Fri 31 Jul, 08:00 — no card, no call
-`utm_content=three-reports-no-card`
+link: `agenticaffiliate.ai/go/three-reports-no-card`
 
 > I have never once come away from a software demo call thinking that was a good use of my afternoon.
 >
@@ -128,12 +145,12 @@ https://agenticaffiliate.ai/hosted.html?utm_source=linkedin&utm_medium=social&ut
 >
 > I have sat through enough affiliate tooling demos to know which of those two things vendors are usually optimising for.
 
-**First comment:** `Start free: <hosted.html?…three-reports-no-card>`
+**First comment:** `Start free: https://agenticaffiliate.ai/go/three-reports-no-card`
 
 ---
 
 ## 5 · Mon 3 Aug, 08:00 — the networks I turned down
-`utm_content=networks-i-turned-down`
+link: `agenticaffiliate.ai/go/networks-i-turned-down`
 
 > I turned down more networks than I turned on, and it is going to annoy people.
 >
@@ -145,12 +162,12 @@ https://agenticaffiliate.ai/hosted.html?utm_source=linkedin&utm_medium=social&ut
 >
 > If your network is not on that list, the free local server covers it today, and it always will.
 
-**First comment:** `The four, and why: <hosted.html?…networks-i-turned-down>`
+**First comment:** `The four, and why: https://agenticaffiliate.ai/go/networks-i-turned-down`
 
 ---
 
 ## 6 · Mon 3 Aug, 16:30 — the laptop-shut problem
-`utm_content=laptop-shut`
+link: `agenticaffiliate.ai/go/laptop-shut`
 
 > Every piece of affiliate reporting automation has the same failure mode: it only runs when you are already at your desk.
 >
@@ -162,12 +179,12 @@ https://agenticaffiliate.ai/hosted.html?utm_source=linkedin&utm_medium=social&ut
 >
 > The local server is still the right answer for most people, and it is free. But if your reporting has ever been late because you were on a train, that is the wall, and it is not a discipline problem.
 
-**First comment:** `<hosted.html?…laptop-shut>`
+**First comment:** `https://agenticaffiliate.ai/go/laptop-shut`
 
 ---
 
 ## 7 · Tue 4 Aug, 08:00 — demo
-`utm_content=demo-unpaid`
+link: `agenticaffiliate.ai/go/demo-unpaid`
 
 > "How much am I owed right now that I have not been paid?"
 >
@@ -181,7 +198,7 @@ https://agenticaffiliate.ai/hosted.html?utm_source=linkedin&utm_medium=social&ut
 >
 > Automate the drudgery.
 
-**First comment:** `Run it on your own numbers, free: <hosted.html?…demo-unpaid>`
+**First comment:** `Run it on your own numbers, free: https://agenticaffiliate.ai/go/demo-unpaid`
 
 ---
 

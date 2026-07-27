@@ -41,5 +41,7 @@ run; blitz #1 earned it a mean of ~20 impressions across 20 posts, decaying to
 Baseline to beat, from blitz #1 on the profile: mean ~310 impressions per post,
 best 591, engagement rate 0.36–3.5%.
 
-New this run: UTMs on every link, so page views can be attributed per post, and
-hosted sign-in requests can be compared against the campaign window.
+New this run: each post links to its own `/go/<slug>` path (PR #419), so page
+views are attributable per post without attaching a tracking parameter to
+anyone's URL. Hosted sign-in requests can be compared against the campaign
+window from the worker's own logs.
