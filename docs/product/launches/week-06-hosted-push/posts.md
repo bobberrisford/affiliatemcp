@@ -35,8 +35,13 @@ the honest posts lead, the feature posts follow.
   not the mechanism that does it. Encryption, OAuth, vaults and network counts
   appear only where they answer an objection, never as the subject. If a post
   could be summarised as "here is a thing we built", it is rewritten.
-- Line 1 is an outcome or a story, never a spec. It also does all the work —
-  LinkedIn truncates after roughly two lines.
+- **350 to 500 characters, 600 ceiling.** The first draft of this run came in
+  at 900 to 1,100 and was rejected as too long and AI sloppy. See the "How a
+  post is written" section of `.claude/skills/affiliate-mcp-marketing/SKILL.md`
+  for the banned constructions; the short version is no em dashes, no
+  semicolons, no "it isn't X, it's Y", contractions throughout.
+- Line 1 is an outcome or a story, never a spec. It also does all the work,
+  because LinkedIn truncates after roughly two lines.
 - Links go in the **first comment**, never the post body.
 - UK English. No emoji. Sentence case. No "Thoughts?" at the end.
 - One real number per post. Anything illustrative is labelled a demo **in the
@@ -74,17 +79,15 @@ Built in PR #419. Each page is `noindex` with a canonical to its destination.
 ## 1 · Wed 29 Jul, 08:00 — the contradiction
 link: `agenticaffiliate.ai/go/why-i-hosted-it`
 
-> I spent months making sure this software never touched anyone's affiliate credentials.
+> Spent months making sure this never touched anyone's API keys.
 >
-> Then I built the thing that holds them.
+> Then I built the bit that holds them.
 >
-> The local server is free, open source, and runs on your own machine. Your keys never leave it. That is not changing, and it covers anyone who can follow a terminal.
+> The local server is still free, still open source, keys never leave your machine. That covers anyone who can use a terminal.
 >
-> It does not cover the agency account manager with eight brands who is not allowed to install anything. It does not cover the publisher whose Monday report needs to exist before they have opened the laptop. Those are the people the drudgery costs the most, and local-first was quietly telling them to go away.
+> It doesn't cover the agency AM with eight brands who isn't allowed to install anything. That's who hosted is for.
 >
-> So there is a hosted tier now. You ask what you earned, what you are owed, or what moved this week, and it answers from your own live data — with nothing installed, and whether or not your machine happens to be on.
->
-> I am not going to pretend the trade-off disappeared. Doing that for you means I hold your keys. The security page now says exactly what that means, including the parts that lose me deals.
+> And yes, it means I hold your keys. The security page says exactly what that's worth, including the parts that lose me deals.
 >
 > Three reports a week, free, no card.
 >
@@ -97,17 +100,17 @@ link: `agenticaffiliate.ai/go/why-i-hosted-it`
 ## 2 · Thu 30 Jul, 08:00 — the security page was wrong
 link: `agenticaffiliate.ai/go/security-page-was-wrong`
 
-> Our security page told brands we had no hosted service. We had already launched one.
+> Our security page told brands we had no hosted service.
 >
-> It is the page an agency reads before they trust you with anything. It said, in as many words: no hosted service, no account, the vendor never receives your credentials. Meanwhile the hosted tier was live and holding network API keys in a vault.
+> We'd already launched one.
 >
-> No one raised it with me, which is the part worth sitting with. A page like that does not generate complaints. The people it matters most to read it, believe it, and quietly go elsewhere.
+> That's the page an agency reads before they trust you with anything. Nobody complained. They just quietly went elsewhere, which is worse.
 >
-> It is rewritten. Every answer is now given twice, once for local and once for hosted, and the hosted column includes the things I would rather not print: the vault master key is a Worker secret rather than a KMS. There is no SOC 2. There is no ISO 27001. There is no DPA on offer. Self-serve export is not built yet.
+> It's rewritten. Every answer twice, local and hosted, including the parts I'd rather not print. Master key is a Worker secret, not a KMS. No SOC 2. No ISO 27001. No DPA.
 >
-> If your procurement needs any of those, use the local server. It does the same job with no vendor relationship at all, and it is free.
+> Need any of those? Use the local server. It's free and I hold nothing.
 >
-> A security page that only contains good news is not a security page. It is marketing with a padlock on it.
+> A security page with only good news isn't a security page.
 
 **First comment:** `The rewritten page, both tiers: https://agenticaffiliate.ai/go/security-page-was-wrong`
 
@@ -116,15 +119,15 @@ link: `agenticaffiliate.ai/go/security-page-was-wrong`
 ## 3 · Thu 30 Jul, 16:30 — answered before the call ended
 link: `agenticaffiliate.ai/go/answered-in-the-thread`
 
-> A client asks how their programme is doing. Right now that question costs you the rest of the afternoon.
+> A client asks how their programme's doing.
 >
-> Log into the network, set the date range, export, open the export, remember that this one reports reversals differently, build the comparison against last quarter, spot a number that looks wrong, go back and check it, write the summary, send it. By which point they have half-forgotten they asked.
+> There goes your afternoon. Log in, set the range, export, remember this one counts reversals differently, build the comparison, spot a number that looks wrong, go back and check it, write it up.
 >
-> Point the question at Claude instead and it comes back with the revenue, the trend against the previous window, which partners moved it, and a first draft of what you would actually say to them. From live data. No export step, because there is no export step.
+> Ask Claude instead and you get the revenue, the trend, which partners moved it, and a draft of what you'd actually say. Live data. No export.
 >
-> The part I did not expect is that it changes which questions get asked at all. When an answer costs forty minutes you only ask the ones you have to. When it costs twenty seconds you start asking the ones you were merely curious about, and that is where the useful stuff turns out to be.
+> Strange side effect. You start asking the questions you were only mildly curious about, and that's where the useful stuff turns out to be.
 >
-> Free tier is three of those sessions a week, no card. That is enough to find out whether your Monday looks different.
+> Three sessions a week, free, no card.
 
 **First comment:** `Ask your own data: https://agenticaffiliate.ai/go/answered-in-the-thread`
 
@@ -133,17 +136,15 @@ link: `agenticaffiliate.ai/go/answered-in-the-thread`
 ## 4 · Fri 31 Jul, 08:00 — no card, no call
 link: `agenticaffiliate.ai/go/three-reports-no-card`
 
-> I have never once come away from a software demo call thinking that was a good use of my afternoon.
+> I've never once come out of a software demo thinking that was a good use of an afternoon.
 >
-> So there isn't one. Three reports a week, free, no card, no "book a slot with our team". The free tier exists because you should watch your own data come back before you pay anyone anything. Not a sandbox. Not sample numbers. Your Awin account, your commissions, in Claude, in about five minutes.
+> So there isn't one.
 >
-> A report is one 30-minute working session, not one question. Open a window, ask as much as you like inside it. Three of those a week, on a rolling seven days.
+> Three reports a week. Free. No card. No quick chat with the team.
 >
-> If it is useful, the paid tiers lift the cap and add the scheduled work — the anomaly watch, the unpaid-commission digest, the things that only pay off when they run without you.
+> A report is a 30 minute session, not one question. Ask as much as you want inside it.
 >
-> If it is not useful, you have lost five minutes and given nobody your card details.
->
-> I have sat through enough affiliate tooling demos to know which of those two things vendors are usually optimising for.
+> If it's useful, paid lifts the cap and adds the scheduled work. If it isn't, you've lost five minutes and given nobody your card details.
 
 **First comment:** `Start free: https://agenticaffiliate.ai/go/three-reports-no-card`
 
@@ -152,15 +153,17 @@ link: `agenticaffiliate.ai/go/three-reports-no-card`
 ## 5 · Mon 3 Aug, 08:00 — the networks I turned down
 link: `agenticaffiliate.ai/go/networks-i-turned-down`
 
-> I turned down more networks than I turned on, and it is going to annoy people.
+> I turned down more networks than I turned on.
 >
-> Hosted supports four. The local server supports dozens. Awin, CJ Affiliate, Impact, and Rakuten Advertising are the four I will hold keys for. They are the ones whose terms I have actually checked and whose adapters are mature enough to run unattended, on a schedule, without me watching.
+> Hosted does four. Awin, CJ, Impact, Rakuten. The local server does dozens.
 >
-> Everything else stays local-only. Not because those networks are worse — several have perfectly good APIs — but because "I built an adapter" and "I will take custody of your credentials for this" are different sentences, and I am not going to blur them to make a pricing page look better.
+> Those four are the ones whose terms I've actually read, and whose adapters I'd trust to run unattended.
 >
-> There is a related thing worth saying out loud. All four of these networks issue full-access API tokens rather than scoped read-only ones. That is their limitation rather than my choice, and it is why the guidance is to generate a key dedicated to this connection, so you can revoke it without disturbing anything else.
+> "I built an adapter" and "I'll take custody of your credentials" are different sentences. I'm not blurring them to make a pricing page look fuller.
 >
-> If your network is not on that list, the free local server covers it today, and it always will.
+> Worth knowing: all four only issue full-access tokens. Their limitation, not my choice. Generate a dedicated key so you can revoke it cleanly.
+>
+> Not on the list? Local covers it. Free, and always will.
 
 **First comment:** `The four, and why: https://agenticaffiliate.ai/go/networks-i-turned-down`
 
@@ -169,15 +172,15 @@ link: `agenticaffiliate.ai/go/networks-i-turned-down`
 ## 6 · Mon 3 Aug, 16:30 — the laptop-shut problem
 link: `agenticaffiliate.ai/go/laptop-shut`
 
-> Every piece of affiliate reporting automation has the same failure mode: it only runs when you are already at your desk.
+> Most affiliate reporting automation only runs when you're already at your desk.
 >
-> Which means it is not automation. It is a faster version of you doing it.
+> That isn't automation. That's you, slightly faster.
 >
-> The Monday brief that matters is the one that already exists when you open the laptop. The reversal spike you want to hear about is the one caught on Saturday, not the one you find on Tuesday while looking for something else. Neither of those works if the thing doing the checking lives on a machine that is asleep.
+> The Monday brief worth having is the one already sitting there when you open the laptop. The reversal spike worth catching is the Saturday one.
 >
-> That is the entire reason hosted exists. Not more features. The same server, the same open-source adapters, the same seven operations — running somewhere that does not close its lid.
+> Neither happens if the thing doing the checking is asleep in your bag.
 >
-> The local server is still the right answer for most people, and it is free. But if your reporting has ever been late because you were on a train, that is the wall, and it is not a discipline problem.
+> That's the whole reason hosted exists. Same server, same adapters, somewhere that doesn't shut its lid.
 
 **First comment:** `https://agenticaffiliate.ai/go/laptop-shut`
 
@@ -186,17 +189,15 @@ link: `agenticaffiliate.ai/go/laptop-shut`
 ## 7 · Tue 4 Aug, 08:00 — demo
 link: `agenticaffiliate.ai/go/demo-unpaid`
 
-> "How much am I owed right now that I have not been paid?"
+> "How much am I owed right now?"
 >
-> Most operators cannot answer that in under an hour, and it is not because they are disorganised. The answer is spread across every network they work with, each one showing its own slice, none of them adding up.
+> Most people can't answer that in under an hour. Not because they're disorganised. The answer is split across every network they work with and none of them add up.
 >
-> The card below is a demo, with sample figures — I am not passing off invented numbers as a real account. What is real is the shape of it: one question, every connected network swept, commissions classified by what the networks' own records say, itemised per network and per currency. Any network that failed to respond is listed at the top rather than quietly dropped from the total, because a wrong total is worse than a short one.
+> The card below is a demo with sample numbers. I'm not passing invented figures off as a real account.
 >
-> Then it drafts the chase email for each one. Sending stays with you.
+> What's real is the shape. One question, every network swept, itemised per network and currency. Anything that failed to respond gets listed, not quietly dropped from the total.
 >
-> That is the whole pitch. Not a prettier view of your data. The work you were going to do on Thursday, done, waiting for you to approve it.
->
-> Automate the drudgery.
+> Then it drafts the chase emails. Sending is still you.
 
 **First comment:** `Run it on your own numbers, free: https://agenticaffiliate.ai/go/demo-unpaid`
 
