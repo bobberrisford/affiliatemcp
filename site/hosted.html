@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>affiliate-mcp — get hosted</title>
-<meta name="description" content="affiliate-mcp hosted: sign in by email, connect your networks, and start free — three reports a week, no card. Solo £34/month, Pro £99/month. No install, no terminal.">
+<title>affiliate-mcp — hosted</title>
+<meta name="description" content="Ask what you earned, what you're owed, or what moved this week, answered from your own live affiliate network data in Claude. No exports, no install. Three reports a week free, no card.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='14' fill='%232B2BFF'/%3E%3Cpolyline points='34,38 58,60 34,82' fill='none' stroke='%23fff' stroke-width='13'/%3E%3Crect x='66' y='68' width='24' height='14' fill='%23fff'/%3E%3C/svg%3E">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="affiliate-mcp">
-<meta property="og:title" content="affiliate-mcp — get hosted">
-<meta property="og:description" content="Sign in by email, connect your networks, then add it to Claude as a custom connector. No token to paste. Start free — three reports a week, no card. Solo £34, Pro £99.">
+<meta property="og:title" content="affiliate-mcp — affiliate reporting that doesn't wait for you">
+<meta property="og:description" content="Ask what you earned, what you're owed, or what moved — from your own live network data, in Claude. Three reports a week free, no card.">
 <meta property="og:url" content="https://agenticaffiliate.ai/hosted.html">
 <meta property="og:image" content="https://agenticaffiliate.ai/og.png">
 <meta property="og:image:type" content="image/png">
@@ -17,8 +17,8 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="agentic affiliate -- automate the affiliate grind">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="affiliate-mcp — get hosted">
-<meta name="twitter:description" content="Sign in by email, connect your networks, then add it to Claude as a custom connector. No token to paste.">
+<meta name="twitter:title" content="affiliate-mcp — affiliate reporting that doesn't wait for you">
+<meta name="twitter:description" content="Ask what you earned, what you're owed, or what moved — from your own live network data, in Claude. Three reports a week free, no card.">
 <meta name="twitter:image" content="https://agenticaffiliate.ai/og.png">
 <style>
 @font-face{font-family:'Bricolage Grotesque';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/bricolage-grotesque-700.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;}
@@ -59,57 +59,147 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
 .ptier p{font-size:.92rem;color:var(--smudge-dk);margin:0}
 .plist{list-style:none;padding:0;margin:14px 0 0}.plist li{padding:12px 0;border-top:1px solid var(--line);display:flex;gap:12px;align-items:flex-start}.plist li:last-child{border-bottom:1px solid var(--line)}.plist .mk{color:var(--blue);font-family:var(--font-mono);font-weight:800;flex:none}
 .cta{background:var(--blue);color:var(--paper);padding:56px 0;text-align:center}.cta h2{font-family:var(--font-display);font-weight:800;font-size:clamp(1.8rem,4.4vw,2.8rem);text-transform:lowercase;letter-spacing:-.03em;color:var(--paper)}.cta p{color:rgba(255,255,255,.92);max-width:52ch;margin:14px auto}.cta .btn{background:var(--paper);color:var(--ink);border-color:var(--paper)}.cta .fine{font-family:var(--font-mono);font-size:.72rem;color:rgba(255,255,255,.72);margin-top:16px;max-width:52ch}
+.hero{position:relative;padding:56px 0 44px}
+.hero-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:44px;align-items:center}
+@media(max-width:940px){.hero-grid{grid-template-columns:1fr;gap:32px}}
+.hero h1{font-family:var(--font-display);font-weight:800;font-size:clamp(2.3rem,4.6vw,3.5rem);line-height:.94;letter-spacing:-.03em;text-transform:lowercase;margin:0}
+.hero .lead{margin-top:20px;max-width:50ch}
+.signin{display:flex;gap:10px;flex-wrap:wrap;max-width:520px;margin-top:24px}
+.signin input{flex:1 1 250px;font-family:var(--font-mono);font-size:.95rem;padding:12px 14px;border:2px solid var(--ink);background:var(--paper);color:var(--ink)}
+.fineprint{font-family:var(--font-mono);font-size:.74rem;letter-spacing:.03em;color:var(--smudge-dk);margin-top:14px}
+.demo{background:#FAF9F5;border:2px solid var(--ink);border-radius:10px;box-shadow:6px 6px 0 var(--ink);overflow:hidden;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif}
+.cl-top{display:flex;align-items:center;gap:9px;padding:12px 16px;background:#fff;border-bottom:1px solid #ECEAE0}
+.cl-top svg{width:22px;height:22px;display:block}
+.cl-name{font-weight:600;color:#1F1E1D;font-size:.95rem;letter-spacing:-.01em}
+.cl-conn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:.68rem;color:#8a8782;border:1px solid #E5E2D6;border-radius:999px;padding:3px 10px}
+.ast{color:#D97757;font-weight:700}
+.cl-body{padding:18px 16px 20px;color:#1F1E1D;font-size:.9rem;line-height:1.5}
+.cl-user{margin-left:auto;width:max-content;max-width:84%;background:#F0EEE6;border-radius:14px;border-bottom-right-radius:4px;padding:10px 14px;color:#1F1E1D;font-size:.88rem}
+.cl-asst{display:flex;gap:11px;margin-top:18px}
+.cl-asst>svg{width:24px;height:24px;flex:none;margin-top:2px}
+.cl-content{flex:1;min-width:0}
+.cl-tool{display:inline-flex;align-items:center;gap:8px;border:1px solid #E5E2D6;background:#fff;border-radius:8px;padding:6px 11px;font-size:.72rem;color:#6F6E69;margin-bottom:12px}
+.cl-tool .fn{color:#1F1E1D;font-family:var(--font-mono);font-size:.68rem}
+.cl-say{margin:0 0 12px;color:#1F1E1D;max-width:none}.cl-say b{font-weight:700}
+.cl-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.cl-table th{text-align:left;font-weight:600;color:#8a8782;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;padding:0 0 7px;border-bottom:1px solid #E5E2D6}
+.cl-table td{padding:8px 0;border-bottom:1px solid #ECEAE0;color:#1F1E1D}
+.cl-table th.r,.cl-table td.r{text-align:right}
+.cl-table td.r{font-variant-numeric:tabular-nums}
+.jobs{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:22px}
+@media(max-width:860px){.jobs{grid-template-columns:1fr}}
+.job{border:2px solid var(--ink);border-radius:8px;padding:22px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px}
+.job .q{font-family:var(--font-display);font-weight:800;font-size:1.22rem;line-height:1.15;letter-spacing:-.02em;text-transform:lowercase}
+.job p{margin:0;font-size:.95rem}
+.job .stop{font-family:var(--font-mono);font-size:.74rem;letter-spacing:.03em;text-transform:uppercase;color:var(--magenta);font-weight:700;margin-top:auto;padding-top:12px;border-top:1px solid var(--line)}
+.faq2{max-width:820px;border-top:2px solid var(--ink);margin-top:18px}
+.faq2 details{border-bottom:2px solid var(--ink)}
+.faq2 summary{cursor:pointer;list-style:none;padding:16px 0;font-family:var(--font-display);font-weight:800;font-size:1.05rem;text-transform:lowercase;display:flex;gap:12px;align-items:baseline}
+.faq2 summary::-webkit-details-marker{display:none}
+.faq2 summary::before{content:"+";color:var(--blue);font-family:var(--font-mono);font-weight:800}
+.faq2 details[open] summary::before{content:"–"}
+.faq2 .ans{padding:0 0 18px 24px}.faq2 .ans p{margin:0 0 .7em;font-size:.96rem}
 </style>
 </head>
-<body data-page="pricing">
+<body data-page="hosted">
 
-<nav class="nav"><div class="wrap">
+<nav class="nav" id="top"><div class="wrap">
   <a class="brand" href="index.html"><svg viewBox="0 0 120 120"><rect width="120" height="120" rx="14" fill="#2B2BFF"></rect><polyline points="34,38 58,60 34,82" fill="none" stroke="#fff" stroke-width="13"></polyline><rect x="66" y="68" width="24" height="14" fill="#fff"></rect></svg><span class="wm">agentic <span class="mcp">affiliate</span></span></a>
   <div class="links"><a href="index.html#how">how it works</a><a href="networks.html">networks</a><a href="adopt.html">adopt your adapter</a><a href="skills.html">skills</a><a class="on" href="hosted.html">hosted</a><a href="mission.html">mission</a></div>
   <div class="right"><a class="btn d sm" href="https://github.com/bobberrisford/affiliatemcp">★ github</a><a class="btn p sm" href="get-started.html">get started ▸</a></div>
 </div></nav>
 
-<header class="phead"><div class="wrap">
-  <div class="sec-label">hosted</div>
-  <h1>get hosted</h1>
-  <p class="lead">No install, no terminal. Sign in by email, connect your networks in a guided dashboard, then add affiliate-mcp to Claude as a custom connector. Your reports run on a schedule and while your laptop is shut.</p>
-  <p class="small muted" style="max-width:56ch;margin-top:14px">Happy to self-host? The <a href="get-started.html" style="text-decoration:underline">free local server</a> does everything hosted does, for every network — no subscription. Hosted just removes the install and the laptop-awake constraint.</p>
-</div></header>
+<header class="hero"><div class="wrap"><div class="hero-grid">
+  <div>
+    <div class="sec-label">hosted</div>
+    <h1>affiliate reporting that doesn't wait for you.</h1>
+    <p class="lead">Ask what you earned, what you're owed, or what moved this week — answered from your own live network data, in the chat you already work in. No exports. No install. Nothing that has to stay awake.</p>
+    <form id="signin-form" class="signin">
+      <input id="email" type="email" required placeholder="you@example.com" autocomplete="email">
+      <button class="btn p" type="submit" id="signin-btn">start free ▸</button>
+    </form>
+    <p id="signin-done" class="small muted" style="display:none;margin-top:12px;max-width:52ch">If that address is valid, a sign-in link is on its way from sign-in@agenticaffiliate.ai. Check spam the first time — the domain is new. The link works once and expires in 15 minutes.</p>
+    <p id="signin-err" class="small muted" style="display:none;margin-top:12px">That did not go through. Check the address and try again; if it keeps failing, the sign-in service may be briefly unreachable.</p>
+    <p class="fineprint">three reports a week · no card · about five minutes to set up</p>
+  </div>
+  <div>
+    <div class="demo">
+      <div class="cl-top"><svg viewBox="0 0 24 24"><g fill="#D97757"><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3"></rect><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(45 12 12)"></rect><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(90 12 12)"></rect><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(135 12 12)"></rect></g></svg><span class="cl-name">Claude</span><span class="cl-conn"><span class="ast">✳</span> agentic affiliate · connected</span></div>
+      <div class="cl-body">
+        <div class="cl-user">what am I owed that hasn't been paid yet?</div>
+        <div class="cl-asst"><svg viewBox="0 0 24 24"><g fill="#D97757"><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3"></rect><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(45 12 12)"></rect><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(90 12 12)"></rect><rect x="10.7" y="1.5" width="2.6" height="21" rx="1.3" transform="rotate(135 12 12)"></rect></g></svg>
+          <div class="cl-content">
+            <div class="cl-tool"><span class="ast">✳</span> agentic affiliate <span class="fn">· list_transactions</span></div>
+            <p class="cl-say"><b>£4,182.60</b> is approved but unpaid across three networks. <b>£1,204.00</b> of that has been sitting longer than 90 days.</p>
+            <table class="cl-table">
+              <thead><tr><th>Network</th><th>Status</th><th class="r">Amount</th></tr></thead>
+              <tbody>
+                <tr><td>Awin</td><td>approved</td><td class="r">£2,410.00</td></tr>
+                <tr><td>CJ Affiliate</td><td>pending, 90+ days</td><td class="r">£1,204.00</td></tr>
+                <tr><td>Impact</td><td>approved</td><td class="r">£568.60</td></tr>
+                <tr><td>Rakuten</td><td>nothing outstanding</td><td class="r">£0.00</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="fineprint" style="text-align:right">illustrative figures · your own account, your own numbers</p>
+  </div>
+</div></div></header>
 
-<section class="sec" id="signin"><div class="wrap">
-  <h2>1 · sign in by email</h2>
-  <p class="muted" style="max-width:64ch">Enter your email and we send a single-use sign-in link. It expires in 15 minutes. Signing in for the first time is the same step that creates your account.</p>
-  <p class="small muted" style="max-width:64ch"><b>Why:</b> no password to set or remember. This email identity is also what you approve Claude against in step 4, so your keys and your agent stay tied to one account you control.</p>
-  <form id="signin-form" style="display:flex;gap:10px;flex-wrap:wrap;max-width:560px;margin-top:14px">
-    <input id="email" type="email" required placeholder="you@example.com" autocomplete="email"
-      style="flex:1 1 280px;font-family:var(--font-mono);font-size:.95rem;padding:12px 14px;border:2px solid var(--ink);background:var(--paper);color:var(--ink)">
-    <button class="btn p" type="submit" id="signin-btn">email me a sign-in link ▸</button>
-  </form>
-  <p id="signin-done" class="small muted" style="display:none;margin-top:12px;max-width:56ch">If that address is valid, a sign-in link is on its way from sign-in@agenticaffiliate.ai. Check spam the first time — the domain is new. The link works once and expires in 15 minutes.</p>
-  <p id="signin-err" class="small muted" style="display:none;margin-top:12px">That did not go through. Check the address and try again; if it keeps failing, the sign-in service may be briefly unreachable.</p>
+<section class="sec"><div class="wrap">
+  <div class="sec-label">what it takes off you</div>
+  <h2>three questions you stop doing by hand.</h2>
+  <div class="jobs">
+    <div class="job">
+      <div class="q">"what hasn't been paid?"</div>
+      <p>Approved-but-unpaid commissions across every connected network, added up, with anything past its validation window flagged. Then it drafts the chase email.</p>
+      <div class="stop">no more reconciling four exports</div>
+    </div>
+    <div class="job">
+      <div class="q">"how is this client doing?"</div>
+      <p>Any brand, any window, answered in the thread while they are still asking. Revenue, trend, the partners moving it, and what you would put in the update.</p>
+      <div class="stop">no more "let me pull that"</div>
+    </div>
+    <div class="job">
+      <div class="q">"what changed this week?"</div>
+      <p>Reversal spikes, revenue drops, links that quietly stopped earning. Surfaced against last week, not buried in a report you read on the 4th.</p>
+      <div class="stop">no more month-end surprises</div>
+    </div>
+  </div>
+  <p class="small muted" style="margin-top:20px;max-width:64ch">Same questions you ask now. The difference is there is no export step, because there is no export step — the agent reads your live network data directly and does the arithmetic across all of it.</p>
 </div></section>
 
-<section class="sec" id="connect"><div class="wrap">
-  <h2>2 · connect your networks</h2>
-  <p class="muted" style="max-width:64ch">The emailed link opens your dashboard straight away — there is <b>no token to copy or paste</b>. Pick a network and a short guided form asks for exactly the keys it needs, with a note on where to find each one in that network's own dashboard. Save, and we run a live connection test so you can see it works before going further. <b>Awin</b>, <b>CJ Affiliate</b>, <b>Impact</b>, and <b>Rakuten Advertising</b> connect today — add them one at a time.</p>
-  <p class="small muted" style="max-width:64ch"><b>Why:</b> your network API keys are entered here, in the encrypted dashboard, and nowhere else. They are never given to Claude or any MCP client — the agent only ever receives a scoped session (step 4). Holding them here is what lets the service run your reports while your machine is off.</p>
-  <p style="margin-top:16px"><a class="btn p" href="https://hosted.agenticaffiliate.ai/connect">open your dashboard ▸</a></p>
+<section class="sec"><div class="wrap">
+  <div class="sec-label">why hosted</div>
+  <h2>the work stops depending on you being at the desk.</h2>
+  <div class="pgrid two" style="max-width:900px;margin-top:6px">
+    <div class="card">
+      <p style="margin:0"><b>Nothing to install.</b> No Node.js, no terminal, no config file. You sign in with an email link and connect a network in a guided form. If you have ever been blocked from installing software on a work laptop, this is the version for you.</p>
+    </div>
+    <div class="card">
+      <p style="margin:0"><b>It runs with the lid shut.</b> Scheduled checks and digests happen on our infrastructure, so the Monday brief exists before you open the laptop and a Saturday reversal spike is caught on Saturday.</p>
+    </div>
+  </div>
+  <p class="small muted" style="margin-top:18px;max-width:64ch">Everything else is identical to the free local server — the same open-source adapters, the same operations, the same answers. Hosted removes two constraints; it does not add capability you cannot have for free.</p>
 </div></section>
 
 <section class="sec" id="plans"><div class="wrap">
-  <h2>3 · start free, upgrade when you need to</h2>
-  <p class="muted" style="max-width:64ch">There is nothing to pay to begin. The free plan lets you ask about your own data in Claude straight away — three reports a week, no card. Paid plans lift that cap and add the automation you cannot do by hand. Payment is handled by <b>Stripe Checkout</b>; change tier, update your card, or cancel any time from the billing portal in your dashboard.</p>
-  <p class="small muted" style="max-width:64ch"><b>Why free first:</b> you have already watched your own data authenticate in step 2. Run a few real reports on the house, then pay only once it is clearly earning its keep — not on a promise.</p>
+  <div class="sec-label">pricing</div>
+  <h2>start on your own data, before you pay anything.</h2>
+  <p class="muted" style="max-width:64ch">Not a sandbox and not sample numbers. Connect a real network and ask a real question. If it is not useful you have lost five minutes and given nobody your card details.</p>
   <div class="pgrid" style="max-width:980px">
-    <div class="ptier">
+    <div class="ptier" style="box-shadow:6px 6px 0 var(--magenta)">
       <div class="price">£0<span>free, no card</span></div>
       <h3>free</h3>
-      <p>Try it on your own data before you pay anything.</p>
+      <p>Enough to find out whether this is worth paying for.</p>
       <ul class="plist">
         <li><span class="mk">→</span><span>Ask about your own affiliate data in Claude or any MCP client</span></li>
-        <li><span class="mk">→</span><span>Three reports a week (a report is one 30-minute working session)</span></li>
-        <li><span class="mk">→</span><span>No card, no commitment</span></li>
+        <li><span class="mk">→</span><span>Three reports a week — a report is one 30-minute working session, not one question</span></li>
+        <li><span class="mk">→</span><span>No card, no commitment, no demo call</span></li>
       </ul>
+      <p style="margin-top:16px"><a class="btn p" href="#top">start free ▸</a></p>
     </div>
     <div class="ptier">
       <div class="price">£34<span>per month</span></div>
@@ -135,39 +225,65 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
       </ul>
     </div>
   </div>
+  <p class="small muted" style="margin-top:16px">Payment is handled by Stripe Checkout. Change tier, update your card, or cancel from the billing portal in your dashboard.</p>
 </div></section>
 
-<section class="sec" id="claude"><div class="wrap">
-  <h2>4 · add it to claude</h2>
-  <p class="muted" style="max-width:64ch">In Claude, add affiliate-mcp as a custom connector and sign in through your browser — again, <b>no token to paste</b>.</p>
+<section class="sec"><div class="wrap">
+  <div class="sec-label">your keys</div>
+  <h2>you can take it all back in one click.</h2>
   <ul class="plist" style="max-width:820px">
-    <li><span class="mk">→</span><span><b>Claude Desktop or claude.ai:</b> Settings → Connectors → <b>Add custom connector</b>, paste the transport URL below, then follow the browser sign-in and approve access.</span></li>
-    <li><span class="mk">→</span><span><b>Claude Code:</b> run <code>claude mcp add --transport http agentic-affiliate https://mcp.agenticaffiliate.ai/mcp</code>, then <code>/mcp</code> and approve the browser sign-in.</span></li>
-    <li><span class="mk">→</span><span><b>Any other MCP client</b> that supports remote servers with OAuth connects the same way, using the transport URL below.</span></li>
+    <li><span class="mk">→</span><span><b>Claude never receives your network keys.</b> They go into the encrypted dashboard and nowhere else. Your AI client gets a short-lived, scoped session instead — there is no token to paste anywhere, in either direction.</span></li>
+    <li><span class="mk">→</span><span><b>Encrypted per account, decrypted only at call time.</b> Each account has its own key, used in memory for the moment a request runs, never written back in plaintext.</span></li>
+    <li><span class="mk">→</span><span><b>Delete the account and it is gone.</b> Credentials, the key protecting them, the account record, the billing email. Complete, not a soft flag. You can also revoke the API key in the network's own dashboard, which cuts access regardless of anything on our side.</span></li>
   </ul>
-  <p style="font-family:var(--font-mono);font-size:.95rem;margin-top:14px;padding:12px 14px;border:2px solid var(--ink);display:inline-block"><b>https://mcp.agenticaffiliate.ai/mcp</b></p>
-  <p class="small muted" style="max-width:64ch"><b>Why:</b> you approve access with the same email identity from step 1, and Claude receives a short-lived, scoped token — never your network keys.</p>
+  <p style="margin-top:20px"><a class="btn ghost" href="security.html">read the security page, both tiers ▸</a></p>
+  <p class="small muted" style="margin-top:14px;max-width:64ch">That page states the limitations too, including the ones that lose us deals. Worth reading before you decide.</p>
 </div></section>
 
-<section class="sec" id="first-prompt"><div class="wrap">
-  <h2>5 · run your first report</h2>
-  <p class="muted" style="max-width:64ch">Ask your agent something real:</p>
-  <ul class="plist" style="max-width:820px">
-    <li><span class="mk">→</span><span>“Show my unpaid commissions on Awin from the last 30 days.”</span></li>
-    <li><span class="mk">→</span><span>“Summarise last month's earnings across all my networks.”</span></li>
-  </ul>
-  <p class="small muted" style="max-width:64ch"><b>Why:</b> if that returns your data, the whole loop is working — keys in the dashboard, agent authorised by OAuth, reports on demand.</p>
+<section class="sec"><div class="wrap">
+  <div class="sec-label">the questions people actually ask</div>
+  <div class="faq2">
+    <details open><summary>do I need to be technical?</summary>
+      <div class="ans"><p>No. Sign in with an email link, pick a network, paste the API key it asks for — the form tells you where to find it in that network's own dashboard — and add one URL to Claude. There is nothing to install and no terminal.</p></div>
+    </details>
+    <details><summary>which networks work on hosted?</summary>
+      <div class="ans"><p>Awin, CJ Affiliate, Impact, and Rakuten Advertising. Those are the four whose terms have been checked and whose adapters are mature enough to run unattended.</p><p>The free local server covers dozens more. Holding someone's API key is a heavier commitment than helping them use their own, and we would rather draw that line visibly than blur it to make this page look better.</p></div>
+    </details>
+    <details><summary>what counts as a "report"?</summary>
+      <div class="ans"><p>One 30-minute working session, not one question. Your first request opens the window and everything you ask inside it is included. Three of those a week on the free plan, on a rolling seven days.</p></div>
+    </details>
+    <details><summary>what happens if I cancel?</summary>
+      <div class="ans"><p>You drop back to the free plan rather than losing access. Cancel from the billing portal in your dashboard, any time. If you delete the account instead, everything stored with it goes too.</p></div>
+    </details>
+    <details><summary>is the local server still free?</summary>
+      <div class="ans"><p>Yes, and it always will be. It is MIT licensed, open source, and does everything hosted does for every supported network, with your keys never leaving your machine. If you can run it yourself, <a href="get-started.html" style="border-bottom:2px solid var(--blue)">run it yourself</a> — hosted exists for the people who cannot, and for work that has to happen while the laptop is shut.</p></div>
+    </details>
+  </div>
 </div></section>
 
 <section class="sec"><div class="wrap">
   <h2>the honest bits</h2>
   <ul class="plist" style="max-width:820px">
     <li><span class="mk">→</span><span><b>Four networks hosted today.</b> Awin, CJ Affiliate, Impact, and Rakuten Advertising. Others stay local-only until their terms are checked — the free local server covers all of them.</span></li>
-    <li><span class="mk">→</span><span><b>Keys go in the dashboard, never in Claude.</b> Credentials are entered only in the encrypted dashboard, decrypted only at the moment a request runs, and deleted with your account whenever you ask. Claude gets an OAuth session, not your keys.</span></li>
-    <li><span class="mk">→</span><span><b>Nothing sensitive is copied around.</b> Sign-in is a one-time email link and Claude connects by browser OAuth — there is no session token to paste anywhere.</span></li>
     <li><span class="mk">→</span><span><b>One long-lived token per network.</b> These four networks only issue full-access API tokens, not scoped read-only ones. Generate one dedicated to this connection, and revoke it in the network's dashboard if you ever disconnect.</span></li>
+    <li><span class="mk">→</span><span><b>Self-serve export is not built yet.</b> Hard delete works today; a copy of your stored data has to be requested. Stated here rather than left for you to discover.</span></li>
+    <li><span class="mk">→</span><span><b>No SOC 2, no ISO 27001, no DPA on offer.</b> If your procurement needs those, use the local server — same capability, no vendor relationship.</span></li>
     <li><span class="mk">→</span><span><b>Local stays free and complete.</b> Hosted removes the install and the laptop-awake constraint; it does not gate anything the open-source server already does.</span></li>
   </ul>
+</div></section>
+
+<section class="sec"><div class="wrap">
+  <div class="sec-label">setup</div>
+  <h2>about five minutes.</h2>
+  <p class="muted" style="max-width:64ch">Sign in by email, connect a network in a guided form and watch the live connection test pass, add one URL to Claude, then ask your first question. Most of the five minutes is spent finding an API key in your network's own dashboard.</p>
+  <p style="margin-top:18px"><a class="btn p" href="hosted-setup.html">the full walkthrough ▸</a><a class="btn ghost" href="https://hosted.agenticaffiliate.ai/connect" style="margin-left:8px">open your dashboard ▸</a></p>
+</div></section>
+
+<section class="cta"><div class="wrap">
+  <h2>ask your own numbers a question.</h2>
+  <p>Three reports a week, free, no card. If it is not earning its keep, you have lost five minutes.</p>
+  <p style="margin-top:20px"><a class="btn" href="#top">start free ▸</a></p>
+  <p class="fine">Awin, CJ Affiliate, Impact and Rakuten connect today. Prefer to self-host? The local server is free forever.</p>
 </div></section>
 
 <script>
@@ -196,3 +312,4 @@ document.getElementById('signin-form').addEventListener('submit', async function
 </div></footer>
 </body>
 </html>
+
