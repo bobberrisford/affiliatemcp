@@ -3,7 +3,11 @@
 **Channel:** Rob's LinkedIn profile only (`robertberrisford`). The Agentic
 Affiliate company page is **not** used this run.
 
-**Cadence:** 7 posts over 5 days, 1–2 a day.
+**Cadence:** 10 posts over 5 working days, never more than 2 a day.
+
+Seven hosted posts plus three build-in-public posts. Blitz #1's two best
+performers (591 and 577 impressions) were both founder posts about the work
+itself, beating the feature posts roughly 2:1, so the genre earns its slots.
 
 ## Why this shape
 
@@ -200,6 +204,53 @@ link: `agenticaffiliate.ai/go/demo-unpaid`
 > Then it drafts the chase emails. Sending is still you.
 
 **First comment:** `Run it on your own numbers, free: https://agenticaffiliate.ai/go/demo-unpaid`
+
+---
+
+## 8 · Wed 29 Jul, 16:30 — build in public: the green CI
+link: `agenticaffiliate.ai/go/green-ci`
+
+> My CI has been green every day for a week.
+>
+> Today I read the logs properly. It was skipping the test.
+>
+> A secret wasn't set, so the job printed "not provisioned, skipping" and exited zero. Green tick, nothing run. Six days of that.
+>
+> The badge wasn't lying. It just wasn't saying what I assumed it said.
+>
+> Go and open one of your green runs. Read it, don't glance at it.
+
+**First comment:** `Open source, so you can check mine: https://agenticaffiliate.ai/go/green-ci`
+
+---
+
+## 9 · Fri 31 Jul, 16:30 — build in public: the analytics plan that couldn't work
+link: `agenticaffiliate.ai/go/utm-doesnt-work`
+
+> Wrote a whole analytics plan around UTM tags. Got as far as building it before I checked whether it worked.
+>
+> Cloudflare Web Analytics doesn't log query strings. On purpose, for privacy. So every utm_content I'd planned would have recorded precisely nothing.
+>
+> The fix is better than the original. Each post links to its own path instead. Cloudflare reports paths, so the path is the attribution, and nothing follows the reader around.
+>
+> The privacy default I nearly worked around turned out to be the better design.
+
+**First comment:** `The decision record, including the correction: https://agenticaffiliate.ai/go/utm-doesnt-work`
+
+---
+
+## 10 · Tue 4 Aug, 16:30 — build in public: the wrong number
+link: `agenticaffiliate.ai/go/wrong-number`
+
+> My own homepage had the wrong number on it.
+>
+> It said 64 networks. The README said 72 networks, 86 adapters. Both had been sitting there for weeks.
+>
+> Counted the directories today. 86 adapters across 72 network families. One production, three partial, the rest experimental.
+>
+> Nobody had pulled me up on it. That's the thing about a number on a marketing page. It doesn't get checked, it gets repeated.
+
+**First comment:** `The full per-network list: https://agenticaffiliate.ai/go/wrong-number`
 
 ---
 
