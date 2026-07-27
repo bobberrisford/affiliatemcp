@@ -164,9 +164,22 @@ The constraints we accept:
   counting page views. The security page states this rather than asserting
   compliance.
 
-Five funnel marks are defined: `hosted.html` view, sign-in form submit,
-`/connect` arrival, connection-test pass, first tool call. The last three are
-server-side.
+**Attribution uses distinct paths, not query strings.** Cloudflare Web
+Analytics deliberately does not log query strings, to avoid collecting
+sensitive data that people put in URLs. That is the right default and we are
+not working around it — but it means a `?utm_content=` scheme would produce no
+per-post attribution at all. Instead each campaign post links to its own
+static path under `/go/<slug>`, which redirects to the real page. Cloudflare
+reports paths, so the distinct path *is* the attribution, and no tracking
+parameter is ever attached to a visitor's URL.
+
+These pages are `noindex` with a canonical link to their destination, so they
+cannot fragment search results.
+
+Five funnel marks are defined: `hosted.html` view (client, via the path),
+sign-in form submit, `/connect` arrival, connection-test pass, and first tool
+call. The last four are server-side, from logs the hosted worker already
+writes.
 
 ### 4. Sequencing
 
@@ -214,8 +227,9 @@ misdescribes the product is the wrong order.
 
 1. Rewrite `site/security.html`, `site/privacy.html`, `site/faq.html` to the
    two-tier framing. Fix the "not a public product yet" line in `PRIVACY.md`.
-2. Add the Cloudflare Web Analytics beacon to `site/` only, plus the five
-   funnel marks. Never to `hosted/src/page-chrome.ts`.
+2. Add the Cloudflare Web Analytics beacon to `site/` only, plus the `/go/`
+   redirect pages for campaign attribution. Never to
+   `hosted/src/page-chrome.ts`.
 3. Close PR #411 and PR #412, referencing this record.
 4. **Rob, legal:** decide whether a DPA is offered to hosted customers, and
    whether to pursue any certification. Until then the page says neither
