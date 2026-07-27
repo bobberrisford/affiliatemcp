@@ -1,7 +1,9 @@
 # Hosted trust surface and web analytics
 
 - **Date:** 2026-07-27
-- **Status:** Proposed (awaiting Rob)
+- **Status:** Accepted (2026-07-27) by Rob, the maintainer and decision owner, who
+  merged it deliberately ahead of its implementation in #415 and #420, both of
+  which are now live on agenticaffiliate.ai.
 - **Affects:** `site/security.html`, `site/privacy.html`, `site/faq.html`,
   `PRIVACY.md` (the "pre-launch" framing), and every page in `site/`
 - **Builds on:** [`2026-07-12-hosted-credential-custody.md`](./2026-07-12-hosted-credential-custody.md)
