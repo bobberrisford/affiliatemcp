@@ -288,5 +288,6 @@ code{font-family:var(--font-mono);font-size:.92em;background:var(--ink);color:va
   document.getElementById("cmds").addEventListener("click",function(e){var btn=e.target.closest(".copy");if(!btn)return;var t=btn.parentElement.querySelector(".cmd-text").textContent;try{navigator.clipboard.writeText(t);}catch(err){}btn.textContent="copied ✓";setTimeout(function(){btn.textContent="copy";},1200);});
   renderCmds("desktop");
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"__CF_BEACON_TOKEN__"}'></script>
 </body>
 </html>
