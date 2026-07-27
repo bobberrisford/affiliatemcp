@@ -24,20 +24,27 @@ Two findings drive blitz #2:
 2. **Frequency burned reach.** At 3–4 posts a day, profile impressions roughly
    halved across the week. This run is 1–2 a day.
 
-And one about content: **founder voice and candour beat feature posts about
-2:1.** The five best performers were all first-person, and three of them were
+And one about content, which is also why this run is written the way it is:
+**founder voice and candour beat feature posts about 2:1.** The five best performers were all first-person, and three of them were
 about a problem rather than a capability. The run below is ordered accordingly —
 the honest posts lead, the feature posts follow.
 
 ## Rules for this run
 
-- Line 1 does all the work. LinkedIn truncates after roughly two lines.
+- **Value, not features.** Every post names the work the reader stops doing,
+  not the mechanism that does it. Encryption, OAuth, vaults and network counts
+  appear only where they answer an objection, never as the subject. If a post
+  could be summarised as "here is a thing we built", it is rewritten.
+- Line 1 is an outcome or a story, never a spec. It also does all the work —
+  LinkedIn truncates after roughly two lines.
 - Links go in the **first comment**, never the post body.
 - UK English. No emoji. Sentence case. No "Thoughts?" at the end.
 - One real number per post. Anything illustrative is labelled a demo **in the
   post body**, not just in the alt text.
 - Networks are partners. Nothing here punches at Awin, CJ, Impact or Rakuten.
 - Name the drudgery, not the dashboard.
+- Hosted is the call to action in every post. Local is mentioned where honesty
+  requires it, and never as the thing being sold.
 
 ## UTM convention
 
@@ -58,9 +65,9 @@ https://agenticaffiliate.ai/hosted.html?utm_source=linkedin&utm_medium=social&ut
 >
 > It does not cover the agency account manager with eight brands who is not allowed to install anything. It does not cover the publisher whose Monday report needs to exist before they have opened the laptop. Those are the people the drudgery costs the most, and local-first was quietly telling them to go away.
 >
-> So there is a hosted tier now. You connect a network in an encrypted dashboard, and the reports run whether your machine is on or not. Your keys sit in a per-user encrypted vault. Claude never receives them — it gets a scoped session, and that is all it gets.
+> So there is a hosted tier now. You ask what you earned, what you are owed, or what moved this week, and it answers from your own live data — with nothing installed, and whether or not your machine happens to be on.
 >
-> I am not going to pretend the trade-off disappeared. Choosing hosted means I hold your keys. The security page now says exactly what that means, including the parts that lose me deals.
+> I am not going to pretend the trade-off disappeared. Doing that for you means I hold your keys. The security page now says exactly what that means, including the parts that lose me deals.
 >
 > Three reports a week, free, no card.
 >
@@ -77,7 +84,7 @@ https://agenticaffiliate.ai/hosted.html?utm_source=linkedin&utm_medium=social&ut
 >
 > It is the page an agency reads before they trust you with anything. It said, in as many words: no hosted service, no account, the vendor never receives your credentials. Meanwhile the hosted tier was live and holding network API keys in a vault.
 >
-> Nobody complained. That is the part worth sitting with — the people it would have mattered most to were the ones who read it, believed it, and quietly moved on.
+> No one raised it with me, which is the part worth sitting with. A page like that does not generate complaints. The people it matters most to read it, believe it, and quietly go elsewhere.
 >
 > It is rewritten. Every answer is now given twice, once for local and once for hosted, and the hosted column includes the things I would rather not print: the vault master key is a Worker secret rather than a KMS. There is no SOC 2. There is no ISO 27001. There is no DPA on offer. Self-serve export is not built yet.
 >
@@ -89,31 +96,29 @@ https://agenticaffiliate.ai/hosted.html?utm_source=linkedin&utm_medium=social&ut
 
 ---
 
-## 3 · Thu 30 Jul, 16:30 — your keys never reach the model
-`utm_content=keys-never-reach-claude`
+## 3 · Thu 30 Jul, 16:30 — answered before the call ended
+`utm_content=answered-in-the-thread`
 
-> The most common question about hosted affiliate tooling is the right one: does the AI get my API keys?
+> A client asks how their programme is doing. Right now that question costs you the rest of the afternoon.
 >
-> No. And it is worth explaining how, because "we take security seriously" is not an answer.
+> Log into the network, set the date range, export, open the export, remember that this one reports reversals differently, build the comparison against last quarter, spot a number that looks wrong, go back and check it, write the summary, send it. By which point they have half-forgotten they asked.
 >
-> Your network keys go into an encrypted dashboard. Each account gets its own AES-256-GCM data key. Credentials are decrypted in memory, at the moment a call runs, and never written back anywhere in plaintext.
+> Point the question at Claude instead and it comes back with the revenue, the trend against the previous window, which partners moved it, and a first draft of what you would actually say to them. From live data. No export step, because there is no export step.
 >
-> When you add the connector in Claude, Claude does an OAuth handshake and receives a short-lived, scoped session token. Not a key. Not a copy of a key. A token that lets it ask this service for your data, which the service then fetches using credentials Claude cannot see.
+> The part I did not expect is that it changes which questions get asked at all. When an answer costs forty minutes you only ask the ones you have to. When it costs twenty seconds you start asking the ones you were merely curious about, and that is where the useful stuff turns out to be.
 >
-> There is no token to paste anywhere either, in either direction. Pasting secrets between browser tabs is how they end up in chat logs.
->
-> You can revoke the network key from that network's own dashboard at any time, which cuts access regardless of anything on my side. That is the part I would want if I were you.
+> Free tier is three of those sessions a week, no card. That is enough to find out whether your Monday looks different.
 
-**First comment:** `How the flow actually works, with a diagram: <security.html?…keys-never-reach-claude>`
+**First comment:** `Ask your own data: <hosted.html?…answered-in-the-thread>`
 
 ---
 
 ## 4 · Fri 31 Jul, 08:00 — no card, no call
 `utm_content=three-reports-no-card`
 
-> Three reports a week. No card. No demo call. No "book a slot with our team".
+> I have never once come away from a software demo call thinking that was a good use of my afternoon.
 >
-> The free tier on hosted exists because I think you should watch your own data come back before you pay anyone anything. Not a sandbox. Not sample numbers. Your Awin account, your commissions, in Claude, in about five minutes.
+> So there isn't one. Three reports a week, free, no card, no "book a slot with our team". The free tier exists because you should watch your own data come back before you pay anyone anything. Not a sandbox. Not sample numbers. Your Awin account, your commissions, in Claude, in about five minutes.
 >
 > A report is one 30-minute working session, not one question. Open a window, ask as much as you like inside it. Three of those a week, on a rolling seven days.
 >
@@ -127,12 +132,12 @@ https://agenticaffiliate.ai/hosted.html?utm_source=linkedin&utm_medium=social&ut
 
 ---
 
-## 5 · Mon 3 Aug, 08:00 — four networks, and the line
-`utm_content=four-networks`
+## 5 · Mon 3 Aug, 08:00 — the networks I turned down
+`utm_content=networks-i-turned-down`
 
-> Hosted supports four networks. The local server supports dozens. That gap is deliberate and it is going to annoy people.
+> I turned down more networks than I turned on, and it is going to annoy people.
 >
-> Awin, CJ Affiliate, Impact, and Rakuten Advertising are the four I will hold keys for. They are the ones whose terms I have actually checked and whose adapters are mature enough to run unattended, on a schedule, without me watching.
+> Hosted supports four. The local server supports dozens. Awin, CJ Affiliate, Impact, and Rakuten Advertising are the four I will hold keys for. They are the ones whose terms I have actually checked and whose adapters are mature enough to run unattended, on a schedule, without me watching.
 >
 > Everything else stays local-only. Not because those networks are worse — several have perfectly good APIs — but because "I built an adapter" and "I will take custody of your credentials for this" are different sentences, and I am not going to blur them to make a pricing page look better.
 >
@@ -140,7 +145,7 @@ https://agenticaffiliate.ai/hosted.html?utm_source=linkedin&utm_medium=social&ut
 >
 > If your network is not on that list, the free local server covers it today, and it always will.
 
-**First comment:** `The four, and what each one supports: <hosted.html?…four-networks>`
+**First comment:** `The four, and why: <hosted.html?…networks-i-turned-down>`
 
 ---
 
@@ -220,3 +225,17 @@ Carried over from blitz #1's own "confirm before posting" list, and still
 unverified: the "three hours every Monday" figure, "a beta user told me I built
 it backwards", the "first wave of operators this month" scarcity line, and the
 claim that Everflow has shipped MCP. None appear above.
+
+Two more were caught in drafting this run and rewritten rather than shipped:
+
+- Post 3 was first written as "a client asked me and I answered on the call".
+  There is no such client and no such call. It is now a second-person scenario,
+  which makes the same point without inventing a customer.
+- Post 2 said "nobody complained". Not knowable — an absence of complaints is
+  not evidence of anything. Reworded to say what is actually true: a page like
+  that does not generate complaints, it generates quiet departures.
+
+The only first-person claims left are ones Rob can stand behind: that he built
+the project local-first and then added hosted custody (documented in
+`docs/decisions/2026-07-12-hosted-credential-custody.md`), that hosted supports
+four networks out of 86 adapters, and an opinion about demo calls.
