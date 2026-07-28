@@ -102,6 +102,12 @@ connector at `https://mcp.agenticaffiliate.ai/mcp` over streamable HTTP.
 The listing name is `ai.agenticaffiliate/affiliate-networks-mcp`, a
 DNS-verified namespace, so the first publish needs the domain proved once:
 
+- [ ] **Publish a release to npm that carries `mcpName` first.** The registry
+      validates the listing by reading `mcpName` from the **published** package,
+      not from this working tree, so the first `mcp-publisher publish` fails until
+      a version containing it is live. Check with
+      `npm view affiliate-networks-mcp mcpName`: empty means publish the npm
+      release before going further. `0.18.0` predates the field.
 - [ ] Install the publisher CLI (`mcp-publisher`; Homebrew, curl, or PowerShell
       per the registry docs).
 - [ ] Add the DNS TXT record the registry asks for on `agenticaffiliate.ai`, then
