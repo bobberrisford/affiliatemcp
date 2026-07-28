@@ -1,0 +1,93 @@
+name: Listing drift
+
+# Published listings rot silently. A registry entry left on an old version, or
+# a download link that has started 404ing, looks fine from the inside: nothing
+# fails, nobody is told, and the first report comes from a user who could not
+# install. This job checks the external surfaces weekly and opens an issue when
+# one of them disagrees with what we actually shipped.
+
+on:
+  schedule:
+    - cron: '0 9 * * 1' # Mondays, 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compare published surfaces against npm
+        id: check
+        run: |
+          set -uo pipefail
+          NPM="$(npm view affiliate-networks-mcp version)"
+          echo "npm latest: $NPM"
+
+          # stderr is silenced on all three probes: a 404 from the registry and
+          # a 401 from the hosted connector are both expected states here, and
+          # curl's error lines would read as failures in the job log.
+          REG="$(curl -fsS "https://registry.modelcontextprotocol.io/v0.1/servers/ai.agenticaffiliate%2Faffiliate-networks-mcp/versions/latest" 2>/dev/null \
+                 | jq -r .server.version 2>/dev/null || echo 'unpublished')"
+          MCPB="$(curl -fsS -o /dev/null -w '%{http_code}' -L \
+                 "https://github.com/bobberrisford/affiliatemcp/releases/latest/download/affiliate-networks-mcp.mcpb" 2>/dev/null || true)"
+          HOSTED="$(curl -fsS -o /dev/null -w '%{http_code}' \
+                 "https://mcp.agenticaffiliate.ai/mcp" 2>/dev/null || true)"
+
+          echo "registry=$REG mcpb_http=$MCPB hosted_http=$HOSTED"
+
+          FAIL=""
+
+          # The registry is only wrong if it is behind. "unpublished" is the
+          # expected state until the first manual publish, so report it as
+          # information rather than drift.
+          if [ "$REG" = "unpublished" ]; then
+            echo "registry listing not published yet; skipping that check"
+          elif [ "$REG" != "$NPM" ]; then
+            FAIL="${FAIL}- MCP Registry serves \`$REG\`, npm is \`$NPM\`. The release skipped or failed the registry step.\n"
+          fi
+
+          # The marketing site links to releases/latest/download/...mcpb. The
+          # desktop app publishes desktop-v* releases into this same repo, and
+          # whichever release is newest owns GitHub's "Latest" pointer, so a
+          # desktop release can silently steal it and 404 this link.
+          if [ "$MCPB" != "200" ]; then
+            FAIL="${FAIL}- \`releases/latest/download/affiliate-networks-mcp.mcpb\` returned \`$MCPB\`, expected 200. A \`desktop-v*\` release has probably taken the Latest pointer.\n"
+          fi
+
+          # A bare GET on the hosted connector must be refused with the
+          # RFC 9728 challenge. Anything else means auth is misconfigured, and
+          # the Anthropic directory listing depends on this shape.
+          if [ "$HOSTED" != "401" ]; then
+            FAIL="${FAIL}- Hosted \`/mcp\` returned \`$HOSTED\`, expected 401 with a \`WWW-Authenticate\` challenge.\n"
+          fi
+
+          if [ -n "$FAIL" ]; then
+            {
+              echo "The weekly listing check found at least one published surface out of step with the shipped release."
+              echo
+              printf '%b' "$FAIL"
+              echo
+              echo "Runbook: \`RELEASING.md\` (MCP Registry) and \`docs/product/distribution-listings-plan.md\`."
+            } > body.md
+            echo "drift=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "drift=false" >> "$GITHUB_OUTPUT"
+            echo "all surfaces current"
+          fi
+
+      - name: Open an issue when a surface has drifted
+        if: steps.check.outputs.drift == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # One rolling issue rather than one per week, so a surface that stays
+          # broken does not generate a pile of duplicates.
+          EXISTING="$(gh issue list --state open --search 'Listing drift detected in:title' --json number --jq '.[0].number')"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body-file body.md
+          else
+            gh issue create --title "Listing drift detected" --body-file body.md
+          fi
