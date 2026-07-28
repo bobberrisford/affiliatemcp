@@ -3,7 +3,7 @@
   "name": "ai.agenticaffiliate/affiliate-networks-mcp",
   "title": "Affiliate Networks MCP",
   "description": "Affiliate network reporting in your AI client. Bring your own keys. Most adapters experimental.",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "websiteUrl": "https://agenticaffiliate.ai",
   "repository": {
     "url": "https://github.com/bobberrisford/affiliatemcp",
@@ -13,7 +13,7 @@
     {
       "registryType": "npm",
       "identifier": "affiliate-networks-mcp",
-      "version": "0.18.0",
+      "version": "0.19.0",
       "runtimeHint": "npx",
       "transport": {
         "type": "stdio"
