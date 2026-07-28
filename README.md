@@ -250,10 +250,9 @@ VS Code/Copilot installer candidate.
 
 ### Client support states
 
-These labels describe the onboarding journey, not whether every network
-adapter is live-verified. "Tested" below means repository-owned automated
-validation, not live proof against every host version. See
-[`REPORT.md`](./REPORT.md) for adapter maturity.
+These labels describe the onboarding journey, not whether every network adapter
+is live-verified. "Tested" means repository-owned automated validation, not live
+proof against every host version. See [`REPORT.md`](./REPORT.md) for maturity.
 
 | Client or path | Support state | What that means |
 | --- | --- | --- |
@@ -261,10 +260,11 @@ validation, not live proof against every host version. See
 | Claude Desktop CLI/manual config | **Shipped and tested** | Technical local stdio path. Installer/config behaviour has automated coverage. |
 | Claude Code plugin and CLI registration | **Shipped and tested** | Technical path with packaged skills and local MCP registration. |
 | Codex CLI and IDE extension | **Shipped and tested** | Technical path using the shared local Codex MCP configuration. This is not ChatGPT connector support. |
+| Hosted connector (`mcp.agenticaffiliate.ai`) | **Shipped and tested, paid** | Remote MCP over OAuth, for people who cannot run the local server. Any client that can add a custom connector can use it, including Claude. Covers four networks (Awin, CJ, Impact, Rakuten), not every adapter. Read-only; credentials sit in an encrypted vault and browser-driven operations stay local-only. See [`PRIVACY.md`](./PRIVACY.md) and the [security page](https://agenticaffiliate.ai/security.html). |
 | Claude Cowork private mirror | **Partially shipped** | Requires a private mirror and org-admin follow-through; it is not a simple individual setup path. |
 | Cursor, VS Code, and generic local MCP clients | **Possible, not yet a tested first-party journey** | The local stdio server is compatible in principle. Client-specific setup, packaging, and support ownership are tracked in [#207](https://github.com/bobberrisford/affiliatemcp/issues/207). |
 | Portable browser credential setup | **Planned, not shipped** | Intended to make all network credentials available without a terminal. Its security and DMG-retirement decision is tracked in [#206](https://github.com/bobberrisford/affiliatemcp/issues/206). |
-| ChatGPT connector or remote HTTPS MCP | **Planned, not shipped** | ChatGPT cannot use this local stdio server directly. The separate remote architecture decision is tracked in [#208](https://github.com/bobberrisford/affiliatemcp/issues/208). |
+| ChatGPT | **Possible through the hosted connector, not yet a tested first-party journey** | ChatGPT cannot use this local stdio server directly, so it needs the hosted connector above; the free local path is not available to it. No tested ChatGPT setup walkthrough and no connector-directory listing yet. |
 
 **Check it worked.** In a new Claude conversation, ask **"What affiliate
 networks do you have access to?"** — you should see every network you
@@ -528,7 +528,7 @@ If you registered any brand-side networks, the wizard also writes
 brand (e.g. `acme`) to the network's brand id on every network the brand is
 bound to (empty for the publisher-only path).
 
-That local path stays free and complete; a hosted tier is planned, opt-in.
+That local path stays free and complete; an opt-in [hosted tier](https://agenticaffiliate.ai/hosted.html) is live for four networks.
 
 ## Managing brands
 
