@@ -39,6 +39,9 @@ planning. They are useful context, but accepted records under
 - [`agency-account-manager-deliverables.md`](./agency-account-manager-deliverables.md)
   is the active, capability-aware backlog for agency deliverables and skills.
 - [`website-copy.md`](./website-copy.md) is working copy for the website.
+- [`directory-listing-submissions.md`](./directory-listing-submissions.md) is the
+  operational brief for the Claude and ChatGPT connector-directory submissions.
+  Preparation only; the maintainer submits.
 
 ## Historical and implemented plans
 
