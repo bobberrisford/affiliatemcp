@@ -58,6 +58,9 @@ const REDIRECT_URI = 'https://client.example/callback';
 function getReq(path: string): Request {
   return new Request(`${BASE}${path}`);
 }
+function getReqCookie(path: string, cookie: string): Request {
+  return new Request(`${BASE}${path}`, { headers: { cookie } });
+}
 function jsonPost(path: string, body: unknown): Request {
   return new Request(`${BASE}${path}`, {
     method: 'POST',
@@ -99,6 +102,27 @@ function authorizeUrl(params: Record<string, string>): string {
   return `/authorize?${new URLSearchParams(params).toString()}`;
 }
 
+/**
+ * Follow the magic-link callback into the token-free consent page and return
+ * the consent-form identity token. Asserts the hardened handoff: the callback
+ * no longer renders consent at its own `?token=` URL — it 303-redirects to
+ * `/authorize/consent` with NO token in the location, handing the browser an
+ * opaque `hosted_consent` cookie that the consent page reads to re-derive the
+ * request and user.
+ */
+async function consentTokenFromCallback(env: Env, linkToken: string): Promise<string> {
+  const cbRes = await worker.fetch(getReq(`/auth/callback?token=${linkToken}`), env);
+  expect(cbRes.status).toBe(303);
+  expect(cbRes.headers.get('location')).toBe('/authorize/consent');
+  const setCookie = cbRes.headers.get('set-cookie') as string;
+  const handoff = (setCookie.match(/hosted_consent=([^;]+)/) as RegExpMatchArray)[1] as string;
+
+  const pageRes = await worker.fetch(getReqCookie('/authorize/consent', `hosted_consent=${handoff}`), env);
+  expect(pageRes.status).toBe(200);
+  const html = await pageRes.text();
+  return (html.match(/name="token" value="([^"]+)"/) as RegExpMatchArray)[1] as string;
+}
+
 /** Drive register → authorize → email → callback → consent(approve) → code.
  * Returns the authorization code and the PKCE verifier for the token step. */
 async function runToAuthCode(
@@ -132,10 +156,7 @@ async function runToAuthCode(
   const linkToken = (JSON.parse(init.body as string).text as string).match(/token=([^\s]+)/)?.[1] as string;
   fetchSpy.mockRestore();
 
-  const cbRes = await worker.fetch(getReq(`/auth/callback?token=${linkToken}`), env);
-  expect(cbRes.status).toBe(200);
-  const consentHtml = await cbRes.text();
-  const consentToken = (consentHtml.match(/name="token" value="([^"]+)"/) as RegExpMatchArray)[1] as string;
+  const consentToken = await consentTokenFromCallback(env, linkToken);
 
   const consentRes = await worker.fetch(
     formPost('/authorize/consent', { auth_req: reqId, token: consentToken, decision: 'approve' }),
@@ -369,8 +390,7 @@ describe('authorization-code happy path', () => {
     await worker.fetch(formPost('/authorize/email', { auth_req: reqId, email: 'u@example.com' }), env);
     const [, init] = spy.mock.calls[spy.mock.calls.length - 1] as [string, RequestInit];
     const linkToken = (JSON.parse(init.body as string).text as string).match(/token=([^\s]+)/)?.[1] as string;
-    const cb = await worker.fetch(getReq(`/auth/callback?token=${linkToken}`), env);
-    const consentToken = ((await cb.text()).match(/name="token" value="([^"]+)"/) as RegExpMatchArray)[1] as string;
+    const consentToken = await consentTokenFromCallback(env, linkToken);
     const consentRes = await worker.fetch(
       formPost('/authorize/consent', { auth_req: reqId, token: consentToken, decision: 'approve' }),
       env,
@@ -508,8 +528,7 @@ describe('consent', () => {
     await worker.fetch(formPost('/authorize/email', { auth_req: reqId, email: 'u@example.com' }), env);
     const [, init] = spy.mock.calls[spy.mock.calls.length - 1] as [string, RequestInit];
     const linkToken = (JSON.parse(init.body as string).text as string).match(/token=([^\s]+)/)?.[1] as string;
-    const cb = await worker.fetch(getReq(`/auth/callback?token=${linkToken}`), env);
-    const consentToken = ((await cb.text()).match(/name="token" value="([^"]+)"/) as RegExpMatchArray)[1] as string;
+    const consentToken = await consentTokenFromCallback(env, linkToken);
 
     const denyRes = await worker.fetch(
       formPost('/authorize/consent', { auth_req: reqId, token: consentToken, decision: 'deny' }),
@@ -536,5 +555,81 @@ describe('consent', () => {
     );
     expect(res.status).toBe(400);
     expect(res.headers.get('location')).toBeNull();
+  });
+});
+
+// ── Token-free consent handoff (callback → /authorize/consent) ────────────────
+
+describe('token-free consent handoff', () => {
+  /** Drive register → authorize → email, returning the emailed magic-link token
+   * ready for the callback. */
+  async function driveToLinkToken(env: Env): Promise<string> {
+    const clientId = await registerClient(env);
+    const { challenge } = await pkcePair();
+    const authRes = await worker.fetch(
+      getReq(authorizeUrl({ response_type: 'code', client_id: clientId, redirect_uri: REDIRECT_URI, code_challenge: challenge, code_challenge_method: 'S256' })),
+      env,
+    );
+    const reqId = ((await authRes.text()).match(/name="auth_req" value="([^"]+)"/) as RegExpMatchArray)[1] as string;
+    const spy = mockResend();
+    await worker.fetch(formPost('/authorize/email', { auth_req: reqId, email: 'u@example.com' }), env);
+    const [, init] = spy.mock.calls[spy.mock.calls.length - 1] as [string, RequestInit];
+    const linkToken = (JSON.parse(init.body as string).text as string).match(/token=([^\s]+)/)?.[1] as string;
+    spy.mockRestore();
+    return linkToken;
+  }
+
+  it('303-redirects the callback to a token-free /authorize/consent with an HttpOnly, scoped cookie', async () => {
+    const env = await makeEnv();
+    const linkToken = await driveToLinkToken(env);
+
+    const cbRes = await worker.fetch(getReq(`/auth/callback?token=${linkToken}`), env);
+    expect(cbRes.status).toBe(303);
+    const location = cbRes.headers.get('location') as string;
+    expect(location).toBe('/authorize/consent');
+    // The whole point: neither the magic-link token nor any token rides in the URL.
+    expect(location).not.toContain(linkToken);
+    expect(location).not.toContain('token');
+    // The consent HTML is NOT served at the token-bearing callback URL.
+    expect(await cbRes.text()).toBe('');
+
+    const setCookie = cbRes.headers.get('set-cookie') as string;
+    expect(setCookie).toMatch(/^hosted_consent=[^;]+;/);
+    expect(setCookie).toContain('HttpOnly');
+    expect(setCookie).toContain('Secure');
+    expect(setCookie).toContain('SameSite=Lax');
+    // Scoped to the consent path only, so it is never sent to any other route.
+    expect(setCookie).toContain('Path=/authorize/consent');
+  });
+
+  it('renders consent from the handoff cookie, clears it, and is single-use', async () => {
+    const env = await makeEnv();
+    const linkToken = await driveToLinkToken(env);
+    const cbRes = await worker.fetch(getReq(`/auth/callback?token=${linkToken}`), env);
+    const handoff = ((cbRes.headers.get('set-cookie') as string).match(/hosted_consent=([^;]+)/) as RegExpMatchArray)[1] as string;
+
+    const first = await worker.fetch(getReqCookie('/authorize/consent', `hosted_consent=${handoff}`), env);
+    expect(first.status).toBe(200);
+    const html = await first.text();
+    expect(html).toContain('approve connection');
+    expect(html).toMatch(/name="token" value="amcps_[^"]+"/);
+    expect(html).toContain('Test MCP Client');
+    // The consumed handoff cookie is cleared on the render.
+    expect(first.headers.get('set-cookie')).toContain('hosted_consent=;');
+
+    // Single-use: the same cookie will not render a second consent page, and
+    // the spent-handoff error path clears the dead cookie too.
+    const second = await worker.fetch(getReqCookie('/authorize/consent', `hosted_consent=${handoff}`), env);
+    expect(second.status).toBe(400);
+    expect(await second.text()).not.toContain('name="token"');
+    expect(second.headers.get('set-cookie')).toContain('hosted_consent=;');
+  });
+
+  it('serves an error page (not consent) when the handoff cookie is absent', async () => {
+    const env = await makeEnv();
+    const res = await worker.fetch(getReq('/authorize/consent'), env);
+    expect(res.status).toBe(400);
+    expect(res.headers.get('content-type')).toContain('text/html');
+    expect(await res.text()).not.toContain('name="token"');
   });
 });

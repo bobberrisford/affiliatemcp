@@ -74,6 +74,25 @@ export interface HostedTransportConfig {
    * rather than a 404. Optional so callers that construct this config directly
    * (tests) are not forced to set it. */
   resourceUrl?: string;
+  /**
+   * MCP 2026-07-28 stateless transport path
+   * (`docs/decisions/2026-07-29-mcp-2026-07-28-early-adoption.md`).
+   *
+   * UNSET/false (the default): the stateless routing rule in `http-server.ts`
+   * is inert and every request takes the legacy sessionful Streamable HTTP
+   * path exactly as before — dormant-code deploys are safe. Set
+   * `HOSTED_STATELESS_2026=1` to serve stateless 2026-07-28 requests
+   * (identified by an `Mcp-Method` header or an `MCP-Protocol-Version:
+   * 2026-07-28` header) beside the legacy path. Rollback is unsetting it. */
+  statelessEnabled?: boolean;
+  /**
+   * Conformance fixture surface (`HOSTED_CONFORMANCE_FIXTURES=1`). Harness-only:
+   * merges the official conformance suite's diagnostic fixture tools and
+   * prompts (`conformance-fixtures.ts`) into the stateless surface so
+   * `npm run conformance:hosted` can exercise protocol behaviour. NEVER set in
+   * production config; the fixtures carry no credentials and no adapter access,
+   * but they are test probes, not product surface. */
+  conformanceFixtures?: boolean;
 }
 
 function readUrl(name: string): string {
@@ -167,5 +186,20 @@ export function loadHostedTransportConfig(): HostedTransportConfig {
     // metadata); set it to the transport's own public origin to advertise the
     // auth server for client OAuth discovery (slice 2b).
     resourceUrl: readOptionalOrigin('HOSTED_TRANSPORT_PUBLIC_URL'),
+    // Unset = legacy-only (dormant stateless code); `HOSTED_STATELESS_2026=1`
+    // serves the MCP 2026-07-28 stateless path beside the legacy one.
+    statelessEnabled: readFlag('HOSTED_STATELESS_2026'),
+    // Harness-only diagnostic fixtures for the conformance suite; never set in
+    // production (see the interface comment).
+    conformanceFixtures: readFlag('HOSTED_CONFORMANCE_FIXTURES'),
   };
+}
+
+/** Read a boolean flag: `1`/`true` (case-insensitive) is on; unset, empty, or
+ * anything else is off. Off is always the safe/legacy behaviour. */
+function readFlag(name: string): boolean {
+  const raw = process.env[name];
+  if (!raw) return false;
+  const v = raw.trim().toLowerCase();
+  return v === '1' || v === 'true';
 }

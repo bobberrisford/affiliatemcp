@@ -49,10 +49,15 @@ The custody contract:
    the connect flow instructs the user to create one; the hosted tier is
    read-only in scope regardless.
 4. **What the keys are used for.** Serving that user's own requests and their
-   own scheduled jobs. Never aggregation across tenants, never analytics,
-   never any purpose beyond serving the key's owner. This extends the
-   `PRIVACY.md` posture: hosted custody changes where keys live, not what the
-   project is allowed to do with data.
+   own scheduled jobs. No analytics and no purpose beyond serving the key's
+   owner, with **one bounded exception**: opt-in, aggregate-only, k-anonymous
+   programme benchmarks, defined in and governed by
+   [`2026-07-19-hosted-benchmark-aggregates.md`](./2026-07-19-hosted-benchmark-aggregates.md),
+   which supersedes this clause's original absolute "never aggregation across
+   tenants". That exception is off by default and revocable, exposes no single
+   tenant's data, and is the only cross-tenant use permitted. Otherwise this
+   extends the `PRIVACY.md` posture: hosted custody changes where keys live, not
+   what the project is allowed to do with data.
 5. **User control.** Self-serve export of everything and hard delete of the
    account, credentials included, at any time. Deletion is complete, not a
    soft flag.

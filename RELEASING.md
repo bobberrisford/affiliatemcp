@@ -29,7 +29,7 @@ plugin path.
       will have failed already if not.
 - [ ] Regenerate derived docs if network data changed:
       `npm run generate:readme` and `npm run generate:report`.
-- [ ] Bump the server release version in **all five** touch-points. A release
+- [ ] Bump the server release version in **all seven** touch-points. A release
       needs every one of these; missing any will fail CI:
   - [ ] `package.json` (npm + `.mcpb` source of truth).
   - [ ] `.claude-plugin/plugin.json` (must equal `package.json`).
@@ -39,6 +39,10 @@ plugin path.
         fields.
   - [ ] `src/shared/telemetry.ts` `PACKAGE_VERSION`. `tests/shared/telemetry.test.ts`
         pins this to `package.json`, so a stale value fails CI.
+  - [ ] `server.json` top-level `version` (MCP Registry listing).
+  - [ ] `server.json` `packages[0].version`. The registry validates the listing
+        against the live npm package, and both fields describe that same release,
+        so `tests/shared/telemetry.test.ts` pins both.
 - [ ] Confirm `desktop/package.json` is left alone. It is **not** bumped for a
       server release; the desktop app ships on its own `desktop-v*` version
       stream.
@@ -69,6 +73,11 @@ of the user release.
 - [ ] Tag and push the release so the plugin marketplace source is current.
 - [ ] Confirm the publish workflow attached
       `affiliate-networks-mcp-<version>.mcpb` to the GitHub release.
+- [ ] `mcp-publisher publish` (the MCP Registry listing), **after** `npm publish`
+      has succeeded. The registry verifies the version against the live npm
+      package, so publishing the listing first fails. Skipping this step does not
+      break the release; it leaves the registry advertising the previous version.
+      First release only: do the one-time setup below.
 
 ## After publishing: refresh Cowork mirrors
 
@@ -83,3 +92,39 @@ else's mirror, so this has to be communicated on every release:
 
 This is the most common "worked once, then went stale" failure for Cowork, so
 keep the reminder in every release, not just major ones.
+
+## MCP Registry: one-time setup
+
+`server.json` at the repository root is the MCP Registry listing. It advertises
+both delivery paths: the free local npm package over stdio, and the hosted
+connector at `https://mcp.agenticaffiliate.ai/mcp` over streamable HTTP.
+
+The listing name is `ai.agenticaffiliate/affiliate-networks-mcp`, a
+DNS-verified namespace, so the first publish needs the domain proved once:
+
+- [ ] **Publish a release to npm that carries `mcpName` first.** The registry
+      validates the listing by reading `mcpName` from the **published** package,
+      not from this working tree, so the first `mcp-publisher publish` fails until
+      a version containing it is live. Check with
+      `npm view affiliate-networks-mcp mcpName`: empty means publish the npm
+      release before going further. `0.18.0` predates the field.
+- [ ] Install the publisher CLI (`mcp-publisher`; Homebrew, curl, or PowerShell
+      per the registry docs).
+- [ ] Add the DNS TXT record the registry asks for on `agenticaffiliate.ai`, then
+      `mcp-publisher login dns --domain agenticaffiliate.ai`.
+- [ ] `mcp-publisher publish` from the repository root.
+
+Two constraints worth knowing before editing `server.json`:
+
+- `description` is capped at **100 characters** by the schema, so it cannot
+  restate the README. Keep it honest about maturity: most adapters carry
+  `claim_status: experimental`, so check `REPORT.md` before implying breadth of
+  support.
+- `name` must equal `mcpName` in `package.json`. That pair is how the registry
+  proves ownership, and `tests/shared/telemetry.test.ts` pins it.
+
+To move to a GitHub-verified namespace instead, change both `server.json`'s
+`name` and `package.json`'s `mcpName` to
+`io.github.bobberrisford/affiliate-networks-mcp` and use
+`mcp-publisher login github`. Renaming after the first publish creates a second
+listing rather than moving the first, so decide before publishing.

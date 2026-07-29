@@ -1,6 +1,7 @@
 {
   "name": "affiliate-networks-mcp",
-  "version": "0.18.0",
+  "mcpName": "ai.agenticaffiliate/affiliate-networks-mcp",
+  "version": "0.20.0",
   "description": "Bring affiliate-network data to Claude or Codex through a local stdio MCP server. 80+ publisher and advertiser-side adapters, most experimental. Local-only, bring your own keys.",
   "license": "MIT",
   "repository": {
@@ -46,6 +47,7 @@
     "hosted:capture-token": "tsx scripts/hosted-capture-token.ts",
     "test:live": "echo \"test:live placeholder — implemented in a later chunk\" && exit 0",
     "smoke:mcp": "node scripts/smoke-mcp.mjs",
+    "conformance:hosted": "tsx scripts/conformance-hosted.ts",
     "verify:mcpb": "npm run build:mcpb && node scripts/smoke-mcp.mjs --entry .artifacts/mcpb/server/index.cjs --server-only",
     "scaffold:network": "tsx scripts/scaffold-network.ts",
     "validate:network": "tsx scripts/validate-network-json.ts",
@@ -55,12 +57,13 @@
     "generate:api-index": "tsx scripts/generate-api-index.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "pino": "^9.5.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@anthropic-ai/mcpb": "^2.1.2",
+    "@modelcontextprotocol/conformance": "0.2.0-alpha.10",
     "@types/node": "^20.14.10",
     "@typescript-eslint/eslint-plugin": "^7.16.0",
     "@typescript-eslint/parser": "^7.16.0",

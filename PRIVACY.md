@@ -123,7 +123,7 @@ everything, run `npx affiliate-networks-mcp uninstall` (or
 `claude plugin uninstall affiliate-networks-mcp`), then delete the
 `~/.affiliate-mcp/` directory.
 
-## Hosted tier (pre-launch, opt-in)
+## Hosted tier (live, opt-in)
 
 > Appended alongside workstream slice H3 (`docs/product/hosted-mvp-workstream.md`),
 > per the follow-up recorded in
@@ -133,9 +133,19 @@ everything, run `npx affiliate-networks-mcp uninstall` (or
 > opt into the separate hosted tier described here. Local stays free and
 > complete either way.
 
-The hosted tier is not a public product yet. This section is written now, in
-the same change set as the credential vault it describes, so the policy is
-accurate before the first paying hosted customer rather than after.
+The hosted tier is live and open for sign-up at
+[agenticaffiliate.ai/hosted.html](https://agenticaffiliate.ai/hosted.html). This
+section was written ahead of launch, in the same change set as the credential
+vault it describes, so the policy was accurate before the first hosted customer
+rather than after.
+
+Two current limits are stated here rather than left to be discovered:
+self-serve export is not built yet, so a copy of your stored data has to be
+requested; and because session tokens are stateless, a token already issued
+stays valid until it expires rather than being revoked on the spot. For the
+hosted tier we act as a processor of the data you store with us; there is no
+SOC 2 or ISO 27001 certification and no data processing agreement on offer at
+present.
 
 **What is stored.** Per-user affiliate network API credentials and OAuth
 tokens, plus per-tenant brand and client-strategy context. For paying
@@ -161,9 +171,9 @@ environment. Credentials are decrypted only at call time, in memory, to
 serve the request that needs them; plaintext is never written to storage.
 
 **Who can access it.** A stored credential serves only that user's own
-requests and their own scheduled jobs. It is never used for aggregation
-across users, never for analytics, and never for any purpose beyond serving
-its owner.
+requests and their own scheduled jobs. It is never used for analytics, and
+never for any purpose beyond serving its owner, with one bounded exception:
+opt-in programme benchmarks, described under "Aggregation" below.
 
 **Deletion.** Deleting a hosted account deletes its stored data completely:
 the encrypted credential data, the wrapped key protecting it, the account
@@ -174,10 +184,19 @@ soft flag; once it runs, there is nothing left to decrypt and nobody left to
 email. Cancelling the Stripe subscription itself happens on Stripe's side as
 part of the same deletion runbook (`hosted/README.md`).
 
-**No aggregation.** The hosted tier changes where a credential lives, not
-what this project is allowed to do with it: no cross-tenant aggregation, no
-analytics, no purpose beyond serving the key's owner, the same posture as
-every other section of this policy.
+**Aggregation: one opt-in exception.** The hosted tier changes where a
+credential lives, not what this project is allowed to do with it: no
+analytics and no purpose beyond serving the key's owner, the same posture as
+every other section of this policy — with a single, deliberate exception.
+Hosted users may **opt in** (off by default, revocable at any time) to
+programme benchmarks that compare their own figures against a category
+median. These are **aggregate-only and k-anonymous**: a benchmark is computed
+and shown only when enough distinct tenants are in a category, only
+derived metrics are ever aggregated (never raw transactions, publisher or
+brand identities, credentials, or any single-tenant figure), the computation
+runs server-side and stores only the aggregate outputs with no tenant
+linkage, and no individual tenant's data is ever exposed. This is governed by
+[`docs/decisions/2026-07-19-hosted-benchmark-aggregates.md`](docs/decisions/2026-07-19-hosted-benchmark-aggregates.md).
 
 ## Contact
 

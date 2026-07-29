@@ -186,11 +186,38 @@ describe('PACKAGE_VERSION', () => {
     expect(lock.packages['']?.version).toBe(PACKAGE_VERSION);
   });
 
+  it('stays in sync with both server.json version fields so the registry listing cannot drift', async () => {
+    // The MCP Registry validates a listing against the live npm package, so a
+    // server.json version that disagrees with the published package fails the
+    // publish. Both fields describe the same release, so both are pinned.
+    const { PACKAGE_VERSION } = await import('../../src/shared/telemetry.js');
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const server = JSON.parse(
+      readFileSync(path.resolve(here, '..', '..', 'server.json'), 'utf8'),
+    ) as { version: string; packages: { version?: string }[] };
+    expect(server.version).toBe(PACKAGE_VERSION);
+    expect(server.packages[0]?.version).toBe(PACKAGE_VERSION);
+  });
+
+  it('carries an mcpName matching server.json so registry ownership verification passes', async () => {
+    // The registry proves ownership by matching package.json's mcpName against
+    // server.json's name. A mismatch fails the publish, not the build, so it
+    // has to be caught here.
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const pkg = JSON.parse(
+      readFileSync(path.resolve(here, '..', '..', 'package.json'), 'utf8'),
+    ) as { mcpName?: string };
+    const server = JSON.parse(
+      readFileSync(path.resolve(here, '..', '..', 'server.json'), 'utf8'),
+    ) as { name: string };
+    expect(pkg.mcpName).toBe(server.name);
+  });
+
   it('reports the current released version', async () => {
     // Bump this literal each release. It forces a deliberate tests/shared edit
     // (the check:change guardrail under src/shared) and pins the published
     // version the telemetry channel reports.
     const { PACKAGE_VERSION } = await import('../../src/shared/telemetry.js');
-    expect(PACKAGE_VERSION).toBe('0.18.0');
+    expect(PACKAGE_VERSION).toBe('0.20.0');
   });
 });

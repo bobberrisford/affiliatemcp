@@ -10,9 +10,9 @@
  * different user's state.
  */
 
-const VALID_TIERS = new Set(['none', 'solo', 'pro']);
+const VALID_TIERS = new Set(['none', 'free', 'solo', 'pro']);
 
-export type HostedTier = 'none' | 'solo' | 'pro';
+export type HostedTier = 'none' | 'free' | 'solo' | 'pro';
 
 export interface HostedEntitlement {
   tier: HostedTier;

@@ -36,10 +36,10 @@ function fakeKV(): KVNamespace & { store: Map<string, string> } {
 }
 
 describe('resolveEntitlement', () => {
-  it('returns tier "none" for a user who has never subscribed', async () => {
+  it('returns tier "free" for a user who has never subscribed', async () => {
     const kv = fakeKV();
     const entitlement = await resolveEntitlement(kv, 'hosted_usr_never');
-    expect(entitlement).toEqual({ tier: 'none', status: 'none' });
+    expect(entitlement).toEqual({ tier: 'free', status: 'none' });
   });
 
   it('returns the stored tier for an active subscription', async () => {
@@ -52,14 +52,14 @@ describe('resolveEntitlement', () => {
     expect(await resolveEntitlement(kv, 'hosted_usr_a')).toEqual({ tier: 'pro', status: 'active' });
   });
 
-  it('collapses a lapsed (canceled) subscription to tier "none"', async () => {
+  it('collapses a lapsed (canceled) subscription to tier "free"', async () => {
     const kv = fakeKV();
     await putSubscriptionRecord(kv, 'hosted_usr_b', {
       tier: 'solo',
       status: 'canceled',
       updatedAt: 0,
     });
-    expect(await resolveEntitlement(kv, 'hosted_usr_b')).toEqual({ tier: 'none', status: 'canceled' });
+    expect(await resolveEntitlement(kv, 'hosted_usr_b')).toEqual({ tier: 'free', status: 'canceled' });
   });
 
   it('treats "trialing" as an active tier', async () => {
@@ -147,6 +147,11 @@ describe('tierEntitledToDigest', () => {
   it('denies every digest type for tier "none"', () => {
     expect(tierEntitledToDigest('none', 'earnings')).toBe(false);
     expect(tierEntitledToDigest('none', 'unpaid-commissions')).toBe(false);
+  });
+
+  it('denies every digest type for the metered free tier', () => {
+    expect(tierEntitledToDigest('free', 'earnings')).toBe(false);
+    expect(tierEntitledToDigest('free', 'unpaid-commissions')).toBe(false);
   });
 
   it('allows only the earnings digest for solo', () => {

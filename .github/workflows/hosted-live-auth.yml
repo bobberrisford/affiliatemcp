@@ -8,8 +8,10 @@ name: Hosted live authenticated smoke
 # refresh token back to the secret (the auth server rotates refresh tokens on
 # use, so the stored one must be updated each run).
 #
-# Never runs on pull requests, so a fork cannot read the secrets. Single
-# concurrency, no cancellation, so two runs can never race the write-back.
+# Runs daily, on manual dispatch, and automatically after a successful
+# "Deploy hosted Worker" run (post-deploy verification). Never runs on pull
+# requests, so a fork cannot read the secrets. Single concurrency, no
+# cancellation, so two runs can never race the write-back.
 #
 # Required, provisioned manually by the maintainer (never by an agent):
 #   - secret HOSTED_TEST_REFRESH_TOKEN  (rotating; updated by this workflow)
@@ -22,6 +24,11 @@ on:
   schedule:
     - cron: '0 6 * * *' # daily
   workflow_dispatch:
+  # Post-deploy verification: run automatically after a successful hosted
+  # Worker deploy, so every hosted ship is immediately checked end to end.
+  workflow_run:
+    workflows: ['Deploy hosted Worker']
+    types: [completed]
 
 permissions:
   contents: read
@@ -32,7 +39,8 @@ concurrency:
 
 jobs:
   live-auth-smoke:
-    if: ${{ github.repository == 'bobberrisford/affiliatemcp' }}
+    # On a post-deploy run, only proceed if the deploy actually succeeded.
+    if: ${{ github.repository == 'bobberrisford/affiliatemcp' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

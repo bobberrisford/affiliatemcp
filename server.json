@@ -1,0 +1,29 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "ai.agenticaffiliate/affiliate-networks-mcp",
+  "title": "Affiliate Networks MCP",
+  "description": "Affiliate network reporting in your AI client. Bring your own keys. Most adapters experimental.",
+  "version": "0.20.0",
+  "websiteUrl": "https://agenticaffiliate.ai",
+  "repository": {
+    "url": "https://github.com/bobberrisford/affiliatemcp",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "affiliate-networks-mcp",
+      "version": "0.20.0",
+      "runtimeHint": "npx",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.agenticaffiliate.ai/mcp"
+    }
+  ]
+}

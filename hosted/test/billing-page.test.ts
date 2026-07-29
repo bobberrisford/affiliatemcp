@@ -177,18 +177,21 @@ describe('GET|POST /connect/billing: session gating', () => {
     expect(await res.text()).toContain('<h1>billing</h1>');
   });
 
-  it('carries cache-control: no-store and referrer-policy: no-referrer', async () => {
+  it('carries cache-control: no-store and referrer-policy: same-origin', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
     const res = await worker.fetch(authedGet('/connect/billing', token), env);
     expect(res.headers.get('cache-control')).toBe('no-store');
-    expect(res.headers.get('referrer-policy')).toBe('no-referrer');
+    // same-origin (not no-referrer): this page's own subscribe/upgrade POSTs are
+    // same-origin and must keep their Origin header for the CSRF gate. The
+    // Stripe checkout redirect below is the one response that stays no-referrer.
+    expect(res.headers.get('referrer-policy')).toBe('same-origin');
   });
 });
 
 // ── Tier-dependent action buttons ───────────────────────────────────────────
 describe('billing page: tier-dependent actions', () => {
-  it('tier none renders both Subscribe Solo and Subscribe Pro buttons, and no manage button', async () => {
+  it('an unsubscribed (free-tier) user sees both Subscribe buttons, no manage button, and a Free current-plan label', async () => {
     const { env, signingKey } = await makeTestEnv();
     const token = await issueSessionToken(signingKey, generateUserId());
     const res = await worker.fetch(authedGet('/connect/billing', token), env);
@@ -196,7 +199,27 @@ describe('billing page: tier-dependent actions', () => {
     expect(body).toContain('Subscribe Solo');
     expect(body).toContain('Subscribe Pro');
     expect(body).not.toContain('Manage subscription');
-    expect(body).toContain('Current plan: <strong>none</strong>');
+    // Unsubscribed users now resolve to the metered free tier (decision 2026-07-18),
+    // so the current-plan label reads "Free", not "none".
+    expect(body).toContain('Current plan: <strong>Free</strong>');
+    expectNoTokenLeak(body, token);
+  });
+
+  it('shows a Free / Solo / Pro comparison that answers "why upgrade", marking the current plan', async () => {
+    const { env, signingKey } = await makeTestEnv();
+    const token = await issueSessionToken(signingKey, generateUserId());
+    const res = await worker.fetch(authedGet('/connect/billing', token), env);
+    const body = await res.text();
+    // All three plans and their prices are laid out.
+    expect(body).toContain('Free &mdash; &pound;0');
+    expect(body).toContain('Solo &mdash; &pound;34/month');
+    expect(body).toContain('Pro &mdash; &pound;99/month');
+    // The free caller's own plan is marked.
+    expect(body).toContain('Free &mdash; &pound;0 <span class="muted">(your plan)</span>');
+    // The "why upgrade" reasons are concrete, not vague.
+    expect(body).toContain('no weekly report cap');
+    expect(body).toContain('anomaly watch');
+    expect(body).toContain('CSV export');
     expectNoTokenLeak(body, token);
   });
 

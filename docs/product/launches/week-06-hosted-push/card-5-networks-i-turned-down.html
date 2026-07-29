@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>agentic affiliate — the networks I turned down (1:1)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  :root{
+    --ink:#0B0B0C; --paper:#FFFFFF;
+    --blue:#2B2BFF; --blue-bright:#5A78FF; --magenta:#FF2E88;
+    --fg-invert-mut:#9A9DAC;
+    --font-display:'Bricolage Grotesque','Arial Black',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  }
+  html,body{margin:0}
+  body{background:#0a0a0a}
+  .stage{position:fixed;inset:0;display:grid;place-items:center;overflow:hidden}
+  .frame{position:relative;overflow:hidden;transform-origin:center center;flex:none;
+    width:1080px;height:1080px;background:var(--ink);color:var(--paper);
+    padding:80px;display:flex;flex-direction:column;justify-content:space-between}
+  .frame::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:0.5;mix-blend-mode:multiply;
+    background-image:radial-gradient(rgba(11,11,12,0.16) 0.5px,transparent 0.6px);background-size:3px 3px}
+  .dots{position:absolute;inset:0;color:var(--paper);opacity:0.06;
+    background-image:radial-gradient(currentColor 1.4px,transparent 1.6px);background-size:11px 11px}
+
+  .top{display:flex;align-items:center;gap:20px;position:relative}
+  .top svg{width:88px;height:88px;border-radius:12px}
+  .top .wm{font-family:var(--font-display);font-weight:800;font-size:2.6rem;letter-spacing:-0.03em}
+  .top .wm .mcp{background:var(--blue);color:var(--paper);padding:0 11px;border-radius:8px}
+
+  .mid{position:relative}
+  .q{font-family:var(--font-mono);font-size:1.45rem;font-weight:700;color:var(--fg-invert-mut);margin-bottom:10px}
+  .q .you{color:var(--blue-bright)}
+  .numrow{display:flex;align-items:flex-end;gap:28px;flex-wrap:wrap}
+  .num{font-family:var(--font-display);font-weight:800;font-size:190px;line-height:0.82;letter-spacing:-0.04em;margin:0}
+  .tag{font-family:var(--font-mono);font-weight:700;font-size:1.5rem;letter-spacing:0.02em;
+    background:var(--blue);color:var(--paper);padding:10px 16px;border-radius:10px;box-shadow:4px 4px 0 0 var(--magenta);margin-bottom:14px}
+
+  .chips{position:relative;display:flex;flex-wrap:wrap;gap:14px}
+  .chip{font-family:var(--font-mono);font-weight:700;font-size:1.28rem;color:var(--paper);
+    border:2px solid rgba(255,255,255,0.24);padding:12px 18px;border-radius:10px}
+
+  .fine{position:relative;font-family:var(--font-mono);font-size:1.15rem;font-weight:500;color:var(--fg-invert-mut);line-height:1.5}
+
+  .foot{position:relative;display:flex;align-items:center;justify-content:space-between}
+  .kick{font-family:var(--font-display);font-weight:800;font-size:2.1rem;line-height:1.05;letter-spacing:-0.02em;text-transform:lowercase;max-width:760px}
+  .kick .mag{color:var(--magenta)}
+  .stamp{font-family:var(--font-mono);font-weight:700;font-size:1.05rem;letter-spacing:0.02em;color:var(--fg-invert-mut);
+    border:2px solid rgba(255,255,255,0.18);padding:10px 16px;border-radius:10px;white-space:nowrap}
+  .stamp b{color:var(--paper)}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="frame" data-w="1080" data-h="1080">
+    <div class="dots"></div>
+
+    <div class="top">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="agentic affiliate mark">
+        <rect x="0" y="0" width="120" height="120" rx="14" fill="#2B2BFF"></rect>
+        <polyline points="34,38 58,60 34,82" fill="none" stroke="#FFFFFF" stroke-width="13" stroke-linecap="square" stroke-linejoin="miter"></polyline>
+        <rect x="66" y="68" width="24" height="14" fill="#FFFFFF"></rect>
+      </svg>
+      <span class="wm">agentic <span class="mcp">affiliate</span></span>
+    </div>
+
+    <div class="mid">
+      <div class="q"><span class="you">you ▸</span> how many networks does hosted hold the keys for?</div>
+      <div class="numrow">
+        <div class="num">4</div>
+        <div class="tag">networks hosted</div>
+      </div>
+    </div>
+
+    <div class="chips">
+      <span class="chip">Awin</span>
+      <span class="chip">CJ Affiliate</span>
+      <span class="chip">Impact</span>
+      <span class="chip">Rakuten Advertising</span>
+    </div>
+
+    <div class="fine">72 networks, 86 adapters on the free local server.</div>
+
+    <div class="foot">
+      <div class="kick">holding your keys is a <span class="mag">different promise.</span></div>
+      <div class="stamp">made with <b>agenticaffiliate.ai</b></div>
+    </div>
+  </div>
+</div>
+<script>
+  const f=document.querySelector('.frame');
+  function fit(){const s=Math.min(innerWidth/f.dataset.w,innerHeight/f.dataset.h);f.style.transform='scale('+s+')';}
+  addEventListener('resize',fit);fit();
+</script>
+</body>
+</html>

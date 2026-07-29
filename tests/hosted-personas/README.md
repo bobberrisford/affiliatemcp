@@ -56,14 +56,19 @@ Once the tenant is provisioned, a subset runs automatically:
   (`HOSTED_TEST_ACCESS_TOKEN`), connects to the live connector, lists tools, and
   makes an entitled meta call (plus an optional vault-backed read when
   `HOSTED_TEST_NETWORK` is set). Skips without the token.
-- `.github/workflows/hosted-live-auth.yml` — daily / `workflow_dispatch`,
+- `.github/workflows/hosted-live-auth.yml` — daily, `workflow_dispatch`, and
+  **after every successful hosted Worker deploy** (post-deploy verification),
   single-concurrency, never on PRs. Exchanges the seeded refresh token, runs the
   smoke, then writes the **rotated** refresh token back to the secret (the auth
   server rotates refresh tokens on use). A no-op success until the tenant secrets
   are set.
 
-The remaining destructive legs (cancel, hard delete) stay in the maintainer
-runbook; the automated smoke is read-only.
+  [![Hosted live authenticated smoke](https://github.com/bobberrisford/affiliatemcp/actions/workflows/hosted-live-auth.yml/badge.svg)](https://github.com/bobberrisford/affiliatemcp/actions/workflows/hosted-live-auth.yml)
+
+To capture the tenant's `refresh_token` + `client_id` for the secrets, run
+`npm run hosted:capture-token` (see the runbook). The remaining destructive legs
+(cancel, hard delete) stay in the maintainer runbook; the automated smoke is
+read-only.
 
 ## Known gap kept visible
 

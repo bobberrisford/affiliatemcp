@@ -55,6 +55,8 @@ import { HostedAuthUnavailableError, verifySessionRemote } from './session-auth.
 import { runWithHostedCallInfo } from './call-context.js';
 import { buildHostedMcpServer } from './mcp-server.js';
 import { TokenBucketRateLimiter } from './rate-limiter.js';
+import { handleStatelessRequest, isStatelessRequest, type StatelessSurface } from './stateless-handler.js';
+import { buildHostedStatelessSurface } from './stateless-surface.js';
 
 const log = createLogger('hosted-transport');
 
@@ -138,6 +140,14 @@ export async function startHostedHttpServer(config: HostedTransportConfig): Prom
 
   const sessions = new Map<string, McpSessionEntry>();
 
+  // MCP 2026-07-28 stateless path (decision 2026-07-29): built once at
+  // startup, and ONLY when the flag is on — with the flag off this stays
+  // undefined and the routing check below is inert, so a dormant deploy
+  // changes nothing about the legacy path.
+  const statelessSurface: StatelessSurface | undefined = config.statelessEnabled
+    ? buildHostedStatelessSurface({ config, limiters })
+    : undefined;
+
   async function handleMcp(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const token = bearerToken(req);
     if (!token) {
@@ -193,6 +203,32 @@ export async function startHostedHttpServer(config: HostedTransportConfig): Prom
             error: { code: -32700, message: 'Parse error' },
             id: null,
           });
+          return;
+        }
+
+        // Stateless 2026-07-28 requests (Mcp-Method header, or the stateless
+        // protocol revision in MCP-Protocol-Version) are self-contained: no
+        // session lookup, no SDK transport, one response. A request carrying
+        // an mcp-session-id belongs to a live legacy session and stays on the
+        // legacy path even when the flag is on.
+        if (statelessSurface && !sessionId && isStatelessRequest(req.headers)) {
+          const allowedOriginHosts = config.resourceUrl ? [new URL(config.resourceUrl).hostname] : [];
+          const response = await handleStatelessRequest(statelessSurface, req.headers, parsedBody, {
+            allowedOriginHosts,
+          });
+          if (response.notifications && response.notifications.length > 0) {
+            // Notifications (e.g. progress) ride the response as a short
+            // event stream: notification frames first, the final result
+            // frame last. No stream outlives the request.
+            res.writeHead(response.status, { 'content-type': 'text/event-stream' });
+            for (const frame of response.notifications) {
+              res.write(`data: ${JSON.stringify(frame)}\n\n`);
+            }
+            res.write(`data: ${JSON.stringify(response.body)}\n\n`);
+            res.end();
+            return;
+          }
+          sendJson(res, response.status, response.body);
           return;
         }
 

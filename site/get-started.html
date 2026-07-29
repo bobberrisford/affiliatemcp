@@ -72,7 +72,7 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
 <nav class="nav"><div class="wrap">
   <a class="brand" href="index.html"><svg viewBox="0 0 120 120"><rect width="120" height="120" rx="14" fill="#2B2BFF"></rect><polyline points="34,38 58,60 34,82" fill="none" stroke="#fff" stroke-width="13"></polyline><rect x="66" y="68" width="24" height="14" fill="#fff"></rect></svg><span class="wm">agentic <span class="mcp">affiliate</span></span></a>
   <div class="links"><a href="index.html#how">how it works</a><a href="networks.html">networks</a><a href="adopt.html">adopt your adapter</a><a href="skills.html">skills</a><a href="hosted.html">hosted</a><a href="mission.html">mission</a></div>
-  <div class="right"><a class="btn d sm" href="https://github.com/bobberrisford/affiliatemcp">★ github</a><a class="btn p sm" href="get-started.html">get started ▸</a></div>
+  <div class="right"><a class="btn d sm" href="https://github.com/bobberrisford/affiliatemcp">★ github</a><a class="btn p sm" href="hosted.html">start free ▸</a></div>
 </div></nav>
 
 <header class="phead"><div class="wrap">
@@ -226,5 +226,6 @@ document.getElementById("tabs").addEventListener("click",function(e){var b=e.tar
 renderConnect("desktop");
 document.addEventListener("click",function(e){var b=e.target.closest(".tcopy");if(!b)return;var term=b.closest(".term");var cmd=term?term.getAttribute("data-cmd"):"";try{navigator.clipboard.writeText(cmd||"");}catch(err){}b.textContent="copied ✓";setTimeout(function(){b.textContent="copy";},1200);});
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token":"__CF_BEACON_TOKEN__"}'></script>
 </body>
 </html>

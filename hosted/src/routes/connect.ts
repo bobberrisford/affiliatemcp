@@ -44,9 +44,14 @@
  * (or `Referer`) via `sameOriginPost` (`../http.js`) and return a 403 page
  * otherwise. Pure-navigation and idempotent POSTs (`/connect` list,
  * `/connect/:network/form`, `/retest`) do not need the check. Every page in
- * this flow is served `Referrer-Policy: no-referrer` on top of the Worker-wide
+ * this flow is served `Referrer-Policy: same-origin` on top of the Worker-wide
  * `cache-control: no-store`, so its token-free URLs leak nothing outbound
- * through the external documentation links these pages contain. The GET
+ * through the external documentation links these pages contain (cross-origin
+ * requests get no `Referer` at all). `same-origin` — not `no-referrer` — is
+ * deliberate: a `no-referrer` document forces the `Origin` header to `null` on
+ * its own same-origin POSTs (Fetch standard), which would make `sameOriginPost`
+ * reject the credential submission this very check is meant to protect. See
+ * `renderShell` in `../page-chrome.ts` for the full reasoning. The GET
  * variants of the list/form/retest routes exist only for callers that CAN send
  * an Authorization header; a browser without a cookie simply sees the sign-in
  * prompt.
@@ -91,7 +96,7 @@ export { escapeHtml };
 /**
  * A hosted page in the connect family. Delegates to the shared design-system
  * shell (`renderShell`): brand header + a single card holding `bodyHtml`,
- * `cache-control: no-store` (from `html()`), and `referrer-policy: no-referrer`
+ * `cache-control: no-store` (from `html()`), and `referrer-policy: same-origin`
  * (no page here renders the session token — the browser holds it in the
  * HttpOnly `hosted_session` cookie, see the file header). `status` defaults to
  * 200; pass 403 for the CSRF-rejection page and 500 for a sign-in config error.
@@ -511,35 +516,51 @@ function renderConnectResultBody(
       address will appear here once setup is finished, ready to paste into your
       client's "add custom connector" step.</p>`;
 
-    // The hosted MCP transport refuses tool calls without an active
-    // subscription (the entitlement gate in `../billing.ts`, consulted at the
-    // transport boundary). So a user who is not yet subscribed must subscribe
-    // BEFORE adding the connector, or their first prompt fails at that boundary.
-    // Sequence the guidance to match entitlement: `none` -> billing first;
-    // `solo`/`pro` -> the full add-connector + first-prompt copy.
+    // Since the freemium amendment (`docs/decisions/2026-07-18-hosted-freemium-metered-tier.md`),
+    // a connected `free` caller can run reports straight away, metered to a few
+    // a week with no card. So this page is value-first: it leads with the
+    // add-to-Claude steps and a first prompt (the thing the user came to do),
+    // then frames upgrading as removing the weekly cap and unlocking the
+    // automation layer — not as a wall to get past first. `none` is a defensive
+    // fall-through (unreachable: an authenticated caller resolves to `free`, not
+    // `none`); it shares the same copy rather than a dead second branch.
     const front = env.SITE_ORIGIN || 'https://agenticaffiliate.ai';
 
-    if (tier === 'none') {
+    if (tier === 'none' || tier === 'free') {
       return `
       <h1>${escapeHtml(network.name)} connected</h1>
       <p class="status-connected">Connection test passed.</p>
       ${maskedLine}
-      <h2>you're nearly there</h2>
-      <p>Your ${escapeHtml(network.name)} account is connected and working. Two
-      quick steps left before you can pull reports in Claude:</p>
-      <ol>
-        <li><strong>Choose a plan.</strong> Running reports needs an active plan.
-        You can subscribe in a minute below.</li>
-        <li><strong>Add affiliate-mcp to Claude.</strong> Once you're on a plan,
-        add it as a custom connector (steps below) and sign in through your
-        browser. There is no token to copy or paste.</li>
-      </ol>
-      <p>${navForm('/connect/billing', 'choose a plan', {}, 'p')}</p>
+      <h2>you're live on the free plan</h2>
+      <p>Your ${escapeHtml(network.name)} account is connected. You are on the
+      free plan: <strong>3 reports a week, no card needed</strong>. Add
+      affiliate-mcp to your MCP client once, then just ask.</p>
       ${connectorUrlHtml}
-      <p class="muted">After you subscribe: in Claude, open
-      <strong>Settings &rarr; Connectors &rarr; Add custom connector</strong>,
-      paste the connector URL above, and approve the browser sign-in. Full
+      <h2>add it to Claude</h2>
+      <ol>
+        <li>Open Claude and go to <strong>Settings &rarr; Connectors</strong>.</li>
+        <li>Click <strong>Add custom connector</strong> and paste the connector
+        URL above.</li>
+        <li>Claude opens a browser sign-in. Approve it. There is no token to
+        copy or paste.</li>
+      </ol>
+      <p class="muted">Using a different MCP client (ChatGPT, Cursor, and
+      others)? Each has an equivalent "add custom connector" step. Full
       walkthrough: <a href="${escapeHtml(front)}/get-started.html">${escapeHtml(front)}/get-started.html</a>.</p>
+      <h2>then just ask</h2>
+      <p>Nothing else to install: no plugin or skill to set up.
+      Suggested first prompt: "Show my unpaid commissions on
+      ${escapeHtml(network.name)} from the last 30 days." For more ideas, see
+      <a href="${escapeHtml(front)}/what-you-can-ask.html">${escapeHtml(front)}/what-you-can-ask.html</a>.</p>
+      <div class="note">A report is one 30-minute working session, and the free
+      plan includes 3 a week. We can't run that prompt for you from this page &mdash;
+      try it in your MCP client once it's connected.</div>
+      <h2>need more than 3 reports a week?</h2>
+      <p>Paid plans lift the weekly cap and add the things you cannot do by
+      hand: scheduled earnings and unpaid-commission digests, anomaly watch,
+      QBR and weekly-report actions, and CSV export. Start free and upgrade
+      whenever you hit the limit.</p>
+      <p>${navForm('/connect/billing', 'see plans', {}, 'p')}</p>
       <p>${navForm('/connect', 'back to all networks')}</p>
     `;
     }

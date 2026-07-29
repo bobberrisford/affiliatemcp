@@ -43,10 +43,11 @@
  * never affiliate credentials or affiliate data, so the "no affiliate data in
  * HOSTED_USERS" invariant (`src/env.ts`, `hosted/README.md`) is unchanged.
  * Key shapes, all documented in `hosted/README.md` "OAuth (slice 1)":
- *   oauth:client:<clientId>   -> ClientRecord        (registered client; no TTL)
- *   oauth:req:<reqId>         -> PendingAuthRequest   (TTL'd, single-use)
- *   oauth:code:<sha256Hex>    -> AuthCodeRecord       (TTL'd, single-use)
- *   oauth:refresh:<sha256Hex> -> RefreshRecord        (TTL'd, rotated on use)
+ *   oauth:client:<clientId>   -> ClientRecord         (registered client; no TTL)
+ *   oauth:req:<reqId>         -> PendingAuthRequest    (TTL'd, single-use)
+ *   oauth:code:<sha256Hex>    -> AuthCodeRecord        (TTL'd, single-use)
+ *   oauth:refresh:<sha256Hex> -> RefreshRecord         (TTL'd, rotated on use)
+ *   oauth:consent:<id>        -> ConsentHandoffRecord  (TTL'd, single-use)
  */
 
 import { base64urlEncode } from './token.js';
@@ -74,6 +75,15 @@ export const OAUTH_REQUEST_TTL_SECONDS = 15 * 60;
  * (already defended by PKCE) to a short window regardless. RFC 6749 §4.1.2
  * recommends a maximum of 10 minutes; 5 is comfortably inside that. */
 export const OAUTH_CODE_TTL_SECONDS = 5 * 60;
+
+/** Consent-handoff lifetime. This is the short bridge between `/auth/callback`
+ * consuming the magic link and the browser loading the token-free
+ * `/authorize/consent` page (`src/index.ts` → `handleConsentPage`,
+ * `src/routes/oauth.ts`): the callback stashes {authRequestId, userId} here and
+ * hands the browser an opaque cookie pointing at it, so no token, request id, or
+ * user id rides in the consent URL. Bounded to the pending request's own window
+ * so the handoff can never outlive the authorization request it points at. */
+export const OAUTH_CONSENT_HANDOFF_TTL_SECONDS = OAUTH_REQUEST_TTL_SECONDS;
 
 export const REFRESH_TOKEN_PREFIX = 'amcpr_';
 
@@ -131,12 +141,27 @@ export interface RefreshRecord {
   expiresAt: number;
 }
 
+/**
+ * The state the token-free consent page needs, carried across the
+ * `/auth/callback` → `/authorize/consent` redirect by an opaque cookie rather
+ * than a URL. `authRequestId` is the pending `oauth:req:` id to look up; `userId`
+ * is the identity the callback just established (used to mint the consent-form
+ * identity token). Neither is a live credential, but keeping both out of the URL
+ * is the whole point of the handoff — see `handleConsentPage` (`src/routes/oauth.ts`).
+ */
+export interface ConsentHandoffRecord {
+  authRequestId: string;
+  userId: string;
+  expiresAt: number;
+}
+
 // ── KV key helpers ─────────────────────────────────────────────────────────
 
 const clientKey = (clientId: string) => `oauth:client:${clientId}`;
 const requestKey = (reqId: string) => `oauth:req:${reqId}`;
 const codeKey = (codeHash: string) => `oauth:code:${codeHash}`;
 const refreshKey = (tokenHash: string) => `oauth:refresh:${tokenHash}`;
+const consentHandoffKey = (id: string) => `oauth:consent:${id}`;
 
 // ── Random-token + hashing helpers ─────────────────────────────────────────
 
@@ -272,6 +297,41 @@ export async function getPendingRequest(kv: KVNamespace, reqId: string): Promise
 
 export async function deletePendingRequest(kv: KVNamespace, reqId: string): Promise<void> {
   await kv.delete(requestKey(reqId));
+}
+
+// ── Consent handoff (callback → token-free consent page) ────────────────────
+
+/** Stash a consent handoff, returning the opaque id to place in the cookie the
+ * callback sets. Single-purpose and short-lived, so it is written under the
+ * request's own TTL. */
+export async function putConsentHandoff(kv: KVNamespace, record: ConsentHandoffRecord): Promise<string> {
+  const id = randomToken();
+  await kv.put(consentHandoffKey(id), JSON.stringify(record), {
+    expirationTtl: OAUTH_CONSENT_HANDOFF_TTL_SECONDS,
+  });
+  return id;
+}
+
+/**
+ * Consume a consent handoff: read it, then delete it BEFORE returning, so the
+ * cookie is single-use exactly like the magic link, the authorization code, and
+ * the refresh token it sits alongside. A page refresh after consumption falls
+ * through to the "restart the connection" path rather than re-rendering, which
+ * is the same single-use behaviour the magic link itself has. Returns null for
+ * an unknown, malformed, or expired handoff.
+ */
+export async function consumeConsentHandoff(kv: KVNamespace, id: string): Promise<ConsentHandoffRecord | null> {
+  const raw = await kv.get(consentHandoffKey(id));
+  if (!raw) return null;
+  await kv.delete(consentHandoffKey(id));
+  let record: ConsentHandoffRecord;
+  try {
+    record = JSON.parse(raw) as ConsentHandoffRecord;
+  } catch {
+    return null;
+  }
+  if (record.expiresAt <= Math.floor(Date.now() / 1000)) return null;
+  return record;
 }
 
 // ── Authorization code ─────────────────────────────────────────────────────

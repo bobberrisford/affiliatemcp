@@ -293,13 +293,51 @@ describe('GET /billing/entitlement', () => {
     expect(res.status).toBe(401);
   });
 
-  it('returns tier "none" for a user with no subscription', async () => {
+  it('returns tier "free" for a user with no subscription', async () => {
     const signingKey = await generatePrivateKeyB64();
     const { env } = await makeEnv(signingKey);
     const token = await issueSessionToken(signingKey, 'hosted_usr_5');
     const res = await worker.fetch(req('/billing/entitlement', 'GET', { token }), env);
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ tier: 'none', status: 'none' });
+    expect(await res.json()).toEqual({ tier: 'free', status: 'none' });
+  });
+});
+
+describe('POST /billing/meter', () => {
+  it('requires a session', async () => {
+    const { env } = await makeEnv('x');
+    const res = await worker.fetch(req('/billing/meter', 'POST'), env);
+    expect(res.status).toBe(401);
+  });
+
+  it('allows the first free report and reports the remaining allowance', async () => {
+    const signingKey = await generatePrivateKeyB64();
+    const { env } = await makeEnv(signingKey);
+    const token = await issueSessionToken(signingKey, 'hosted_usr_meter');
+    const res = await worker.fetch(req('/billing/meter', 'POST', { token }), env);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { allowed: boolean; remaining: number; resetAt: number | null };
+    expect(body.allowed).toBe(true);
+    expect(body.remaining).toBe(2);
+    expect(body.resetAt).not.toBeNull();
+  });
+
+  it('refuses once the weekly allowance is spent, then the meter key persists in KV', async () => {
+    const signingKey = await generatePrivateKeyB64();
+    const { env, billingKv } = await makeEnv(signingKey);
+    const token = await issueSessionToken(signingKey, 'hosted_usr_capped');
+    // Pre-seed three windows all within the last 7 days, none currently open,
+    // so the next call must open a fourth and is refused.
+    const now = Date.now();
+    const windows = [now - 60 * 60 * 1000, now - 40 * 60 * 1000, now - 35 * 60 * 1000];
+    await billingKv.put('meter:hosted_usr_capped', JSON.stringify({ windows }));
+    const res = await worker.fetch(req('/billing/meter', 'POST', { token }), env);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { allowed: boolean; remaining: number };
+    expect(body.allowed).toBe(false);
+    expect(body.remaining).toBe(0);
+    // Refusal consumes nothing: the stored window list is unchanged.
+    expect(billingKv.store.get('meter:hosted_usr_capped')).toBe(JSON.stringify({ windows }));
   });
 
   it('returns the stored tier for an active subscriber', async () => {
