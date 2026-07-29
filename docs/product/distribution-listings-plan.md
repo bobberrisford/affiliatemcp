@@ -116,6 +116,32 @@ open the repo, and in Anthropic's case exercise the tools.
   `affiliate_run_diagnostic` already exist as the discovery entry points, which
   makes the third option less disruptive than it sounds.
 
+  **What a connected-networks filter would actually save.** Measured on
+  2026-07-29 by grouping the generated tools per adapter and keeping the 12
+  always-on meta tools:
+
+  | Scenario | Tools | Payload | Tokens | Reduction |
+  | --- | --- | --- | --- | --- |
+  | Full surface, today | 682 | 442.5 KiB | ~113,284 | — |
+  | Meta tools only | 12 | 10.7 KiB | ~2,728 | 97.6% |
+  | 1 network (Awin publisher) | 36 | 26.0 KiB | ~6,662 | **94.1%** |
+  | 2 networks (Awin + CJ) | 43 | 30.3 KiB | ~7,757 | 93.2% |
+  | 3 networks (agency, advertiser side) | 44 | 34.0 KiB | ~8,708 | 92.3% |
+  | 5 networks (multi-network publisher) | 64 | 43.2 KiB | ~11,066 | 90.2% |
+  | 10 networks (heavy user) | 100 | 65.5 KiB | ~16,758 | 85.2% |
+
+  Even the heaviest realistic user sees an 85% reduction, and the common case is
+  94%. The distribution is flat: the median adapter contributes 7 tools and the
+  largest, Awin, contributes 24, so no single network dominates and the saving
+  comes almost entirely from not shipping the other 80-odd.
+
+  That makes the first option clearly the strongest. It needs no new tool
+  surface, no curation to maintain, and no change to how any individual tool
+  behaves. It changes only which subset of the existing set `tools/list`
+  returns, based on state both transports already hold: the hosted path knows
+  the connected networks from the vault, and the local path can read configured
+  credentials.
+
   Resolve this before the Anthropic submission, not before the registry publish.
 - **Confirm `PRIVACY.md` answers the standard directory questions**: what data
   leaves the machine, who processes it, retention. Local-first is a strong
@@ -327,8 +353,10 @@ on mismatch rather than failing silently.
 **Not automatable, and should not be faked:** the Anthropic Connectors
 Directory (form plus human review), `awesome-mcp-servers` (PR, human review),
 Glama and PulseMCP ownership claims, mcp.so. These are one-off, and the correct
-tooling for them is a checklist with dates, not a script. Track them in the
-tracking issue for this plan.
+tooling for them is a checklist with dates, not a script. The copy, field values
+and logo assets for these are prepared in
+[`directory-submissions/`](./directory-submissions/README.md) so each submission
+is a paste rather than a rewrite, and so no two listings drift apart.
 
 ## 10. Suggested order
 
