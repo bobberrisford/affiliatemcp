@@ -21,14 +21,29 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
-      - name: MCP 2026-07-28 conformance (hosted stateless path)
-        run: npm run conformance:hosted
       - name: Verify timezone-sensitive adapter tests
         run: |
           TZ=UTC npx vitest run tests/networks/admitad/adapter.test.ts tests/networks/monetizze/adapter.test.ts
           TZ=Europe/Paris npx vitest run tests/networks/admitad/adapter.test.ts tests/networks/monetizze/adapter.test.ts
       - run: npm run build
       - run: npm run verify:mcpb
+
+  # MCP 2026-07-28 conformance proof for the hosted stateless path
+  # (docs/decisions/2026-07-29-mcp-2026-07-28-early-adoption.md). Its own job
+  # on Node 22 because the official conformance CLI uses fs.globSync
+  # (Node 22+), while `build` deliberately stays on Node 20 to keep validating
+  # the package's minimum supported engine.
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci
+      - name: MCP 2026-07-28 conformance (hosted stateless path)
+        run: npm run conformance:hosted
 
   # Bundle + load-smoke the desktop app's self-contained CJS bundles. The
   # packaged Electron app ships no node_modules, so this catches the ESM /
