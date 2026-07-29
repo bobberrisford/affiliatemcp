@@ -214,6 +214,13 @@ describe('digest-scoped token: every other session-gated surface refuses it', ()
     expect((ctx.env.HOSTED_VAULT as unknown as { store: Map<string, string> }).store.size).toBe(before);
   });
 
+  it('GET /account/export returns 403 insufficient_scope', async () => {
+    const ctx = await makeContext();
+    const res = await worker.fetch(authed('/account/export', 'GET', ctx.digestToken), ctx.env);
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'insufficient_scope' });
+  });
+
   it('POST /billing/checkout returns 403 insufficient_scope', async () => {
     const ctx = await makeContext();
     const res = await worker.fetch(authed('/billing/checkout', 'POST', ctx.digestToken, { tier: 'solo' }), ctx.env);
