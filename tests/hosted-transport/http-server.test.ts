@@ -723,3 +723,91 @@ describe('hosted MCP transport (slice 2b) OAuth resource discovery', () => {
     expect(badToken.headers.get('www-authenticate')).toBeNull();
   });
 });
+
+describe('hosted MCP transport MCP 2026-07-28 stateless routing (decision 2026-07-29)', () => {
+  const STATELESS_HEADERS = {
+    'content-type': 'application/json',
+    'mcp-protocol-version': '2026-07-28',
+    'mcp-method': 'server/discover',
+  };
+  const DISCOVER_BODY = JSON.stringify({
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'server/discover',
+    params: {
+      _meta: {
+        'io.modelcontextprotocol/protocolVersion': '2026-07-28',
+        'io.modelcontextprotocol/clientCapabilities': {},
+      },
+    },
+  });
+
+  function authedSession(): string {
+    const token = 'amcps_test.session.stateless';
+    fakeWorker.sessions.set(token, {
+      userId: 'hosted_usr_stateless',
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    });
+    return token;
+  }
+
+  it('flag OFF (the default test config): a stateless-shaped request takes the LEGACY path and gets its 400', async () => {
+    const token = authedSession();
+    const res = await fetch(`http://127.0.0.1:${transportHandle.port}/mcp`, {
+      method: 'POST',
+      headers: { ...STATELESS_HEADERS, authorization: `Bearer ${token}` },
+      body: DISCOVER_BODY,
+    });
+    // The legacy path's "no valid session ID" refusal, code -32000 — NOT any
+    // stateless protocol answer (which would be a 200 result or a
+    // -32020/-32602 gate error). This pins the dormant-deploy invariant.
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error?: { code?: number } };
+    expect(body.error?.code).toBe(-32000);
+  });
+
+  it('flag ON: the same request is answered statelessly by server/discover', async () => {
+    const flagged = await startHostedHttpServer({
+      authUrl: fakeWorker.url,
+      vaultUrl: fakeWorker.url,
+      port: 0,
+      rateLimitCapacity: 10,
+      rateLimitRefillPerSecond: 1,
+      statelessEnabled: true,
+    });
+    try {
+      const token = authedSession();
+      const res = await fetch(`http://127.0.0.1:${flagged.port}/mcp`, {
+        method: 'POST',
+        headers: { ...STATELESS_HEADERS, authorization: `Bearer ${token}` },
+        body: DISCOVER_BODY,
+      });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { result?: { supportedVersions?: string[] } };
+      expect(body.result?.supportedVersions).toEqual(['2026-07-28']);
+    } finally {
+      await flagged.close();
+    }
+  });
+
+  it('flag ON: stateless requests still require a bearer token (401 before any protocol handling)', async () => {
+    const flagged = await startHostedHttpServer({
+      authUrl: fakeWorker.url,
+      vaultUrl: fakeWorker.url,
+      port: 0,
+      rateLimitCapacity: 10,
+      rateLimitRefillPerSecond: 1,
+      statelessEnabled: true,
+    });
+    try {
+      const res = await fetch(`http://127.0.0.1:${flagged.port}/mcp`, {
+        method: 'POST',
+        headers: STATELESS_HEADERS,
+        body: DISCOVER_BODY,
+      });
+      expect(res.status).toBe(401);
+    } finally {
+      await flagged.close();
+    }
+  });
+});

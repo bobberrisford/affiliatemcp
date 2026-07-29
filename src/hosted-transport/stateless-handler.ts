@@ -264,6 +264,11 @@ const LOCALHOST_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
  * Requests without an `Origin` header (server-to-server MCP clients) pass. */
 function originAllowed(headers: Record<string, string | string[] | undefined>, allowedHosts: string[]): boolean {
   const origin = firstHeader(headers, 'origin');
+  // `Origin: null` (sandboxed iframes, some redirects) is allowed for the same
+  // reason a missing Origin is: this check only guards against the browser
+  // DNS-rebinding shape, and every request here has ALREADY passed bearer
+  // verification, which a rebinding page cannot forge. Rejecting `null` would
+  // add no protection and break legitimate non-browser clients that send it.
   if (origin === undefined || origin === 'null') return true;
   let host: string;
   try {

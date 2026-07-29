@@ -273,7 +273,7 @@ export function buildConformanceFixturePrompts(): ConformanceFixturePrompt[] {
         description: 'Conformance fixture prompt with an image.',
         messages: [
           { role: 'user', content: { type: 'image', data: TINY_PNG_BASE64, mimeType: 'image/png' } },
-          { role: 'user', content: { type: 'text', text: 'Please analyze the image above.' } },
+          { role: 'user', content: { type: 'text', text: 'Please analyse the image above.' } },
         ],
       }),
     },

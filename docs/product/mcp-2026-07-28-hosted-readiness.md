@@ -79,9 +79,10 @@ The design the implementation PR will follow:
   extract it into a shared function both handlers call; behaviour-preserving
   extraction only.
 - **Feature flag:** `HOSTED_STATELESS_2026` read in `env.ts`, default off.
-  Off means the routing rule is inert and stateless requests get a plain
-  404, exactly as today. The flag is set in `containers/wrangler.toml` env,
-  so flipping it is a config deploy, and rollback is unsetting it.
+  Off means the routing rule is inert and a stateless-shaped request falls
+  through to the legacy path's existing refusal (the 400 "no valid session
+  ID" answer), exactly as today. The flag is set in `containers/wrangler.toml`
+  env, so flipping it is a config deploy, and rollback is unsetting it.
 - **Explicit non-goals:** no SSE resumability on the stateless path (the
   revision removed it), no sampling, no Tasks or MCP Apps extensions, no
   change to `src/shared/`, no change to the stdio server, no change to the
