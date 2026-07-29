@@ -107,6 +107,18 @@ HOSTED_WORKER_ORIGIN = "__HOSTED_WORKER_ORIGIN__"
 # transport container instance (env is applied only at container start).
 TRANSPORT_PUBLIC_URL = "__TRANSPORT_PUBLIC_URL__"
 
+# MCP 2026-07-28 stateless path launch lever (decision
+# docs/decisions/2026-07-29-mcp-2026-07-28-early-adoption.md, readiness plan
+# R4). The transport code shipped dormant in 0.20.0; it activates only when
+# this is exactly "1". A committed literal, deliberately NOT an Actions
+# variable: flipping it (and rolling back) is a one-line reviewable diff to
+# this file, and merging it triggers the containers deploy, which recycles
+# the pinned instance with the new env (env applies at container start).
+# Launch: change "0" to "1", merge, then run the live verification in the
+# readiness plan (legacy smoke green + a conformance pass against the live
+# /mcp with the seeded test tenant). Rollback: change it back to "0", merge.
+HOSTED_STATELESS_2026 = "0"
+
 # ── Secrets — set via `wrangler secret put <NAME>` (NEVER commit) ──────────
 #   DIGEST_COMPOSE_SECRET  optional doorbell shared with hosted/'s own
 #                          DIGEST_COMPOSE_SECRET secret (hosted/wrangler.toml).

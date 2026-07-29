@@ -103,6 +103,16 @@ export interface Env {
    * that has not yet chosen its public origin still runs (discovery off) rather
    * than crashing. See wrangler.toml's `[vars]` comment. */
   TRANSPORT_PUBLIC_URL?: string;
+  /**
+   * MCP 2026-07-28 stateless path launch lever
+   * (`docs/decisions/2026-07-29-mcp-2026-07-28-early-adoption.md`, readiness
+   * plan R4). Forwarded to the transport container as
+   * `HOSTED_STATELESS_2026`; the transport code shipped dormant in 0.20.0 and
+   * activates only when this is exactly `"1"`. The value is a committed
+   * literal in wrangler.toml's `[vars]`, so every flip (and rollback) is a
+   * one-line reviewable diff that redeploys and recycles the instance.
+   * Optional so older deploys and tests need not set it. */
+  HOSTED_STATELESS_2026?: string;
   /** Optional doorbell shared with hosted/'s own `DIGEST_COMPOSE_SECRET` secret. */
   DIGEST_COMPOSE_SECRET?: string;
 }
@@ -213,6 +223,10 @@ export class McpTransportContainer extends DurableObject<Env> {
       // `Env.TRANSPORT_PUBLIC_URL`. Omitted (discovery off) until a real origin
       // is configured, so the placeholder default never boots a bogus value.
       ...(publicOrigin ? { HOSTED_TRANSPORT_PUBLIC_URL: publicOrigin } : {}),
+      // MCP 2026-07-28 stateless launch lever — see the field comment on
+      // `Env.HOSTED_STATELESS_2026`. Forwarded only when explicitly "1", so
+      // an unset or "0" var keeps the stateless code dormant.
+      ...(this.env.HOSTED_STATELESS_2026 === '1' ? { HOSTED_STATELESS_2026: '1' } : {}),
     });
     return fetchWhenListening(container, TRANSPORT_PORT, request);
   }
