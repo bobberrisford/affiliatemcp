@@ -21,6 +21,8 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+      - name: MCP 2026-07-28 conformance (hosted stateless path)
+        run: npm run conformance:hosted
       - name: Verify timezone-sensitive adapter tests
         run: |
           TZ=UTC npx vitest run tests/networks/admitad/adapter.test.ts tests/networks/monetizze/adapter.test.ts
