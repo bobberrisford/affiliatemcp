@@ -40,6 +40,16 @@ Two gaps block everything downstream:
    metadata is written and the npm precondition is satisfied (0.19.0 carries
    `mcpName`; 0.18.0 predated it), but `mcp-publisher publish` was never run.
 
+### Where this sits among existing docs
+
+Three documents now touch distribution. They do not overlap, and each should
+stay in its lane:
+
+- `RELEASING.md` — the operator runbook for the MCP Registry listing. Steps.
+- `docs/product/directory-listing-submissions.md` — the Claude and ChatGPT
+  connector-directory submissions. Copy, claims discipline, and who submits.
+- **This document** — everything else, and the ordering across all of it.
+
 ## 2. Why the official registry comes first
 
 The official registry at `registry.modelcontextprotocol.io` is not one listing
@@ -68,15 +78,44 @@ open the repo, and in Anthropic's case exercise the tools.
 - **Keep the honesty line in the short description.** "Most adapters
   experimental" is already in `server.json`. It should survive into every
   listing. It is also a differentiator: almost no directory entry admits this.
-- **Decide the tool-surface story.** The server registers roughly 500 tools
-  across 86 adapters. Anthropic's connector review explicitly checks that a
-  connector "behaves well when every tool is called", and large tool surfaces
-  are a known context-budget problem in every client. This is the single
-  biggest review risk in the plan. Options, in order of preference: expose only
-  configured networks in the tool list (likely already the behaviour for stdio,
-  needs confirming for hosted); ship a curated default set for the hosted
-  connector; or document the surface explicitly in the submission notes. Resolve
-  this before the Anthropic submission, not before the registry publish.
+- **Decide the tool-surface story.** This is the single biggest risk in the
+  plan, and it is larger than first estimated. Measured against `origin/main` on
+  2026-07-29:
+
+  | Metric | Value |
+  | --- | --- |
+  | Tools returned by `tools/list` | **682** |
+  | Payload size | **442.2 KiB** |
+  | Rough token cost | **~113,000** |
+  | Distinct network prefixes | 87, median 7 tools each |
+
+  Both transports return the identical unfiltered set. `src/server.ts` and
+  `src/hosted-transport/mcp-server.ts` each answer `ListToolsRequestSchema` with
+  every tool from `generateAllTools()`, and `src/networks/index.js` registers
+  every adapter unconditionally. There is no filtering by configured
+  credentials, connected vault networks, or environment, and no mechanism exists
+  to add one today.
+
+  Two consequences, and the first is the more important:
+
+  1. **This is a live problem for existing users, not a submission problem.** A
+     user who has configured one network still pays ~113k tokens of tool
+     definitions before asking anything. That is most of a context window spent
+     on 86 adapters they do not use.
+  2. Anthropic's connector review checks that a connector "behaves well when
+     every tool is called". 682 tools is a plausible hard fail.
+
+  Changing what `tools/list` returns is a public MCP contract change, so it
+  needs a decision record before implementation, per `AGENTS.md`. Sketch of the
+  options, not a recommendation to implement yet: filter to connected networks
+  (the hosted transport already knows these from the vault, and the local path
+  could read configured credentials); ship a curated default with an opt-in to
+  the full set; or keep a small always-on core and move per-network operations
+  behind a discovery tool. Note `affiliate_list_networks` and
+  `affiliate_run_diagnostic` already exist as the discovery entry points, which
+  makes the third option less disruptive than it sounds.
+
+  Resolve this before the Anthropic submission, not before the registry publish.
 - **Confirm `PRIVACY.md` answers the standard directory questions**: what data
   leaves the machine, who processes it, retention. Local-first is a strong
   answer; make sure it is stated in one paragraph a reviewer can quote.
@@ -140,22 +179,46 @@ the repo runs.
 These are the surfaces where the audience actually is. They are not fed by the
 registry and each needs its own submission.
 
-### 5a. Anthropic Connectors Directory (hosted only)
+### 5a. Claude and ChatGPT connector directories
 
-The directory accepts remote HTTPS connectors only. This was already learned the
-hard way: a local stdio entry surfaces as
-`ant.dir.ant.<hash>.affiliate-networks-mcp: No server configuration found`, and
-`DEPLOY.md` §7 records it. The **hosted** service is the eligible artefact, and
-it already has the OAuth protected-resource metadata the directory expects.
+**`docs/product/directory-listing-submissions.md` owns both of these.** It holds
+the shared fact table, the claims discipline, the draft Claude copy, and the
+category and auth guidance. Do not restate any of it here; that doc exists so
+the two listings cannot drift apart. This section records only what this plan
+adds.
 
-Submit the remote server via the MCP directory submission form in the Claude
-developer docs. Expect review against tool design, authentication, privacy,
-allowed external links, documentation, support, and whole-tool-surface
-behaviour. Resolve the tool-count question in §3 first. Aim for the community
-tier initially; verified review is deeper and slower.
+Two rules from that brief that govern the whole plan, worth repeating once
+because they change who does what:
 
-This is the highest-value single listing after the registry, because it reaches
-Claude.ai, Desktop, Mobile, Claude Code, and Cowork in one entry.
+- **An agent prepares; Rob submits.** Nothing is submitted, published, or posted
+  by an agent.
+- **Do not hand-maintain a tool count** in listing copy. Adapters register their
+  tools automatically.
+
+What this plan adds:
+
+- The directory accepts remote HTTPS connectors only, so the **hosted** service
+  is the eligible artefact. The local stdio server surfaces as
+  `ant.dir.ant.<hash>.affiliate-networks-mcp: No server configuration found`;
+  `DEPLOY.md` §7 records it.
+- The hosted remote is technically ready: `/mcp` answers 401 with a
+  `WWW-Authenticate` challenge and `/.well-known/oauth-protected-resource`
+  returns 200, which is the shape the directory expects.
+- Review covers tool design, authentication, privacy, allowed external links,
+  documentation, support, and whole-tool-surface behaviour. **§3's 682-tool
+  finding is the blocker here**, and it is the reason to resolve that before
+  submitting rather than after a rejection.
+- Aim for the community tier first; verified review is deeper and slower.
+
+**The ChatGPT blocker recorded in that brief is now stale.** It says to fix
+`site/faq.html` first, because the FAQ claimed a remote HTTPS path was "planned
+but not shipped". The live FAQ now reads: "ChatGPT cannot run the local server,
+so it needs the hosted connector, which is live". That correction has landed, so
+the ChatGPT submission is unblocked on that count. The remaining honest caveat
+belongs in the listing itself: a ChatGPT user cannot use the free local path.
+
+Claude remains the highest-value single listing, because it reaches Claude.ai,
+Desktop, Mobile, Claude Code and Cowork in one entry.
 
 ### 5b. Claude Code plugin marketplace
 
@@ -253,11 +316,17 @@ tracking issue for this plan.
 
 1. ~~Fix the network-count inconsistency across all metadata files.~~ Done; the
    only offender was the unmerged redesign branch.
-2. Add the apex TXT record, publish to the official registry, verify. (Ops.)
-3. Automate registry publish in `publish.yml`. (Small CI PR.)
-4. Resolve the hosted tool-surface question. (Decision, possibly a decision
-   record, since it touches the public MCP contract.)
-5. Submit the hosted connector to the Anthropic Connectors Directory.
+2. ~~Add the apex TXT record, publish to the official registry, verify.~~ Done
+   2026-07-29: live at 0.19.0, status `active`, and first result for
+   `?search=affiliate`.
+3. Automate registry publish in `publish.yml`. (Small CI PR; blocked only on the
+   `MCP_REGISTRY_KEY` secret.)
+4. Resolve the 682-tool surface. **Decision record required** before any
+   implementation, because it changes what `tools/list` returns and that is a
+   public MCP contract. This is now the critical path for everything in Tier 1.
+5. Prepare the Claude connector-directory submission per
+   `directory-listing-submissions.md`, for Rob to submit. Then ChatGPT, whose
+   FAQ blocker has cleared.
 6. Wait a week, audit which aggregators ingested automatically, hand-submit the
    rest and claim every listing.
 7. `awesome-mcp-servers` PR, npm keyword expansion, client-specific snippets.
@@ -270,8 +339,10 @@ tracking issue for this plan.
   `site/refresh-wip` copy until that branch has merged and been re-checked.
 - Do not submit the local stdio server to any remote-only directory. That failure
   mode is already documented.
-- Do not submit to the Anthropic Connectors Directory before the tool-surface
-  question is answered. A rejected submission is slower to fix than a delayed
-  one.
+- Do not submit to either connector directory before the 682-tool surface is
+  answered. A rejected submission is slower to fix than a delayed one.
+- No agent submits anything. Agents prepare copy and assets; Rob submits. This
+  is `directory-listing-submissions.md`'s rule and it applies to every surface
+  in this plan, not just the two it covers.
 - Registry metadata must never be published by hand twice. If step 3 is not
   done, step 2 must be repeated manually on every release, and it will not be.
