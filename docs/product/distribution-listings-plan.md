@@ -28,17 +28,18 @@ registry step, and the first publish still needs a DNS TXT record. This plan
 picks up from there and widens the scope from one registry to the whole
 distribution surface.
 
-Two gaps block everything downstream:
+Both gaps that blocked this are now cleared, on 2026-07-29:
 
-1. **No apex DNS TXT record** on `agenticaffiliate.ai`. `dig +short TXT
-   agenticaffiliate.ai` returns nothing. Because `server.json` and the npm
-   `mcpName` both commit to the `ai.agenticaffiliate/*` namespace, DNS
-   authentication is the only way to publish under that name. Switching to
-   `io.github.bobberrisford/*` would mean republishing npm with a changed
-   `mcpName`, so adding the TXT record is the cheaper path.
-2. **The server has never been published to the official registry.** The
-   metadata is written and the npm precondition is satisfied (0.19.0 carries
-   `mcpName`; 0.18.0 predated it), but `mcp-publisher publish` was never run.
+1. ~~No apex DNS TXT record on `agenticaffiliate.ai`.~~ Added and propagated
+   (confirmed against the local resolver, `1.1.1.1` and `8.8.8.8`).
+2. ~~The server has never been published to the official registry.~~ Published
+   at 0.19.0, `"status": "active"`, `"isLatest": true`, advertising both the npm
+   stdio package and the hosted remote. It is the first result for
+   `?search=affiliate`.
+
+What remains blocked is republishing on every subsequent release, which stays
+manual until the `MCP_REGISTRY_KEY` secret exists. A skipped republish fails
+silently and leaves the registry advertising an old version.
 
 ### Where this sits among existing docs
 
@@ -239,18 +240,35 @@ and `desktop-v*` share one pointer, and desktop stealing it 404s the site's
 
 ## 6. Tier 2: aggregators and catalogues
 
-Most of these ingest the official registry. Do Tier 0 first, wait a week, then
-check which ones picked the server up automatically and only hand-submit to the
-ones that did not.
+Some ingest the official registry, some crawl GitHub independently, and some
+need a form. Status below was measured on 2026-07-29, hours after the registry
+publish, so the crawl-fed ones have not had time to react yet. Re-check before
+spending effort on any row.
 
-| Directory | How to get listed | Notes |
+| Directory | Status on 2026-07-29 | How to get listed |
 | --- | --- | --- |
-| Smithery | `smithery mcp publish "https://mcp.agenticaffiliate.ai/mcp" -n agenticaffiliate/affiliate-networks-mcp`, or let it ingest from the registry | Publishing the remote makes it one-click installable from the Smithery CLI. Claim the listing either way. |
-| Glama | Crawls GitHub and the registry automatically; claim ownership once it appears | Also renders the repo README, so README quality is the listing quality. |
-| PulseMCP | Submission form; also crawls | Tracks estimated weekly visitors per server, which is a free usage signal worth having. |
-| mcp.so | Submit button on the site, or a GitHub issue | Low effort, decent SEO. |
-| Docker MCP Catalog | PR to `docker/mcp-registry` adding `servers/<name>/server.yaml`, plus `tools.json` and `readme.md` | Docker builds, signs, and publishes the image. Worth doing only if a containerised path fits the local-first model; the `Dockerfile` on `main` suggests it might. Treat as optional. |
-| QVeris and other subregistries | Automatic from the registry | No action. |
+| **PulseMCP** | **Already listed**, and predates the registry publish: crawled from GitHub, release date 22 May 2026, **158 estimated weekly visitors**. Unclaimed. | Claim it. Check the description first: it reads "Query earnings and performance data across 72+ affiliate marketing networks", which is close but is a claim we do not make in that form. |
+| Glama | Not listed | Crawls GitHub and the registry; give it a week, then submit. It renders the repo README, so README quality is listing quality. |
+| Smithery | Not listed (checked `registry.smithery.ai` for three query forms) | `smithery mcp publish "https://mcp.agenticaffiliate.ai/mcp" -n agenticaffiliate/affiliate-networks-mcp`. Hold until §3 is resolved: this makes the connector one-click installable, and 682 tools is a poor first impression. |
+| mcp.so | Not verified (search endpoint 403s to scripted requests) | `mcp.so/submit`. Public GitHub servers only. Low effort, decent SEO. |
+| mcpservers.org | Not checked | `mcpservers.org/submit`. The submission front-end for the Awesome MCP Servers site. |
+| MCP Server Finder | Not checked | Form at `mcpserverfinder.com`. |
+| mcp.directory | Not checked | Renders a one-click install panel for Cursor, Claude Desktop and VS Code, so it doubles as an install surface. |
+| MCPCentral | Not checked; site 403s to scripted requests | `mcpcentral.io/submit-server`, reportedly via `mcp-publisher`. Verify by hand. |
+| Docker MCP Catalog | Not listed | PR to `docker/mcp-registry` with `server.yaml`, `tools.json`, `readme.md`. Optional: only worth it if a containerised path fits the local-first model. Note `tools.json` would be a 682-entry file. |
+| QVeris and other subregistries | Automatic | No action. |
+
+Two directories worth calling out separately because they are client
+marketplaces rather than catalogues, so a listing is also an install path:
+
+- **Cline MCP Marketplace** — a GitHub issue on `cline/mcp-marketplace` with the
+  repo URL, a reason, and a **400×400 PNG logo**. We have `desktop/build/icon.png`
+  at 1024×1024 to downscale. Reaches Cline's install flow directly.
+- **LobeHub MCP marketplace** — `lobehub.com/mcp`, a large catalogue with its own
+  submission route.
+
+Both make the server installable in one click, so both sit behind §3 for the
+same reason Smithery does.
 
 ## 7. Tier 3: other MCP clients
 
@@ -327,10 +345,12 @@ tracking issue for this plan.
 5. Prepare the Claude connector-directory submission per
    `directory-listing-submissions.md`, for Rob to submit. Then ChatGPT, whose
    FAQ blocker has cleared.
-6. Wait a week, audit which aggregators ingested automatically, hand-submit the
+6. Claim the existing PulseMCP listing, which is live and already drawing an
+   estimated 158 weekly visitors with nobody watching it.
+7. Wait a week, audit which aggregators ingested automatically, hand-submit the
    rest and claim every listing.
-7. `awesome-mcp-servers` PR, npm keyword expansion, client-specific snippets.
-8. Product Hunt and Hacker News, once the funnel behind them is proven.
+8. `awesome-mcp-servers` PR, npm keyword expansion, client-specific snippets.
+9. Product Hunt and Hacker News, once the funnel behind them is proven.
 
 ## 11. Stop conditions
 
