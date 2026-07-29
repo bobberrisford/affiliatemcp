@@ -218,6 +218,6 @@ describe('PACKAGE_VERSION', () => {
     // (the check:change guardrail under src/shared) and pins the published
     // version the telemetry channel reports.
     const { PACKAGE_VERSION } = await import('../../src/shared/telemetry.js');
-    expect(PACKAGE_VERSION).toBe('0.19.0');
+    expect(PACKAGE_VERSION).toBe('0.20.0');
   });
 });
