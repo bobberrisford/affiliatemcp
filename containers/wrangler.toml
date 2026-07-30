@@ -117,7 +117,7 @@ TRANSPORT_PUBLIC_URL = "__TRANSPORT_PUBLIC_URL__"
 # Launch: change "0" to "1", merge, then run the live verification in the
 # readiness plan (legacy smoke green + a conformance pass against the live
 # /mcp with the seeded test tenant). Rollback: change it back to "0", merge.
-HOSTED_STATELESS_2026 = "0"
+HOSTED_STATELESS_2026 = "1"
 
 # ── Secrets — set via `wrangler secret put <NAME>` (NEVER commit) ──────────
 #   DIGEST_COMPOSE_SECRET  optional doorbell shared with hosted/'s own
