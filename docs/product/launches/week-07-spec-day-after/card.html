@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>agentic affiliate — new spec, same connector (1:1)</title>
+<style>
+  @font-face{font-family:'Bricolage Grotesque';font-style:normal;font-weight:600 800;
+    src:url('../../../../design-system/fonts/bricolage-grotesque.woff2') format('woff2')}
+  @font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400 800;
+    src:url('../../../../design-system/fonts/jetbrains-mono.woff2') format('woff2')}
+  *{box-sizing:border-box}
+  :root{
+    --ink:#0B0B0C; --paper:#FFFFFF;
+    --blue:#2B2BFF; --blue-bright:#5A78FF; --magenta:#FF2E88; --green:#2FD575;
+    --fg-invert-mut:#9A9DAC;
+    --font-display:'Bricolage Grotesque','Arial Black',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  }
+  html,body{margin:0}
+  body{background:#0a0a0a}
+  .stage{position:fixed;inset:0;display:grid;place-items:center;overflow:hidden}
+  .frame{position:relative;overflow:hidden;transform-origin:center center;flex:none;
+    width:1080px;height:1080px;background:var(--ink);color:var(--paper);
+    padding:80px;display:flex;flex-direction:column;justify-content:space-between}
+  .frame::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:0.5;mix-blend-mode:multiply;
+    background-image:radial-gradient(rgba(11,11,12,0.16) 0.5px,transparent 0.6px);background-size:3px 3px}
+  .dots{position:absolute;inset:0;color:var(--paper);opacity:0.06;
+    background-image:radial-gradient(currentColor 1.4px,transparent 1.6px);background-size:11px 11px}
+
+  .top{display:flex;align-items:center;gap:20px;position:relative}
+  .top svg{width:80px;height:80px;border-radius:12px}
+  .top .wm{font-family:var(--font-display);font-weight:800;font-size:2.2rem;letter-spacing:-0.03em}
+  .top .wm .mcp{background:var(--blue);color:var(--paper);padding:0 10px;border-radius:8px}
+
+  .q{font-family:var(--font-mono);font-size:1.3rem;font-weight:700;color:var(--fg-invert-mut);position:relative;margin-top:34px}
+  .q .you{color:var(--blue-bright)}
+
+  .mid{position:relative;flex:1;display:flex;flex-direction:column;justify-content:center;gap:38px}
+  .headline{font-family:var(--font-display);font-weight:800;font-size:4.4rem;line-height:1.04;letter-spacing:-0.02em;text-transform:lowercase;margin:0}
+  .headline .mag{color:var(--magenta)}
+
+  .receipt{display:flex;align-items:stretch;gap:34px}
+  .checks{flex:1;font-family:var(--font-mono);font-size:1.32rem;font-weight:500;line-height:2.05;color:var(--fg-invert-mut);
+    border-left:3px solid rgba(255,255,255,0.14);padding-left:34px}
+  .checks b{color:var(--paper);font-weight:700}
+  .checks .ok{color:var(--green);font-weight:700}
+  .score{align-self:center;flex:none;width:200px;height:200px;border-radius:22px;background:var(--blue);
+    display:grid;place-items:center;box-shadow:9px 9px 0 0 var(--magenta)}
+  .score .n{font-family:var(--font-display);font-weight:800;font-size:4.6rem;color:var(--paper);letter-spacing:-0.02em}
+
+  .foot{position:relative;display:flex;align-items:flex-end;justify-content:space-between}
+  .kick{font-family:var(--font-display);font-weight:800;font-size:2.1rem;line-height:1.05;letter-spacing:-0.02em;text-transform:lowercase;max-width:720px}
+  .kick .mag{color:var(--magenta)}
+  .stamp{font-family:var(--font-mono);font-weight:700;font-size:1.05rem;letter-spacing:0.02em;color:var(--fg-invert-mut);
+    border:2px solid rgba(255,255,255,0.18);padding:10px 16px;border-radius:10px;white-space:nowrap}
+  .stamp b{color:var(--paper)}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="frame" data-w="1080" data-h="1080">
+    <div class="dots"></div>
+
+    <div class="top">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="agentic affiliate mark">
+        <rect x="0" y="0" width="120" height="120" rx="14" fill="#2B2BFF"></rect>
+        <polyline points="34,38 58,60 34,82" fill="none" stroke="#FFFFFF" stroke-width="13" stroke-linecap="square" stroke-linejoin="miter"></polyline>
+        <rect x="66" y="68" width="24" height="14" fill="#FFFFFF"></rect>
+      </svg>
+      <span class="wm">agentic <span class="mcp">affiliate</span></span>
+    </div>
+
+    <div class="q"><span class="you">you ▸</span> the MCP spec changed. did my connector break?</div>
+
+    <div class="mid">
+      <h1 class="headline">no. it already speaks<br>the <span class="mag">new one.</span></h1>
+      <div class="receipt">
+        <div class="checks">
+          resource metadata <b>· 200</b> <span class="ok">pass</span><br>
+          health <b>· 200</b> <span class="ok">pass</span><br>
+          old protocol <b>· answers as before</b> <span class="ok">pass</span><br>
+          2026-07-28 revision <b>· live</b> <span class="ok">pass</span>
+        </div>
+        <div class="score"><span class="n">4/4</span></div>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="kick">in production <span class="mag">a day</span> after the spec shipped. 30 jul 2026.</div>
+      <div class="stamp">made with <b>agenticaffiliate.ai</b></div>
+    </div>
+  </div>
+</div>
+<script>
+  const f=document.querySelector('.frame');
+  function fit(){const s=Math.min(innerWidth/f.dataset.w,innerHeight/f.dataset.h);f.style.transform='scale('+s+')';}
+  addEventListener('resize',fit);fit();
+</script>
+</body>
+</html>
