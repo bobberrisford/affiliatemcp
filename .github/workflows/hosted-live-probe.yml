@@ -54,6 +54,14 @@ jobs:
           BASE="https://mcp.agenticaffiliate.ai"
           FLAG=$(grep -oP 'HOSTED_STATELESS_2026 = "\K[01]' containers/wrangler.toml || echo "absent")
           echo "Committed launch lever: HOSTED_STATELESS_2026=${FLAG}"
+
+          # A containers deploy recycles the single pinned instance, and the
+          # Worker briefly answers 500 (Cloudflare error 1101) on every route
+          # while that happens (observed 2026-07-31: red 92s after deploy run
+          # 48, green again by the next probe). Retry so the run reports the
+          # steady state, not the recycle window; a persistent failure still
+          # fails the run.
+          run_probes() {
           fail=0
 
           # 1. RFC 9728 protected-resource metadata: 200 with the resource field.
@@ -114,4 +122,16 @@ jobs:
             fi
           fi
 
-          exit $fail
+          return $fail
+          }
+
+          for attempt in 1 2 3 4 5 6; do
+            echo "=== probe attempt ${attempt}/6 ==="
+            if run_probes; then
+              echo "Probe passed on attempt ${attempt}."
+              exit 0
+            fi
+            [ "$attempt" -lt 6 ] && sleep 45
+          done
+          echo "Probe still failing after 6 attempts across ~4 minutes: this is steady-state, not a recycle window."
+          exit 1
