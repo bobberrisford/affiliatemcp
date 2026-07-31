@@ -1,0 +1,117 @@
+name: Hosted live probe
+
+# Unauthenticated live verification of the hosted transport's public surface
+# at mcp.agenticaffiliate.ai, from a GitHub runner (which has open egress —
+# coding-agent sandboxes often cannot reach the production host directly).
+#
+# Exists for two jobs:
+#   1. Post-deploy verification for the CONTAINERS Worker (the transport).
+#      deploy-containers.yml ships the transport but never probes it;
+#      hosted-live-auth.yml runs only after the hosted/ Worker deploy and on
+#      its daily schedule. This closes that gap: every transport deploy is
+#      followed by a live check.
+#   2. On-demand testing for maintainers and agents: workflow_dispatch, plus
+#      a push trigger scoped to this file so an agent iterating on the probes
+#      gets results from the branch without needing dispatch permissions.
+#
+# Probes are UNAUTHENTICATED on purpose: no secrets, no tenant, nothing to
+# leak. They verify the surface shape, not tool behaviour (hosted-live-auth
+# owns the authenticated end-to-end walk).
+#
+# The stateless expectation tracks the committed launch lever
+# (containers/wrangler.toml HOSTED_STATELESS_2026), so this stays green
+# across launches AND rollbacks: flag "1" expects the stateless path to
+# answer 401 (bearer auth precedes protocol handling); flag "0" expects the
+# legacy 400 -32000 refusal for a session-less POST.
+
+on:
+  workflow_run:
+    workflows: ['Deploy containers Worker']
+    types: [completed]
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/hosted-live-probe.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    # For the post-deploy trigger, only probe after a SUCCESSFUL deploy of
+    # main; a failed deploy already has its own red signal.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Probe the hosted transport public surface
+        run: |
+          set -uo pipefail
+          BASE="https://mcp.agenticaffiliate.ai"
+          FLAG=$(grep -oP 'HOSTED_STATELESS_2026 = "\K[01]' containers/wrangler.toml || echo "absent")
+          echo "Committed launch lever: HOSTED_STATELESS_2026=${FLAG}"
+          fail=0
+
+          # 1. RFC 9728 protected-resource metadata: 200 with the resource field.
+          code=$(curl -sS -o prm.json -w '%{http_code}' --max-time 30 "${BASE}/.well-known/oauth-protected-resource" || echo 000)
+          if [ "$code" = "200" ] && grep -q '"resource"' prm.json; then
+            echo "PASS  oauth-protected-resource: 200 with resource field"
+          else
+            echo "FAIL  oauth-protected-resource: HTTP ${code}"; cat prm.json 2>/dev/null | head -c 300; echo; fail=1
+          fi
+
+          # 2. Health: 200.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 "${BASE}/health" || echo 000)
+          if [ "$code" = "200" ]; then
+            echo "PASS  /health: 200"
+          else
+            echo "FAIL  /health: HTTP ${code}"; fail=1
+          fi
+
+          # 3. Legacy path: an unauthenticated initialize must be a 401 with a
+          #    WWW-Authenticate challenge (the OAuth discovery hop clients use).
+          headers=$(mktemp)
+          code=$(curl -sS -o /dev/null -D "$headers" -w '%{http_code}' --max-time 30 -X POST \
+            -H 'content-type: application/json' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"live-probe","version":"0"}}}' \
+            "${BASE}/mcp" || echo 000)
+          if [ "$code" = "401" ] && grep -qi '^www-authenticate:' "$headers"; then
+            echo "PASS  legacy /mcp unauthenticated: 401 with WWW-Authenticate"
+          else
+            echo "FAIL  legacy /mcp unauthenticated: HTTP ${code} (challenge present: $(grep -ci '^www-authenticate:' "$headers"))"; fail=1
+          fi
+
+          # 4. Stateless path, expectation tracking the committed lever.
+          body=$(mktemp)
+          code=$(curl -sS -o "$body" -w '%{http_code}' --max-time 30 -X POST \
+            -H 'content-type: application/json' \
+            -H 'MCP-Protocol-Version: 2026-07-28' \
+            -H 'Mcp-Method: server/discover' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"server/discover","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}' \
+            "${BASE}/mcp" || echo 000)
+          if [ "$FLAG" = "1" ]; then
+            # Launched: bearer auth precedes protocol handling, so the honest
+            # unauthenticated answer is 401. A 400 with -32000 means the
+            # running instance never picked the flag up; 404/5xx are worse.
+            if [ "$code" = "401" ]; then
+              echo "PASS  stateless /mcp unauthenticated: 401 (launched, auth-gated)"
+            else
+              echo "FAIL  stateless /mcp unauthenticated: HTTP ${code}, expected 401 (flag=1)"
+              head -c 300 "$body"; echo; fail=1
+            fi
+          else
+            # Dormant/rolled back: the request falls through to the legacy
+            # path's session refusal.
+            if [ "$code" = "400" ] && grep -q '\-32000' "$body"; then
+              echo "PASS  stateless /mcp unauthenticated: legacy 400 -32000 (dormant, flag=${FLAG})"
+            else
+              echo "FAIL  stateless /mcp unauthenticated: HTTP ${code}, expected legacy 400 -32000 (flag=${FLAG})"
+              head -c 300 "$body"; echo; fail=1
+            fi
+          fi
+
+          exit $fail
