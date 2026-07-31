@@ -1,4 +1,5 @@
 name: Hosted live probe
+# Probe re-run marker: 2026-07-31 post-deploy-48 verification.
 
 # Unauthenticated live verification of the hosted transport's public surface
 # at mcp.agenticaffiliate.ai, from a GitHub runner (which has open egress —
