@@ -117,7 +117,7 @@ a{color:inherit;text-decoration:none}code{font-family:var(--font-mono);font-size
     </details>
     <details>
       <summary><span class="pm">+</span>what happens if i cancel hosted?</summary>
-      <div class="ans"><p>Cancel any time from the billing portal in your dashboard. You drop back to the free plan rather than losing access. If you delete your account instead, the encrypted credentials, the key protecting them, the account record and the billing email all go with it — deletion is complete, not a soft flag. You can also revoke the API key in the network's own dashboard at any point, which cuts access regardless of anything on our side.</p></div>
+      <div class="ans"><p>Cancel any time from the billing portal in your dashboard. You drop back to the free plan rather than losing access. If you delete your account instead, the encrypted credentials, the key protecting them, the account record and the billing email all go with it — deletion is complete, not a soft flag. You can take a copy out first: <code>GET /account/export</code>, authenticated with your own session, returns everything we hold about you as one JSON document, credential values excluded. You can also revoke the API key in the network's own dashboard at any point, which cuts access regardless of anything on our side.</p></div>
     </details>
     <details>
       <summary><span class="pm">+</span>who built this?</summary>
