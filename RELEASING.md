@@ -73,11 +73,14 @@ of the user release.
 - [ ] Tag and push the release so the plugin marketplace source is current.
 - [ ] Confirm the publish workflow attached
       `affiliate-networks-mcp-<version>.mcpb` to the GitHub release.
-- [ ] `mcp-publisher publish` (the MCP Registry listing), **after** `npm publish`
-      has succeeded. The registry verifies the version against the live npm
-      package, so publishing the listing first fails. Skipping this step does not
-      break the release; it leaves the registry advertising the previous version.
-      First release only: do the one-time setup below.
+- [ ] Confirm the `registry` job in the publish workflow republished the MCP
+      Registry listing. It runs automatically after a successful `npm publish`,
+      because the registry verifies the version against the live npm package and
+      so cannot run first. It fails loudly if the registry does not end up
+      serving this version, which is deliberate: the previous manual step could
+      be skipped without breaking the release, leaving the registry advertising
+      an older version indefinitely.
+      First release only: do the one-time setup below, which the job depends on.
 
 ## After publishing: refresh Cowork mirrors
 
@@ -110,9 +113,21 @@ DNS-verified namespace, so the first publish needs the domain proved once:
       release before going further. `0.18.0` predates the field.
 - [ ] Install the publisher CLI (`mcp-publisher`; Homebrew, curl, or PowerShell
       per the registry docs).
-- [ ] Add the DNS TXT record the registry asks for on `agenticaffiliate.ai`, then
-      `mcp-publisher login dns --domain agenticaffiliate.ai`.
-- [ ] `mcp-publisher publish` from the repository root.
+- [ ] Add the DNS TXT record the registry asks for on the **apex** of
+      `agenticaffiliate.ai`, not under a selector such as `_mcp-auth`. MCP DNS
+      auth follows SPF-style apex placement, and a record under a selector fails
+      with a generic signature error that does not point at the cause.
+- [ ] `mcp-publisher login dns --domain agenticaffiliate.ai --algorithm ed25519
+      --private-key "<hex seed>"`, then `mcp-publisher publish` from the
+      repository root. Do the first publish by hand so the DNS proof is
+      confirmed working before CI depends on it.
+- [ ] Give CI the same key so every later release republishes automatically: add
+      the hex seed as `MCP_REGISTRY_KEY`, in a protected Environment named
+      `mcp-registry-publish` restricted to `main`. A plain repository secret is
+      readable by any workflow the repository runs; the registry docs recommend
+      the Environment for exactly this reason.
+- [ ] Keep a copy of the private key in 1Password. Losing it means losing control
+      of the `ai.agenticaffiliate` namespace until the TXT record is rotated.
 
 Two constraints worth knowing before editing `server.json`:
 
