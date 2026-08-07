@@ -747,11 +747,15 @@ success path, the failure path, or the retest path.
 ### First-value pointer, honestly bounded
 
 On a passing connection test, the result page shows the copyable session
-token (the same one the H2 callback page issues) and a transport URL
-**placeholder** — H4's remote MCP transport (`src/hosted-transport/` in the
-root workspace) has not been deployed anywhere yet, so there is no real URL
-to give. The page states this plainly rather than fabricating one, and
-suggests a first prompt to try once a real MCP client is actually connected.
+token (the same one the H2 callback page issues) and the connector URL the
+user adds in their MCP client. H4's remote MCP transport
+(`src/hosted-transport/` in the root workspace) is deployed and live at
+`https://mcp.agenticaffiliate.ai`; when the deployer has set
+`HOSTED_CONNECTOR_URL` (`src/env.ts`) the page shows that real transport
+origin, and it is set in production to `https://mcp.agenticaffiliate.ai/mcp`.
+If a deployment leaves `HOSTED_CONNECTOR_URL` unset, the page falls back to a
+neutral shape placeholder (`https://<your-hosted-transport-deployment>/mcp`)
+rather than fabricating a URL. The page also suggests a first prompt to try.
 A full automatic first-value report (running that prompt end to end and
 showing the result on this page) needs the Node H4 transport runtime, which
 is out of this Worker's scope — stated on the page and here, rather than
@@ -1115,10 +1119,10 @@ same as before this follow-up.
 ## Deploy on Cloudflare (all-in-one)
 
 Step 14 above (deploy the Node digest-compose service) and H4's own deploy
-note ("no real URL to give" — "First-value pointer, honestly bounded") both
-assumed the two Node services (`src/hosted-transport/`, `src/hosted-digest/`,
-root workspace) would run on a separate host from this Worker — a VPS,
-Fly.io, Railway. Rob asked for an option to run those two services on
+note ("First-value pointer, honestly bounded") both assumed the two Node
+services (`src/hosted-transport/`, `src/hosted-digest/`, root workspace) would
+run on a separate host from this Worker — a VPS, Fly.io, Railway. Rob asked
+for an option to run those two services on
 Cloudflare as well, via **Cloudflare Containers** (a container instance
 attached to a Worker through a Durable Object binding), so the entire hosted
 stack — this Worker, the vault, the transport, the digest-compose service —
