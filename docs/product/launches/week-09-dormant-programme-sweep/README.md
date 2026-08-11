@@ -94,8 +94,90 @@ cross-tenant benchmark work waiting on #403 — this is single-tenant throughout
 node -e "const{chromium}=require('playwright');(async()=>{const d=process.cwd()+'/docs/product/launches/week-09-dormant-programme-sweep';const b=await chromium.launch();const p=await b.newPage({viewport:{width:1080,height:1080},deviceScaleFactor:2});await p.goto('file://'+d+'/card-advertiser.html');await p.waitForTimeout(900);console.log(await p.locator('.frame').boundingBox());await p.locator('.frame').screenshot({path:d+'/card-advertiser.png'});await b.close()})()"
 ```
 
+## Deployment plan
+
+Three surfaces ship on different mechanisms, and only one is automatic. The
+posts should not run ahead of the release, or the first-comment link lands on a
+version that does not contain the skill.
+
+### Stage 1 — merge this PR
+
+On merge to `main`:
+
+- **`site/go/*.html` deploy automatically** via GitHub Pages. No version gate,
+  no action. This is the only automatic surface here.
+- **npm does not publish.** `.github/workflows/publish.yml` runs on push to
+  `main` but is version-gated: it queries npm for the current
+  `package.json` version and skips when that version already exists. `main` is
+  on **0.20.0**, which is already published, so merging this PR ships nothing to
+  npm users.
+
+### Stage 2 — the release PR (this is what actually deploys the skill)
+
+A separate, small PR bumping **0.20.0 → 0.21.0**. Per `RELEASING.md` there are
+**seven** version touch-points, and missing any one fails CI:
+
+1. `package.json`
+2. `.claude-plugin/plugin.json` (must equal `package.json`)
+3. `package-lock.json` root `version`
+4. `package-lock.json` `packages[""].version` — both lockfile fields are
+   rewritten by re-running `npm install` after bumping `package.json`
+5. `src/shared/telemetry.ts` `PACKAGE_VERSION`
+6. `server.json` top-level `version` (MCP Registry listing)
+7. `server.json` `packages[0].version`
+
+Plus one thing that is easy to miss: because `PACKAGE_VERSION` lives under
+`src/shared/`, the `check:change` guardrail blocks the diff unless it also
+touches a test under `tests/shared/` or `tests/integration/`. Bump it alongside
+a real edit to `tests/shared/telemetry.test.ts`, keeping the version-sync
+assertions meaningful.
+
+Leave `desktop/package.json` alone — the desktop app ships on its own
+`desktop-v*` stream.
+
+On merge, `publish.yml` runs typecheck, lint, the full test suite, `build`,
+`build:mcpb`, `npm publish`, then creates the `v0.21.0` GitHub release and
+attaches both the versioned and stable-named `.mcpb`.
+
+### Stage 3 — verify the artifact, not the working tree
+
+`RELEASING.md` is explicit that the tests read `skills/` off disk, so a green
+suite does not prove the published tarball contains the skill. After publish:
+
+```bash
+npm view affiliate-networks-mcp@0.21.0 version
+npm pack affiliate-networks-mcp@0.21.0 --dry-run 2>&1 | grep dormant-programme-sweep
+curl -sSI https://agenticaffiliate.ai/go/publisher-sweep | head -1
+curl -sSI https://agenticaffiliate.ai/go/off-roster | head -1
+curl -sSI https://agenticaffiliate.ai/go/two-numbers | head -1
+```
+
+The `npm pack` line is the one that matters: it proves a user installing 0.21.0
+actually receives `skills/dormant-programme-sweep/`.
+
+### Who gets the skill, and who does not
+
+- **npm, the Claude plugin, the `.mcpb` desktop bundle** — yes, from 0.21.0.
+- **The hosted connector — no.** `src/prompts/generate.ts` is a hand-maintained
+  prompt list, independent of `skills/`; the hosted transport serves tools and
+  prompts, not skills. A hosted user can still ask "how many of our publishers
+  actually sell anything?" and Claude will reach for
+  `list_media_partners` and `list_transactions` directly, so the posts' CTA is
+  not broken — but they get the tools, not the skill's guardrails. Closing that
+  gap (a prompt mirroring the sweep) is a public-surface change and belongs in
+  its own PR, not this one.
+- **The MCP Registry listing** is republished manually until the
+  `MCP_REGISTRY_KEY` secret exists.
+
 ## Waiting on Rob
 
-- The permission call on the third-party figures, above.
-- Review, then a go/no-go on publishing. Nothing is scheduled.
-- Merge only if Rob asks for it.
+- Review, then merge this PR (stage 1) if he wants it.
+- Authorise the release PR (stage 2). Nothing reaches users without it.
+- Queue the posts. Nothing is scheduled: no campaign is named for week 9, so
+  campaign mode leaves the default in force.
+
+The permission question on the third-party figures is **settled** — Rob's call,
+2026-08-11: publishable as long as the advertiser is not named. Every
+identifier is withheld from the card, the posts, and the worked example, and a
+`git grep` over the branch confirms no brand name or account ID appears
+anywhere.

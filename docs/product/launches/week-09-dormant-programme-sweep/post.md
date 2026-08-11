@@ -16,39 +16,40 @@ Nothing is scheduled. No campaign is named or time-boxed for week 9, so
 default in force: the agent prepares copy in a tracked PR, Rob queues. The
 Buffer queue holds no scheduled posts, so every slot this week is free.
 
-## Before any of this can be posted — read this first
+## The advertiser's identity — settled
 
-**The figures come from a third party's programme.** The sweep ran against a
-live Awin advertiser account reachable from `AWIN_ADVERTISER_API_TOKEN`. It is
-not Rob's own brand. The brand, the account ID, and every publisher name are
-withheld from the card, the posts, and the worked example — only aggregate
-shape is used.
+The figures come from a live Awin advertiser programme that is not Rob's own
+brand. Rob's call, 2026-08-11: **publishable as long as the advertiser is not
+named.**
 
-Even anonymised, this is someone else's commercial performance data, and API
-access does not by itself confer the right to publish figures derived from it.
-Rob needs to confirm one of:
+What that requires, and what has been done:
 
-1. He has the right to publish anonymised aggregates from this account, or
-2. The sweep is re-run against a programme he owns or has written permission
-   for, and the card and post 1 are re-rendered, or
-3. The posts are reframed as explicitly illustrative product output, and the
-   card gets a demo label.
+- The brand name, account ID, and every publisher name are withheld from the
+  card, all three posts, and the worked example. Only aggregate shape is used.
+- `git grep` over the branch for the brand name, both advertiser account IDs,
+  and every connected publisher account name returns nothing.
+- The card says "one real programme" and names no sector or region.
+- No currency symbol appears anywhere, because the API returned a null currency
+  field — so the commission total cannot be used to infer a market.
 
-**Recommendation: option 1 if the permission genuinely exists, otherwise option
-2.** Do not publish on the assumption that anonymisation alone settles it.
-
-Nothing else in the bundle is blocked on this; the skill and the worked example
-already withhold every identifier.
+**Keep it that way on any edit.** The brand must not be named in the post body,
+the first comment, a reply, or the image alt text. If anyone asks in the
+comments which programme it was, the answer is that it is a real programme run
+through the operator's own credentials and not identified.
 
 ## Proposed slots
 
 | # | Slot | Post | Image |
 | --- | --- | --- | --- |
-| 1 | Tue 12 Aug, 08:00 | 524 recruited, 50 selling | `card-advertiser.png` |
-| 2 | Thu 14 Aug, 08:00 | The eight publishers that were not on the list | none |
-| 3 | Fri 15 Aug, 08:00 | The partner count is the wrong number | none |
+| 1 | Wed 12 Aug, 08:00 | 524 recruited, 50 selling | `card-advertiser.png` |
+| 2 | Thu 13 Aug, 08:00 | The eight publishers that were not on the list | none |
+| 3 | Fri 14 Aug, 08:00 | The partner count is the wrong number | none |
 
 One a day. Blitz #1 measured 3–4 a day as roughly halving per-post reach.
+
+Today is Tuesday 11 August 2026, so this covers the rest of the week. Post 1
+should not go out before the release in the deployment plan lands, so that the
+first-comment link resolves to a version that actually contains the skill.
 
 ---
 
