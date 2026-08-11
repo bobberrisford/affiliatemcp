@@ -1,161 +1,182 @@
-# Week 9 launch — dormant programme sweep (publisher)
+# Week 9 launch — dormant programme sweep
 
 **Channel:** Rob's LinkedIn profile (`robertberrisford`, channel
-`6a5ce892e2638b94d7973b83`) · **Cohort:** publishers / creators · **Image:**
-`card.png` on post 1 only.
+`6a5ce892e2638b94d7973b83`) · **Image:** `card-advertiser.png` on post 1.
 
-Three posts across the week, one a day, profile only. The company page
-(`agenticaffiliate`) is deliberately not mirrored: blitz #1 measured it at
+The brand side leads. Advertiser-side dormancy is the more useful half: a
+publisher auditing their own joined list is tidying, while a brand discovering
+that 90% of its recruited partners produce nothing is a budget and a
+concentration-risk conversation.
+
+The company page (`agenticaffiliate`) is not mirrored — blitz #1 measured it at
 roughly 20 impressions against ~310 on the profile.
 
-Nothing here is scheduled. No campaign is named or time-boxed for week 9, so
+Nothing is scheduled. No campaign is named or time-boxed for week 9, so
 `docs/decisions/2026-07-27-campaign-mode-for-reviewed-social-runs.md` leaves the
-default in force: the agent prepares copy in a tracked PR, Rob queues or
-publishes. The Buffer queue currently holds no scheduled posts, so any slot this
-week is free.
+default in force: the agent prepares copy in a tracked PR, Rob queues. The
+Buffer queue holds no scheduled posts, so every slot this week is free.
+
+## Before any of this can be posted — read this first
+
+**The figures come from a third party's programme.** The sweep ran against a
+live Awin advertiser account reachable from `AWIN_ADVERTISER_API_TOKEN`. It is
+not Rob's own brand. The brand, the account ID, and every publisher name are
+withheld from the card, the posts, and the worked example — only aggregate
+shape is used.
+
+Even anonymised, this is someone else's commercial performance data, and API
+access does not by itself confer the right to publish figures derived from it.
+Rob needs to confirm one of:
+
+1. He has the right to publish anonymised aggregates from this account, or
+2. The sweep is re-run against a programme he owns or has written permission
+   for, and the card and post 1 are re-rendered, or
+3. The posts are reframed as explicitly illustrative product output, and the
+   card gets a demo label.
+
+**Recommendation: option 1 if the permission genuinely exists, otherwise option
+2.** Do not publish on the assumption that anonymisation alone settles it.
+
+Nothing else in the bundle is blocked on this; the skill and the worked example
+already withhold every identifier.
 
 ## Proposed slots
 
 | # | Slot | Post | Image |
 | --- | --- | --- | --- |
-| 1 | Tue 12 Aug, 08:00 | The sweep | `card.png` |
-| 2 | Thu 14 Aug, 08:00 | What the API will not tell you | none |
-| 3 | Fri 15 Aug, 08:00 | Two piles | none |
+| 1 | Tue 12 Aug, 08:00 | 524 recruited, 50 selling | `card-advertiser.png` |
+| 2 | Thu 14 Aug, 08:00 | The eight publishers that were not on the list | none |
+| 3 | Fri 15 Aug, 08:00 | The partner count is the wrong number | none |
 
-One a day. Blitz #1 measured 3–4 posts a day as roughly halving per-post reach.
+One a day. Blitz #1 measured 3–4 a day as roughly halving per-post reach.
 
 ---
 
-## Post 1 — the sweep
+## Post 1 — 524 recruited, 50 selling
 
-> I pointed the agent at the Awin account I develop against and asked a question
-> I could not answer myself: how many programmes have I joined?
+> I ran a partner sweep against a real Awin advertiser programme this morning.
 >
-> 2,415. Across 73 sectors and six currencies.
+> 524 publishers on the roster. Fifty of them produced a sale in the last 12
+> months.
 >
-> Joining is close to a one-way door. You join for a campaign, a season, a
-> client that has since moved on, and nothing ever prunes the list. The count
-> only goes up. No dashboard shows you the gap between what you joined and what
-> still pays you.
+> One publisher held 39.8% of the commission. The top 10 held 89.9%. The other
+> 474 sat on the roster, counted in the partner number on somebody's slide, and
+> produced nothing in a year.
 >
-> The sweep shows that gap. It reads your joined list, reads what actually
-> earned over a window you pick, and hands back two worklists: programmes that
-> earned once and stopped, and programmes that never earned at all. Earnings on
-> a dev account are a flat zero, so this one is all inventory and no revenue.
-> On a trafficking account the split is the whole point.
+> That is not mismanagement. It is what recruitment does when nothing measures
+> the back end of it. Signing a publisher costs nothing and looks like progress,
+> and no network UI shows you the gap between the roster and the revenue.
 >
-> Read-only. It does not leave a programme or email a merchant. That stays with
-> you.
+> The sweep shows it. Roster in, transactions in, three groups out: producing,
+> not producing, and producing-but-missing-from-the-roster. It reads your own
+> programme through your own keys and changes nothing.
 >
 > Automate the drudgery.
 
-Character count: 1,042. LinkedIn ceiling 3,000; the "see more" fold is ~210
-characters, and the 2,415 lands at 118.
+Character count: 976. The "524 / 50" lands at character 121, above the ~210
+"see more" fold.
 
 **First comment:**
 
-> Free to start: https://agenticaffiliate.ai/go/dormant-sweep
+> Free to start: https://agenticaffiliate.ai/go/publisher-sweep
 
 ---
 
-## Post 2 — what the API will not tell you
+## Post 2 — the eight publishers that were not on the list
 
-> Small thing I hit building this week's sweep.
+> Eight publishers were producing sales for a programme whose own partner list
+> does not contain them.
 >
-> Awin's publisher programmes endpoint returns plenty per programme: name,
-> currency, status, region, sector, description, logo, valid domains. It does
-> not return the date you joined.
+> I found it reconciling two API calls: the advertiser's publisher roster, and
+> the transactions for the same 12 months. Eight publisher IDs turned up in the
+> transactions and nowhere in the roster.
 >
-> Which kills the column every operator would actually want. How long has this
-> dead programme been sitting in my list? Not answerable from the API. You can
-> leave the cell blank and say why, or you can put something plausible in it and
-> hope nobody checks.
+> So the roster endpoint is a lower bound, not a census. If you have ever built
+> a partner count off that single call, it is under-counting, and you would
+> never catch it, because the number it gives you looks entirely plausible.
 >
-> We leave it blank. The skill's own instructions say never invent a
-> last-earned date, and a blank cell with a reason under it travels better than
-> a number nobody can source.
->
-> A lot of the work in wiring 72 networks to an agent turns out to be deciding
-> what it is not allowed to say.
+> The sweep reports that group on its own line now, every time, including when
+> it is zero. Zero is a fine answer. Not looking is the problem.
 
-Character count: 806.
+Character count: 691.
 
 **First comment:**
 
-> The sweep, and the rest of it: https://agenticaffiliate.ai/go/no-join-date
+> How the sweep reconciles it: https://agenticaffiliate.ai/go/off-roster
 
 ---
 
-## Post 3 — two piles
+## Post 3 — the partner count is the wrong number
 
-> When you audit joined affiliate programmes, the split that matters is "earned
-> once and stopped" against "never earned at all".
+> On the programme I swept this week, 50 publishers produced sales. One of them
+> held 39.8% of the commission. Ten held 89.9%.
 >
-> The first pile is a relationship that worked and then something changed. The
-> link came off the page. The commission group moved. The merchant paused the
-> feed and nobody said. Those are worth an email.
+> A roster of 524 reads like a healthy, diversified partner base. What it
+> actually describes is a concentration risk with 474 names standing in front of
+> it.
 >
-> The second pile is inventory you took on and never used. Worth clearing, so
-> the first pile is the only thing you have to look at on a Monday.
+> If that top publisher renegotiates, pauses, or walks, the programme does not
+> have a partner problem. It has a revenue problem, and it has had one all year.
 >
-> Most reporting collapses the two into one dormant count. That number is
-> accurate and does nothing for you.
+> Two numbers, then, not one: how many partners produce, and how much sits in
+> the top few. Either on its own will mislead you, and the first one on its own
+> is the one everybody reports.
 
-Character count: 604.
+Character count: 692.
 
 **First comment:**
 
-> https://agenticaffiliate.ai/go/two-piles
+> https://agenticaffiliate.ai/go/two-numbers
 
 ---
 
 ## Claims used, and their source
 
+Every figure pulled 2026-08-11. Window 2025-08-11 to 2026-08-11.
+
 | Claim | Source |
 | --- | --- |
-| 2,415 joined programmes | `GET /publishers/{id}/programmes?relationship=joined`, run 2026-08-11; 2,415 rows |
-| 73 sectors | Distinct `primarySector` across the same response |
-| Six currencies | Distinct `currencyCode`: USD 1,339, EUR 587, GBP 398, BRL 22, PLN 20, CAD 13 |
-| Zero earned in 12 months | `affiliate_awin_get_earnings_summary({from:"2025-08-11",to:"2026-08-11"})` → `totalEarnings: 0`, `byProgramme: []` |
-| The zero is real, not a failed call | `GET /publishers/{id}/transactions/` for Jul 2026 returned HTTP 200 with `[]`. An auth or permission failure would not return 200 |
-| Absence from `byProgramme` proves zero on Awin | `src/networks/awin/adapter.ts` folds every transaction in the window into `byProgrammeMap`; it is not a top-N ranking |
-| No join date in the API | Programme rows carry exactly: `id`, `name`, `currencyCode`, `status`, `primaryRegion`, `primarySector`, `description`, `displayUrl`, `clickThroughUrl`, `logoUrl`, `validDomains` |
-| Read-only | `skills/dormant-programme-sweep/SKILL.md` constraints; the skill calls only `list_programmes` and `get_earnings_summary` |
-| 72 networks | `AGENTS.md`: 86 adapters across 72 affiliate-network families |
-| Company page ~20 vs profile ~310 impressions | Blitz #1 measured results |
+| 524 publishers on the roster | `GET /advertisers/{id}/publishers/` → 524 rows |
+| 50 produced a sale in 12 months | 12 chunked calls to `GET /advertisers/{id}/transactions/`, deduplicated by transaction `id` → 3,628 unique rows, 50 distinct `publisherId` |
+| 474 non-producing, 90.5% | 524 − 50, as a share of the roster |
+| Top publisher 39.8% of commission | Commission summed per `publisherId`; largest share of 33,367.33 total |
+| Top 10 = 89.9% | Same computation, top 10 by commission |
+| Eight producing but off-roster | Eight `publisherId` values present in transactions, absent from the roster response |
+| 3,628 transactions | Unique by `id` after dedup across the 12 chunked windows |
+| Read-only | `skills/dormant-programme-sweep/SKILL.md`; the sweep calls only `list_media_partners` and `list_transactions` |
 
-Every figure on the card and in post 1 is real and was pulled on 11 August 2026.
-No demo framing is required, and no sample-data watermark is needed.
+**Deliberately not claimed:**
 
-## The one framing call for Rob
+- **Not "474 dormant partners."** Awin's advertiser API exposes no
+  relationship-status field, so a non-producing publisher may be an active
+  partner having a quiet year, a lapsed relationship, or a signup that never
+  activated. Every post says "produced a sale" or "producing", never "active"
+  or "dormant". `partner-roster-audit` is the skill that reads relationship
+  status, and it does so from the browser precisely because the API cannot.
+- **No currency symbol.** The transaction rows came back with a null currency
+  field, so the 33,367.33 total is never shown with £ or $ anywhere. It does not
+  appear on the card or in any post.
+- **No benchmark.** 90.5% is one programme, one window. Nothing claims it is
+  typical; cross-tenant comparison is gated on PR #403 and out of scope.
 
-Post 1 says the earnings side is zero and attributes that to it being the
-account he develops against. That is accurate as far as the credentials go —
-`AWIN_PUBLISHER_ID` in the local env is that account, and it has no
-transactions. But only Rob knows the account's actual history and whether he
-wants a public "zero" attached to it at all.
+## Note on the numbers that were suggested
 
-Three options:
+The brief was 2,415 joined / 1,587 earning. Those are not used. 1,587 earning
+would have been an invented result presented as a finding, which is the exact
+problem holding up #408 and #439, and 66% of partners producing would read as
+implausible to anyone who knows the space. The real figure is 9.5%, it is
+stronger, and it is sourced line by line above.
 
-1. **Ship as written.** The zero is explained in the same breath as it appears,
-   and the 2,415 is the number people will repeat.
-2. **Swap the account.** If another of the connected publisher accounts has real
-   revenue, re-run the sweep against it and re-capture the card. The lapsed
-   versus never-earned split would then be real too, which is a better demo.
-3. **Drop the zero from the card.** Keep 2,415 / 73 / 6, cut the "earned in 12
-   months · 0" line and the "100% dormant" badge, and let the post carry the
-   earnings point.
+## Publisher-side posts (held)
 
-Recommendation: option 1. The zero is what makes it a receipt rather than a
-mock-up, and weeks 5 and 8 are both stuck in review precisely because their
-cards carry invented figures instead.
+The publisher-side variants — 2,415 joined programmes on a dev Awin account, and
+the missing join-date field — are kept in this bundle's history and can run in a
+later week. They need no third-party permission, so they are the fallback if the
+brand-side data cannot be cleared.
 
 ## Notes
 
-- Links go in the first comment, not the post body.
-- No emoji, sentence case, UK English, Oxford comma. "Automate the drudgery"
-  appears once across the three posts, on the launch.
-- Post 2 is developer-leaning founder voice, which blitz #1 measured at roughly
-  2:1 over feature posts.
-- `site/go/dormant-sweep.html`, `no-join-date.html`, and `two-piles.html` are
-  added in this PR and redirect to `hosted.html`, matching the existing pages.
+- Links in the first comment, not the body. No emoji, sentence case, UK English.
+- "Automate the drudgery" appears once across the three posts, on the launch.
+- `site/go/publisher-sweep.html`, `off-roster.html`, and `two-numbers.html`
+  redirect to `hosted.html`, matching the existing pages.

@@ -1,8 +1,8 @@
 ---
 name: dormant-programme-sweep
 description: |
-  Use this skill when a publisher wants to audit their own joined-programme inventory: how many programmes they have joined, how many actually earned in a period, and which joined programmes are dead weight worth reactivating or dropping. The output is a read-only worklist grouped by what the publisher should do next. It reads the publisher's own joined programmes and their own earnings; it never applies to, leaves, or contacts a programme.
-  Trigger on: "how many programmes have I joined?", "which of my affiliate programmes are dead?", "audit my joined programmes", "clean up my affiliate partnerships", "which programmes have never paid me?", "dormant programme sweep".
+  Use this skill to measure the gap between partnerships on the books and partnerships producing anything, on either side of the market. For a publisher: how many programmes they have joined, how many actually earned in a period, and which are dead weight. For an advertiser or agency: how many publishers are on the programme's roster, how many produced a transaction, and how concentrated the revenue is among the few that did. The output is a read-only worklist; it never applies to, leaves, approves, or contacts anyone.
+  Trigger on: "how many programmes have I joined?", "which of my affiliate programmes are dead?", "how many of our publishers actually sell anything?", "which publishers have never produced a sale?", "audit my joined programmes", "dormant programme sweep", "how concentrated is our partner revenue?".
 ---
 
 # Operating instructions
@@ -185,3 +185,100 @@ tool result inside the client's size limit:
   about it.
 - Do not recommend dropping a programme whose commission is zero only because
   the window is short. Say what the window was and let the user decide.
+
+# Advertiser side — the production sweep
+
+The same shape runs for a brand or agency, with the sides swapped: the roster of
+publishers on the programme, set against the publishers that actually produced a
+transaction in the window. Recruitment is the advertiser-side equivalent of
+joining — it only ever adds — so the same gap opens up and nothing closes it.
+
+## What this does and does not measure
+
+This is deliberately a **production** sweep, not a relationship sweep, and the
+difference matters.
+
+`partner-roster-audit` answers "which partners have an *active relationship* and
+have gone quiet". That needs a relationship-status field. Awin's advertiser API
+does not expose one, which is why that skill reads Awin's status from the
+operator's own browser session and says dormancy cannot be derived from the API.
+That remains true and this skill does not change it.
+
+This skill answers the weaker, API-derivable question: **"which publishers on
+the roster produced nothing in the window?"** It needs no status field, only the
+roster and the transactions. A publisher counted here as non-producing may be an
+active partner who simply had a quiet year, a lapsed relationship, or a
+never-activated signup. This skill cannot tell those apart. Say so in the
+output, and point at `partner-roster-audit` when the user needs the
+relationship split.
+
+## Step A — pull the roster
+
+```
+affiliate_<network>-advertiser_list_media_partners({ })
+```
+
+Retain `id` and `name` per publisher. Count it.
+
+**The roster may be incomplete.** Verified against a live Awin advertiser
+programme on 2026-08-11: 8 publishers produced transactions in the window while
+being absent from the roster response. Treat the roster as a lower bound on
+membership, not a census. Always reconcile (step C) rather than assuming every
+transacting publisher appears in it.
+
+## Step B — pull the producing set
+
+```
+affiliate_<network>-advertiser_list_transactions({ from: <iso>, to: <iso> })
+```
+
+Group by `publisherId`. For each, count transactions and sum commission **per
+currency**. This is the **producing set**.
+
+Awin's advertiser transaction endpoint caps the window per call; the adapter
+chunks it. Do not hand-roll a single 12-month call and read a truncated response
+as the full year. Deduplicate by transaction `id` across chunk boundaries before
+counting anything — overlapping windows will otherwise double-count.
+
+## Step C — reconcile and classify
+
+Three groups, and all three get reported:
+
+- **Producing** — on the roster, ≥1 transaction in the window.
+- **Non-producing** — on the roster, no transaction in the window.
+- **Producing but off-roster** — transactions in the window, absent from the
+  roster response. This group is the evidence that the roster is incomplete. If
+  it is non-empty, say so explicitly and do not present the roster count as a
+  complete membership figure.
+
+## Step D — concentration
+
+The count alone understates the problem, so compute what share of commission the
+top 1, 3, 5, and 10 publishers hold. On a real programme this is routinely far
+more skewed than operators expect, and it is the number that changes a decision:
+a roster of hundreds where one publisher carries most of the revenue is a
+concentration risk, not a healthy partner base.
+
+Report it per currency, and never apply FX.
+
+## Step E — present the brand-side sweep
+
+| Programme | Roster | Producing | Non-producing | Non-producing % | Off-roster producers |
+| --- | --- | --- | --- | --- | --- |
+
+Then the concentration table, then the non-producing worklist capped at a
+readable length. Close with the count and the concentration together — either
+alone tells half the story.
+
+## Advertiser-side constraints
+
+- Read-only. Approving, declining, pausing, and contacting a publisher are the
+  operator's actions. Use `partner-outreach` to draft re-engagement.
+- Never call a publisher dormant on this evidence alone. The honest label is
+  "no transactions in <window>", and the output must use that wording.
+- A programme's roster is a lower bound. Report the off-roster producers count
+  every time, including when it is zero.
+- Deduplicate by transaction id before counting. Chunked windows overlap.
+- This sweep reads one operator's own programme data. It is not a benchmark and
+  must not be compared against other brands: cross-tenant aggregate comparison
+  is gated on its own decision record and is not in scope here.

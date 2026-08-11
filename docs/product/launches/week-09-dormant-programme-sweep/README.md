@@ -1,84 +1,101 @@
 # Week 9 launch bundle — dormant programme sweep
 
 The week-9 bundle from the hosted PLG weekly launch calendar
-(`docs/product/hosted-plg-workstream.md`). Unlike weeks 5 and 8, every figure on
-the card came off a live account on the day; nothing here is illustrative and no
-sample-data framing is needed.
+(`docs/product/hosted-plg-workstream.md`). Unlike weeks 5 and 8, every figure
+came off live accounts on the day; nothing is illustrative and no sample-data
+framing is used.
 
 | | |
 |---|---|
 | **Week** | 9 |
-| **Cohort** | Publishers / creators (alternating from week 8's agency slot) |
-| **Feature** | Dormant programme sweep — joined inventory against what actually earned |
-| **Source skill** | `dormant-programme-sweep` (new, shipped in this PR) |
-| **Delivery** | In-chat branded card + the written worklist |
+| **Lead cohort** | Advertisers, brands, and agencies |
+| **Feature** | Dormant programme sweep — partnerships on the books against partnerships producing |
+| **Source skill** | `dormant-programme-sweep` (new, ships in this PR; both sides) |
+| **Delivery** | In-chat branded card + written worklist |
 | **Gating** | Free-first |
-| **Proof** | Live Awin publisher account, swept 2026-08-11: 2,415 joined, 0 earning |
+| **Proof** | Live Awin advertiser programme, swept 2026-08-11: 524 roster, 50 producing |
+
+## Read this before publishing
+
+The launch figures come from a **third party's** Awin advertiser programme,
+reachable from the configured advertiser token. Every identifier is withheld,
+but API access does not by itself confer the right to publish derived figures.
+`post.md` sets out the three options and the recommendation. Nothing else in the
+bundle depends on it.
 
 ## Contents
 
-- `card.html` — self-contained 1080×1080 card. Brand fonts loaded from
-  `design-system/fonts/`, mark inlined as SVG, no external fetches.
-- `card.png` — 2160×2160 capture (deviceScaleFactor 2). `.frame` bounding box
-  verified at exactly 1080×1080 and the attribution stamp sits inside it.
-- `post.md` — three LinkedIn posts, first comments, proposed slots, the claims
-  table, and the one framing call left for Rob.
-- The skill itself at `skills/dormant-programme-sweep/`, with a worked example
-  built from the same real run.
+- `card-advertiser.html` / `.png` — the launch card (1080×1080 source, 2160×2160
+  capture). Brand fonts local, mark inlined, no external fetches.
+- `card.html` / `.png` — the publisher-side variant, held for a later week.
+- `post.md` — three brand-side LinkedIn posts, first comments, proposed slots,
+  the claims table, what is deliberately not claimed, and the permission call.
+- The skill at `skills/dormant-programme-sweep/`, with a worked example per side.
 - Three redirect pages under `site/go/`.
 
-## Hook
+## Both sides of one feature
 
-"How many programmes have I joined, and how many still pay?" Joined inventory
-only ever grows; nothing prunes it, and no network dashboard shows the gap
-between the list and the earning set. The sweep computes that gap and splits the
-dormant remainder into reactivation candidates and drop candidates.
+The gap between partnerships on the books and partnerships producing anything
+opens on both sides of the market, for the same reason: adding is free and
+nothing ever subtracts.
 
-## Why this feature, this week
+- **Publisher side** — joined programmes against what earned. Proof: a live Awin
+  publisher account, 2,415 joined across 73 sectors, zero earning in 12 months.
+- **Advertiser side** — the publisher roster against what produced. Proof: a
+  live Awin advertiser programme, 524 on the roster, 50 producing, one publisher
+  holding 39.8% of commission.
 
-Weeks 5 and 8 are both open drafts blocked on the same thing: their cards carry
-invented figures, so neither can be published without a re-render against real
-data. Week 9 was chosen to be a feature whose proof exists on the account that
-is already configured. Awin publisher is the only credential set in the local
-env, so the feature had to be publisher-side, read-only, and answerable from
-`list_programmes` plus `get_earnings_summary`. It is.
+The brand side leads the launch. A publisher pruning their own joined list is
+tidying; a brand finding that 90% of recruited partners produced nothing in a
+year is a budget conversation and a concentration risk.
+
+## What the sweep deliberately does not claim
+
+It reports **production**, not **relationship**. Awin's advertiser API exposes
+no relationship-status field, so "produced no sale in the window" cannot be
+upgraded to "dormant partner" — the publisher may be active and quiet, lapsed,
+or never activated. `partner-roster-audit` remains the skill that reads
+relationship status, and it reads it from the operator's browser session
+precisely because the API cannot supply it. This skill does not contradict that
+record; it answers the weaker question the API *can* answer.
+
+The sweep also found **8 publishers producing while absent from the roster
+endpoint**, so the roster is reported as a lower bound and that group gets its
+own line in every output, including when it is zero.
 
 ## Free-first gating
 
-Nothing here sits behind payment. The sweep reads the operator's own joined list
-and their own earnings through their own keys, and the card renders in chat. The
-paid pull stays scale and unattended operation — a scheduled monthly sweep that
-emails the delta — per
-`docs/decisions/2026-07-18-hosted-freemium-metered-tier.md`.
+Nothing sits behind payment. The sweep reads the operator's own roster and
+transactions through their own keys, and the card renders in chat. The paid pull
+stays scale and unattended operation — a scheduled sweep that emails the delta —
+per `docs/decisions/2026-07-18-hosted-freemium-metered-tier.md`.
 
 ## Scope and risk
 
-Routine and decision-complete. One new user-facing skill, its example, its test
-registration, the launch bundle, and three static redirect pages. No adapter,
-tool, contract, or runtime change: the skill composes two operations that
-already ship. No new tool surface is added, per the `NetworkAdapter` rule in
-`AGENTS.md`. No decision gate applies — this is a single-tenant read, not the
-aggregate benchmark work waiting on PR #403.
+Routine and decision-complete. One new user-facing skill covering both sides,
+two worked examples, test registration, the launch bundle, and three static
+redirects. No adapter, tool, contract, or runtime change: the skill composes
+`list_programmes`, `get_earnings_summary`, `list_media_partners`, and
+`list_transactions`, all already shipped. No new tool surface. Not the
+cross-tenant benchmark work waiting on #403 — this is single-tenant throughout.
 
 ## Proof
 
-- `npx vitest run tests/skills/skills-exist.test.ts` — 98 passed, including the
-  new skill's frontmatter, trigger phrases, cited tool names, and example file.
-- Card captured with Playwright; `.frame` bounding box logged at exactly
-  1080×1080, PNG written at 2160×2160.
-- Every claim on the card traced to its source in `post.md`.
+- `npx vitest run` — full suite green.
+- `npx tsc -p tsconfig.dev.json --noEmit` — clean.
+- `npx eslint src scripts tests` — 0 errors.
+- `npm run check:change -- --base origin/main` — passed.
+- Both cards captured with Playwright; `.frame` bounding box logged at exactly
+  1080×1080, PNGs written at 2160×2160, attribution inside the frame.
 
-## How to re-render the card
+## How to re-render a card
 
 ```bash
-node -e "const{chromium}=require('playwright');(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:1080,height:1080},deviceScaleFactor:2});await p.goto('file://'+process.cwd()+'/docs/product/launches/week-09-dormant-programme-sweep/card.html');await p.waitForTimeout(900);console.log(await p.locator('.frame').boundingBox());await p.locator('.frame').screenshot({path:'docs/product/launches/week-09-dormant-programme-sweep/card.png'});await b.close()})()"
+node -e "const{chromium}=require('playwright');(async()=>{const d=process.cwd()+'/docs/product/launches/week-09-dormant-programme-sweep';const b=await chromium.launch();const p=await b.newPage({viewport:{width:1080,height:1080},deviceScaleFactor:2});await p.goto('file://'+d+'/card-advertiser.html');await p.waitForTimeout(900);console.log(await p.locator('.frame').boundingBox());await p.locator('.frame').screenshot({path:d+'/card-advertiser.png'});await b.close()})()"
 ```
 
 ## Waiting on Rob
 
-- The framing call in `post.md`: whether the public "zero earning" stays, the
-  sweep is re-run against an account with real revenue, or the zero comes off
-  the card. Recommendation is to ship as written.
-- Review, then a go/no-go on publishing. Nothing is scheduled; no campaign is in
-  force for week 9, so the default applies and Rob queues.
+- The permission call on the third-party figures, above.
+- Review, then a go/no-go on publishing. Nothing is scheduled.
 - Merge only if Rob asks for it.
