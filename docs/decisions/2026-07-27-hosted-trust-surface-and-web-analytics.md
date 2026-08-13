@@ -219,6 +219,11 @@ misdescribes the product is the wrong order.
   self-serve export is not built. Some enterprise buyers will disqualify us on
   that list. This is the correct outcome; they would have disqualified us later
   and with less goodwill.
+  **Status update, 2026-07-29:** self-serve export shipped as
+  `GET /account/export` (PR #395), so that item has left the list and the trust
+  pages now state it as live. The rest of the list stands. The accepted text
+  above is left as written; this note records what changed, not a
+  re-decision.
 - We start collecting aggregate page-view data where previously we collected
   none. The claim "nothing phones home" stays true of the **local server**, and
   must be scoped that way wherever it appears.

@@ -139,10 +139,9 @@ section was written ahead of launch, in the same change set as the credential
 vault it describes, so the policy was accurate before the first hosted customer
 rather than after.
 
-Two current limits are stated here rather than left to be discovered:
-self-serve export is not built yet, so a copy of your stored data has to be
-requested; and because session tokens are stateless, a token already issued
-stays valid until it expires rather than being revoked on the spot. For the
+One current limit is stated here rather than left to be discovered: because
+session tokens are stateless, a token already issued stays valid until it
+expires rather than being revoked on the spot. For the
 hosted tier we act as a processor of the data you store with us; there is no
 SOC 2 or ISO 27001 certification and no data processing agreement on offer at
 present.
@@ -174,6 +173,15 @@ serve the request that needs them; plaintext is never written to storage.
 requests and their own scheduled jobs. It is never used for analytics, and
 never for any purpose beyond serving its owner, with one bounded exception:
 opt-in programme benchmarks, described under "Aggregation" below.
+
+**Export.** `GET /account/export`, authenticated with your own session,
+returns one JSON document of everything this service holds about you: the
+account record, your connected networks as metadata only, and the
+subscription record including the billing email. Credential values are never
+included. The export reads the vault's metadata without decrypting anything,
+so a copy of your export cannot be used to connect a network on your behalf.
+There is no dashboard button for it yet; it is an authenticated request
+against the hosted API.
 
 **Deletion.** Deleting a hosted account deletes its stored data completely:
 the encrypted credential data, the wrapped key protecting it, the account

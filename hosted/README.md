@@ -404,8 +404,8 @@ workstream):
 `src/vault.ts` implements per-user envelope encryption for network
 credentials, in a separate KV namespace (`HOSTED_VAULT`) from H2's identity
 store. Routes: `src/routes/vault.ts` (`POST`/`GET`/`DELETE /vault/credentials`)
-and `src/routes/account.ts` (`DELETE /account`), all requiring the same
-session token H2 issues (`src/routes/guard.ts`).
+and `src/routes/account.ts` (`DELETE /account`, `GET /account/export`), all
+requiring the same session token H2 issues (`src/routes/guard.ts`).
 
 ### Design
 
@@ -487,6 +487,21 @@ can point different calls at different providers during a rotation.
 5. Confirm `{ skipped: 0 }` on a re-run before removing the old secret value
    from wherever it was held during the rotation window. Credential blobs are
    never touched by this procedure — only the wrapped data keys.
+
+### Export
+
+- **`GET /account/export`** is the read half of the custody record's
+  user-control clause (`src/routes/account.ts`): one JSON document of
+  everything the Worker holds about the caller, across all three KV
+  namespaces. Owner-only and full-scope; a digest-scoped token is refused
+  with `403 insufficient_scope`. Connected networks appear as metadata only
+  (`vault.listCredentialMetadata` reads blob metadata without decrypting and
+  never returns `iv`/`ciphertext`), so a leaked export cannot connect a
+  network on the caller's behalf. The caller's own billing email is included,
+  deliberately: an "everything we hold about you" export that omitted the one
+  plaintext PII the Worker stores would be misleading, and it is returned
+  only to the caller's own verified session. There is no dashboard button
+  yet; it is an authenticated API request.
 
 ### Deletion
 
