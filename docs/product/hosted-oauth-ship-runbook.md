@@ -74,21 +74,23 @@ is already returning `iss` first.
 
 ### Tier B — required before an MCP client can use OAuth
 
-5. Confirm the H4 transport is deployed to a real, reachable URL. The connect
-   success page and `hosted/README.md` note it had not been deployed anywhere
-   yet; ship needs a live transport origin. Follow
-   `docs/product/hosted-transport-deploy-runbook.md` for the ordered,
-   copy-pasteable steps (build/push the image, custom domain, every env var
-   and how the origins must agree, and the post-deploy smoke).
+5. **Done.** The H4 transport is deployed and live at
+   `https://mcp.agenticaffiliate.ai` (Cloudflare Containers via
+   `deploy-containers.yml`). Verified:
+   `GET https://mcp.agenticaffiliate.ai/.well-known/oauth-protected-resource`
+   returns 200 with `resource` = `https://mcp.agenticaffiliate.ai` and
+   `authorization_servers` = `["https://hosted.agenticaffiliate.ai"]`. See
+   `docs/product/hosted-transport-deploy-runbook.md` for the ordered deploy
+   steps used.
 6. Transport OAuth discovery is now **implemented** (slice 2b, PR #375): the
    transport's `401`s carry a `WWW-Authenticate` challenge and it serves
    `/.well-known/oauth-protected-resource` pointing at the Worker's issuer,
    both gated on the `HOSTED_TRANSPORT_PUBLIC_URL` env var (unset = discovery
    off, backward-compatible). Set `HOSTED_TRANSPORT_PUBLIC_URL` (the transport's
    own public origin) to enable client auto-discovery.
-7. Set `HOSTED_CONNECTOR_URL` (Worker var) to the transport's connector URL so
-   the connect success page shows the real value instead of the placeholder
-   (implemented in slice 2b).
+7. **Done.** `HOSTED_CONNECTOR_URL` (Worker var) is set in production to
+   `https://mcp.agenticaffiliate.ai/mcp`, so the connect success page shows the
+   real connector URL instead of the placeholder (implemented in slice 2b).
 8. End-to-end test against a real MCP client (the H4 acceptance proof that was
    always a Rob-only follow-up): add affiliate-mcp as a custom connector in
    Claude, complete the browser OAuth + consent, and confirm a tool call runs
