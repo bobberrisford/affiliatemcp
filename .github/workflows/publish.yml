@@ -16,6 +16,10 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    outputs:
+      # Consumed by the registry job below, so the listing is only republished
+      # on a release that actually reached npm.
+      published: ${{ steps.check.outputs.publish }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -75,3 +79,55 @@ jobs:
           # resolves to the newest release, so the download link never goes stale.
           cp ".artifacts/affiliate-networks-mcp-$VERSION.mcpb" ".artifacts/affiliate-networks-mcp.mcpb"
           gh release upload "v$VERSION" ".artifacts/affiliate-networks-mcp.mcpb" --clobber
+
+  # The MCP Registry listing. RELEASING.md carried this as a manual post-release
+  # step and noted that skipping it "leaves the registry advertising the
+  # previous version" — a silent failure, and manual release steps get skipped.
+  #
+  # Separate job, not extra steps on `publish`, for one reason: the signing key
+  # lives in a protected Environment restricted to main, and `environment` can
+  # only be set per job. Keeping it off the npm job means the key is not present
+  # in the job that runs the build and the package's own scripts.
+  #
+  # No version-sync step is needed here. tests/shared/telemetry.test.ts pins
+  # both server.json version fields to package.json, so a stale listing version
+  # fails CI long before it can reach the registry.
+  registry:
+    needs: publish
+    if: needs.publish.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    environment: mcp-registry-publish
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install mcp-publisher
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" \
+            | tar xz mcp-publisher
+      - name: Authenticate to the MCP Registry
+        # DNS-verified namespace. The listing name is
+        # ai.agenticaffiliate/affiliate-networks-mcp and npm's mcpName is pinned
+        # to it, so github-oidc auth is not an option: it would only grant
+        # io.github.bobberrisford/*. See docs/product/distribution-listings-plan.md.
+        env:
+          MCP_REGISTRY_KEY: ${{ secrets.MCP_REGISTRY_KEY }}
+        run: |
+          ./mcp-publisher login dns \
+            --domain agenticaffiliate.ai \
+            --algorithm ed25519 \
+            --private-key "$MCP_REGISTRY_KEY"
+      - name: Publish the listing
+        run: ./mcp-publisher publish
+      - name: Verify the registry serves this version
+        # The registry accepts a publish and then validates it against the live
+        # npm package, so a bad listing surfaces here rather than at the next
+        # release.
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          LIVE="$(curl -fsS "https://registry.modelcontextprotocol.io/v0.1/servers/ai.agenticaffiliate%2Faffiliate-networks-mcp/versions/latest" | jq -r .server.version)"
+          echo "registry=$LIVE package=$VERSION"
+          if [ "$LIVE" != "$VERSION" ]; then
+            echo "::error::registry is serving $LIVE, expected $VERSION"
+            exit 1
+          fi
