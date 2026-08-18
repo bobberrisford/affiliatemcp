@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>agentic affiliate — link-health badge (1:1)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  :root{
+    --ink:#0B0B0C; --paper:#FFFFFF;
+    --blue:#2B2BFF; --blue-bright:#5A78FF; --magenta:#FF2E88;
+    --fg-invert-mut:#9A9DAC;
+    --pos:var(--blue); --neg:var(--magenta);
+    --font-display:'Bricolage Grotesque','Arial Black',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  }
+  html,body{margin:0}
+  body{background:#0a0a0a}
+  .stage{position:fixed;inset:0;display:grid;place-items:center;overflow:hidden}
+  .frame{position:relative;overflow:hidden;transform-origin:center center;flex:none;
+    width:1080px;height:1080px;background:var(--ink);color:var(--paper);
+    padding:80px;display:flex;flex-direction:column;justify-content:space-between}
+  .frame::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:0.5;mix-blend-mode:multiply;
+    background-image:radial-gradient(rgba(11,11,12,0.16) 0.5px,transparent 0.6px);background-size:3px 3px}
+  .dots{position:absolute;inset:0;color:var(--paper);opacity:0.06;
+    background-image:radial-gradient(currentColor 1.4px,transparent 1.6px);background-size:11px 11px}
+
+  .top{display:flex;align-items:center;justify-content:space-between;position:relative}
+  .top .brand{display:flex;align-items:center;gap:20px}
+  .top svg{width:80px;height:80px;border-radius:12px}
+  .top .wm{font-family:var(--font-display);font-weight:800;font-size:2.2rem;letter-spacing:-0.03em}
+  .top .wm .mcp{background:var(--blue);color:var(--paper);padding:0 10px;border-radius:8px}
+  .top .when{font-family:var(--font-mono);font-weight:700;font-size:1.05rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--fg-invert-mut);
+    border:2px solid rgba(255,255,255,0.18);padding:9px 14px;border-radius:10px}
+  .top .when b{color:var(--paper)}
+
+  .mid{position:relative}
+  .q{font-family:var(--font-mono);font-size:1.4rem;font-weight:700;color:var(--fg-invert-mut);margin-bottom:20px}
+  .q .you{color:var(--blue-bright)}
+  .numrow{display:flex;align-items:flex-end;gap:28px;flex-wrap:wrap}
+  .num{font-family:var(--font-display);font-weight:800;font-size:158px;line-height:0.82;letter-spacing:-0.04em;margin:0}
+  .num .u{font-size:70px;color:var(--fg-invert-mut);margin-left:14px}
+  .delta{font-family:var(--font-mono);font-weight:700;font-size:1.5rem;letter-spacing:0.02em;
+    background:var(--neg);color:var(--paper);padding:10px 16px;border-radius:10px;box-shadow:4px 4px 0 0 var(--ink);margin-bottom:16px}
+  .sub{font-family:var(--font-mono);font-size:1.25rem;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--fg-invert-mut);margin-top:24px}
+  .sub b{color:var(--magenta)}
+
+  .flags{position:relative}
+  .row{display:grid;grid-template-columns:250px 1fr auto;align-items:center;gap:20px;padding:16px 0;border-top:2px solid rgba(255,255,255,0.10)}
+  .row:last-child{border-bottom:2px solid rgba(255,255,255,0.10)}
+  .brandn{font-family:var(--font-mono);font-weight:700;font-size:1.35rem;letter-spacing:0.02em}
+  .issue{font-family:var(--font-mono);font-weight:500;font-size:1.15rem;color:var(--fg-invert-mut)}
+  .val{font-family:var(--font-mono);font-weight:700;font-size:1.25rem;color:var(--paper);
+    background:rgba(255,46,136,0.16);border:2px solid var(--magenta);padding:6px 12px;border-radius:8px;white-space:nowrap}
+  .val.ok{background:rgba(43,43,255,0.16);border-color:var(--blue-bright);color:var(--paper)}
+
+  .foot{position:relative;display:flex;align-items:center;justify-content:space-between}
+  .kick{font-family:var(--font-display);font-weight:800;font-size:2rem;line-height:1.02;letter-spacing:-0.02em;text-transform:lowercase}
+  .kick .mag{color:var(--magenta)}
+  .stamp{font-family:var(--font-mono);font-weight:700;font-size:1.05rem;letter-spacing:0.02em;color:var(--fg-invert-mut);
+    border:2px solid rgba(255,255,255,0.18);padding:10px 16px;border-radius:10px;white-space:nowrap}
+  .stamp b{color:var(--paper)}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="frame" data-w="1080" data-h="1080">
+    <div class="dots"></div>
+
+    <div class="top">
+      <div class="brand">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="agentic affiliate mark">
+          <rect x="0" y="0" width="120" height="120" rx="14" fill="#2B2BFF"></rect>
+          <polyline points="34,38 58,60 34,82" fill="none" stroke="#FFFFFF" stroke-width="13" stroke-linecap="square" stroke-linejoin="miter"></polyline>
+          <rect x="66" y="68" width="24" height="14" fill="#FFFFFF"></rect>
+        </svg>
+        <span class="wm">agentic <span class="mcp">affiliate</span></span>
+      </div>
+      <div class="when">link health · <b>audited</b></div>
+    </div>
+
+    <div class="mid">
+      <div class="q"><span class="you">you ▸</span> are any of my affiliate links dead?</div>
+      <div class="numrow">
+        <div class="num">200<span class="u">links checked</span></div>
+        <div class="delta">4 broken</div>
+      </div>
+      <div class="sub">across <b>4 networks</b> · dead links earn nothing</div>
+    </div>
+
+    <div class="flags">
+      <div class="row"><span class="brandn">Awin</span><span class="issue">programme no longer joined · 2 links</span><span class="val">dead</span></div>
+      <div class="row"><span class="brandn">CJ Affiliate</span><span class="issue">merchant left the network · 1 link</span><span class="val">dead</span></div>
+      <div class="row"><span class="brandn">Rakuten</span><span class="issue">programme pending, not live · 1 link</span><span class="val">inactive</span></div>
+      <div class="row"><span class="brandn">Impact</span><span class="issue">196 links pointing at joined programmes</span><span class="val ok">all live</span></div>
+    </div>
+
+    <div class="foot">
+      <div class="kick">every dead link<br>is money <span class="mag">leaking.</span></div>
+      <div class="stamp">made with <b>agenticaffiliate.ai</b></div>
+    </div>
+  </div>
+</div>
+<script>
+  const f=document.querySelector('.frame');
+  function fit(){const s=Math.min(innerWidth/f.dataset.w,innerHeight/f.dataset.h);f.style.transform='scale('+s+')';}
+  addEventListener('resize',fit);fit();
+</script>
+</body>
+</html>
